@@ -13,17 +13,24 @@ class TestMenuCategory:
         assert category.slug == slugify(menu_category["title"])
         assert str(category) == category.title
 
-    def test_create_menu_item(self, menu_item):
+
+@pytest.mark.django_db
+class TestMenu:
+
+    def test_create_menu_item(self, menu_item, image):
         item = Menu.objects.create(**menu_item)
+        item.images.add(image)
 
         assert item.title == menu_item["title"]
         assert item.category == menu_item["category"]
         assert item.description == menu_item["description"]
         assert item.is_available == menu_item["is_available"]
-        # assert item.image == menu_item["image"]
-        # assert item.thumbnail == menu_item["thumbnail"]
+        assert item.images.count() == 1
         assert item.price == menu_item["price"]
         assert item.slug == menu_item["title"]
+        assert item.thumbnail.name.startswith("menu/thumbnails/")
+        assert item.thumbnail.name.endswith(".jpg")
+        assert item.thumbnail.file.read() == b"file_content"
 
         assert str(item) == menu_item["title"]
 
@@ -32,8 +39,7 @@ class TestMenuCategory:
         (
             "price",
             "description",
-            # "image",
-            # "thumbnail",
+            "thumbnail",
         ),
     )
     def test_menu_nullable_fields(self, omit, menu_item):

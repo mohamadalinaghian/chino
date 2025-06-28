@@ -15,7 +15,7 @@ def menu_category():
 @pytest.fixture
 def image_file():
     return SimpleUploadedFile(
-        "image.jpg",
+        "test.jpg",
         b"file_content",
         content_type="image/jpeg",
     )
@@ -23,12 +23,13 @@ def image_file():
 
 @pytest.fixture
 def image(image_file):
-    return Image.objects.create(image=image_file)
+    return Image.objects.create(title="Image 1", image=image_file)
 
 
 @pytest.fixture
 def menu_item(
     menu_category,
+    image_file,
 ):
     category = MenuCategory.objects.create(**menu_category)
     item = {
@@ -37,5 +38,6 @@ def menu_item(
         "price": 45000,
         "description": "i think title has wrong spell!",
         "is_available": True,
+        "thumbnail": image_file,
     }
     return item
