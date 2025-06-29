@@ -9,9 +9,10 @@ psycopg2-binary==2.9.10
 sqlparse==0.5.3
 django-ordered-model==3.7.4
 pillow==11.2.1
+python-slugify==8.0.4 
 
 
-gunicorn==23.0.0
+# gunicorn==23.0.0
 
 
 pytest==8.4.1         

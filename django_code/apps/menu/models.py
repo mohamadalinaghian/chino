@@ -1,8 +1,8 @@
 from django.db import models
 from django.utils import timezone
-from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from ordered_model.models import OrderedModel
+from slugify import slugify
 
 
 def upload_menu_thumbnail(instance, filename):
@@ -13,11 +13,13 @@ class MenuCategory(OrderedModel):
     title = models.CharField(
         verbose_name=_("Title"), max_length=50, unique=True, db_index=True
     )
-    slug = models.SlugField(max_length=50, unique=True, verbose_name=_("Slug"))
+    slug = models.SlugField(
+        max_length=50, unique=True, verbose_name=_("Slug"), allow_unicode=True
+    )
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.title)
+            self.slug = slugify(str(self.title), separator="-", allow_unicode=True)
 
         super().save(*args, **kwargs)
 
@@ -39,7 +41,9 @@ class Menu(OrderedModel):
         verbose_name=_("Description"), blank=True, null=True, max_length=255
     )
 
-    slug = models.SlugField(verbose_name=_("Slug"), max_length=50, unique=True)
+    slug = models.SlugField(
+        verbose_name=_("Slug"), max_length=50, unique=True, allow_unicode=True
+    )
     category = models.ForeignKey(
         MenuCategory,
         on_delete=models.SET_NULL,
@@ -69,7 +73,11 @@ class Menu(OrderedModel):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.title)
+            self.slug = slugify(
+                self.title,
+                allow_unicode=True,
+                separator="-",
+            )
         super().save(*args, **kwargs)
 
     class Meta(OrderedModel.Meta):
