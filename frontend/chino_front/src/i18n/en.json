@@ -1,0 +1,9 @@
+{
+	"menu": {
+		"title": "Menu",
+		"items": {
+			"latte": "Caffe Latte",
+			"espresso": "Espresso"
+		}
+	}
+}
