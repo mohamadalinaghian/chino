@@ -7,7 +7,7 @@ interface Props {
 
 export default function MenuItemImage({ item }: Props) {
   return (
-    <div className="relative w-[96px] sm:w-[120px] aspect-square rounded overflow-hidden bg-gray-100 shrink-0 grow-0 flex-none">
+    <div className="relative w-[96px] sm:w-[120px] aspect-square rounded overflow-hidden bg-gray-100 shrink-0 grow-0 flex-none h-[96px] sm:h-[120px]">
       <Image
         src={item.thumbnail || "/fallback-thumbnail.jpg"}
         alt={item.title}

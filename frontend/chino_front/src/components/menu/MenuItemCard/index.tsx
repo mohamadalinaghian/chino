@@ -9,7 +9,7 @@ interface Props {
 export default function MenuItemCard({ item }: Props) {
   return (
     <article
-      className="flex gap-4 border-b border-gray-200 py-4 last:border-0 sm:gap-6"
+      className="flex flex-row gap-4 border-b border-gray-200 py-4 last:border-0 sm:gap-6"
       itemScope
       itemType="https://schema.org/Product"
     >
