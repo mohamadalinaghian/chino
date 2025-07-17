@@ -46,9 +46,7 @@ class Menu(OrderedModel):
     )
     category = models.ForeignKey(
         MenuCategory,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        on_delete=models.DO_NOTHING,
         related_name="menus",
         verbose_name=_("Category"),
     )
