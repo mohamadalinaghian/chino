@@ -18,6 +18,9 @@ export async function getMenuData(): Promise<{
   categories: IMenuCategory[];
   items: IMenuItem[];
 }> {
+
+    await new Promise((resolve) => setTimeout(resolve, 2000)); // 👈 تست loading
+
   const [categories, items] = await Promise.all([
     getMenuCategories(),
     getMenuItems(),
