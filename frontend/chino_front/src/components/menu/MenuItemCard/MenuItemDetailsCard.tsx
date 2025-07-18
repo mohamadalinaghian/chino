@@ -1,3 +1,4 @@
+import React from "react";
 import { IMenuItem } from "@/types/menu";
 import MenuItemExpandableDescription from "./MenuItemExpandableDescriptionCard";
 

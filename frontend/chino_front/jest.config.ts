@@ -1,16 +1,23 @@
-import type { JestConfigWithTsJest } from "ts-jest";
+// jest.config.ts
 
-const config: JestConfigWithTsJest = {
+import type { Config } from "jest";
+
+const config: Config = {
   preset: "ts-jest",
+
   testEnvironment: "jsdom",
+
   moduleNameMapper: {
-    "^@/(.*)$": "<rootDir>/src/$1",
+    "^@/(.*)$": "<rootDir>/src/$1", // اگر alias داری
   },
+
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
-  testMatch: ["**/*.test.tsx"],
+
   transform: {
-    "^.+\\.(ts|tsx)$": "ts-jest",
+    "^.+\\.tsx?$": ["ts-jest", { useESM: true }],
   },
+
+  extensionsToTreatAsEsm: [".ts", ".tsx"],
 };
 
 export default config;

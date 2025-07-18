@@ -1,9 +1,7 @@
 import { getMenuData } from "@/services/menu/Menu";
 import MenuList from "@/components/menu/MenuList";
 
-function checkCategory(){
   
-}
 export default async function MenuPage() {
   const { categories, items } = await getMenuData();
 

@@ -1,3 +1,5 @@
+import React from "react";
+
 import { IMenuItem } from "@/types/menu";
 import MenuItemImage from "@/components/menu/MenuItemCard/MenuItemImageCard";
 import MenuItemDetails from "@/components/menu/MenuItemCard/MenuItemDetailsCard";
