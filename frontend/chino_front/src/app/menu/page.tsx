@@ -4,6 +4,10 @@ import MenuContent from "./MenuContent";
 
 import MenuSchemaInjector from "./MenuSchemaInjector";
 
+import MenuLayout from "./MenuLayout";
+
+import { SidebarMenu } from "@/components/menu/sidebar";
+
 import { generateMenuSchema } from "@/seo/structuredData/menuSchema";
 
 export { metadata } from "./metadata";
@@ -13,9 +17,13 @@ export default async function MenuPage() {
 
   const schema = generateMenuSchema(categories, items);
 
+  const content = <MenuContent categories={categories} items={items} />;
+
+  const sidebar = <SidebarMenu categories={categories} />;
+
   return (
     <>
-      <MenuContent categories={categories} items={items} />
+      <MenuLayout sidebar={sidebar} content={content} />
 
       <MenuSchemaInjector schema={schema} />
     </>

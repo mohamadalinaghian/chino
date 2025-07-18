@@ -1,25 +1,33 @@
 "use client";
-import { useId } from "react";
+
+import { toAnchorId } from "./toAnchorId";
 
 type Props = {
-  category: { id: string; title: string };
-  active: boolean;
-  onClick: (id: string) => void;
+  title: string;
+  active?: boolean;
+  onClick?: () => void;
 };
 
-export default function SidebarItem({ category, active, onClick }: Props) {
-  const id = useId();
+export default function SidebarItem({ title, active, onClick }: Props) {
+  const anchorId = toAnchorId(title);
+
   return (
     <li>
-      <button
-        role="tab"
-        aria-selected={active}
-        onClick={() => onClick(category.id)}
-        className={`block w-full text-left px-4 py-2 rounded 
-          ${active ? "bg-brown-200 font-semibold" : "hover:bg-brown-50"}`}
+      <a
+        href={`#${anchorId}`}
+        onClick={onClick}
+        className={`block px-2 py-1 text-sm transition font-medium rounded relative
+          ${
+            active
+              ? "text-brown-800 font-bold bg-brown-100"
+              : "text-brown-600 hover:text-brown-800"
+          }`}
       >
-        {category.title}
-      </button>
+        {title}
+        {active && (
+          <span className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-4 bg-brown-800 rounded-r" />
+        )}
+      </a>
     </li>
   );
 }

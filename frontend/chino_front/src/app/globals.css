@@ -1,11 +1,25 @@
 @import "tailwindcss";
 
 html {
-	font-family: Vazirmatn, sans-serif;
-	scroll-behavior: smooth;
+  font-family: Vazirmatn, sans-serif;
+  scroll-behavior: smooth;
 }
 
 body {
-	background-color: #fff;
-	color: #111;
+  background-color: #fff;
+  color: #111;
+}
+@layer utilities {
+  .animate-section {
+    animation: highlight 0.8s ease;
+  }
+
+  @keyframes highlight {
+    0% {
+      background-color: #fdf6e3;
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
 }

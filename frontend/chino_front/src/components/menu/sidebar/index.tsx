@@ -1,2 +1,1 @@
-export { default } from "./Sidebar";
-export type { Props as SidebarProps } from "./Sidebar";
+export { default as SidebarMenu } from "./SidebarMenu";

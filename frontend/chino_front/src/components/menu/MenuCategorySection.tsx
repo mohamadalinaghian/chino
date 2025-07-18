@@ -2,6 +2,7 @@
 
 import { IMenuCategory, IMenuItem } from "@/types/menu";
 import MenuItemCard from "./MenuItemCard";
+import { toAnchorId } from "@/components/menu/sidebar/toAnchorId";
 
 interface Props {
   category: IMenuCategory;
@@ -9,13 +10,19 @@ interface Props {
 }
 
 export default function MenuCategorySection({ category, items }: Props) {
-  // if (items.length === 0) return null;
+  if (items.length === 0) return null;
+
+  const anchorId = toAnchorId(category.title);
 
   return (
-    <section className="mb-10" aria-labelledby={`category-${category.title}`}>
+    <section
+      id={anchorId}
+      className="mb-10 scroll-mt-32 animate-section"
+      aria-labelledby={`category-${anchorId}`}
+    >
       <h2
-        id={`category-${category.title}`}
         className="text-lg font-semibold border-b border-gray-300 pb-2 mb-4"
+        id={`category-${anchorId}`}
       >
         {category.title}
       </h2>

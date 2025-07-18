@@ -8,6 +8,7 @@ const config: Config = {
       container: {
         center: true,
         padding: "1rem",
+        scrollBehavior: ["responsive"],
       },
       fontFamily: {
         vazir: ["Vazirmatn", "sans-serif"],
@@ -18,4 +19,3 @@ const config: Config = {
 };
 
 export default config;
-
