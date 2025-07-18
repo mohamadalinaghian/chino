@@ -18,13 +18,18 @@ export async function getMenuData(): Promise<{
   categories: IMenuCategory[];
   items: IMenuItem[];
 }> {
-
-    await new Promise((resolve) => setTimeout(resolve, 2000)); // 👈 تست loading
+  const MIN_LOADING_MS = 1200;
+  const start = Date.now();
 
   const [categories, items] = await Promise.all([
     getMenuCategories(),
     getMenuItems(),
   ]);
+
+  const elapsed = Date.now() - start;
+  if (elapsed < MIN_LOADING_MS && process.env.NODE_ENV === "production") {
+    await new Promise((r) => setTimeout(r, MIN_LOADING_MS - elapsed));
+  }
 
   return { categories, items };
 }
