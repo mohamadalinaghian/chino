@@ -17,6 +17,7 @@ export default function MenuItemImage({ item }: Props) {
         sizes="120px"
         className="object-cover object-center"
         placeholder="blur"
+        priority
         blurDataURL="/blur.png"
       />
     </div>

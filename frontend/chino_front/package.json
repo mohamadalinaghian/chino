@@ -10,6 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@tanstack/react-virtual": "^3.13.12",
     "i18next": "^25.3.2",
     "lottie-react": "^2.4.1",
     "next": "15.4.1",

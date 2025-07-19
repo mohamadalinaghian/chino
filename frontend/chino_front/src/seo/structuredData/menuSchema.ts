@@ -4,25 +4,26 @@ export function generateMenuSchema(
   categories: IMenuCategory[],
   items: IMenuItem[],
 ) {
-  return {
+  const schema = {
     "@context": "https://schema.org",
     "@type": "Menu",
-    name: "منوی کافه چینو",
-    hasMenuSection: categories.map((cat) => ({
+    hasMenuSection: categories.map((category) => ({
       "@type": "MenuSection",
-      name: cat.title,
+      name: category.title,
       hasMenuItem: items
-        .filter((item) => item.category.title === cat.title)
+        .filter((item) => item.category.title === category.title)
         .map((item) => ({
           "@type": "MenuItem",
           name: item.title,
           description: item.description,
           offers: {
             "@type": "Offer",
-            priceCurrency: "IRR",
             price: item.price,
+            priceCurrency: "IRR",
           },
         })),
     })),
   };
+
+  return schema;
 }
