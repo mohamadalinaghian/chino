@@ -1,0 +1,47 @@
+# فایل‌های مربوط به Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# پوشه‌های مجازی
+env/
+venv/
+.venv/
+
+# فایل‌های IDE
+.idea/
+.vscode/
+*.swp
+
+# فایل‌های سیستم‌عامل
+.DS_Store
+Thumbs.db
+
+# فایل‌های مربوط به Git
+.git
+.gitignore
+
+# فایل‌های مربوط به logs و output
+*.log
+*.pot
+*.mo
+*.py[cod]
+
+# فایل‌های مربوط به migrations (اختیاری، اگر auto-gen می‌کنی)
+**/migrations/
+!*/migrations/__init__.py
+
+# static/media output
+staticfiles/
+static/
+media/
+
+# فایل‌های secret یا حساس
+.env
+.env.*
+
+# فایل‌های build/docker
+*.db
+docker-compose.override.yml
+*.sqlite3

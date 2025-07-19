@@ -3,7 +3,7 @@
 # -----------------------------
 FROM mohamadalinaghian/dj-base AS base
 
-COPY requirements.txt .
+COPY ./requirements.txt .
 
 RUN /venv/bin/pip install -r requirements.txt
 
@@ -24,7 +24,7 @@ ENV PYTHONUNBUFFERED=1 \
 COPY --from=base --chown=python:python /venv /venv
 
 WORKDIR /app
-COPY --chown=python:python django_code /app
+COPY --chown=python:python ./django_code /app
 
 USER python
 
