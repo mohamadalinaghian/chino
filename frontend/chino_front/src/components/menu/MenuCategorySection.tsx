@@ -2,22 +2,22 @@
 
 import { IMenuCategory, IMenuItem } from "@/types/menu";
 import MenuItemCard from "./MenuItemCard";
-import { toAnchorId } from "@/components/menu/sidebar/toAnchorId";
 
 interface Props {
   category: IMenuCategory;
   items: IMenuItem[];
+  query: string;
 }
 
-export default function MenuCategorySection({ category, items }: Props) {
+export default function MenuCategorySection({ category, items, query }: Props) {
   if (items.length === 0) return null;
 
-  const anchorId = toAnchorId(category.title);
+  const anchorId = encodeURIComponent(category.title);
 
   return (
     <section
       id={anchorId}
-      className="mb-10 scroll-mt-32 animate-section"
+      className="mb-10 scroll-mt-32"
       aria-labelledby={`category-${anchorId}`}
     >
       <h2
@@ -29,7 +29,7 @@ export default function MenuCategorySection({ category, items }: Props) {
 
       <div className="flex flex-col gap-4">
         {items.map((item) => (
-          <MenuItemCard key={item.title} item={item} />
+          <MenuItemCard key={item.title} item={item} query={query} />
         ))}
       </div>
     </section>

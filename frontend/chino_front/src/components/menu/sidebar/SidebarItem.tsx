@@ -16,7 +16,7 @@ export default function SidebarItem({ title, active, onClick }: Props) {
       <a
         href={`#${anchorId}`}
         onClick={onClick}
-        className={`block px-2 py-1 text-sm transition font-medium rounded relative
+        className={`block px-2 py-1 text-s transition font-medium rounded relative
           ${
             active
               ? "text-brown-800 font-bold bg-brown-100"
