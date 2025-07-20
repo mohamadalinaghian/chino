@@ -13,7 +13,7 @@ services:
 
   backend:
     build: ./backend/
-    command: gunicorn chinocafe.wsgi:application --bind 0.0.0.0:8000
+    command: gunicorn app.config.wsgi:application --bind 0.0.0.0:8000
     volumes:
       - ./backend:/app
     env_file:
