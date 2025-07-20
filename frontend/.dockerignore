@@ -4,6 +4,13 @@ __pycache__/
 *.pyo
 *.pyd
 
+node_modules
+.pnpm-store
+.env
+.next
+out
+
+
 # پوشه‌های مجازی
 env/
 venv/

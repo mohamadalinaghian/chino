@@ -7,6 +7,8 @@ build:
 up:
 	${DOCKER} up -d
 
+n_up:
+	${DOCKER} up -d --build frontend
 rest:
 	${DOCKER} restart
 	

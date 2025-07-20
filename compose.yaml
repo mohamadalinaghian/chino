@@ -9,8 +9,7 @@ services:
     ports:
       - "5432:5432"
 
-  web:
-
+  backend:
     build: ./backend/
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
@@ -21,6 +20,17 @@ services:
       - .env
     depends_on:
       - db
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      - backend
+   
 
 volumes:
   postgres_data:

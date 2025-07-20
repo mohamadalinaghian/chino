@@ -9,7 +9,7 @@ import MenuLayout from "./MenuLayout";
 import { SidebarMenu } from "@/components/menu/sidebar";
 
 import { generateMenuSchema } from "@/seo/structuredData/menuSchema";
-
+export const dynamic = "force-dynamic";
 export { metadata } from "./metadata";
 
 export default async function MenuPage() {

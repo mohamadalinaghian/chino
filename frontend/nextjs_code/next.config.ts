@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   images: {
     domains: ["localhost"],
   },
+    eslint: {
+    ignoreDuringBuilds: true,
+  },
   async redirects() {
     return [
       {

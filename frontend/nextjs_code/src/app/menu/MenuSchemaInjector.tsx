@@ -1,5 +1,5 @@
 type Props = {
-  schema: Record<string, any>;
+  schema: Record<string, unknown>;
 };
 
 export default function MenuSchemaInjector({ schema }: Props) {
