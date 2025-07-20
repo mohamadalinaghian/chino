@@ -1,4 +1,3 @@
-
 services:
   db:
     image: postgres:alpine
@@ -7,8 +6,8 @@ services:
       - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    # networks:
-      # - internal
+    networks:
+      - internal
     expose:
       - "5432"
 
@@ -21,8 +20,8 @@ services:
       - .env
     depends_on:
       - db
-    # networks:
-      # - internal
+    networks:
+      - internal
     expose:
       - "8000"
 
@@ -33,40 +32,29 @@ services:
       - .env
     depends_on:
       - backend
-    # networks:
-      # - internal
+    networks:
+      - internal
     expose:
       - "3000"
 
-  # nginx:
-  #   build: ./nginx
-  #   depends_on:
-  #     - backend
-  #     - frontend
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   networks:
-  #     - internal
-  #   volumes:
-  #     - ./nginx/certbot/conf:/etc/letsencrypt
-      # - ./nginx/certbot/www:/var/www/certbot
-    # restart: unless-stopped
-
-  certbot:
-    image: certbot/certbot
+  nginx:
+    build: ./nginx
+    depends_on:
+      - backend
+      - frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - internal
     volumes:
       - ./nginx/certbot/conf:/etc/letsencrypt
       - ./nginx/certbot/www:/var/www/certbot
-    entrypoint: >
-      sh -c 'certbot certonly --webroot --webroot-path=/var/www/certbot
-      --email mohamadalinaghian@gmail.com --agree-tos --no-eff-email
-      -d chinocafe.ir -d www.chinocafe.ir'
+    restart: unless-stopped
 
 volumes:
   postgres_data:
 
-# networks:
-#   internal:
-#     driver: bridge
-    
+networks:
+  internal:
+    driver: bridge
