@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   db:
     image: postgres:alpine
@@ -6,31 +8,65 @@ services:
       - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    networks:
+      - internal
+    expose:
+      - "5432"
 
   backend:
     build: ./backend/
-    command: python manage.py runserver 0.0.0.0:8000
+    command: gunicorn chinocafe.wsgi:application --bind 0.0.0.0:8000
     volumes:
-      - ./backend/django_code:/app
-    ports:
-      - "8000:8000"
+      - ./backend:/app
     env_file:
       - .env
     depends_on:
       - db
+    networks:
+      - internal
+    expose:
+      - "8000"
 
   frontend:
     build: ./frontend
     restart: unless-stopped
-    ports:
-      - "3000:3000"
     env_file:
       - .env
     depends_on:
       - backend
-   
+    networks:
+      - internal
+    expose:
+      - "3000"
+
+  nginx:
+    build: ./nginx
+    depends_on:
+      - backend
+      - frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - internal
+    volumes:
+      - ./nginx/certbot/conf:/etc/letsencrypt
+      - ./nginx/certbot/www:/var/www/certbot
+    restart: unless-stopped
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./nginx/certbot/conf:/etc/letsencrypt
+      - ./nginx/certbot/www:/var/www/certbot
+    entrypoint: >
+      sh -c 'certbot certonly --webroot --webroot-path=/var/www/certbot
+      --email mohamadalinaghian@gmail.com --agree-tos --no-eff-email
+      -d chinocafe.ir -d www.chinocafe.ir'
 
 volumes:
   postgres_data:
+
+networks:
+  internal:
+    driver: bridge
