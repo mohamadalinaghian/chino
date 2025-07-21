@@ -148,16 +148,16 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-STATIC_TOOR = BASE_DIR / "staticfiles"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 if DEBUG:
     assert SECRET_KEY == "unsecure"
     assert env("ENVIROMENT") != "production"
 else:
-    assert re.search(r"[A-Z]", SECRET_KEY), (
-        "❌ SECRET_KEY باید حداقل یک حرف بزرگ داشته باشد."
-    )
-    assert re.search(r"[0-9]", SECRET_KEY), (
-        "❌ SECRET_KEY باید حداقل یک عدد داشته باشد."
-    )
+    assert re.search(
+        r"[A-Z]", SECRET_KEY
+    ), "❌ SECRET_KEY باید حداقل یک حرف بزرگ داشته باشد."
+    assert re.search(
+        r"[0-9]", SECRET_KEY
+    ), "❌ SECRET_KEY باید حداقل یک عدد داشته باشد."
     assert len(SECRET_KEY) >= 50, "❌ SECRET_KEY باید حداقل 50 کاراکتر باشد."
