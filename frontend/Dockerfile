@@ -33,7 +33,7 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/node_modules ./node_modules
 
 # حذف وابستگی‌های dev برای کاهش حجم
-RUN cd /app && npm prune --omit=dev || true
+RUN pnpm install --prod
 
 # باز کردن پورت
 EXPOSE 3000
