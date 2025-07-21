@@ -37,10 +37,10 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "jalali_date",
-    "apps.menu",
-    "apps.user",
+    "django_code.apps.menu",
+    "django_code.apps.user",
     "ordered_model",
-    "apps.utils",
+    "django_code.apps.utils",
 ]
 
 MIDDLEWARE = [
