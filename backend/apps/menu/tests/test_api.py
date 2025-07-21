@@ -1,10 +1,9 @@
 import pytest
-from django_code.apps.menu.models import Menu, MenuCategory
+from apps.menu.models import Menu, MenuCategory
 
 
 @pytest.mark.django_db
 class TestMenuAPI:
-
     def test_menu_list_api(self, api_client, menu_item, image):
         item = Menu.objects.create(**menu_item)
         item.images.add(image)

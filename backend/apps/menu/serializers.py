@@ -1,5 +1,5 @@
-from django_code.apps.menu.models import Menu, MenuCategory
-from django_code.apps.utils.models import Image
+from apps.menu.models import Menu, MenuCategory
+from apps.utils.models import Image
 from rest_framework import serializers
 
 

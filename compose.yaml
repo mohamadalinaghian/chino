@@ -11,11 +11,9 @@ services:
 
   backend:
     build: ./backend/
-    command: gunicorn django_code.config.wsgi:application --bind 0.0.0.0:8000
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
     volumes:
-      - ./backend/django_code:/app
-      - static_volume:/app/django_code/staticfiles
-      - media_volume:/app/django_code/media
+      - ./backend:/app
     env_file:
       - .env
     depends_on:
@@ -46,8 +44,8 @@ services:
     ports:
       - "80:80"
     volumes:
-      - static_volume:/app/django_code/staticfiles:ro
-      - media_volume:/app/django_code/media:ro
+      - static_volume:/app/staticfiles:ro
+      - media_volume:/app/media:ro
 
 volumes:
   postgres_data:

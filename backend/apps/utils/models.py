@@ -1,4 +1,4 @@
-from django_code.apps.utils.upload_path import image_path
+from apps.utils.upload_path import image_path
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _

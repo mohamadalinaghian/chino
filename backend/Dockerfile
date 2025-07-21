@@ -27,7 +27,7 @@ COPY --from=base --chown=python:python /venv /venv
 WORKDIR /app
 
 # ۴. کپی کردن پروژه با مالک مناسب
-COPY --chown=python:python ./django_code /app
+COPY --chown=python:python backend/ /app/
 
 # ۵. ساخت دایرکتوری‌های static/media در زمان build
 RUN mkdir -p /app/staticfiles /app/media && \

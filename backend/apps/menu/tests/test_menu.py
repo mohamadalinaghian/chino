@@ -1,11 +1,10 @@
 import pytest
-from django_code.apps.menu.models import Menu, MenuCategory
+from apps.menu.models import Menu, MenuCategory
 from django.utils.text import slugify
 
 
 @pytest.mark.django_db
 class TestMenuCategory:
-
     def test_create_menu_category(self, menu_category):
         category = MenuCategory.objects.create(**menu_category)
 
@@ -16,7 +15,6 @@ class TestMenuCategory:
 
 @pytest.mark.django_db
 class TestMenu:
-
     def test_create_menu_item(self, menu_item, image):
         item = Menu.objects.create(**menu_item)
         item.images.add(image)

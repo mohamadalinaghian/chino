@@ -37,10 +37,10 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "jalali_date",
-    "django_code.apps.menu",
-    "django_code.apps.user",
+    "apps.menu",
+    "apps.user",
     "ordered_model",
-    "django_code.apps.utils",
+    "apps.utils",
 ]
 
 MIDDLEWARE = [
@@ -154,10 +154,10 @@ if DEBUG:
     assert SECRET_KEY == "unsecure"
     assert env("ENVIROMENT") != "production"
 else:
-    assert re.search(
-        r"[A-Z]", SECRET_KEY
-    ), "❌ SECRET_KEY باید حداقل یک حرف بزرگ داشته باشد."
-    assert re.search(
-        r"[0-9]", SECRET_KEY
-    ), "❌ SECRET_KEY باید حداقل یک عدد داشته باشد."
+    assert re.search(r"[A-Z]", SECRET_KEY), (
+        "❌ SECRET_KEY باید حداقل یک حرف بزرگ داشته باشد."
+    )
+    assert re.search(r"[0-9]", SECRET_KEY), (
+        "❌ SECRET_KEY باید حداقل یک عدد داشته باشد."
+    )
     assert len(SECRET_KEY) >= 50, "❌ SECRET_KEY باید حداقل 50 کاراکتر باشد."

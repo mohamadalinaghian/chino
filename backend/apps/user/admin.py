@@ -1,4 +1,4 @@
-from django_code.apps.user.models import Account, Profile
+from apps.user.models import Account, Profile
 from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin

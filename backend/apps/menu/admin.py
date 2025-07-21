@@ -1,4 +1,4 @@
-from django_code.apps.menu.models import Menu, MenuCategory
+from apps.menu.models import Menu, MenuCategory
 from django.contrib import admin
 from ordered_model.admin import OrderedModelAdmin
 
