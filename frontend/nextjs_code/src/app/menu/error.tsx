@@ -19,14 +19,6 @@ export default function MenuError({
       className="flex flex-col items-center justify-center p-6 text-center min-h-[60vh]"
       aria-labelledby="menu-error-heading"
     >
-      <Image
-        src="/error-coffee.png"
-        alt="خطای منو"
-        width={100}
-        height={100}
-        className="mb-4"
-      />
-
       <h2
         id="menu-error-heading"
         className="text-2xl font-semibold text-red-600 mb-4"
