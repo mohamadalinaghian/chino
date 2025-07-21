@@ -1,4 +1,4 @@
-from apps.utils.models import TimeStampedModel
+from django_code.apps.utils.models import TimeStampedModel
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
