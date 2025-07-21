@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class MenuConfig(AppConfig):
-    name = "apps.menu"
+    name = "django_code.apps.menu"
