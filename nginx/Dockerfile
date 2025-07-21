@@ -1,5 +1,5 @@
 FROM nginx:1.25-alpine
-COPY conf.d /etc/nginx/conf.d/
+COPY ./conf.d /etc/nginx/conf.d/
 
 
 RUN rm -f /etc/nginx/conf.d/default.conf
