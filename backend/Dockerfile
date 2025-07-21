@@ -12,21 +12,28 @@ RUN /venv/bin/pip install -r requirements.txt
 # -----------------------------
 FROM python:3.13-slim AS runtime
 
-RUN  useradd --system --uid 1000 --no-create-home --shell /usr/sbin/nologin python
+# ۱. ساخت کاربر سیستم با UID مشخص
+RUN useradd --system --uid 1000 --no-create-home --shell /usr/sbin/nologin python
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH="/app" \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH="/venv/bin:$PATH"
 
-
-
+# ۲. کپی venv و تنظیم مالکیت به کاربر python
 COPY --from=base --chown=python:python /venv /venv
 
+# ۳. تنظیم محل اجرای برنامه
 WORKDIR /app
+
+# ۴. کپی کردن پروژه با مالک مناسب
 COPY --chown=python:python ./django_code /app
 
+# ۵. ساخت دایرکتوری‌های static/media در زمان build
+RUN mkdir -p /app/staticfiles /app/media && \
+    chown -R python:python /app/staticfiles /app/media
+
+# ۶. اجرای کانتینر با کاربر python
 USER python
 
 EXPOSE 8000
-
