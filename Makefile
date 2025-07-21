@@ -18,8 +18,8 @@ down:
 full_down:
 	${DOCKER} down --rmi local
 
-web_container:
-	${DOCKER} exec web bash
+ex_bak:
+	${DOCKER} exec backend bash
 
 run:
 	${DOCKER} exec web python manage.py runserver 0.0.0.0:8000
