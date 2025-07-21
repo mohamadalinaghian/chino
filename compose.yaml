@@ -11,7 +11,7 @@ services:
 
   backend:
     build: ./backend/
-    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
+    command: gunicorn django_code.config.wsgi:application --bind 0.0.0.0:8000
     volumes:
       - ./backend/django_code:/app
       - static_volume:/app/django_code/staticfiles
