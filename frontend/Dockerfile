@@ -1,41 +1,42 @@
 ### STAGE 1: Build ###
 FROM node:20-alpine AS builder
 
-# ابزار لازم
+# نصب کتابخانه‌ها و سازگاری‌های لازم
 RUN apk add --no-cache libc6-compat
 
-# محل پروژه
+# تنظیم مسیر کاری
 WORKDIR /app
 
-# نصب pnpm
-RUN npm install -g pnpm
-
-# اضافه کردن dependency‌ها
+# کپی و نصب dependency‌ها با pnpm
 COPY ./nextjs_code/pnpm-lock.yaml ./nextjs_code/package.json ./
-RUN pnpm install --frozen-lockfile
+RUN npm install -g pnpm && pnpm install --frozen-lockfile
 
-# کپی باقی پروژه
+# کپی کل سورس پروژه
 COPY ./nextjs_code .
 
-# بیلد
+# بیلد پروژه
 RUN pnpm build
 
 
 ### STAGE 2: Runtime ###
 FROM node:20-alpine AS runner
 
+# نصب کتابخانه‌های پایه برای اجرا
 RUN apk add --no-cache libc6-compat
 
 WORKDIR /app
 
-# کپی فقط فایل‌های لازم
+# فقط فایل‌های ضروری برای اجرای نهایی
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/node_modules ./node_modules
 
-# پورت
+# حذف وابستگی‌های dev برای کاهش حجم
+RUN cd /app && npm prune --omit=dev || true
+
+# باز کردن پورت
 EXPOSE 3000
 
-# اجرای سرور (بدون نیاز به pnpm global)
+# اجرای اپ
 CMD ["node_modules/.bin/next", "start"]
