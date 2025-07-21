@@ -1,4 +1,4 @@
-from apps.menu.views import MenuCategoryViewSet, MenuViewSet
+from django_code.apps.menu.views import MenuCategoryViewSet, MenuViewSet
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 

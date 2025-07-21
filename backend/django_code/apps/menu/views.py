@@ -1,5 +1,5 @@
-from apps.menu.models import Menu, MenuCategory
-from apps.menu.serializers import MenuCategorySerializer, MenuSerializer
+from django_code.apps.menu.models import Menu, MenuCategory
+from django_code.apps.menu.serializers import MenuCategorySerializer, MenuSerializer
 from rest_framework import viewsets
 
 

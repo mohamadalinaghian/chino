@@ -1,5 +1,5 @@
 import pytest
-from apps.menu.models import Menu, MenuCategory
+from django_code.apps.menu.models import Menu, MenuCategory
 
 
 @pytest.mark.django_db

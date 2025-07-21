@@ -1,6 +1,6 @@
 import pytest
-from apps.menu.models import Menu, MenuCategory
-from apps.utils.models import Image
+from django_code.apps.menu.models import Menu, MenuCategory
+from django_code.apps.utils.models import Image
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 
