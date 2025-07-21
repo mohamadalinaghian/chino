@@ -1,9 +1,0 @@
-*
-!conf.d/
-!conf.d/default.conf
-!conf.d/ssl.conf
-!Dockerfile
-!.dockerignore
-!certbot/
-!certbot/www/
-!certbot/conf/
