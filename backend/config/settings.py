@@ -75,6 +75,8 @@ LANGUAGES = {("fa", "فارسی"), ("en", "انگلیسی")}
 TIME_ZONE = "Asia/Tehran"
 USE_I18N = True
 USE_TZ = True
+USE_L10N = True
+
 
 JALALI_DATE_DEFAULTS = {
     "LIST_DISPLAY_AUTO_CONVERT": True,
