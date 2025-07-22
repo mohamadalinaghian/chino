@@ -17,7 +17,7 @@ class TestMenuAPI:
         menu_data = data[0]
         assert menu_data["title"] == item.title
         assert menu_data["category"]["title"] == item.category.title
-        assert menu_data["thumbnail"].endswith(".jpg")
+        assert menu_data["thumbnail"].endswith(".webp")
         assert len(menu_data["images"]) == 1
         assert menu_data["images"][0]["title"] == image.title
 

@@ -3,6 +3,8 @@ from apps.menu.models import Menu, MenuCategory
 from apps.utils.models import Image
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
+from PIL import Image as PILImage
+import io
 
 
 @pytest.fixture
@@ -20,9 +22,13 @@ def menu_category():
 
 @pytest.fixture
 def image_file():
+    buffer = io.BytesIO()
+    img = PILImage.new("RGB", (10, 10), color="red")
+    img.save(buffer, format="JPEG")
+    buffer.seek(0)
     return SimpleUploadedFile(
         "test.jpg",
-        b"file_content",
+        buffer.read(),
         content_type="image/jpeg",
     )
 
@@ -33,10 +39,7 @@ def image(image_file):
 
 
 @pytest.fixture
-def menu_item(
-    menu_category,
-    image_file,
-):
+def menu_item(menu_category, image_file):
     category = MenuCategory.objects.create(**menu_category)
     item = {
         "title": "esspresso",

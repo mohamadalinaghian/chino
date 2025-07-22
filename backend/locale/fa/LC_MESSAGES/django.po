@@ -1,0 +1,182 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-07-22 12:21+0330\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+#: apps/menu/models.py:14 apps/menu/models.py:37 apps/utils/models.py:28
+msgid "Title"
+msgstr ""
+
+#: apps/menu/models.py:17 apps/menu/models.py:45 apps/user/models.py:67
+msgid "Slug"
+msgstr "اسلاگ"
+
+#: apps/menu/models.py:27
+msgid "Menu Category"
+msgstr "دسته بندی منو"
+
+#: apps/menu/models.py:28
+msgid "Menu Categories"
+msgstr "دسته بندی های منو"
+
+#: apps/menu/models.py:39
+msgid "Price"
+msgstr "قیمت"
+
+#: apps/menu/models.py:41
+msgid "Description"
+msgstr "توضیحات"
+
+#: apps/menu/models.py:51
+msgid "Category"
+msgstr "دسته بندی"
+
+#: apps/menu/models.py:56
+msgid "Thumbnail"
+msgstr "عکس بند انگشتی"
+
+#: apps/menu/models.py:64
+msgid "Extra Images"
+msgstr "عکس های دیگر"
+
+#: apps/menu/models.py:68
+msgid "Is Available"
+msgstr "در دسترس؟"
+
+#: apps/menu/models.py:82
+msgid "Menu"
+msgstr "منو"
+
+#: apps/menu/models.py:83
+msgid "Menus"
+msgstr "منو ها"
+
+#: apps/user/admin.py:12
+msgid "Password"
+msgstr "رمز"
+
+#: apps/user/admin.py:13
+msgid "Confirm password"
+msgstr "تأیید رمز"
+
+#: apps/user/admin.py:68
+msgid "Personal info"
+msgstr "مشخصات فردی"
+
+#: apps/user/admin.py:70
+msgid "Permissions"
+msgstr "دسترسی ها"
+
+#: apps/user/admin.py:81
+msgid "Important dates"
+msgstr "تاریخ های مهم"
+
+#: apps/user/models.py:19
+msgid "The given mobile must be set"
+msgstr "شماره تلفن باید ثبت شود"
+
+#: apps/user/models.py:31
+msgid "A superuser must also be staff."
+msgstr "مدیر باید از کارکنان باشد"
+
+#: apps/user/models.py:57
+msgid "Mobile"
+msgstr "موبایل"
+
+#: apps/user/models.py:63
+msgid "Name"
+msgstr "نام"
+
+#: apps/user/models.py:72
+msgid "Is Active?"
+msgstr "فعال؟"
+
+#: apps/user/models.py:73
+msgid "Is Superuser?"
+msgstr "مدیر؟"
+
+#: apps/user/models.py:74
+msgid "Is Staff?"
+msgstr "پرسنل؟"
+
+#: apps/user/models.py:90
+msgid "User Account"
+msgstr "حساب کاربری"
+
+#: apps/user/models.py:91
+msgid "User Accounts"
+msgstr "حساب کاربرها"
+
+#: apps/user/models.py:110
+msgid "Profile"
+msgstr "پروفایل"
+
+#: apps/user/models.py:111
+msgid "Profiles"
+msgstr "پروفایل ها"
+
+#: apps/user/models.py:113 apps/user/tests/test_profile.py:84
+msgid "Male"
+msgstr "آقا"
+
+#: apps/user/models.py:113 apps/user/tests/test_profile.py:84
+msgid "Female"
+msgstr "خانم"
+
+#: apps/user/models.py:117
+msgid "User"
+msgstr "کاربر"
+
+#: apps/user/models.py:122
+msgid "Email"
+msgstr "ایمیل"
+
+#: apps/user/models.py:125
+msgid "Is Email Verified?"
+msgstr "ایمیل تأیید شده است؟"
+
+#: apps/user/models.py:128
+msgid "Address"
+msgstr "آدرس"
+
+#: apps/user/models.py:131
+msgid "Birth Day"
+msgstr "تاریخ تولد"
+
+#: apps/user/models.py:134
+msgid "Sex"
+msgstr "جنسیت"
+
+#: apps/utils/models.py:15 apps/utils/models.py:32
+msgid "Create Date"
+msgstr "تاریخ ساخت"
+
+#: apps/utils/models.py:17
+msgid "Update Date"
+msgstr "تاریخ به روز رسانی"
+
+#: apps/utils/models.py:29
+msgid "Alt Text"
+msgstr "متن جایگزین"
+
+#: apps/utils/models.py:30 apps/utils/models.py:36
+msgid "Image"
+msgstr "عکس"
+
+#: apps/utils/models.py:37
+msgid "Images"
+msgstr "عکس ها"

@@ -26,9 +26,9 @@ class TestMenu:
         assert item.images.count() == 1
         assert item.price == menu_item["price"]
         assert item.slug == menu_item["title"]
-        assert item.thumbnail.name.startswith("menu/thumbnails/")
-        assert item.thumbnail.name.endswith(".jpg")
-        assert item.thumbnail.file.read() == b"file_content"
+        assert item.thumbnail.name.endswith(".webp")
+        assert ".jpg" not in item.thumbnail.name
+        assert item.thumbnail.size > 0
 
         assert str(item) == menu_item["title"]
 

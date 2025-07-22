@@ -1,8 +1,11 @@
 from django.db import models
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from ordered_model.models import OrderedModel
 from slugify import slugify
+from io import BytesIO
+from PIL import Image as PILImage, UnidentifiedImageError
+from django.core.files.base import ContentFile
+import os
 
 
 def upload_menu_thumbnail(instance, filename):
@@ -18,9 +21,9 @@ class MenuCategory(OrderedModel):
     )
 
     def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(str(self.title), separator="-", allow_unicode=True)
-
+        new_slug = slugify(self.title, separator="-", allow_unicode=True)
+        if self.slug != new_slug:
+            self.slug = new_slug
         super().save(*args, **kwargs)
 
     class Meta(OrderedModel.Meta):
@@ -40,7 +43,6 @@ class Menu(OrderedModel):
     description = models.CharField(
         verbose_name=_("Description"), blank=True, null=True, max_length=255
     )
-
     slug = models.SlugField(
         verbose_name=_("Slug"), max_length=50, unique=True, allow_unicode=True
     )
@@ -50,33 +52,49 @@ class Menu(OrderedModel):
         related_name="menus",
         verbose_name=_("Category"),
     )
-
     thumbnail = models.ImageField(
         upload_to=upload_menu_thumbnail,
         verbose_name=_("Thumbnail"),
         blank=True,
         null=True,
     )
-
     images = models.ManyToManyField(
         "utils.Image",
         blank=True,
         verbose_name=_("Extra Images"),
         related_name="menu_items",
     )
-
     is_available = models.BooleanField(verbose_name=_("Is Available"), default=True)
 
     order_with_respect_to = "category"
 
     def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(
-                self.title,
-                allow_unicode=True,
-                separator="-",
-            )
+        if not self.slug or self.slug != slugify(
+            str(self.title), separator="-", allow_unicode=True
+        ):
+            self.slug = slugify(str(self.title), separator="-", allow_unicode=True)
+
+        initial_thumbnail = self.thumbnail
+
         super().save(*args, **kwargs)
+
+        if initial_thumbnail and hasattr(initial_thumbnail, "file"):
+            try:
+                initial_thumbnail.file.seek(0)
+                img = PILImage.open(initial_thumbnail.file).convert("RGB")
+                img.thumbnail((1200, 1200), PILImage.LANCZOS)
+
+                buffer = BytesIO()
+                img.save(buffer, format="WEBP", optimize=True, quality=85)
+                buffer.seek(0)
+
+                name_root, _ = os.path.splitext(initial_thumbnail.name or "thumbnail")
+                new_name = f"{name_root}.webp"
+
+                self.thumbnail.save(new_name, ContentFile(buffer.read()), save=False)
+                super().save(update_fields=["thumbnail"])
+            except (UnidentifiedImageError, AttributeError, ValueError):
+                pass
 
     class Meta(OrderedModel.Meta):
         verbose_name = _("Menu")
