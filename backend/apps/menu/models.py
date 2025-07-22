@@ -5,11 +5,7 @@ from slugify import slugify
 from io import BytesIO
 from PIL import Image as PILImage, UnidentifiedImageError
 from django.core.files.base import ContentFile
-import os
-
-
-def upload_menu_thumbnail(instance, filename):
-    return f"menu/thumbnails/{instance.slug}/{filename}"
+from apps.utils.upload_path import menu_thumbnail_path
 
 
 class MenuCategory(OrderedModel):
@@ -53,7 +49,7 @@ class Menu(OrderedModel):
         verbose_name=_("Category"),
     )
     thumbnail = models.ImageField(
-        upload_to=upload_menu_thumbnail,
+        upload_to=menu_thumbnail_path,
         verbose_name=_("Thumbnail"),
         blank=True,
         null=True,
@@ -82,16 +78,14 @@ class Menu(OrderedModel):
             try:
                 initial_thumbnail.file.seek(0)
                 img = PILImage.open(initial_thumbnail.file).convert("RGB")
-                img.thumbnail((1200, 1200), PILImage.LANCZOS)
+                img.thumbnail((400, 400), PILImage.LANCZOS)
 
                 buffer = BytesIO()
-                img.save(buffer, format="WEBP", optimize=True, quality=85)
+                img.save(buffer, format="WEBP", optimize=True, quality=75)
                 buffer.seek(0)
 
-                name_root, _ = os.path.splitext(initial_thumbnail.name or "thumbnail")
-                new_name = f"{name_root}.webp"
-
-                self.thumbnail.save(new_name, ContentFile(buffer.read()), save=False)
+                path = menu_thumbnail_path(self, "")
+                self.thumbnail.save(path, ContentFile(buffer.read()), save=False)
                 super().save(update_fields=["thumbnail"])
             except (UnidentifiedImageError, AttributeError, ValueError):
                 pass

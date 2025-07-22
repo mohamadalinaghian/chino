@@ -12,7 +12,7 @@ export default function MenuItemPrice({ price }: Props) {
     >
       <span itemProp="price">{price}</span>
       <meta itemProp="priceCurrency" content="IRR" />
-      <span className="ml-1">هزار تومان</span>
+      <span className="ml-1"> هزار تومان</span>
     </div>
   );
 }
