@@ -15,6 +15,7 @@ FROM python:3.13-slim AS runtime
 # ۱. ساخت کاربر سیستم با UID مشخص
 RUN useradd --system --uid 1000 --no-create-home --shell /usr/sbin/nologin python &&\
     apt-get update && apt-get upgrade -y --no-install-recommends &&\
+    apt-get install gettext -y &&\
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ENV PYTHONUNBUFFERED=1 \
