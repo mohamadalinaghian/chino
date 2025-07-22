@@ -2,7 +2,26 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    domains: ["185.243.48.151", "www.chinocafe.ir", "chinocafe.ir"],
+    remotePatterns: [
+      {
+        protocol: "http",
+        hostname: "185.243.48.151",
+        port: "",
+        pathname: "/media/menu/thumbnails/**",
+      },
+      {
+        protocol: "https",
+        hostname: "www.chinocafe.ir",
+        port: "",
+        pathname: "**",
+      },
+      {
+        protocol: "https",
+        hostname: "chinocafe.ir",
+        port: "",
+        pathname: "**",
+      },
+    ],
   },
   eslint: {
     ignoreDuringBuilds: true,
@@ -17,4 +36,5 @@ const nextConfig: NextConfig = {
     ];
   },
 };
+
 export default nextConfig;
