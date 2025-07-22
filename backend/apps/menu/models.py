@@ -78,7 +78,7 @@ class Menu(OrderedModel):
             try:
                 initial_thumbnail.file.seek(0)
                 img = PILImage.open(initial_thumbnail.file).convert("RGB")
-                img.thumbnail((400, 400), PILImage.LANCZOS)
+                img.thumbnail((100, 100), PILImage.LANCZOS)
 
                 buffer = BytesIO()
                 img.save(buffer, format="WEBP", optimize=True, quality=75)

@@ -10,7 +10,7 @@ export default function FloatingSidebarContainer({ visible, children }: Props) {
     <nav
       className={`fixed bottom-15 left-0 z-40 p-4 bg-white rounded-xl shadow-lg transition-all duration-300 transform
         ${visible ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}
-        w-auto max-w-[200px]`}
+        w-[120px] sm:w-[180px] md:w-[200px] max-h-[80vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100`}
     >
       {children}
     </nav>
