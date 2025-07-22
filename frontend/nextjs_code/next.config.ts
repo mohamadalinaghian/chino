@@ -2,9 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    domains: ["localhost"],
+    domains: ["185.243.48.151", "www.chinocafe.ir", "chinocafe.ir"],
   },
-    eslint: {
+  eslint: {
     ignoreDuringBuilds: true,
   },
   async redirects() {
@@ -16,6 +16,5 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-
 };
 export default nextConfig;
