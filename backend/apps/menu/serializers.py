@@ -18,7 +18,7 @@ class MenuCategorySerializer(serializers.ModelSerializer):
 class MenuSerializer(serializers.ModelSerializer):
     category = MenuCategorySerializer()
     images = ImageSerializer(many=True)
-    thumbnail = serializers.SerializerMethodField()
+    thumbnail = serializers.ImageField()
 
     class Meta:
         model = Menu
@@ -31,6 +31,3 @@ class MenuSerializer(serializers.ModelSerializer):
             "images",
             "category",
         )
-
-    def get_thumbnail(self, obj):
-        return obj.thumbnail.url if obj.thumbnail else None
