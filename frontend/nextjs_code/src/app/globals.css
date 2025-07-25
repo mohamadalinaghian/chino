@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 html {
-  font-family: Vazirmatn, sans-serif;
   scroll-behavior: smooth;
 }
 
 body {
-  background-color: #fff;
-  color: #111;
+  /* حذف رنگ زمینه اینجا، چون تو layout.tsx داده شده */
+  @apply antialiased;
 }
+
 @layer utilities {
   .animate-section {
     animation: highlight 0.8s ease;
