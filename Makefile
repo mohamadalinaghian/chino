@@ -1,6 +1,8 @@
 SHELL := /bin/bash
 DOCKER := docker compose
 
+update:
+	git pull && make full_down && make up
 build:
 	${DOCKER} build 
 
