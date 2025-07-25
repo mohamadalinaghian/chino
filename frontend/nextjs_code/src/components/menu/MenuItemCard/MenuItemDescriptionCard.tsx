@@ -19,7 +19,7 @@ export default function MenuItemDescription({ description, query }: Props) {
   }, []);
 
   return (
-    <div className="mt-1 text-sm text-gray-700">
+    <div className="mt-1 text-xs sm:text-sm text-gray-700">
       <div
         ref={ref}
         className={`transition-all duration-300 ease-in-out whitespace-pre-wrap break-words ${

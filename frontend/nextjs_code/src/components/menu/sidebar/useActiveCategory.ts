@@ -13,18 +13,17 @@ export default function useActiveCategory(categoryTitles: string[]) {
           .filter((entry) => entry.isIntersecting)
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
         if (visible.length > 0) {
-          const currentId = visible[0].target.id;
-          setActiveId(currentId);
+          setActiveId(visible[0].target.id);
         }
       },
-      { rootMargin: "-50% 0px -45% 0px", threshold: 0.2 },
+      { rootMargin: "-40% 0px -50% 0px", threshold: 0.1 }
     );
 
-    categoryTitles.forEach((title) => {
-      const id = toAnchorId(title);
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    });
+    const elements = categoryTitles.map((title) =>
+      document.getElementById(toAnchorId(title))
+    );
+
+    elements.forEach((el) => el && observer.observe(el));
 
     return () => observer.disconnect();
   }, [categoryTitles]);

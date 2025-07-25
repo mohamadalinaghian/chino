@@ -40,7 +40,7 @@ class Image(models.Model):
                 self.image.open()
                 self.image.seek(0)
                 img = PILImage.open(self.image).convert("RGB")
-                img.thumbnail((300, 300), PILImage.LANCZOS)
+                img.thumbnail((400, 400), PILImage.LANCZOS)
                 buffer = BytesIO()
                 img.save(buffer, format="WEBP", optimize=True, quality=75)
                 buffer.seek(0)

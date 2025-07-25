@@ -3,5 +3,6 @@ export { default as SidebarMenu } from "./SidebarMenu";
 export { default as SidebarList } from "./SidebarList";
 export { default as ToggleSidebarButton } from "./ToggleSidebarButton";
 export { default as FloatingSidebarContainer } from "./FloatingSidebarContainer";
+export { default as SidebarTitle } from "./SidebarTitle";
 export { toAnchorId } from "./toAnchorId";
 export { default as useActiveCategory } from "./useActiveCategory";

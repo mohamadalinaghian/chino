@@ -11,9 +11,9 @@ export default function ToggleSidebarButton({ open, onToggle }: Props) {
   return (
     <button
       onClick={onToggle}
-      className="fixed bottom-6 left-2 z-50 bg-brown-100 p-2 rounded-full shadow-md md:hidden"
+      className="fixed bottom-6 left-4 z-50 bg-[#B08968] text-white p-2 rounded-full shadow-md md:hidden"
     >
-      {open ? <MdClose size={24} /> : <MdMenuOpen size={24} />}
+      {open ? <MdClose size={20} /> : <MdMenuOpen size={20} />}
     </button>
   );
 }

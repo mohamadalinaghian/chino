@@ -13,20 +13,17 @@ interface Props {
 export default function MenuItemCard({ item, query }: Props) {
   return (
     <article
-      className="flex flex-row gap-4 border-b border-gray-200 py-4 last:border-0 sm:gap-6 hover:bg-gray-50 transition"
+      className="flex gap-4 sm:gap-6 md:gap-8 border border-gray-200 rounded-xl overflow-hidden bg-white p-4 shadow-sm hover:shadow transition duration-300"
       itemScope
       itemType="https://schema.org/Product"
     >
       <MenuItemImage item={item} />
 
-      <div className="flex flex-col justify-between flex-1 min-w-0 overflow-hidden">
+      <div className="flex flex-col justify-between flex-1 min-w-0">
         <div>
           <MenuItemTitle title={item.title} query={query} />
           {item.description && (
-            <MenuItemDescription
-              description={item.description}
-              query={query}
-            />
+            <MenuItemDescription description={item.description} query={query} />
           )}
         </div>
 

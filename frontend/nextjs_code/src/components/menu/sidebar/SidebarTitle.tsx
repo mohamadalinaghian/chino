@@ -1,6 +1,6 @@
 export default function SidebarTitle() {
   return (
-    <h2 className="text-m text-center font-semibold text-brown-800 mb-4">
+    <h2 className="text-sm sm:text-base font-bold text-center text-brown-800 mb-3">
       دسته‌بندی‌ها
     </h2>
   );
