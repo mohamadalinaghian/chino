@@ -11,22 +11,26 @@ type Props = {
 export default function SidebarItem({ title, active, onClick }: Props) {
   const anchorId = toAnchorId(title);
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const el = document.getElementById(anchorId);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      history.replaceState(null, "", `#${anchorId}`);
+    }
+    onClick?.();
+  };
+
   return (
     <li>
       <a
         href={`#${anchorId}`}
-        onClick={onClick}
-        className={`block px-2 py-1 text-s transition font-medium rounded relative
-          ${
-            active
-              ? "text-brown-800 font-bold bg-brown-100"
-              : "text-brown-600 hover:text-brown-800"
-          }`}
+        onClick={handleClick}
+        className={`block px-2 py-1 text-s transition font-medium rounded relative text-center ${
+          active ? "bg-brown-200 font-bold" : ""
+        }`}
       >
         {title}
-        {active && (
-          <span className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-4 bg-brown-800 rounded-r" />
-        )}
       </a>
     </li>
   );

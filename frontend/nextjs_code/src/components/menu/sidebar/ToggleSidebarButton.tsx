@@ -12,7 +12,6 @@ export default function ToggleSidebarButton({ open, onToggle }: Props) {
     <button
       onClick={onToggle}
       className="fixed bottom-6 left-2 z-50 bg-brown-100 p-2 rounded-full shadow-md md:hidden"
-      aria-label="Toggle sidebar"
     >
       {open ? <MdClose size={24} /> : <MdMenuOpen size={24} />}
     </button>

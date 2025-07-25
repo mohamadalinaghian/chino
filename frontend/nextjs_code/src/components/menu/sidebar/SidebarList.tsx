@@ -10,16 +10,15 @@ type Props = {
 };
 
 export default function SidebarList({ categories, onItemClick }: Props) {
-  const titles = categories.map((cat) => cat.title);
-  const active = useActiveCategory(titles);
+  const active = useActiveCategory(categories.map((c) => c.title));
 
   return (
-    <ul className="space-y-2 text-center text-xs">
-      {categories.map((category) => (
+    <ul className="space-y-2">
+      {categories.map((cat) => (
         <SidebarItem
-          key={category.title}
-          title={category.title}
-          active={active === encodeURIComponent(category.title)}
+          key={cat.title}
+          title={cat.title}
+          active={active === encodeURIComponent(cat.title.toLowerCase())}
           onClick={onItemClick}
         />
       ))}

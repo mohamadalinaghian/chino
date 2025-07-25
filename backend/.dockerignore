@@ -29,7 +29,7 @@ Thumbs.db
 *.py[cod]
 
 # فایل‌های مربوط به migrations (اختیاری، اگر auto-gen می‌کنی)
-**/migrations/
+**/migrations/*
 !*/migrations/__init__.py
 
 # static/media output

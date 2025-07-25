@@ -1,43 +1,34 @@
-"use client";
-
-import React from "react";
 import { IMenuCategory, IMenuItem } from "@/types/menu";
 import MenuItemCard from "./MenuItemCard";
-import useInView from "@/hooks/useInView";
+import { toAnchorId } from "@/components/menu/sidebar/toAnchorId";
 
-interface Props {
+type Props = {
   category: IMenuCategory;
   items: IMenuItem[];
   query: string;
-}
+};
 
 export default function MenuCategorySection({ category, items, query }: Props) {
-  const anchorId = encodeURIComponent(category.title);
-  const { ref, inView } = useInView();
+  const anchorId = toAnchorId(category.title);
 
   return (
     <section
-      ref={ref}
       id={anchorId}
-      className="mb-10 scroll-mt-32"
+      className="scroll-mt-32 mb-10"
       aria-labelledby={`category-${anchorId}`}
     >
       <h2
-        className="text-lg font-semibold border-b border-gray-300 pb-2 mb-4"
         id={`category-${anchorId}`}
+        className="text-lg font-bold mb-4"
       >
         {category.title}
       </h2>
 
-      {inView ? (
-        <div className="flex flex-col gap-4">
-          {items.map((item) => (
-            <MenuItemCard key={item.title} item={item} query={query} />
-          ))}
-        </div>
-      ) : (
-        <div className="text-sm text-gray-400">در حال بارگذاری...</div>
-      )}
+      <div className="flex flex-col gap-4">
+        {items.map((item) => (
+          <MenuItemCard key={item.title} item={item} query={query} />
+        ))}
+      </div>
     </section>
   );
 }

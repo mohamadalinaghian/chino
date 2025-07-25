@@ -110,7 +110,7 @@ LOCALE_PATHS = [BASE_DIR / "locale"]
 
 if DEBUG:
     assert SECRET_KEY == "unsecure"
-    assert env("ENVIROMENT") != "production"
+    assert env("ENVIRONMENT") != "production"
 else:
     assert re.search(r"[A-Z]", SECRET_KEY)
     assert re.search(r"[0-9]", SECRET_KEY)

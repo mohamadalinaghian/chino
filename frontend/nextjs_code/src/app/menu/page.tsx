@@ -14,17 +14,14 @@ export { metadata } from "./metadata";
 
 export default async function MenuPage() {
   const { categories, items } = await getMenuData();
-
   const schema = generateMenuSchema(categories, items);
 
   const content = <MenuContent categories={categories} items={items} />;
-
   const sidebar = <SidebarMenu categories={categories} />;
 
   return (
     <>
       <MenuLayout sidebar={sidebar} content={content} />
-
       <MenuSchemaInjector schema={schema} />
     </>
   );

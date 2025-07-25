@@ -16,7 +16,7 @@ export default function MenuList({ categories, items }: Props) {
   const filteredItems = filterMenuItems(items, query);
 
   const hasResults = categories.some((category) =>
-    filteredItems.some((item) => item.category.title === category.title),
+    filteredItems.some((item) => item.category.title === category.title)
   );
 
   return (
@@ -32,19 +32,17 @@ export default function MenuList({ categories, items }: Props) {
       ) : (
         categories.map((category) => {
           const catItems = filteredItems.filter(
-            (item) => item.category.title === category.title,
+            (item) => item.category.title === category.title
           );
 
-          if (catItems.length === 0) return null;
-
-          return (
+          return catItems.length > 0 ? (
             <MenuCategorySection
               key={category.title}
               category={category}
               items={catItems}
               query={query}
             />
-          );
+          ) : null;
         })
       )}
     </div>

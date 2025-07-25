@@ -1,11 +1,12 @@
 "use client";
-
 import { useState } from "react";
-import { IMenuCategory } from "@/types/menu";
-import SidebarTitle from "./SidebarTitle";
+
+
 import SidebarList from "./SidebarList";
-import ToggleSidebarButton from "./ToggleSidebarButton";
+import { IMenuCategory } from "@/types/menu";
 import FloatingSidebarContainer from "./FloatingSidebarContainer";
+import ToggleSidebarButton from "./ToggleSidebarButton";
+import SidebarTitle from "./SidebarTitle";
 
 type Props = {
   categories: IMenuCategory[];
@@ -13,19 +14,15 @@ type Props = {
 
 export default function SidebarMenu({ categories }: Props) {
   const [open, setOpen] = useState(true);
-
   const handleItemClick = () => {
-    if (window.innerWidth < 768) {
-      setOpen(false);
-    }
+    if (window.innerWidth < 768) setOpen(false);
   };
 
   return (
     <>
-      <ToggleSidebarButton open={open} onToggle={() => setOpen(!open)} />
-
+      <ToggleSidebarButton open={open} onToggle={() => setOpen((o) => !o)} />
       <FloatingSidebarContainer visible={open}>
-        <SidebarTitle />
+        <SidebarTitle/>
         <SidebarList categories={categories} onItemClick={handleItemClick} />
       </FloatingSidebarContainer>
     </>
