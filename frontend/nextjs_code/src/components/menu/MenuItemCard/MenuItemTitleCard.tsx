@@ -7,7 +7,7 @@ interface Props {
 
 export default function MenuItemTitle({ title, query }: Props) {
   return (
-    <h3 className="text-base sm:text-lg font-semibold" itemProp="name">
+<h3 className="text-[16px] sm:text-[17px] font-bold text-chino-title tracking-tight" itemProp="name">
       {highlightText(title, query)}
     </h3>
   );

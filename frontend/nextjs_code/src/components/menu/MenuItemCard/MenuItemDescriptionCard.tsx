@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { highlightText } from "../search/highlight";
 
 interface Props {
@@ -19,10 +19,10 @@ export default function MenuItemDescription({ description, query }: Props) {
   }, []);
 
   return (
-    <div className="mt-1 text-xs sm:text-sm text-gray-700">
+<div className="text-sm text-chino-text leading-relaxed mt-1">
       <div
         ref={ref}
-        className={`transition-all duration-300 ease-in-out whitespace-pre-wrap break-words ${
+        className={`transition-all duration-300 whitespace-pre-wrap break-words ${
           expanded ? "" : "line-clamp-3"
         }`}
       >
@@ -32,7 +32,7 @@ export default function MenuItemDescription({ description, query }: Props) {
       {clamped && (
         <button
           onClick={() => setExpanded((prev) => !prev)}
-          className="mt-1 text-xs text-blue-500 hover:underline"
+          className="text-xs text-blue-500 hover:underline mt-1"
         >
           {expanded ? "کمتر" : "بیشتر"}
         </button>

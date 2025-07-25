@@ -7,25 +7,28 @@ export default function useActiveCategory(categoryTitles: string[]) {
   const [activeId, setActiveId] = useState<string | null>(null);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-        if (visible.length > 0) {
-          setActiveId(visible[0].target.id);
-        }
-      },
-      { rootMargin: "-40% 0px -50% 0px", threshold: 0.1 }
-    );
+    const handleScroll = () => {
+      const positions = categoryTitles.map((title) => {
+        const el = document.getElementById(toAnchorId(title));
+        if (!el) return { id: "", offset: Infinity };
 
-    const elements = categoryTitles.map((title) =>
-      document.getElementById(toAnchorId(title))
-    );
+        const rect = el.getBoundingClientRect();
+        return { id: el.id, offset: Math.abs(rect.top - 100) };
+      });
 
-    elements.forEach((el) => el && observer.observe(el));
+      const closest = positions.reduce((a, b) =>
+        a.offset < b.offset ? a : b
+      );
 
-    return () => observer.disconnect();
+      setActiveId(closest.id);
+    };
+
+    handleScroll(); // initial run
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, [categoryTitles]);
 
   return activeId;

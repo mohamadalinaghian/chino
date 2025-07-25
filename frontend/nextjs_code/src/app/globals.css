@@ -5,8 +5,12 @@ html {
 }
 
 body {
-  /* حذف رنگ زمینه اینجا، چون تو layout.tsx داده شده */
   @apply antialiased;
+}
+
+.num {
+  font-feature-settings: "tnum";
+  font-variant-numeric: proportional-nums;
 }
 
 @layer utilities {

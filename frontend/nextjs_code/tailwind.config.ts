@@ -1,21 +1,25 @@
-/** @type {import('tailwindcss').Config} */
-export default {
-  content: [
-    "./src/app/**/*.{js,ts,jsx,tsx}",
-    "./src/components/**/*.{js,ts,jsx,tsx}",
-  ],
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  content: ["./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+          fontFamily: {
+      sans: ['Vazirmatn', 'sans-serif'],
+    },
       colors: {
-        cafeCream: "#FAF3E0",
-        cafeBrown: "#5C4033",
-        cafeAccent: "#B08968",
-        cafeHover: "#EADBC8",
-      },
-      fontFamily: {
-        sans: ["Vazirmatn", "sans-serif"],
+        chino: {
+          background: "#FAF3E0",
+          text: "#3E3E3E",
+          title: "#6F4E37",
+          price: "#2E7D32",
+          card: "#FDF6ED",
+          hover: "#EADBC8",
+        },
       },
     },
   },
   plugins: [require("@tailwindcss/line-clamp")],
 };
+
+export default config;
