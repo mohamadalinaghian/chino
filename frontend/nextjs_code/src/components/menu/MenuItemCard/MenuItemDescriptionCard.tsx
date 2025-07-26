@@ -19,7 +19,7 @@ export default function MenuItemDescription({ description, query }: Props) {
 	}, []);
 
 	return (
-		<div className="text-sm text-gray-700 leading-relaxed mt-1">
+		<div className="text-sm opacity-85 text-[#6D4C41] leading-relaxed mt-1">
 			<div
 				ref={ref}
 				className={`transition-all duration-300 whitespace-pre-wrap break-words ${
@@ -28,11 +28,10 @@ export default function MenuItemDescription({ description, query }: Props) {
 			>
 				{highlightText(description, query)}
 			</div>
-
 			{clamped && (
 				<button
 					onClick={() => setExpanded((prev) => !prev)}
-					className="text-xs text-blue-500 hover:underline mt-1"
+					className="text-xs text-[#C57E58] hover:underline mt-1"
 				>
 					{expanded ? "کمتر" : "بیشتر"}
 				</button>

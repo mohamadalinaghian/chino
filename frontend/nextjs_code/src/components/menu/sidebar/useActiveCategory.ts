@@ -4,32 +4,30 @@ import { useEffect, useState } from "react";
 import { toAnchorId } from "./toAnchorId";
 
 export default function useActiveCategory(categoryTitles: string[]) {
-  const [activeId, setActiveId] = useState<string | null>(null);
+	const [activeId, setActiveId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const positions = categoryTitles.map((title) => {
-        const el = document.getElementById(toAnchorId(title));
-        if (!el) return { id: "", offset: Infinity };
+	useEffect(() => {
+		const handleScroll = () => {
+			const positions = categoryTitles.map((title) => {
+				const el = document.getElementById(toAnchorId(title));
+				if (!el) return { id: "", offset: Infinity };
 
-        const rect = el.getBoundingClientRect();
-        return { id: el.id, offset: Math.abs(rect.top - 100) };
-      });
+				const rect = el.getBoundingClientRect();
+				return { id: el.id, offset: Math.abs(rect.top - 100) };
+			});
 
-      const closest = positions.reduce((a, b) =>
-        a.offset < b.offset ? a : b
-      );
+			const closest = positions.reduce((a, b) => (a.offset < b.offset ? a : b));
 
-      setActiveId(closest.id);
-    };
+			setActiveId(closest.id);
+		};
 
-    handleScroll(); // initial run
-    window.addEventListener("scroll", handleScroll, { passive: true });
+		handleScroll();
+		window.addEventListener("scroll", handleScroll, { passive: true });
 
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, [categoryTitles]);
+		return () => {
+			window.removeEventListener("scroll", handleScroll);
+		};
+	}, [categoryTitles]);
 
-  return activeId;
+	return activeId;
 }

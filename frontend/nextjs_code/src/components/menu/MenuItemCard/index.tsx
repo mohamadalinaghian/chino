@@ -13,15 +13,14 @@ interface Props {
 export default React.memo(function MenuItemCard({ item, query }: Props) {
 	return (
 		<article
-			className="flex p-4 bg-chino-card rounded-xl border
-       shadow hover:shadow-md transition-shadow"
+			className="flex p-4 bg-[#F5E4C3] rounded-xl border border-[#C57E58]
+      shadow-retro hover:shadow-lg transition-shadow duration-300"
 			itemScope
 			itemType="https://schema.org/Product"
 		>
 			<div className="shrink-0 self-start ml-2">
 				<MenuItemImage item={item} />
 			</div>
-
 			<div className="flex flex-col justify-between flex-1 min-w-0 overflow-hidden pl-4">
 				<div className="space-y-1">
 					<MenuItemTitle title={item.title} query={query} />

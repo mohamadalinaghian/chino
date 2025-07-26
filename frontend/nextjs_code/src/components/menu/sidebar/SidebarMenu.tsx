@@ -8,23 +8,23 @@ import SidebarList from "./SidebarList";
 import SidebarTitle from "./SidebarTitle";
 
 type Props = {
-  categories: IMenuCategory[];
+	categories: IMenuCategory[];
 };
 
 export default function SidebarMenu({ categories }: Props) {
-  const [open, setOpen] = useState(true);
+	const [open, setOpen] = useState(true);
 
-  const handleItemClick = () => {
-    if (window.innerWidth < 768) setOpen(false);
-  };
+	const handleItemClick = () => {
+		if (window.innerWidth < 768) setOpen(false);
+	};
 
-  return (
-    <>
-      <ToggleSidebarButton open={open} onToggle={() => setOpen(!open)} />
-      <FloatingSidebarContainer visible={open}>
-        <SidebarTitle />
-        <SidebarList categories={categories} onItemClick={handleItemClick} />
-      </FloatingSidebarContainer>
-    </>
-  );
+	return (
+		<div className="bg-[#FFF8F0]">
+			<ToggleSidebarButton open={open} onToggle={() => setOpen(!open)} />
+			<FloatingSidebarContainer visible={open}>
+				<SidebarTitle />
+				<SidebarList categories={categories} onItemClick={handleItemClick} />
+			</FloatingSidebarContainer>
+		</div>
+	);
 }
