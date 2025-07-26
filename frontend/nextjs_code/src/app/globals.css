@@ -1,29 +1,29 @@
 @import "tailwindcss";
 
 html {
-  scroll-behavior: smooth;
+	scroll-behavior: smooth;
 }
 
 body {
-  @apply antialiased;
+	@apply antialiased;
 }
 
 .num {
-  font-feature-settings: "tnum";
-  font-variant-numeric: proportional-nums;
+	font-feature-settings: "tnum";
+	font-variant-numeric: proportional-nums;
 }
 
 @layer utilities {
-  .animate-section {
-    animation: highlight 0.8s ease;
-  }
+	.animate-section {
+		animation: highlight 0.8s ease;
+	}
 
-  @keyframes highlight {
-    0% {
-      background-color: #fdf6e3;
-    }
-    100% {
-      background-color: transparent;
-    }
-  }
+	@keyframes highlight {
+		0% {
+			background-color: #fdf6e3;
+		}
+		100% {
+			background-color: transparent;
+		}
+	}
 }
