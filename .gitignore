@@ -200,6 +200,7 @@ cython_debug/
 !.env.example
 !.env.dev.example
 !.env.prod.example
+!.env.make.example
 
 # Docker volumes (optional, only if mounted locally)
 frontend/node_modules/
