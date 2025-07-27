@@ -11,13 +11,6 @@ const nextConfig: NextConfig = {
 				port: "",
 				pathname: "*",
 			},
-
-			{
-				protocol: "http",
-				hostname: new URL("http://localhost").hostname,
-				port: "",
-				pathname: "*",
-			},
 		],
 	},
 	eslint: {
