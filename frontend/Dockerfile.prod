@@ -5,7 +5,7 @@ FROM node:24-bullseye AS builder
 RUN apt-get update && apt-get install -y --no-install-recommends libc6
 
 WORKDIR /app
-
+ENV NEXT_PUBLIC_MEDIA_DOMAIN="https:/chinocafe.ir"
 RUN npm install -g pnpm
 COPY ./nextjs_code/pnpm-lock.yaml ./nextjs_code/package.json ./
 RUN pnpm install --frozen-lockfile
