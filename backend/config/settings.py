@@ -10,10 +10,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env(DEBUG=(bool, False))
 environ.Env.read_env()
 
-SECRET_KEY = env("DJANGO_SECRET_KEY", default="unsecure")  # pyright: ignore[reportArgumentType]
-DEBUG = env("DJANGO_DEBUG", default=False, cast=bool)  # pyright: ignore[reportArgumentType]
-ALLOWED_HOSTS = env("DJANGO_ALLOWED_HOSTS", default=("127.0.0.1",), cast=list)  # pyright: ignore[reportArgumentType]
-AUTH_USER_MODEL = env("DJANGO_AUTH_USER_MODEL", default=("user.Account"))  # pyright: ignore[reportArgumentType]
+SECRET_KEY = env("DJANGO_SECRET_KEY", default="unsecure")
+DEBUG = env("DJANGO_DEBUG", default=False, cast=bool)
+ALLOWED_HOSTS = env("DJANGO_ALLOWED_HOSTS", default=("127.0.0.1",), cast=list)
+AUTH_USER_MODEL = env("DJANGO_AUTH_USER_MODEL", default=("user.Account"))
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -107,6 +107,11 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 LOCALE_PATHS = [BASE_DIR / "locale"]
+
+CSRF_COOKIE_SECURE = env("DJANGO_CSRF_COOKIE_SECURE", default=not DEBUG)
+SESSION_COOKIE_SECURE = env("DJANGO_SESSION_COOKIE_SECURE", default=not DEBUG)
+SECURE_SSL_REDIRECT = env("DJANGO_SECURE_SSL_REDIRECT", default=not DEBUG)
+SECURE_PROXY_SSL_HEADER = env("DJANGO_SECURE_PROXY_SSL_HEADER", default=("HTTP_X_FORWARDED_PROTO", "https"), cast=tuple)
 
 if DEBUG:
     assert SECRET_KEY == "unsecure"

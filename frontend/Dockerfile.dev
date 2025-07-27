@@ -1,0 +1,16 @@
+FROM node:24-bullseye
+
+RUN apt-get update && apt-get install -y libc6
+
+WORKDIR /app
+
+RUN npm install -g pnpm && corepack enable
+
+
+COPY ./nextjs_code/pnpm-lock.yaml ./nextjs_code/package.json ./
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm install
+
+COPY ./nextjs_code ./
+
+EXPOSE 3000
+CMD ["pnpm", "dev"]

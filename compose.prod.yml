@@ -1,7 +1,9 @@
+version: "3.8"
+
 services:
   db:
     image: postgres:alpine
-    restart: unless-stopped
+    restart: always
     env_file:
       - .env
     volumes:
@@ -10,44 +12,49 @@ services:
       - "5432"
 
   backend:
-    build: ./backend/
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
+    restart: always
+    env_file:
+      - .env
     volumes:
       - ./backend:/app
       - static_volume:/app/staticfiles
       - media_volume:/app/media
-    env_file:
-      - .env
-    depends_on:
-      - db
     expose:
       - "8000"
+    depends_on:
+      - db
 
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
-    restart: unless-stopped
+      dockerfile: Dockerfile.prod
+    restart: always
     env_file:
       - .env
-    depends_on:
-      - backend
     expose:
       - "3000"
+    depends_on:
+      - backend
 
   nginx:
     build:
       context: ./nginx
-      dockerfile: Dockerfile
-    restart: unless-stopped
+      dockerfile: Dockerfile.prod
+    restart: always
     depends_on:
       - backend
       - frontend
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - static_volume:/app/staticfiles:ro
       - media_volume:/app/media:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
 
 volumes:
   postgres_data:

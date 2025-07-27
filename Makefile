@@ -1,36 +1,39 @@
 SHELL := /bin/bash
-DOCKER := docker compose
+include .env.make
+DOCKER := docker compose -f compose.$(ENV).yml
 
 update:
 	git pull && make full_down && make up
+
 build:
-	${DOCKER} build 
+	$(DOCKER) build
 
 up:
-	${DOCKER} up -d
+	$(DOCKER) up -d
 
 n_up:
-	${DOCKER} up -d --build frontend
+	$(DOCKER) up -d --build frontend
+
 rest:
-	${DOCKER} restart
-	
+	$(DOCKER) restart
+
 down:
-	${DOCKER} down
+	$(DOCKER) down
 
 full_down:
-	${DOCKER} down --rmi local
+	$(DOCKER) down --rmi local
 
 ex_bak:
-	${DOCKER} exec backend bash
+	$(DOCKER) exec backend bash
 
 run:
-	${DOCKER} exec web python manage.py runserver 0.0.0.0:8000
+	$(DOCKER) exec backend python manage.py runserver 0.0.0.0:8000
 
 shell:
-	${DOCKER} exec web python manage.py shell
+	$(DOCKER) exec backend python manage.py shell
 
 dbshell:
-	${DOCKER} exec db sh
+	$(DOCKER) exec db sh
 
 log:
-	${DOCKER} logs
+	$(DOCKER) logs

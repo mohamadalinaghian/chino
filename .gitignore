@@ -193,3 +193,22 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Docker related
+*.env
+.env.*
+!.env.example
+!.env.dev.example
+!.env.prod.example
+
+# Docker volumes (optional, only if mounted locally)
+frontend/node_modules/
+frontend/.next/
+frontend/nextjs_code/.next/
+frontend/nextjs_code/node_modules/
+
+# Editor folders
+.vscode/
+
+# Nginx SSL Certificates (mapped in production)
+nginx/ssl/
