@@ -1,9 +1,6 @@
 import type { NextConfig } from "next";
 
-const MEDIA_HOST =
-	process.env.NEXT_PUBLIC_MEDIA_DOMAIN || "http://backend:8000";
-const SITE_DOMAIN =
-	process.env.NEXT_PUBLIC_SITE_DOMAIN || "http://frontend:3000";
+const MEDIA_HOST: string = process.env.NEXT_PUBLIC_MEDIA_DOMAIN as string;
 
 const nextConfig: NextConfig = {
 	images: {
@@ -12,13 +9,14 @@ const nextConfig: NextConfig = {
 				protocol: MEDIA_HOST.startsWith("https") ? "https" : "http",
 				hostname: new URL(MEDIA_HOST).hostname,
 				port: "",
-				pathname: "/media/menu/thumbnails/**",
+				pathname: "*",
 			},
+
 			{
-				protocol: SITE_DOMAIN.startsWith("https") ? "https" : "http",
-				hostname: new URL(SITE_DOMAIN).hostname,
+				protocol: "http",
+				hostname: new URL("http://localhost").hostname,
 				port: "",
-				pathname: "**",
+				pathname: "*",
 			},
 		],
 	},

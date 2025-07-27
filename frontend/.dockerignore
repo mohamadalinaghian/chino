@@ -4,12 +4,16 @@ __pycache__/
 *.pyo
 *.pyd
 
-node_modules
+node_modules/
 .pnpm-store
 .env
 .next
 out
-
+.next
+node_modules
+.turbo
+.pnpm-store
+*.log
 
 # پوشه‌های مجازی
 env/
@@ -52,3 +56,27 @@ media/
 *.db
 docker-compose.override.yml
 *.sqlite3
+
+# لاگ‌های Frontend
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# پوشه‌های output ساختی
+dist/
+build/
+
+# فایل‌های تست و پوشه snapshot
+coverage/
+*.spec.ts
+*.test.ts
+*.test.tsx
+__tests__/
+__mocks__/
+.snapshots/
+
+# output های پروژه
+*.bak
+*.tmp
+*.swp
