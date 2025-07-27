@@ -10,9 +10,13 @@ RUN npm install -g pnpm
 COPY ./nextjs_code/pnpm-lock.yaml ./nextjs_code/package.json ./
 RUN pnpm install --frozen-lockfile
 
-COPY ./nextjs_code/public ./nextjs_code/src ./nextjs_code/eslint.config.mjs \
-  ./nextjs_code/next.config.ts ./nextjs_code/postcss.config.mjs ./nextjs_code/tailwind.config.ts \
-  ./nextjs_code/tsconfig.json ./
+COPY ./nextjs_code/public ./public
+COPY ./nextjs_code/src ./src
+COPY ./nextjs_code/tsconfig.json ./
+COPY ./nextjs_code/next.config.ts ./
+COPY ./nextjs_code/postcss.config.mjs ./
+COPY ./nextjs_code/tailwind.config.ts ./
+COPY ./nextjs_code/eslint.config.mjs ./
 
 RUN pnpm build
 RUN rm -rf .next/cache && find . -type f -name '*.map' -exec rm -f {} +

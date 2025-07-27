@@ -10,9 +10,13 @@ ENV NEXT_PUBLIC_MEDIA_DOMAIN="http://localhost"
 COPY ./nextjs_code/pnpm-lock.yaml ./nextjs_code/package.json ./
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm install
 
-COPY ./nextjs_code/public/ ./nextjs_code/src/ ./nextjs_code/eslint.config.mjs \
-  ./nextjs_code/next.config.ts ./nextjs_code/postcss.config.mjs ./nextjs_code/tailwind.config.ts \
-  ./nextjs_code/tsconfig.json ./
+COPY ./nextjs_code/public ./public
+COPY ./nextjs_code/src ./src
+COPY ./nextjs_code/tsconfig.json ./
+COPY ./nextjs_code/next.config.ts ./
+COPY ./nextjs_code/postcss.config.mjs ./
+COPY ./nextjs_code/tailwind.config.ts ./
+COPY ./nextjs_code/eslint.config.mjs ./
 
 EXPOSE 3000
 CMD ["pnpm", "dev"]
