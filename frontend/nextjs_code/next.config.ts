@@ -6,8 +6,14 @@ const nextConfig: NextConfig = {
 			{
 				protocol: "http",
 				hostname: "backend",
-				port: "",
-				pathname: "/media/menu/thumbnails/**",
+				port: "8000",
+				pathname: "/media/**",
+			},
+			{
+				protocol: "https",
+				hostname: "backend",
+				port: "8000",
+				pathname: "/media/**",
 			},
 			{
 				protocol: "https",
