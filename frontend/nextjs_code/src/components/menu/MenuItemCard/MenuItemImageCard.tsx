@@ -1,4 +1,4 @@
-// src/components/menu/MenuItemCard/MenuItemImageCard.tsx
+"use client";
 import Image from "next/image";
 import { useState } from "react";
 import { IMenuItem } from "@/types/menu";
