@@ -23,6 +23,12 @@ const nextConfig: NextConfig = {
 			},
 			{
 				protocol: "https",
+				hostname: "chinocafe.ir/api",
+				port: "",
+				pathname: "/media/**",
+			},
+			{
+				protocol: "https",
 				hostname: "https://chinocafe.ir",
 				port: "",
 				pathname: "/media/**",
