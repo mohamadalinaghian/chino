@@ -103,7 +103,7 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
-MEDIA_URL = "/media/"
+MEDIA_URL = env("DJANGO_MEDIA_URL", default="/media/")
 MEDIA_ROOT = BASE_DIR / "media"
 
 LOCALE_PATHS = [BASE_DIR / "locale"]
@@ -112,6 +112,11 @@ CSRF_COOKIE_SECURE = env("DJANGO_CSRF_COOKIE_SECURE", default=not DEBUG)
 SESSION_COOKIE_SECURE = env("DJANGO_SESSION_COOKIE_SECURE", default=not DEBUG)
 SECURE_SSL_REDIRECT = env("DJANGO_SECURE_SSL_REDIRECT", default=not DEBUG)
 SECURE_PROXY_SSL_HEADER = env("DJANGO_SECURE_PROXY_SSL_HEADER", default=("HTTP_X_FORWARDED_PROTO", "https"), cast=tuple)
+
+CORS_ALLOWED_ORIGINS = [
+    "https://chinocafe.ir",
+    "https://www.chinocafe.ir",
+]
 
 if DEBUG:
     assert SECRET_KEY == "unsecure"

@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
 		remotePatterns: [
 			{
 				protocol: "http",
-				hostname: "localhost",
+				hostname: "backend",
 				port: "",
 				pathname: "/media/menu/thumbnails/**",
 			},
