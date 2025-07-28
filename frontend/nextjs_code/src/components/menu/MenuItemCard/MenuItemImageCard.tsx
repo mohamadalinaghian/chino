@@ -9,7 +9,7 @@ interface Props {
 
 export default function MenuItemImage({ item }: Props) {
 	const [hasError, setHasError] = useState(false);
-	const urlEncoded = encodeURIComponent(item.thumbnail);
+	const urlEncoded = encodeURIComponent(item.thumbnail || "");
 
 	return (
 		<div className="relative m-2 w-[96px] sm:w-[110px] aspect-square rounded-xl overflow-hidden bg-[#A7C4A0] flex items-center justify-center text-#4D3727 text-xs">
