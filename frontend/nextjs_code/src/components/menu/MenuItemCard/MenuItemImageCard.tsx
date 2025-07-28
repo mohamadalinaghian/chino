@@ -24,9 +24,7 @@ export default function MenuItemImage({ item }: Props) {
 				<span className="text-center p-2">{item.title}</span>
 			) : (
 				<Image
-					src={
-						"https://chinocafe.ir/media/menu/thumbnails/2025/07/28/7590ae35d782.webp"
-					}
+					src={encodedUrl ?? "/fallback-thumbnail.webp"}
 					alt={item.title}
 					fill
 					sizes="(max-width: 768px) 96px, 110px"
