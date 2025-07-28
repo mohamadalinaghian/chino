@@ -9,10 +9,10 @@ interface Props {
 
 export default function MenuItemImage({ item }: Props) {
 	const [hasError, setHasError] = useState(false);
-	const encodedUrl: string | null =
-		item.thumbnail != null
-			? encodeURI(item.thumbnail)
-			: "/fallback-thumbnail.webp";
+
+	const imageLoader = () => {
+		return `${item.thumbnail}?q=100`;
+	};
 
 	return (
 		<div
@@ -24,7 +24,8 @@ export default function MenuItemImage({ item }: Props) {
 				<span className="text-center p-2">{item.title}</span>
 			) : (
 				<Image
-					src={encodedUrl ?? "/fallback-thumbnail.webp"}
+					loader={imageLoader}
+					src={item.thumbnail ?? "/fallback-thumbnail.webp"}
 					alt={item.title}
 					fill
 					sizes="(max-width: 768px) 96px, 110px"
