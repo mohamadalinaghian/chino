@@ -9,8 +9,6 @@ const nextConfig: NextConfig = {
 				pathname: "/media/**",
 			},
 		],
-		// برای دیباگ موقتا غیرفعال کنید
-		unoptimized: false,
 	},
 	eslint: {
 		ignoreDuringBuilds: true,
