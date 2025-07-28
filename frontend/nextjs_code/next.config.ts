@@ -2,7 +2,15 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
 	images: {
-		remotePatterns: [new URL("https://chinocafe.ir/**")],
+		remotePatterns: [
+			{
+				protocol: "https",
+				hostname: "chinocafe.ir",
+				pathname: "/media/**",
+			},
+		],
+		// برای دیباگ موقتا غیرفعال کنید
+		unoptimized: false,
 	},
 	eslint: {
 		ignoreDuringBuilds: true,
