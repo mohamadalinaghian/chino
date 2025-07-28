@@ -10,7 +10,9 @@ interface Props {
 export default function MenuItemImage({ item }: Props) {
 	const [hasError, setHasError] = useState(false);
 	const encodedUrl: string | null =
-		item.thumbnail != null ? encodeURIComponent(item.thumbnail) : null;
+		item.thumbnail != null
+			? encodeURI(item.thumbnail)
+			: "/fallback-thumbnail.webp";
 
 	return (
 		<div

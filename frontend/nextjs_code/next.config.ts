@@ -31,6 +31,12 @@ const nextConfig: NextConfig = {
 				port: "8000",
 				pathname: "/media/menu/thumbnails/**",
 			},
+			{
+				protocol: "https",
+				hostname: "chinocafe.ir",
+				port: "",
+				pathname: "/media/menu/thumbnails/**",
+			},
 		],
 	},
 	eslint: {
