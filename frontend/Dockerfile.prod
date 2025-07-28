@@ -6,6 +6,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends libc6
 
 WORKDIR /app
 ENV NEXT_PUBLIC_MEDIA_DOMAIN="https:/chinocafe.ir"
+ENV NEXT_PUBLIC_API_URL="https:/chinocafe.ir/api"
+
 RUN npm install -g pnpm
 COPY ./nextjs_code/pnpm-lock.yaml ./nextjs_code/package.json ./
 RUN pnpm install --frozen-lockfile
