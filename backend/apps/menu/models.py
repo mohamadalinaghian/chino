@@ -15,6 +15,7 @@ class MenuCategory(OrderedModel):
     slug = models.SlugField(
         max_length=50, unique=True, verbose_name=_("Slug"), allow_unicode=True
     )
+    description = models.CharField(verbose_name=_("Description"), max_length=200, null=True, blank=True)
 
     def save(self, *args, **kwargs):
         new_slug = slugify(self.title, separator="-", allow_unicode=True)

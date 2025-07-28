@@ -14,7 +14,8 @@ export default React.memo(function MenuItemCard({ item, query }: Props) {
 	return (
 		<article
 			className="flex p-4 bg-[#F5E4C3] rounded-xl border border-[#C57E58]
-      shadow-retro hover:shadow-lg transition-shadow duration-300"
+      shadow-retro hover:shadow-lg transition-shadow duration-300
+      max-w-4xl mx-auto"
 			itemScope
 			itemType="https://schema.org/Product"
 		>

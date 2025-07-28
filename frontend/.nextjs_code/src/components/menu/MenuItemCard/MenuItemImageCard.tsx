@@ -18,7 +18,7 @@ export default function MenuItemImage({ item }: Props) {
 	};
 
 	const imageLoader = ({ src }: { src: string }) => {
-		return `${src}?q=100&t=${Date.now()}`;
+		return `${src}?q=100}`;
 	};
 
 	return (

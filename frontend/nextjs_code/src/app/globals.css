@@ -1,29 +1,5 @@
 @import "tailwindcss";
 
-html {
-	scroll-behavior: smooth;
-}
-
 body {
-	@apply antialiased;
-}
-
-.num {
-	font-feature-settings: "tnum";
-	font-variant-numeric: proportional-nums;
-}
-
-@layer utilities {
-	.animate-section {
-		animation: highlight 0.8s ease;
-	}
-
-	@keyframes highlight {
-		0% {
-			background-color: #fdf6e3;
-		}
-		100% {
-			background-color: transparent;
-		}
-	}
+	font-family: "Vazirmatn", sans-serif;
 }

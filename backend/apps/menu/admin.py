@@ -5,7 +5,7 @@ from ordered_model.admin import OrderedModelAdmin
 
 @admin.register(MenuCategory)
 class MenuCategoryAdmin(OrderedModelAdmin):
-    list_display = ("title", "move_up_down_links")
+    list_display = ("title", "description", "move_up_down_links")
     search_fields = ("title",)
     readonly_fields = ("slug",)
 

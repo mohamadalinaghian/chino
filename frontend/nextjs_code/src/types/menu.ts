@@ -1,13 +1,13 @@
-export interface IMenuItem {
-  title: string;
-  price: number;
-  description: string;
-  thumbnail?: string;
-  category: {
-    title: string;
-  };
+export interface IMenuCategory {
+	title: string;
+	description?: string | null;
 }
 
-export interface IMenuCategory {
-  title: string;
+export interface IMenuItem {
+	title: string;
+	price?: number;
+	description?: string | null;
+	thumbnail?: string | null;
+	images?: string[];
+	category: IMenuCategory;
 }

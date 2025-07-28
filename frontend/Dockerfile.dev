@@ -4,19 +4,19 @@ RUN apt-get update && apt-get install -y libc6
 
 WORKDIR /app
 
-RUN npm install -g pnpm && corepack enable
+COPY ./nextjs_code/package.json ./
+COPY ./nextjs_code/package-lock.json ./
+RUN npm install
 
-ENV NEXT_PUBLIC_MEDIA_DOMAIN="http://localhost"
-COPY ./nextjs_code/pnpm-lock.yaml ./nextjs_code/package.json ./
-RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm install
 
+COPY ./nextjs_code/tsconfig.json ./
+COPY ./nextjs_code/postcss.config.mjs ./
+# COPY ./nextjs_code/tailwind.config.ts ./
+COPY  ./nextjs_code/package.json ./
+COPY ./nextjs_code/next.config.ts ./
 COPY ./nextjs_code/public ./public
 COPY ./nextjs_code/src ./src
-COPY ./nextjs_code/tsconfig.json ./
-COPY ./nextjs_code/next.config.ts ./
-COPY ./nextjs_code/postcss.config.mjs ./
-COPY ./nextjs_code/tailwind.config.ts ./
-COPY ./nextjs_code/eslint.config.mjs ./
+
 
 EXPOSE 3000
-CMD ["pnpm", "dev"]
+CMD ["npm", "run", "dev"]
