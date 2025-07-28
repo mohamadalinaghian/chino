@@ -27,7 +27,6 @@ export default function MenuItemImage({ item }: Props) {
 					src={encodedUrl ?? "/fallback-thumbnail.webp"}
 					alt={item.title}
 					fill
-					unoptimizied
 					sizes="(max-width: 768px) 96px, 110px"
 					className="object-cover object-center"
 					onError={() => setHasError(true)}
