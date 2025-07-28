@@ -5,6 +5,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL as string;
 
 const nextConfig: NextConfig = {
 	images: {
+		domains: ["chinocafe.ir"],
 		remotePatterns: [
 			{
 				protocol: MEDIA_HOST.startsWith("https") ? "https" : "http",
