@@ -5,7 +5,7 @@ FROM node:24-bullseye AS builder
 RUN apt-get update && apt-get install -y --no-install-recommends libc6
 
 WORKDIR /app
-ENV NEXT_PUBLIC_MEDIA_DOMAIN="https://chinocafe.ir"
+ENV NEXT_PUBLIC_MEDIA_DOMAIN="chinocafe.ir"
 ENV NEXT_PUBLIC_API_URL="https://chinocafe.ir/api"
 
 RUN npm install -g pnpm
