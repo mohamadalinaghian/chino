@@ -1,30 +1,17 @@
-"use client";
-
-import { useState } from "react";
+import ExpandableText from "./ExpandableText";
 import dynamic from "next/dynamic";
 
-const DescriptionText = dynamic(() => import("./DescriptionText"), {
-	ssr: true,
+const ExpandableToggle = dynamic(() => import("./ExpandableToggle"), {
+	ssr: false,
 });
 
-type Props = {
-	description: string;
-};
-
-export default function ItemDescription({ description }: Props) {
-	const [expanded, setExpanded] = useState(false);
+export default function ItemDescription({ text }: { text: string }) {
+	const shouldShowToggle = text.length > 100;
 
 	return (
-		<div className="md:pl-28">
-			<DescriptionText description={description} isExpanded={expanded} />
-			{description.length > 60 && (
-				<button
-					onClick={() => setExpanded(!expanded)}
-					className="text-amber-500 text-xs mt-1"
-				>
-					{expanded ? "کمتر" : "بیشتر"}
-				</button>
-			)}
+		<div className="text-sm text-text-light">
+			<ExpandableText text={text} />
+			{shouldShowToggle && <ExpandableToggle />}
 		</div>
 	);
 }

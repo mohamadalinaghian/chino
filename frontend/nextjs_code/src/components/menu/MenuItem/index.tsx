@@ -1,25 +1,29 @@
-import ItemImage from "./ItemImage";
-import ItemTextContent from "./ItemTextContent";
-import ItemDescription from "./ItemDescription";
+import ItemTitle from "@/components/menu/MenuItem/ItemTitle";
+import ItemPrice from "@/components/menu/MenuItem/ItemPrice";
+import ItemThumbnail from "@/components/menu/MenuItem/ItemThumbnail";
+import ItemDescription from "@/components/menu/MenuItem/ItemDescription";
 
-type Props = {
-	item: {
-		title: string;
-		price: number;
-		description: string;
-		thumbnail?: string;
-	};
-};
+interface ItemCardProps {
+	title: string;
+	price: number;
+	description: string;
+	thumbnail: string | null;
+}
 
-export default function MenuItemCard({ item }: Props) {
+export default function ItemCard({
+	title,
+	price,
+	description,
+	thumbnail,
+}: ItemCardProps) {
 	return (
-		<article className="flex flex-col md:flex-row gap-4 p-4 border-b border-gray-100">
-			<div className="flex gap-4">
-				{item.thumbnail && <ItemImage src={item.thumbnail} alt={item.title} />}
-				<ItemTextContent title={item.title} price={item.price} />
+		<article className="flex items-start gap-4 bg-background p-4 rounded-lg shadow-md animate-fade-in-up">
+			{thumbnail && <ItemThumbnail src={thumbnail} alt={title} />}
+			<div className="flex-1">
+				<ItemTitle>{title}</ItemTitle>
+				<ItemPrice price={price} />
+				<ItemDescription text={description} />
 			</div>
-
-			{item.description && <ItemDescription description={item.description} />}
 		</article>
 	);
 }

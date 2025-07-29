@@ -1,11 +1,7 @@
-type Props = {
-	price: number;
-};
-
-export default function ItemPrice({ price }: Props) {
+export default function ItemPrice({ price }: { price: number }) {
 	return (
-		<span className="text-amber-600 font-medium">
-			{price.toLocaleString("fa-IR")} هزار تومان
-		</span>
+		<p className="text-secondary font-medium">
+			{price.toLocaleString()} هزار تومان
+		</p>
 	);
 }
