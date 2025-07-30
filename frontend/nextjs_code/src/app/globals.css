@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+html {
+	scroll-behavior: smooth;
+}
+
 body {
-	font-family: "Vazirmatn", sans-serif;
+	@apply antialiased;
+}
+
+.num {
+	font-feature-settings: "tnum";
+	font-variant-numeric: proportional-nums;
 }

@@ -1,5 +1,5 @@
 import Header from "./Header";
-import ItemCard from "@/components/menu/MenuItem";
+import MenuItem from "@/components/menu/MenuItem";
 
 interface CategoryProps {
 	title: string;
@@ -22,12 +22,12 @@ export default function Category({ title, description, items }: CategoryProps) {
 			<Header title={title} description={description} />
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
 				{items.map((item, idx) => (
-					<ItemCard
+					<MenuItem
 						key={`${title}-${idx}`}
 						title={item.title}
-						description={item.description ?? ""}
-						price={item.price ?? 0}
-						thumbnail={item.thumbnail ?? null}
+						description={item.description || ""}
+						price={item.price || 0}
+						thumbnail={item.thumbnail || null}
 					/>
 				))}
 			</div>

@@ -1,9 +1,5 @@
 import ExpandableText from "./ExpandableText";
-import dynamic from "next/dynamic";
-
-const ExpandableToggle = dynamic(() => import("./ExpandableToggle"), {
-	ssr: false,
-});
+import ExpandableToggle from "./ExpandableToggle";
 
 export default function ItemDescription({ text }: { text: string }) {
 	const shouldShowToggle = text.length > 100;
