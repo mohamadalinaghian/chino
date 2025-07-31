@@ -21,7 +21,8 @@ export default function SearchToggle({ onSearch }: SearchToggleProps) {
 			<button
 				aria-label={open ? "Close search" : "Open search"}
 				onClick={() => setOpen((v) => !v)}
-				className="p-2 bg-amber-500 dark:bg-amber-600 text-white rounded-full shadow-lg hover:scale-110 transition-transform"
+				className="p-2 bg-amber-500 dark:bg-amber-600 text-white
+        rounded-full shadow-lg hover:scale-110 transition-transform"
 			>
 				🔍
 			</button>
@@ -35,8 +36,11 @@ export default function SearchToggle({ onSearch }: SearchToggleProps) {
 							setQuery(e.target.value);
 							onSearch(e.target.value);
 						}}
-						placeholder="جستوجو در آیتمها..."
-						className="px-3 py-2 w-64 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-300 dark:focus:ring-amber-500 transition-colors"
+						placeholder="جستوجو در آیتم ها..."
+						className="px-3 py-2 w-64 bg-amber-200 dark:bg-gray-700 border
+            border-gray-300 dark:border-gray-600 rounded-lg shadow-sm
+            focus:outline-none focus:ring-2 focus:ring-amber-300
+            dark:focus:ring-amber-500 transition-colors"
 						autoFocus
 					/>
 				</div>

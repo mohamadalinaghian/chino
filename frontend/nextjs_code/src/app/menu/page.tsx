@@ -1,25 +1,19 @@
-// 📄 src/app/menu/page.tsx
-
-// Import client-side MenuContainer directly.
-// This component is declared with `"use client"` internally.
-import MenuContainer from "@/components/menu/MenuContainer/MenuContainer";
+import { fetchCategories, fetchMenuItems } from "@/lib/menu";
+import { IMenuCategory, IMenuItem } from "@/types/menu";
+import MenuPageClient from "@/components/menu/MenuPageClient";
 
 /**
- * Cafe Menu Page (Server Component)
- *
- * This is the entry point for the /menu route. It is rendered on the server.
- * The heavy interactive part (MenuContainer) is isolated to a client component.
- *
- * ❗Important:
- * Avoid using `dynamic(..., { ssr: false })` in server components.
- * Instead, directly import the client component that handles browser-only logic.
+ * MenuPage — Server Component
+ * Fetches categories and items and passes them to the interactive UI.
  */
+export default async function MenuPage() {
+	const [categories, menuItems]: [IMenuCategory[], IMenuItem[]] =
+		await Promise.all([fetchCategories(), fetchMenuItems()]);
 
-export default function MenuPage() {
 	return (
 		<main className="container mx-auto px-4 py-8">
 			<h1 className="text-2xl text-center font-bold mb-8">Cafe Chino Menu</h1>
-			<MenuContainer />
+			<MenuPageClient categories={categories} items={menuItems} />
 		</main>
 	);
 }
