@@ -12,10 +12,6 @@ interface SidebarProps {
 	mobile?: boolean;
 }
 
-/**
- * Interactive sidebar component with toggle functionality
- * Handles both mobile and desktop views internally
- */
 export default function Sidebar({
 	categories,
 	onCategoryClick,
@@ -34,7 +30,7 @@ export default function Sidebar({
 
 	const handleCategoryClick = (title: string) => {
 		onCategoryClick(title);
-		if (mobile) setIsOpen(false); // Auto-close on mobile selection
+		if (mobile) setIsOpen(false);
 	};
 
 	return (
@@ -48,10 +44,12 @@ export default function Sidebar({
 				onCategoryClick={handleCategoryClick}
 			/>
 
-			{/* Only show toggle button on mobile */}
-			{mobile && (
-				<SidebarToggleButton isOpen={isOpen} onToggle={toggleSidebar} />
-			)}
+			{/* نمایش دکمه در همه حالات */}
+			<SidebarToggleButton
+				isOpen={isOpen}
+				onToggle={toggleSidebar}
+				className={mobile ? "md:hidden" : "hidden md:block"}
+			/>
 		</div>
 	);
 }

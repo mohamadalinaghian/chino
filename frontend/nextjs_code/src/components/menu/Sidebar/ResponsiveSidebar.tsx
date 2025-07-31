@@ -15,7 +15,7 @@ export default function ResponsiveSidebar({
 	return (
 		<>
 			{/* Desktop Sidebar */}
-			<aside className="hidden md:block md:w-1/4 md:order-first">
+			<aside className="hidden md:block md:w-auto md:order-first md:relative">
 				<Sidebar categories={categories} onCategoryClick={onCategoryClick} />
 			</aside>
 

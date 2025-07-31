@@ -18,17 +18,18 @@ export default function SidebarToggleButton({
 			aria-expanded={isOpen}
 			className={`
         fixed left-4 bottom-4
-        bg-primary-600 hover:bg-primary-700
-        text-white p-3 rounded-full shadow-lg
+        bg-gradient-to-r from-[#ff7676] to-[#f54ea2]
+        text-white p-4 rounded-full shadow-xl
         transition-all duration-300 z-50
-        focus:outline-none focus:ring-2 focus:ring-primary-500
+        focus:outline-none focus:ring-2 focus:ring-[#ffffff60]
+        hover:shadow-lg hover:scale-105
         ${className}
       `}
 		>
 			{isOpen ? (
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
-					className="h-5 w-5"
+					className="h-6 w-6"
 					viewBox="0 0 20 20"
 					fill="currentColor"
 				>
@@ -41,7 +42,7 @@ export default function SidebarToggleButton({
 			) : (
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
-					className="h-5 w-5"
+					className="h-6 w-6"
 					viewBox="0 0 20 20"
 					fill="currentColor"
 				>

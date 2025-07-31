@@ -8,19 +8,27 @@ export const useSidebarLogic = (
 	const [isOpen, setIsOpen] = useState(true);
 	const sidebarRef = useRef<HTMLDivElement>(null);
 	const contentRef = useRef<HTMLDivElement>(null);
-	const [contentWidth, setContentWidth] = useState(0);
+	const [contentWidth, setContentWidth] = useState(250); // مقدار پیشفرض معقول
 
 	const calculateContentWidth = () => {
 		if (contentRef.current && isOpen) {
-			const items = contentRef.current.querySelectorAll("button");
+			// محاسبه بر اساس طولانیترین آیتم + padding
+			const titleElements = contentRef.current.querySelectorAll("button");
 			let maxWidth = 0;
 
-			items.forEach((item) => {
-				const itemWidth = item.scrollWidth;
-				if (itemWidth > maxWidth) maxWidth = itemWidth;
+			titleElements.forEach((el) => {
+				const styles = window.getComputedStyle(el);
+				const padding =
+					parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
+				const totalWidth = el.scrollWidth + padding;
+
+				if (totalWidth > maxWidth) {
+					maxWidth = totalWidth;
+				}
 			});
 
-			setContentWidth(maxWidth + 10); // 10px for padding
+			// اضافه کردن فضای برای عنوان و padding کلی
+			setContentWidth(Math.min(Math.max(maxWidth + 40, 250), 350)); // محدوده معقول
 		}
 	};
 

@@ -22,9 +22,10 @@ export const SidebarView = ({
 		<div
 			className={`
         fixed left-4 bottom-20
-        bg-background
-        border border-border
-        rounded-lg shadow-md
+        bg-gradient-to-b from-[#2d3436] to-[#1e272e]
+        border border-[#ffffff20]
+        rounded-2xl shadow-xl
+        backdrop-blur-sm
         transition-all duration-300 ease-in-out
         z-40 overflow-hidden
         ${mobile ? "md:hidden" : "hidden md:block"}
@@ -36,13 +37,17 @@ export const SidebarView = ({
       `}
 			style={{
 				width: `${contentWidth}px`,
+				minWidth: "250px", // حداقل عرض
 			}}
 		>
-			<div ref={contentRef} className="p-4 h-full overflow-y-auto">
-				<h2 className="font-bold text-md mb-4 text-center text-text">
+			<div
+				ref={contentRef}
+				className="p-6 h-full overflow-y-auto scrollbar-thin scrollbar-thumb-[#ffffff30] scrollbar-track-transparent"
+			>
+				<h2 className="font-bold text-lg mb-6 text-center text-white/90 bg-[#ffffff10] py-3 rounded-xl whitespace-nowrap">
 					دستهبندیها
 				</h2>
-				<ul className="space-y-2">
+				<ul className="space-y-3">
 					{categories.map((category) => (
 						<li key={category.title}>
 							<CategoryLink
