@@ -11,8 +11,7 @@ export default function ExpandButton({
 	onExpandChange,
 }: ExpandButtonProps) {
 	const [expanded, setExpanded] = useState(false);
-	const needsExpand =
-		text.split(/\r?\n/).length > maxLines || text.length > 100;
+	const needsExpand = text.split(/\r?\n/).length > maxLines || text.length > 40;
 	if (!needsExpand) return null;
 	return (
 		<button
