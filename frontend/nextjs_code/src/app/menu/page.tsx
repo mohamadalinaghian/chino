@@ -1,4 +1,4 @@
-import { fetchCategories, fetchMenuItems } from "@/lib/menu";
+import { fetchCategories, fetchMenuItems } from "@/service/menu";
 import { IMenuCategory, IMenuItem } from "@/types/menu";
 import MenuPageClient from "@/components/menu/MenuPageClient";
 
