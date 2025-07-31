@@ -1,13 +1,11 @@
-import { getCategories } from "@/service/getCategory";
-import { getMenuItems } from "@/service/getMenuItem";
-import MenuContent from "./MenuContent.client";
-import { IMenuCategory, IMenuItem } from "@/types/menu";
+import dynamic from "next/dynamic";
 
-export default async function MenuContainer() {
-	const [categories, menuItems] = await Promise.all([
-		getCategories(),
-		getMenuItems(),
-	]);
+// 👇 Lazy load client-only component without SSR
+const MenuContent = dynamic(() => import("./MenuContent.client"), {
+	ssr: false,
+	loading: () => <div>در حال بارگذاری منو...</div>,
+});
 
-	return <MenuContent categories={categories} menuItems={menuItems} />;
+export default function MenuContainer() {
+	return <MenuContent />;
 }
