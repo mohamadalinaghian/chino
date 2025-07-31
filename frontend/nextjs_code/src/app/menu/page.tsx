@@ -1,4 +1,3 @@
-// page.tsx
 import { fetchCategories, fetchMenuItems } from "@/service/menu";
 import { IMenuCategory, IMenuItem } from "@/types/menu";
 import MenuPageClient from "@/components/menu/MenuPageClient";
