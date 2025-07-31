@@ -6,23 +6,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends libc6
 
 WORKDIR /app
 ENV NEXT_PUBLIC_MEDIA_DOMAIN="https://chinocafe.ir"
-ENV NEXT_PUBLIC_API_URL="https://chinocafe.ir/api"
+ENV NEXT_PUBLIC_API_URL="https://chinocafe.ir"
 
-RUN npm install -g pnpm
-COPY ./nextjs_code/pnpm-lock.yaml ./nextjs_code/package.json ./
-RUN pnpm install --frozen-lockfile
+COPY ./nextjs_code/package.json ./
+COPY ./nextjs_code/package-lock.json ./
+RUN npm install
 
-COPY ./nextjs_code/public ./public
-COPY ./nextjs_code/src ./src
+
 COPY ./nextjs_code/tsconfig.json ./
-COPY ./nextjs_code/next.config.ts ./
 COPY ./nextjs_code/postcss.config.mjs ./
 COPY ./nextjs_code/tailwind.config.ts ./
-COPY ./nextjs_code/eslint.config.mjs ./
+COPY  ./nextjs_code/package.json ./
+COPY ./nextjs_code/next.config.ts ./
+COPY ./nextjs_code/public ./public
+COPY ./nextjs_code/src ./src
 
-RUN pnpm build
+RUN npm build
 RUN rm -rf .next/cache && find . -type f -name '*.map' -exec rm -f {} +
-RUN pnpm prune --prod
+RUN npm prune --prod
 
 
 ### STAGE 2: Runner ###

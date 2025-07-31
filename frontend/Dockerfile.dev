@@ -11,7 +11,7 @@ RUN npm install
 
 COPY ./nextjs_code/tsconfig.json ./
 COPY ./nextjs_code/postcss.config.mjs ./
-# COPY ./nextjs_code/tailwind.config.ts ./
+COPY ./nextjs_code/tailwind.config.ts ./
 COPY  ./nextjs_code/package.json ./
 COPY ./nextjs_code/next.config.ts ./
 COPY ./nextjs_code/public ./public
