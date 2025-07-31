@@ -1,35 +1,26 @@
-### STAGE 1: Builder ###
-FROM node:24-bullseye AS builder
-
-
-RUN apt-get update && apt-get install -y --no-install-recommends libc6
+FROM node:24-slim AS builder
 
 WORKDIR /app
 ENV NEXT_PUBLIC_MEDIA_DOMAIN="https://chinocafe.ir"
 ENV NEXT_PUBLIC_API_URL="https://chinocafe.ir"
 
-COPY ./nextjs_code/package.json ./
-COPY ./nextjs_code/package-lock.json ./
+COPY ./nextjs_code/package.json ./package.json
+COPY ./nextjs_code/package-lock.json ./package-lock.json
 RUN npm install
-
 
 COPY ./nextjs_code/tsconfig.json ./
 COPY ./nextjs_code/postcss.config.mjs ./
 COPY ./nextjs_code/tailwind.config.ts ./
-COPY  ./nextjs_code/package.json ./
 COPY ./nextjs_code/next.config.ts ./
 COPY ./nextjs_code/public ./public
 COPY ./nextjs_code/src ./src
 
-RUN npm build
-RUN rm -rf .next/cache && find . -type f -name '*.map' -exec rm -f {} +
-RUN npm prune --prod
-
+RUN npm run build
+RUN rm -rf .next/cache && find . -type f -name '*.map' -delete
+RUN npm prune --production
 
 ### STAGE 2: Runner ###
-FROM node:24-bullseye AS runner
-
-RUN apt-get update && apt-get install -y --no-install-recommends libc6
+FROM node:24-slim AS runner
 
 WORKDIR /app
 
