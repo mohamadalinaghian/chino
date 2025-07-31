@@ -17,14 +17,8 @@ export default function Sidebar({
 	onCategoryClick,
 	mobile = false,
 }: SidebarProps) {
-	const {
-		isOpen,
-		setIsOpen,
-		sidebarRef,
-		contentRef,
-		contentWidth,
-		toggleSidebar,
-	} = useSidebarLogic(categories, mobile);
+	const { isOpen, setIsOpen, sidebarRef, toggleSidebar } =
+		useSidebarLogic(mobile);
 
 	useClickOutside(sidebarRef, () => setIsOpen(false), isOpen);
 
@@ -37,14 +31,11 @@ export default function Sidebar({
 		<div ref={sidebarRef}>
 			<SidebarView
 				categories={categories}
-				contentRef={contentRef}
-				contentWidth={contentWidth}
 				isOpen={isOpen}
 				mobile={mobile}
 				onCategoryClick={handleCategoryClick}
 			/>
 
-			{/* نمایش دکمه در همه حالات */}
 			<SidebarToggleButton
 				isOpen={isOpen}
 				onToggle={toggleSidebar}
