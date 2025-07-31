@@ -12,11 +12,11 @@ interface MenuItemProps {
 }
 
 /**
- * Menu Item Card Component
- * - Server-rendered for SEO
- * - Uses graceful image fallback
- * - Smooth scroll animation
- * - Modern, accessible design
+ * MenuItem component
+ * - Responsive horizontal layout (thumbnail + info block)
+ * - Modern animation & spacing
+ * - Clear price coloring
+ * - Light hover interaction
  */
 export default function MenuItem({
 	title,
@@ -30,19 +30,23 @@ export default function MenuItem({
 			className={`
         flex items-start gap-4
         bg-white dark:bg-gray-800
-        p-4 rounded-2xl border border-gray-100 dark:border-gray-700
-        shadow-sm hover:shadow-md transition-all duration-300
+        p-5 rounded-2xl shadow-md
+        border border-gray-200 dark:border-gray-700
+        transition-transform duration-300
+        hover:shadow-lg hover:-translate-y-[2px]
+        hover:bg-gray-50 dark:hover:bg-gray-700
         opacity-0 animate-fade-in-up scroll-animate
       `}
 			style={{
-				animationDelay: `${Math.min(index * 40, 300)}ms`,
+				animationDelay: `${Math.min(index * 50, 300)}ms`,
 				animationFillMode: "forwards",
 			}}
 		>
 			{thumbnail && <ItemThumbnail src={thumbnail} alt={title} />}
+
 			<div className="flex-1 min-w-0">
 				<ItemTitle>{title}</ItemTitle>
-				<ItemPrice price={price} />
+				{price > 0 && <ItemPrice price={price} />}
 				<ItemDescription text={description} />
 			</div>
 		</article>

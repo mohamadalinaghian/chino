@@ -12,7 +12,9 @@
 		"test:coverage": "jest --coverage"
 	},
 	"dependencies": {
+		"@lottiefiles/react-lottie-player": "^3.6.0",
 		"@tailwindcss/typography": "^0.5.16",
+		"lottie-react": "^2.4.1",
 		"next": "15.4.4",
 		"react": "19.1.0",
 		"react-dom": "19.1.0",

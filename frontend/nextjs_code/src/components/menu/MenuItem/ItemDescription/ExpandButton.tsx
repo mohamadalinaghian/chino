@@ -22,7 +22,7 @@ export default function ExpandButton({
 					return !x;
 				});
 			}}
-			className="text-amber-600 dark:text-amber-400 text-xs font-medium hover:underline"
+			className="text-amber-400 dark:text-amber-500 text-xs font-medium hover:underline"
 			aria-expanded={expanded}
 		>
 			{expanded ? "کمتر" : "بیشتر"}

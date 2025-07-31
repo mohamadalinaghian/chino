@@ -3,22 +3,25 @@
 import { useState } from "react";
 
 /**
- * Expandable description component for category headers
- * - Client-side interactivity
- * - SEO-friendly collapsed text
- * - Smooth animations
+ * ExpandableDescription
+ * - Shows 1 line initially with toggle
+ * - Persian-friendly typography
  */
 export default function ExpandableDescription({ text }: { text: string }) {
 	const [expanded, setExpanded] = useState(false);
 	const shouldToggle = text.length > 100;
 
 	return (
-		<div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-			<p className={`${expanded ? "" : "line-clamp-1"}`}>{text}</p>
+		<div className="text-center text-sm text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+			<p
+				className={`transition-all duration-300 ${expanded ? "" : "line-clamp-1"}`}
+			>
+				{text}
+			</p>
 			{shouldToggle && (
 				<button
 					onClick={() => setExpanded(!expanded)}
-					className="text-primary-500 dark:text-primary-400 text-xs mt-1 font-medium hover:underline"
+					className="text-amber-600 dark:text-amber-400 text-xs mt-1 font-medium hover:underline focus:outline-none"
 					aria-expanded={expanded}
 				>
 					{expanded ? "کمتر" : "بیشتر"}

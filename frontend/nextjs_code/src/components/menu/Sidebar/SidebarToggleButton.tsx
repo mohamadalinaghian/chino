@@ -6,6 +6,12 @@ interface SidebarToggleButtonProps {
 	className?: string;
 }
 
+/**
+ * Sidebar Toggle Button
+ * - Floating action button for toggling sidebar
+ * - Harmonized with sidebar's glassy theme
+ * - Smooth hover animation
+ */
 export default function SidebarToggleButton({
 	isOpen,
 	onToggle,
@@ -18,18 +24,20 @@ export default function SidebarToggleButton({
 			aria-expanded={isOpen}
 			className={`
         fixed left-4 bottom-4
-        bg-gradient-to-r from-[#ff7676] to-[#f54ea2]
-        text-white p-4 rounded-full shadow-xl
-        transition-all duration-300 z-50
-        focus:outline-none focus:ring-2 focus:ring-[#ffffff60]
-        hover:shadow-lg hover:scale-105
+        p-3 rounded-full shadow-lg z-50
+        text-white dark:text-white
+        backdrop-blur-md
+        transition-all duration-300 ease-in-out
+        focus:outline-none focus:ring-2 focus:ring-white/30
+        hover:scale-105
+        bg-gradient-to-br from-[#6c5ce7] to-[#a29bfe] dark:from-[#2d3436] dark:to-[#636e72]
         ${className}
       `}
 		>
 			{isOpen ? (
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
-					className="h-6 w-6"
+					className="h-5 w-5"
 					viewBox="0 0 20 20"
 					fill="currentColor"
 				>
@@ -42,7 +50,7 @@ export default function SidebarToggleButton({
 			) : (
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
-					className="h-6 w-6"
+					className="h-5 w-5"
 					viewBox="0 0 20 20"
 					fill="currentColor"
 				>

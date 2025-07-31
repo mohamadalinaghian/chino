@@ -11,7 +11,7 @@ export default function DescriptionText({
 }: DescriptionTextProps) {
 	return (
 		<p
-			className="text-gray-600 dark:text-gray-300 text-sm"
+			className="text-gray-500 dark:text-gray-300 text-sm leading-relaxed"
 			style={{
 				display: "-webkit-box",
 				WebkitLineClamp: expanded ? undefined : maxLines,

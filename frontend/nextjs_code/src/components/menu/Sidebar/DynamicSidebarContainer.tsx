@@ -7,21 +7,26 @@ type Props = {
 	children: ReactNode;
 };
 
+/**
+ * Sidebar Container Component
+ * - Renders fixed nav with glass effect
+ * - Used by SidebarView
+ */
 export default function DynamicSidebarContainer({ visible, children }: Props) {
 	return (
 		<nav
 			className={`
         fixed bottom-20 left-4 z-40
         rounded-2xl shadow-xl
-        border border-[#ffffff20]
-        bg-gradient-to-b from-[#2d3436] to-[#1e272e]
-        backdrop-blur-sm
-        transition-all duration-300
+        border border-white/20
+        bg-gradient-to-br from-[#fdfbff]/90 to-[#f7f1ff]/90 dark:from-[#222428]/90 dark:to-[#2d2f33]/90
+        backdrop-blur-xl
+        transition-all duration-300 ease-in-out
         overflow-y-auto
         max-h-[60vh]
         ${visible ? "opacity-100" : "opacity-0 pointer-events-none"}
-        w-auto min-w-[180px] max-w-[300px]
-        scrollbar-thin scrollbar-thumb-[#ffffff30] scrollbar-track-transparent
+        w-fit max-w-sm
+        scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent
       `}
 		>
 			{children}

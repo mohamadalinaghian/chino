@@ -6,6 +6,13 @@ html {
 
 body {
 	@apply antialiased;
+	background-color: #faf3d0;
+}
+
+.main-container {
+	min-height: 100vh;
+	padding-top: 1rem;
+	padding-bottom: 1rem;
 }
 
 .num {
@@ -17,7 +24,7 @@ body {
 @keyframes fade-in-up {
 	from {
 		opacity: 0;
-		transform: translateY(10px);
+		transform: translateY(8px);
 	}
 	to {
 		opacity: 1;
@@ -27,6 +34,7 @@ body {
 
 .animate-fade-in-up {
 	animation: fade-in-up 0.5s ease-out forwards;
+	will-change: transform, opacity;
 }
 
 /* Scroll animation */
@@ -41,10 +49,42 @@ body {
 	}
 }
 
+/* Skeleton loading animation */
+@keyframes shimmer {
+	0% {
+		background-position: -1000px 0;
+	}
+	100% {
+		background-position: 1000px 0;
+	}
+}
+
+.skeleton {
+	background: linear-gradient(to right, #f0f0f0 8%, #e0e0e0 18%, #f0f0f0 33%);
+	background-size: 1000px 100%;
+	animation: shimmer 1.5s infinite linear;
+}
+
 @media (prefers-reduced-motion: no-preference) {
 	.scroll-animate {
 		animation: fade-on-scroll 0.5s ease both;
 		animation-timeline: view();
 		animation-range: entry 10% cover 20%;
+	}
+}
+
+.skeleton {
+	@apply bg-gray-200 dark:bg-gray-700 rounded-lg;
+	background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+	background-size: 200% 100%;
+	animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+	0% {
+		background-position: 200% 0;
+	}
+	100% {
+		background-position: -200% 0;
 	}
 }
