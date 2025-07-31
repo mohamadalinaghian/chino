@@ -1,13 +1,20 @@
-import ExpandableText from "./ExpandableText";
-import ExpandableToggle from "./ExpandableToggle";
-
-export default function ItemDescription({ text }: { text: string }) {
-	const shouldShowToggle = text.length > 100;
-
+import DescriptionText from "./DescriptionText";
+import ExpandButton from "./ExpandButton";
+import { useState } from "react";
+interface Props {
+	text: string;
+	maxLines?: number;
+}
+export default function ItemDescription({ text, maxLines = 1 }: Props) {
+	const [expanded, setExpanded] = useState(false);
 	return (
-		<div className="text-sm text-text-light">
-			<ExpandableText text={text} />
-			{shouldShowToggle && <ExpandableToggle />}
+		<div className="space-y-1">
+			<DescriptionText text={text} maxLines={maxLines} expanded={expanded} />
+			<ExpandButton
+				text={text}
+				maxLines={maxLines}
+				onExpandChange={setExpanded}
+			/>
 		</div>
 	);
 }
