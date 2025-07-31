@@ -9,12 +9,14 @@ import { SidebarView } from "./SidebarView";
 interface SidebarProps {
 	categories: IMenuCategory[];
 	onCategoryClick: (title: string) => void;
+	activeCategory?: string | null;
 	mobile?: boolean;
 }
 
 export default function Sidebar({
 	categories,
 	onCategoryClick,
+	activeCategory,
 	mobile = false,
 }: SidebarProps) {
 	const { isOpen, setIsOpen, sidebarRef, toggleSidebar } =
@@ -34,6 +36,7 @@ export default function Sidebar({
 				isOpen={isOpen}
 				mobile={mobile}
 				onCategoryClick={handleCategoryClick}
+				activeCategory={activeCategory}
 			/>
 
 			<SidebarToggleButton
