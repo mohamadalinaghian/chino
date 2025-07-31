@@ -30,7 +30,7 @@ export default function Sidebar({
 	};
 
 	return (
-		<div ref={sidebarRef}>
+		<nav ref={sidebarRef}>
 			<SidebarView
 				categories={categories}
 				isOpen={isOpen}
@@ -44,6 +44,6 @@ export default function Sidebar({
 				onToggle={toggleSidebar}
 				className={mobile ? "md:hidden" : "hidden md:block"}
 			/>
-		</div>
+		</nav>
 	);
 }
