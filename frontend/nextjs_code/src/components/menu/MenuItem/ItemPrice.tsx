@@ -7,7 +7,7 @@ export default function ItemPrice({ price }: { price: number }) {
 	return (
 		<p
 			className="
-        text-amber-200 dark:text-amber-300/80
+        text-amber-300 dark:text-amber-400/80
         font-semibold text-sm mb-2
       "
 		>
