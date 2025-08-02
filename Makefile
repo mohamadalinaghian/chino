@@ -11,8 +11,11 @@ build:
 up:
 	$(DOCKER) up -d
 
-n_up:
-	$(DOCKER) up -d --build frontend
+up_back:
+	$(DOCKER) up -d backend
+
+front_bash:
+	$(DOCKER) exec frontend bash
 
 rest:
 	$(DOCKER) restart
@@ -23,11 +26,8 @@ down:
 full_down:
 	$(DOCKER) down --rmi local
 
-ex_bak:
+back_bash:
 	$(DOCKER) exec backend bash
-
-run:
-	$(DOCKER) exec backend python manage.py runserver 0.0.0.0:8000
 
 shell:
 	$(DOCKER) exec backend python manage.py shell

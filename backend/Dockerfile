@@ -1,37 +1,53 @@
 # -----------------------------
-# Stage 1: Build wheels
+# Stage 1: Build wheel cache
 # -----------------------------
-FROM mohamadalinaghian/django-image:0.1 AS base
+FROM python:3.13-slim AS builder
 
-WORKDIR /
-COPY ./requirements.txt .
-
-RUN /venv/bin/pip install -r requirements.txt
-
-# -----------------------------
-# Stage 2: Runtime on same slim
-# -----------------------------
-FROM python:3.13-slim AS runtime
-
-RUN useradd --system --uid 1000 --no-create-home --shell /usr/sbin/nologin python &&\
-    apt-get update && apt-get upgrade -y --no-install-recommends &&\
-    apt-get install --no-install-recommends -y gettext  &&\
-    apt-get clean && rm -rf /var/lib/apt/lists/*
-
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONPATH="/app" \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/venv/bin:$PATH"
-
-COPY --from=base --chown=python:python /venv /venv
+# Install build tools for any packages that need compilation
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
+COPY requirements.txt .
+
+# Create a virtualenv and install dependencies into it
+RUN python -m venv /venv \
+    && /venv/bin/pip install --upgrade pip setuptools wheel \
+    && /venv/bin/pip install -r requirements.txt
+
+# -----------------------------
+# Stage 2: Runtime
+# -----------------------------
+FROM python:3.13-slim AS runtime
+
+# Create a non-root user
+RUN useradd --system --uid 1000 --no-create-home --shell /usr/sbin/nologin python \
+    && apt-get update \
+    && apt-get install --no-install-recommends -y gettext \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH="/app" \
+    PATH="/venv/bin:$PATH"
+
+WORKDIR /app
+
+# Copy only the venv from the builder
+COPY --from=builder /venv /venv
+
+# Copy application code
 COPY --chown=python:python . /app/
 
-RUN mkdir -p /app/staticfiles /app/media && \
-    chown -R python:python /app/staticfiles /app/media
+# Prepare runtime dirs
+RUN mkdir -p /app/staticfiles /app/media \
+    && chown -R python:python /app/staticfiles /app/media
 
 USER python
 
 EXPOSE 8000
+
+CMD ["gunicorn", "your_project.wsgi:application", "--bind", "0.0.0.0:8000"]

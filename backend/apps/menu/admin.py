@@ -22,13 +22,4 @@ class MenuAdmin(OrderedModelAdmin):
     list_filter = ("category", "is_available")
     search_fields = ("title", "description")
     filter_horizontal = ("images",)
-    prepopulated_fields = {"slug": ("title",)}  # ← این خط مهمه
-
-    # def thumbnail_preview(self, obj):
-    #     if obj.thumbnail:
-    #         return format_html(
-    #             '<img src="{}" width="40" height="40" />', obj.thumbnail.url
-    #         )
-    #     return "—"
-    #
-    # thumbnail_preview.short_description = "تصویر"
+    prepopulated_fields = {"slug": ("title",)}
