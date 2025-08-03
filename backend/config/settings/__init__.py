@@ -6,5 +6,4 @@ from .templates import *
 from .i18n import *
 from .static import *
 from .security import *
-from .jazzmin import *
 from .jalali import *

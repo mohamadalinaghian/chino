@@ -1,4 +1,3 @@
-# apps/inventory/models/recipe.py
 
 from apps.utils.models import TimeStampedModel
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -57,6 +56,7 @@ class RecipeComponent(TimeStampedModel):
         on_delete=models.CASCADE,
         related_name="components",
         verbose_name=_("Recipe"),
+        db_index=True,
     )
     component = models.ForeignKey(
         "inventory.Ingredient",
