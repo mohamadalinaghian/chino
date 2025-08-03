@@ -67,7 +67,13 @@ class Menu(OrderedModel):
         related_name="menu_items",
     )
     is_available = models.BooleanField(verbose_name=_("Is Available"), default=True)
-
+    recipe_components = GenericRelation(
+        "inventory.RecipeComponent",
+        content_type_field="content_type",
+        object_id_field="object_id",
+        verbose_name=_("Recipes"),
+        related_name="items_with_recipes",
+    )
     order_with_respect_to = "category"
 
     def save(self, *args, **kwargs):

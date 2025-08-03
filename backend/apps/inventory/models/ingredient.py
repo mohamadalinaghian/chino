@@ -1,8 +1,10 @@
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
+
 from .unit import Unit
-from django.contrib.contenttypes.fields import GenericRelation
+
 
 class Ingredient(models.Model):
     """
@@ -10,6 +12,7 @@ class Ingredient(models.Model):
     ‘Raw’ items come from purchases.
     ‘Processed’ items are produced in‐house via recipes.
     """
+
     class IngredientType(models.TextChoices):
         RAW = "raw", _("Raw")
         PROCESSED = "processed", _("Processed")
@@ -29,11 +32,12 @@ class Ingredient(models.Model):
         help_text=_("Atomic unit used for storage and calculation."),
     )
     ingredient_type = models.CharField(
+        verbose_name=_("Ingredient Type"),
         max_length=10,
         choices=IngredientType.choices,
         default=IngredientType.RAW,
     )
-    recipes = GenericRelation("inventory.RecipeComponent")
+
 
     class Meta:
         ordering = ["name"]
