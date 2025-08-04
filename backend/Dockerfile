@@ -16,7 +16,9 @@ COPY requirements.txt .
 # Create a virtualenv and install dependencies into it
 RUN python -m venv /venv \
     && /venv/bin/pip install --upgrade pip setuptools wheel \
-    && /venv/bin/pip install -r requirements.txt
+    && /venv/bin/pip install -r requirements.txt \
+    && chown -R 1000:1000 /venv
+
 
 # -----------------------------
 # Stage 2: Runtime

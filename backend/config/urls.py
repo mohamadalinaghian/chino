@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 
 urlpatterns = [
     path("api/admin/", admin.site.urls),
-    path("api/menu/", include("apps.menu.urls")),
+    path("api/menu/", include("nested_admin.urls")),
 ]
 
 admin.site.index_title = _("Chino Admin Panel")
