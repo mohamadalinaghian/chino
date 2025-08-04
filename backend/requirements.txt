@@ -13,3 +13,4 @@ python-slugify
 gunicorn
 setuptools
 packaging
+django-nested-admin
