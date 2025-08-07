@@ -1,78 +1,58 @@
-
-from apps.utils.models import TimeStampedModel
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from apps.inventory.models.product import Product
+from apps.utils.models import TimeStampedModel
 
 
 class Recipe(TimeStampedModel):
     """
-    Represents the recipe for a single parent object (Ingredient[processed] or Menu item),
-    including instructions and cooking/processing time.
+    This model will store metadata about recipes used in the system.
+    final recipe will be stored in RecipeComponent model.
+
+    is_countable will use to determine if the recipe is countable or not, and
+    formula will be used to calculate the final product quantity.
     """
 
-    content_type = models.ForeignKey(
-        ContentType,
+    CONSUM_TYPE = (
+        (True, _("Yes")),
+        (False, _("No")),
+    )
+
+    ALLOWED_RECIPE_PRODUCT_TYPES = ["PROCESSED", "MENU_ITEM", "CONSUMABLE"]
+
+    product = models.ForeignKey(
+        Product,
         on_delete=models.CASCADE,
-        limit_choices_to={
-            "app_label__in": ["inventory", "menu"],
-            "model__in": ["ingredient", "menu"],
-        },
-        verbose_name=_("Parent ContentType"),
-    )
-    object_id = models.PositiveIntegerField(verbose_name=_("Parent Object ID"))
-    parent = GenericForeignKey("content_type", "object_id")
-
-    instructions = models.TextField(
-        _("Instructions"),
-        help_text=_("Step-by-step instructions for preparing this item."),
-        blank=True,
-    )
-    cook_time_minutes = models.PositiveIntegerField(
-        _("Cook/Process Time (min)"),
-        help_text=_("Estimated time in minutes to prepare/process."),
-        default=0,
-    )
-
-    class Meta:
-        verbose_name = _("Recipe")
-        verbose_name_plural = _("Recipes")
-        indexes = [
-            models.Index(fields=["content_type", "object_id"]),
-        ]
-
-    def __str__(self):
-        return f"Recipe for {self.parent}"
-
-
-class RecipeComponent(TimeStampedModel):
-    """
-    A line item in a Recipe: which Ingredient and how many atomic units.
-    """
-
-    recipe = models.ForeignKey(
-        Recipe,
-        on_delete=models.CASCADE,
-        related_name="components",
-        verbose_name=_("Recipe"),
+        related_name="recipes",
+        limit_choices_to={"product_type__in": ALLOWED_RECIPE_PRODUCT_TYPES},
         db_index=True,
     )
-    component = models.ForeignKey(
-        "inventory.Ingredient",
-        on_delete=models.CASCADE,
-        verbose_name=_("Component Ingredient"),
-        help_text=_("Raw or processed ingredient."),
+    instruction = models.CharField(
+        verbose_name=_("Instruction"), max_length=255, blank=True, null=True
     )
-    quantity = models.PositiveIntegerField(
-        _("Quantity (atomic units)"),
-        help_text=_("Number of units of the component per 1 parent unit."),
+    prepared_time = models.PositiveSmallIntegerField(
+        verbose_name=_("Prepared Time (in minutes)"),
+        default=0,
+        blank=True,
     )
 
-    class Meta:
-        verbose_name = _("Recipe Component")
-        verbose_name_plural = _("Recipe Components")
-        unique_together = [["recipe", "component"]]
+    is_countable = models.BooleanField(
+        verbose_name=_("Is Countable"),
+        default=False,
+        choices=CONSUM_TYPE,
+        help_text=_("Indicates if the product consum by number or weight."),
+    )
 
-    def __str__(self):
-        return f"{self.component} x {self.quantity}"
+    def clean(self) -> None:
+        """Validate that the product is not of type RAW."""
+        super().clean()
+        if self.product.product_type == "RAW":
+            raise ValueError(_("Recipe cannot be created for raw products."))
+
+    def __str__(self) -> str:
+        return f"{self.product.name} Recipe"
+
+    class RecipeMeta:
+        verbose_name = _("Recipe")
+        verbose_name_plural = _("Recipes")
+        ordering = ("product__name", "-updated_at")  # Newest recipes first
