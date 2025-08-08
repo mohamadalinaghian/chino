@@ -1,110 +1,86 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from django.contrib.auth import get_user_model
-from decimal import Decimal
-
-from apps.inventory.services.stock import consume_and_cost, InsufficientStock
 from apps.utils.models import TimeStampedModel
-
-User = get_user_model()
+from django.contrib.auth import get_user_model
 
 
 class ItemProduction(TimeStampedModel):
     """
-    Store Item produced in system and it's cost and persons who created it.
+    Represents the production process of a product.
+
+    This model does not directly handle business logic such as cost calculation
+    or stock adjustments. All business logic is delegated to service layers.
+
+    Fields:
+        product: The product being produced.
+        recipe: The recipe used for production (optional).
+        input_quantity: Total quantity of input materials used in production.
+        output_quantity: Total quantity of finished product obtained.
+        unit_cost: Cost per unit of the finished product.
+        total_cost: Total cost of this production batch.
+        notes: Optional notes about the production (e.g., reasons for yield loss).
     """
 
-    used_recipe = models.ForeignKey(
-        to="inventory.Recipe",
+    product = models.ForeignKey(
+        "inventory.Product",
         on_delete=models.PROTECT,
-        verbose_name=_("Produced Recipe"),
-        help_text=_("The recipe that has been used to produce this item."),
         related_name="productions",
+        verbose_name=_("Product"),
         db_index=True,
     )
+
+    recipe = models.ForeignKey(
+        "inventory.Recipe",
+        on_delete=models.SET_NULL,
+        related_name="productions",
+        verbose_name=_("Recipe"),
+        null=True,
+        blank=True,
+    )
+
     input_quantity = models.DecimalField(
-        verbose_name=_("Quantity Used"),
+        verbose_name=_("Input Quantity"),
+        help_text=_("Total quantity of input materials (before production loss)"),
         max_digits=10,
-        decimal_places=2,
-        help_text=_(
-            "Quantity of the components used for this production, regardless of the unit"
-        ),
-        null=True,
-        blank=True,
+        decimal_places=3,
     )
+
     output_quantity = models.DecimalField(
-        verbose_name=_("Quantity Produced"),
+        verbose_name=_("Output Quantity"),
+        help_text=_("Total quantity of product obtained after production"),
         max_digits=10,
-        decimal_places=2,
-        help_text=_("Quantity of the final product produced."),
-        null=True,
-        blank=True,
+        decimal_places=3,
     )
+
     unit_cost = models.DecimalField(
-        verbose_name=_("Unit Cost (calculated)"),
-        max_digits=10,
-        decimal_places=2,
-        editable=False,
+        verbose_name=_("Unit Cost"),
+        help_text=_("Cost per unit of finished product"),
+        max_digits=12,
+        decimal_places=4,
     )
+
+    total_cost = models.DecimalField(
+        verbose_name=_("Total Cost"),
+        help_text=_("Total cost of this production batch"),
+        max_digits=14,
+        decimal_places=4,
+    )
+
     creators = models.ManyToManyField(
-        to=User,
+        get_user_model(),
         verbose_name=_("Creators"),
         related_name="produced_items",
-        blank=True,
     )
+    notes = models.TextField(
+        verbose_name=_("Notes"),
+        blank=True,
+        null=True,
+    )
+
+    def __str__(self):
+        return f"{self.product.name} - {self.output_quantity} @ {self.unit_cost}"
 
     class Meta:
         verbose_name = _("Item Production")
         verbose_name_plural = _("Item Productions")
-        ordering = ["-created_at"]
-
-    def __str__(self):
-        return f"{self.used_recipe.product} @ {self.created_at.date()}"
-
-    def get_recipe_components(self):
-        """
-        Retrieve the components used in the recipe for this production.
-        """
-        return self.used_recipe.recipe_components.all()
-
-    def calculate_unit_cost(self):
-        """
-        Use FIFO to calculate the unit cost of producing this product based on its recipe.
-        """
-
-        if not self.used_recipe:
-            raise ValueError(_("No recipe defined for this production."))
-
-        total_cost = Decimal("0.0")
-        total_input = Decimal("0.0")
-
-        for comp in self.get_recipe_components():
-            # ۱. محاسبه مقدار مورد نیاز
-            needed = comp.quantity * self.output_quantity
-
-            # ۲. مصرف FIFO و گرفتن هزینه
-            try:
-                cost = consume_and_cost(comp.component, needed)
-            except InsufficientStock as e:
-                raise ValueError(str(e))
-
-            total_cost += cost
-            total_input += needed
-
-        # ۳. تنظیم input_quantity
-        if self.used_recipe.is_countable:
-            self.input_quantity = None
-        else:
-            self.input_quantity = total_input
-
-        # ۴. محاسبه unit_cost
-        if self.output_quantity is None or self.output_quantity <= 0:
-            raise ValueError(_("Output quantity must be positive"))
-
-        unit_cost = total_cost / self.output_quantity
-        return unit_cost.quantize(Decimal("0.01"))
-
-    def save(self, *args, **kwargs):
-        if not self.unit_cost:
-            self.unit_cost = self.calculate_unit_cost()
-        super().save(*args, **kwargs)
+        ordering = ("-created_at",)

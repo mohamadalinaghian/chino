@@ -9,8 +9,12 @@ class Product(models.Model):
     e.g tomato, coffee, meet, cheeze, salt (RAW type).
         tomato souce, spice mix (Processed type).
         esspresso, pizza, salad (MenuItem type).
+        soap, toilet-paper (Consumable type).
 
-    is_countable will use to determine if the recipe is countable or not,
+    It's unitless.
+    For purposes of using FIFO unit price calculation,
+    live price will store in StockEntry.
+    Is_countable will use to determine if the recipe is countable or not,
     and determine which formula will be used to calculate the final product quantity.
     """
 
@@ -19,12 +23,11 @@ class Product(models.Model):
         (False, _("No")),
     )
 
-    PRODUCT_TYPE_CHOICES = [
-        ("RAW", _("Raw Ingredient")),
-        ("PROCESSED", _("Processed Ingredient")),
-        ("MENU_ITEM", _("Menu Item")),
-        ("CONSUMABLE", _("Consumable")),
-    ]
+    class ProductType(models.TextChoices):
+        RAW = "RAW", _("Raw Ingredient")
+        PROCESSED = "PROCESSED", _("Processed Ingredient")
+        MENU_ITEM = "MENU_ITEM", _("Menu Item")
+        CONSUMABLE = "CONSUMABLE", _("Consumable")
 
     name = models.CharField(
         verbose_name=_("Name"), max_length=50, unique=True, db_index=True
@@ -33,19 +36,11 @@ class Product(models.Model):
         verbose_name=_("Description"), max_length=255, blank=True, null=True
     )
     product_type = models.CharField(
-        verbose_name=_("Product Type"),
+        _("Product Type"),
         max_length=20,
-        choices=PRODUCT_TYPE_CHOICES,
-        default=PRODUCT_TYPE_CHOICES[0][0],
+        choices=ProductType.choices,
+        default=ProductType.RAW,
         db_index=True,
-    )
-
-    unit_price = models.DecimalField(
-        verbose_name=_("Unit Price"),
-        max_digits=10,
-        decimal_places=1,
-        help_text=_("Price per unit of the product"),
-        default=Decimal("0.0"),
     )
 
     is_countable = models.BooleanField(
@@ -54,6 +49,8 @@ class Product(models.Model):
         choices=CONSUM_TYPE,
         help_text=_("Indicates if the product consum by number or weight."),
     )
+   
+    is_active = models.BooleanField(_("Active"), default=True)
 
     class Meta:
         verbose_name = _("Product")
