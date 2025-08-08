@@ -5,7 +5,7 @@ from apps.inventory.models import StockEntry
 
 
 @receiver(post_save, sender=PurchaseItem)
-def create_stock_entry(sender, instance, created, **kwargs):
+def on_purchase_item_created(sender, instance, created, **kwargs):
     if created:
         StockEntry.objects.create(
             product=instance.item,

@@ -3,14 +3,14 @@ from django.utils.translation import gettext_lazy as _
 from treebeard.mp_tree import MP_Node
 
 
-class RecipeComponent(MP_Node):
+class RecipeComponent(models.Model):
     """
     This model will store the components of a recipe.
     It allows for hierarchical relationships between components,
     enabling complex recipes with sub-components.
     """
 
-    parent_recipe = models.ForeignKey(
+    recipe = models.ForeignKey(
         to="inventory.Recipe",
         verbose_name=_("Product"),
         on_delete=models.CASCADE,
@@ -28,9 +28,8 @@ class RecipeComponent(MP_Node):
         max_digits=6,
     )
 
-    #  depth =
-
-    node_order_by = ["parent_recipe", "component"]
+    def __str__(self):
+        return f"{self.recipe} - {self.component} ({self.quantity})"
 
     class Meta:
         verbose_name = _("Recipe Component")

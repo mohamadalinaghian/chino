@@ -9,7 +9,15 @@ class Product(models.Model):
     e.g tomato, coffee, meet, cheeze, salt (RAW type).
         tomato souce, spice mix (Processed type).
         esspresso, pizza, salad (MenuItem type).
+
+    is_countable will use to determine if the recipe is countable or not,
+    and determine which formula will be used to calculate the final product quantity.
     """
+
+    CONSUM_TYPE = (
+        (True, _("Yes")),
+        (False, _("No")),
+    )
 
     PRODUCT_TYPE_CHOICES = [
         ("RAW", _("Raw Ingredient")),
@@ -38,6 +46,13 @@ class Product(models.Model):
         decimal_places=1,
         help_text=_("Price per unit of the product"),
         default=Decimal("0.0"),
+    )
+
+    is_countable = models.BooleanField(
+        verbose_name=_("Is Countable"),
+        default=False,
+        choices=CONSUM_TYPE,
+        help_text=_("Indicates if the product consum by number or weight."),
     )
 
     class Meta:

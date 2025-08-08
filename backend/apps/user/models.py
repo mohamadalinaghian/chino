@@ -49,7 +49,7 @@ class Account(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
 
     mobile_validate = RegexValidator(
         regex=r"^09\d{9}$",
-        message="شماره موبایل باید با 09 شروع شود و 11 رقم باشد",
+        message=_("Mobile number must be in the format 09XXXXXXXXX"),
         code="invalid_mobile",
     )
 
@@ -137,4 +137,4 @@ class Profile(TimeStampedModel):
     )
 
     def __str__(self):
-        return f"Profile of {self.user.name} ({self.user.mobile})"
+        return f"{self.user.name}: ({self.user.mobile})"

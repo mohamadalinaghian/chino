@@ -32,8 +32,8 @@ def consume_and_cost(product: Product, quantity: Decimal) -> Decimal:
     with transaction.atomic():
         # Lock selected rows
         entries = (
-            StockEntry.objects.select_for_update(skip_locked=True)
-            .filter(product=product, is_remaining=True)
+            StockEntry.objects.select_for_update(nowait=True, of=("self",))
+            .filter(product=product, is_remaining=True)[:10]
             .order_by("created_at", "pk")
         )
 

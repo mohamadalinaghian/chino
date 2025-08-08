@@ -14,7 +14,7 @@ class ItemProduction(TimeStampedModel):
     Store Item produced in system and it's cost and persons who created it.
     """
 
-    usaged_recipe = models.ForeignKey(
+    used_recipe = models.ForeignKey(
         to="inventory.Recipe",
         on_delete=models.PROTECT,
         verbose_name=_("Produced Recipe"),
@@ -51,29 +51,28 @@ class ItemProduction(TimeStampedModel):
         verbose_name=_("Creators"),
         related_name="produced_items",
         blank=True,
-        null=True,
     )
 
     class Meta:
         verbose_name = _("Item Production")
         verbose_name_plural = _("Item Productions")
-        ordering = ["-produced_at"]
+        ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.usaged_recipe.name} @ {self.created_at.date()}"
+        return f"{self.used_recipe.product} @ {self.created_at.date()}"
 
     def get_recipe_components(self):
         """
         Retrieve the components used in the recipe for this production.
         """
-        return self.usaged_recipe.recipe_components.all()
+        return self.used_recipe.recipe_components.all()
 
     def calculate_unit_cost(self):
         """
         Use FIFO to calculate the unit cost of producing this product based on its recipe.
         """
 
-        if not self.usaged_recipe:
+        if not self.used_recipe:
             raise ValueError(_("No recipe defined for this production."))
 
         total_cost = Decimal("0.0")
@@ -93,7 +92,7 @@ class ItemProduction(TimeStampedModel):
             total_input += needed
 
         # ۳. تنظیم input_quantity
-        if self.usaged_recipe.is_countable:
+        if self.used_recipe.is_countable:
             self.input_quantity = None
         else:
             self.input_quantity = total_input
