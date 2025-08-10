@@ -9,7 +9,8 @@ class PurchaseInvoiceQuerySet(models.QuerySet):
     Custom querysets:
         - Invoices between two specified dates.
         - Invoice items.
-        - Total cost in selected duration.
+        - Total cost.
+        - Retrieved supplier.
     """
 
     def get_items(self):
@@ -24,15 +25,21 @@ class PurchaseInvoiceQuerySet(models.QuerySet):
         """
         if end_date is None:
             end_date = timezone.now()
-        return self.filter(created_at__range=[start_date, end_date])
+        return self.filter(issue_date__range=[start_date, end_date])
 
     def total_cost(self):
         """
         Get total cost of all invoices between two dates.
         """
         return self.aggregate(
-            total=Sum("total_cost", output_field=models.DecimalField())
+            total=Sum("invoice_final_cost", output_field=models.DecimalField())
         )["total"] or Decimal("0.00")
+
+    def by_supplier(self, supplier):
+        """
+        Get the supplier name.
+        """
+        return self.filter(supplier_name=supplier)
 
 
 class PurchaseInvoiceManager(models.Manager):
@@ -47,3 +54,6 @@ class PurchaseInvoiceManager(models.Manager):
 
     def total_cost(self):
         return self.get_queryset().total_cost()
+
+    def by_supplier(self, supplier):
+        return self.get_queryset().by_supplier(supplier)

@@ -29,9 +29,10 @@ class PurchaseInvoice(TimeStampedModel):
         help_text=_("The date that invoice was issued."),
     )
 
-    supplier_name = models.ForeignKey(
+    supplier = models.ForeignKey(
         "purchasing.Supplier",
         verbose_name=_("Supplier Name"),
+        related_name="invoices",
         on_delete=models.PROTECT,
         null=True,
         blank=True,
@@ -61,7 +62,7 @@ class PurchaseInvoice(TimeStampedModel):
         _("Invoice Final Cost"),
         max_digits=10,
         decimal_places=2,
-        help_text=_("Final cost after appling tax and discount"),
+        help_text=_("Final cost after applying tax and discount"),
     )
 
     created_by = models.ForeignKey(

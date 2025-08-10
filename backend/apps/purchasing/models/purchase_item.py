@@ -61,22 +61,4 @@ class PurchaseItem(models.Model):
     def __str__(self):
         return f"{self.product.name} - {self.purchase_invoice.issue_date}"
 
-    @property
-    def total_price(self):
-        """
-        Total price for this item without considering invoice-level tax/discount.
-        """
-        return self.unit_price * self.quantity
 
-    @property
-    def remaining_quantity(self):
-        """
-        Remaining quantity after returns.
-        """
-        from django.db.models import Sum
-
-        returned = (
-            self.returns.aggregate(total_returned=Sum("quantity"))["total_returned"]
-            or 0
-        )
-        return self.quantity - Decimal(str(returned))
