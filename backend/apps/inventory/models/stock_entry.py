@@ -1,5 +1,4 @@
-# apps/inventory/models/stock_entry.py
-
+from decimal import Decimal
 from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -95,12 +94,17 @@ class StockEntry(TimeStampedModel):
         help_text=_("True if remaining_quantity is zero."),
     )
 
+    from apps.inventory.managers.stock_entry import StockEntryManager
+
+    objects = StockEntryManager()
+
     class Meta:
         verbose_name = _("Stock Entry")
         verbose_name_plural = _("Stock Entries")
         ordering = ("-created_at",)  # Newest entries first
         indexes = [
             models.Index(fields=["product", "movement_type"]),
+            models.Index(fields=["product", "created_at"]),
         ]
 
     def __str__(self):
@@ -140,3 +144,11 @@ class StockEntry(TimeStampedModel):
             and self.quantity > 0
         ):
             raise ValidationError(_("OUT movements must have negative quantity."))
+
+        def save(self, *args, **kwargs):
+            # keep is_depleted consistent with remaining_quantity
+            try:
+                self.is_depleted = Decimal(self.remaining_quantity) <= Decimal("0")
+            except Exception:
+                self.is_depleted = False
+            super().save(*args, **kwargs)

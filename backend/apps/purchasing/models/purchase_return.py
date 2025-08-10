@@ -1,7 +1,9 @@
+from decimal import Decimal
 from django.utils import timezone
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.utils.models import TimeStampedModel
+from django.core.exceptions import ValidationError
 
 
 class PurchaseReturn(TimeStampedModel):
@@ -39,3 +41,16 @@ class PurchaseReturn(TimeStampedModel):
 
     def __str__(self):
         return f"{self.quantity} " + _("returned from") + f" {self.purchase_item}"
+
+    def clean(self):
+        super().clean()
+        # ensure not returning more than remaining
+        remaining = self.purchase_item.remaining_quantity
+        if Decimal(str(self.quantity)) > Decimal(str(remaining)):
+            raise ValidationError(
+                {
+                    "quantity": _(
+                        "Return quantity cannot exceed remaining purchased quantity."
+                    )
+                }
+            )

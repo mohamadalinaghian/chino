@@ -6,6 +6,8 @@ from django.utils import timezone
 from django.conf import settings
 from apps.utils.models import TimeStampedModel
 
+from apps.purchasing.managers.purchase_invoice import PurchaseInvoiceManager
+
 
 class PurchaseInvoiceStatus(models.TextChoices):
     DRAFT = "DRAFT", _("Draft")
@@ -20,8 +22,12 @@ class PurchaseInvoice(TimeStampedModel):
     It holds metadata like discount, tax, etc.
     """
 
-    issue_date = models.DateField(_("Issue Date"), default=timezone.now, db_index=True)
-    purchase_date = models.DateField(_("Purchase Date"), default=timezone.now)
+    issue_date = models.DateField(
+        _("Issue Date"),
+        default=timezone.now,
+        db_index=True,
+        help_text=_("The date that invoice was issued."),
+    )
 
     supplier_name = models.ForeignKey(
         "purchasing.Supplier",
@@ -49,15 +55,14 @@ class PurchaseInvoice(TimeStampedModel):
         help_text=_("Global tax amount to apply on total invoice."),
     )
 
-    extra_cost = models.DecimalField(
-        _("Extra Cost"),
+    note = models.CharField(_("Note"), max_length=255, null=True, blank=True)
+
+    invoice_final_cost = models.DecimalField(
+        _("Invoice Final Cost"),
         max_digits=10,
         decimal_places=2,
-        default=Decimal("0.0"),
-        help_text=_("Any additional cost like shipping, handling, etc."),
+        help_text=_("Final cost after appling tax and discount"),
     )
-
-    note = models.TextField(_("Note"), blank=True)
 
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -68,10 +73,10 @@ class PurchaseInvoice(TimeStampedModel):
     )
 
     status = models.CharField(
-        _("Status"),
-        max_length=20,
-        choices=PurchaseInvoiceStatus.choices,
+        _("Status"), max_length=20, choices=PurchaseInvoiceStatus.choices, db_index=True
     )
+
+    objects = PurchaseInvoiceManager()
 
     class Meta:
         verbose_name = _("Purchase Invoice")
@@ -85,27 +90,5 @@ class PurchaseInvoice(TimeStampedModel):
         return f"Invoice #{self.pk} - {self.issue_date}"
 
     def clean(self):
-        if self.purchase_date > timezone.now().date():
+        if self.issue_date > timezone.now().date():
             raise ValidationError(_("Purchase date cannot be in the future"))
-        if self.issue_date < self.purchase_date:
-            raise ValidationError(_("Issue date cannot be before purchase date"))
-
-    @property
-    def total_cost(self):
-        """
-        Sum of item total prices.
-        """
-        from django.db.models import Sum, F
-
-        return self.items.aggregate(total=Sum(F("quantity") * F("unit_price")))[
-            "total"
-        ] or Decimal("0.00")
-
-    @property
-    def final_cost(self):
-        """
-        Final payable cost after discount, tax, and extra cost.
-        """
-        return (
-            self.total_cost - self.discount_amount + self.tax_amount + self.extra_cost
-        )

@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
-
+from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 
 
@@ -49,3 +49,23 @@ class Supplier(models.Model):
 
     def __str__(self):
         return self.name
+
+    def clean(self):
+        super().clean()
+        # validate extra_phone_number is list of valid phones
+        if self.extra_phone_number:
+            if not isinstance(self.extra_phone_number, list):
+                raise ValidationError(
+                    {"extra_phone_number": _("Must be a list of phone numbers.")}
+                )
+            for num in self.extra_phone_number:
+                try:
+                    self.phone_number_validate(num)
+                except ValidationError as e:
+                    raise ValidationError(
+                        {
+                            "extra_phone_number": _(
+                                "One or more phone numbers are invalid."
+                            )
+                        }
+                    )

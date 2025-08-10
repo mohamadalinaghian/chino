@@ -2,6 +2,8 @@ from decimal import Decimal
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from apps.purchasing.managers.purchase_item import PurchaseItemManager
+
 
 class PurchaseItem(models.Model):
     """
@@ -48,6 +50,8 @@ class PurchaseItem(models.Model):
         max_length=255,
         blank=True,
     )
+
+    objects = PurchaseItemManager()
 
     class Meta:
         verbose_name = _("Purchase Item")
