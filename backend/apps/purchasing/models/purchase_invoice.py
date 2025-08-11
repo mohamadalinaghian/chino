@@ -48,13 +48,6 @@ class PurchaseInvoice(TimeStampedModel):
         ),
     )
 
-    tax_amount = models.DecimalField(
-        _("Tax Amount"),
-        max_digits=10,
-        decimal_places=2,
-        default=Decimal("0.0"),
-        help_text=_("Global tax amount to apply on total invoice."),
-    )
 
     note = models.CharField(_("Note"), max_length=255, null=True, blank=True)
 

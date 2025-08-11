@@ -1,11 +1,12 @@
 from django.core.validators import RegexValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from ..managers import SupplierVisitorManager
 
 
 class SupplierVisitor(models.Model):
     """
-    Store  supplier visitor info neither mobile or officenumber.
+    Store supplier visitor info neither mobile or office number.
     """
 
     phone_number_validate = RegexValidator(
@@ -24,3 +25,9 @@ class SupplierVisitor(models.Model):
     )
 
     is_active = models.BooleanField(_("Active"), default=True)
+
+    objects = SupplierVisitorManager()
+
+    class Meta:
+        verbose_name = _("Supplier Visitor")
+        verbose_name_plural = _("Supplier Visitors")

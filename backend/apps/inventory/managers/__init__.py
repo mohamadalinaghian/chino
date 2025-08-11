@@ -1,4 +1,4 @@
-from .stock_entry import StockEntryManager
+from .product import ProductManager
 
 
-__all__ = ["StockEntryManager"]
+__all__ = ["ProductManager"]

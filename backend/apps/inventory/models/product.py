@@ -1,14 +1,17 @@
-from decimal import Decimal
+from ast import mod
+from tkinter import W
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
+from apps.inventory.managers.product import ProductManager
 
 
 class Product(models.Model):
     """
     This model will store all the ingredients uses in system.
-    e.g tomato, coffee, meet, cheeze, salt (RAW type).
-        tomato souce, spice mix (Processed type).
-        esspresso, pizza, salad (MenuItem type).
+    e.g tomato, coffee, meet, cheese, salt (RAW type).
+        tomato sauce, spice mix (Processed type).
+        espresso, pizza, salad (MenuItem type).
         soap, toilet-paper (Consumable type).
 
     It's unitless.
@@ -18,7 +21,7 @@ class Product(models.Model):
     and determine which formula will be used to calculate the final product quantity.
     """
 
-    CONSUM_TYPE = (
+    CONSUME_TYPE = (
         (True, _("Yes")),
         (False, _("No")),
     )
@@ -46,16 +49,27 @@ class Product(models.Model):
     is_countable = models.BooleanField(
         verbose_name=_("Is Countable"),
         default=False,
-        choices=CONSUM_TYPE,
-        help_text=_("Indicates if the product consum by number or weight."),
+        choices=CONSUME_TYPE,
+        help_text=_("Indicates if the product consume by number or weight."),
     )
-   
+    track_inventory = models.BooleanField(
+        verbose_name=_("Track Inventory"),
+        default=False,
+        help_text=_("Indicates if the product inventory should be tracked."),
+    )
+
     is_active = models.BooleanField(_("Active"), default=True)
+
+    objects = ProductManager()
 
     class Meta:
         verbose_name = _("Product")
         verbose_name_plural = _("Products")
         ordering = ["name"]
+        index_together = [
+            "product_type",
+            "is_active",
+        ]
 
     def __str__(self):
         return self.name

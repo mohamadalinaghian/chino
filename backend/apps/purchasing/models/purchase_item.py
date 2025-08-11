@@ -21,7 +21,7 @@ class PurchaseItem(models.Model):
         "inventory.Product",
         on_delete=models.PROTECT,
         verbose_name=_("Product"),
-        related_name=("purchase_items"),
+        related_name=("purchases"),
     )
 
     quantity = models.DecimalField(
@@ -60,5 +60,3 @@ class PurchaseItem(models.Model):
 
     def __str__(self):
         return f"{self.product.name} - {self.purchase_invoice.issue_date}"
-
-
