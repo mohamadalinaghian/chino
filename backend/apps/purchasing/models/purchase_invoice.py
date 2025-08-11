@@ -4,9 +4,9 @@ from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from django.conf import settings
-from apps.utils.models import TimeStampedModel
+from ...utils.models import TimeStampedModel
 
-from apps.purchasing.managers.purchase_invoice import PurchaseInvoiceManager
+from ..managers.purchase_invoice import PurchaseInvoiceManager
 
 
 class PurchaseInvoiceStatus(models.TextChoices):
@@ -47,7 +47,6 @@ class PurchaseInvoice(TimeStampedModel):
             "Total discount applied to the invoice. This does not affect item unit prices."
         ),
     )
-
 
     note = models.CharField(_("Note"), max_length=255, null=True, blank=True)
 

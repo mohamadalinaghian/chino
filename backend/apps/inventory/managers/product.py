@@ -1,7 +1,5 @@
 from django.db import models
 
-from apps.inventory.models.product import Product
-
 
 class ProductQuerySet(models.QuerySet):
     """Custom QuerySet for Product model to filter products based on various criteria."""
@@ -27,15 +25,20 @@ class ProductQuerySet(models.QuerySet):
         return self.filter(is_countable=True)
 
     def raw_products(self):
+        from ..models import Product
+
         return self.filter(product_type=Product.ProductType.RAW)
 
     def processed_products(self):
+        from ..models import Product
         return self.filter(product_type=Product.ProductType.PROCESSED)
 
     def menu_items(self):
+        from ..models import Product
         return self.filter(product_type=Product.ProductType.MENU_ITEM)
 
     def consumables(self):
+        from ..models import Product
         return self.filter(product_type=Product.ProductType.CONSUMABLE)
 
 

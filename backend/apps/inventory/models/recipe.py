@@ -1,7 +1,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
-from apps.utils.models import TimeStampedModel
+from ...utils.models import TimeStampedModel
 
 
 class Recipe(TimeStampedModel):

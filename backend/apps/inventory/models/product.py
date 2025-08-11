@@ -1,9 +1,7 @@
-from ast import mod
-from tkinter import W
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from apps.inventory.managers.product import ProductManager
+from ..managers.product import ProductManager
 
 
 class Product(models.Model):
@@ -66,9 +64,8 @@ class Product(models.Model):
         verbose_name = _("Product")
         verbose_name_plural = _("Products")
         ordering = ["name"]
-        index_together = [
-            "product_type",
-            "is_active",
+        indexes = [
+            models.Index(fields=["product_type", "is_active"]),
         ]
 
     def __str__(self):

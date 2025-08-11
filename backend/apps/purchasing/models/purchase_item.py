@@ -1,8 +1,7 @@
-from decimal import Decimal
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from apps.purchasing.managers.purchase_item import PurchaseItemManager
+from ..managers.purchase_item import PurchaseItemManager
 
 
 class PurchaseItem(models.Model):
@@ -56,7 +55,7 @@ class PurchaseItem(models.Model):
     class Meta:
         verbose_name = _("Purchase Item")
         verbose_name_plural = _("Purchase Items")
-        ordering = ["-created"]
+        ordering = ["product"]
 
     def __str__(self):
         return f"{self.product.name} - {self.purchase_invoice.issue_date}"
