@@ -1,6 +1,8 @@
 from django.contrib import admin
 from ..models import PurchaseInvoice
 from .purchase_item import PurchaseItemInline
+from . import signals
+from django.db.models import Sum
 
 
 @admin.register(PurchaseInvoice)
