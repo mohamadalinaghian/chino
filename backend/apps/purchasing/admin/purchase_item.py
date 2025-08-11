@@ -1,5 +1,5 @@
 from django.contrib import admin
-from apps.purchasing.models import PurchaseItem
+from ..models import PurchaseItem
 
 
 class PurchaseItemInline(admin.TabularInline):
