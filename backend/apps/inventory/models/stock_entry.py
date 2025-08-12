@@ -94,7 +94,7 @@ class StockEntry(TimeStampedModel):
         help_text=_("True if remaining_quantity is zero."),
     )
 
-    # from apps.inventory.managers.stock_entry import StockEntryManager
+    #  from apps.inventory.managers.stock_entry import StockEntryManager
 
     # objects = StockEntryManager()
 

@@ -80,7 +80,7 @@ class PurchaseInvoice(TimeStampedModel):
         ]
 
     def __str__(self):
-        return f"{_("Invoice")} #{self.pk} - {self.issue_date}"
+        return f"#{self.pk} - {self.issue_date}"
 
     def clean(self):
         if self.issue_date > timezone.now().date():

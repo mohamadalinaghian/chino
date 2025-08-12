@@ -4,6 +4,7 @@ from ..models import StockEntry
 from jalali_date.widgets import AdminJalaliDateWidget
 from jalali_date.admin import ModelAdminJalaliMixin
 from django import forms
+from ...utils.number_separator import format_number
 
 
 class StockEntryAdminForm(forms.ModelForm):
@@ -29,14 +30,28 @@ class StockEntryAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
         "id",
         "product",
         "movement_type",
-        "quantity",
-        "remaining_quantity",
-        "unit_cost",
+        "formatted_quantity",
+        "formatted_unit_cost",
+        "formatted_remaining_quantity",  # اینجا متد جدید
         "is_depleted",
         "created_at",
         "source_document",
     )
 
+    def formatted_quantity(self, obj):
+        return format_number(obj.quantity)
+
+    formatted_quantity.short_description = "Quantity"
+
+    def formatted_unit_cost(self, obj):
+        return format_number(obj.unit_cost)
+
+    formatted_unit_cost.short_description = "Unit Cost"
+
+    def formatted_remaining_quantity(self, obj):
+        return format_number(obj.remaining_quantity)
+
+    formatted_remaining_quantity.short_description = "Remaining Quantity"
     list_filter = (
         "movement_type",
         "is_depleted",

@@ -3,10 +3,12 @@ from decimal import Decimal
 
 def format_number(value: Decimal) -> str:
     """
-    Format a Decimal number with thousand separators.
-    Omit decimal part if it's zero (cleaner presentation).
+    Format number with thousand separators and remove trailing .00 if unnecessary.
+    Example: 12345.00 -> '12,345' | 12345.50 -> '12,345.5'
     """
-    val = value.normalize()
-    formatted = f"{val:,.2f}"
-
-    return str(formatted)
+    if value is None:
+        return ""
+    value = value.normalize()
+    if value == value.to_integral_value():
+        return f"{value:,.0f}"
+    return f"{value:,}"  # auto trim extra zeros
