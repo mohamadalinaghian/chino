@@ -1,7 +1,7 @@
 from django.contrib import admin
 from ..models import PurchaseInvoice
 from .purchase_item import PurchaseItemInline
-from . import signals
+from .signals import purchase_item_post_save_admin  # it will active signal
 from django.db.models import Sum
 
 
