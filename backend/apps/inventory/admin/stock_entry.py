@@ -31,27 +31,38 @@ class StockEntryAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
         "product",
         "movement_type",
         "formatted_quantity",
+        "formatted_remaining_quantity",
         "formatted_unit_cost",
-        "formatted_remaining_quantity",  # اینجا متد جدید
         "is_depleted",
         "created_at",
         "source_document",
     )
 
+    # formatted columns must return str
     def formatted_quantity(self, obj):
         return format_number(obj.quantity)
 
-    formatted_quantity.short_description = "Quantity"
-
-    def formatted_unit_cost(self, obj):
-        return format_number(obj.unit_cost)
-
-    formatted_unit_cost.short_description = "Unit Cost"
+    formatted_quantity.short_description = _("Quantity")
 
     def formatted_remaining_quantity(self, obj):
         return format_number(obj.remaining_quantity)
 
-    formatted_remaining_quantity.short_description = "Remaining Quantity"
+    formatted_remaining_quantity.short_description = _("Remaining Quantity")
+    formatted_remaining_quantity.admin_order_field = "remaining_quantity"
+
+    def formatted_unit_cost(self, obj):
+        return format_number(obj.unit_cost)
+
+    formatted_unit_cost.short_description = _("Unit Cost")
+    formatted_unit_cost.admin_order_field = "unit_cost"
+
+    # source_document as you already had
+    def source_document(self, obj):
+        if obj.source_object:
+            return f"{obj.content_type.model_class().__name__} #{obj.object_id}"
+        return _("(No source)")
+
+    source_document.short_description = _("Source Document")
     list_filter = (
         "movement_type",
         "is_depleted",
