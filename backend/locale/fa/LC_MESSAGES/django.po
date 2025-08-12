@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-07-22 12:21+0330\n"
+"POT-Creation-Date: 2025-08-12 18:08+0330\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,53 +17,489 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
-#: apps/menu/models.py:14 apps/menu/models.py:37 apps/utils/models.py:28
-msgid "Title"
+
+#: apps/inventory/admin/stock_entry.py:46
+msgid "(No source)"
 msgstr ""
 
-#: apps/menu/models.py:17 apps/menu/models.py:45 apps/user/models.py:67
-msgid "Slug"
-msgstr "اسلاگ"
+#: apps/inventory/admin/stock_entry.py:48
+msgid "Source Document"
+msgstr ""
 
-#: apps/menu/models.py:27
-msgid "Menu Category"
+#: apps/inventory/models/item_production.py:28
+#: apps/inventory/models/product.py:64 apps/inventory/models/recipe.py:23
+#: apps/inventory/models/stock_entry.py:45
+#: apps/purchasing/models/purchase_item.py:22
+msgid "Product"
+msgstr ""
+
+#: apps/inventory/models/item_production.py:36
+#: apps/inventory/models/recipe.py:61
+#: apps/inventory/models/recipe_component.py:18
+msgid "Recipe"
+msgstr ""
+
+#: apps/inventory/models/item_production.py:42
+msgid "Input Quantity"
+msgstr ""
+
+#: apps/inventory/models/item_production.py:43
+msgid "Total quantity of input materials (before production loss)"
+msgstr ""
+
+#: apps/inventory/models/item_production.py:49
+msgid "Output Quantity"
+msgstr ""
+
+#: apps/inventory/models/item_production.py:50
+msgid "Total quantity of product obtained after production"
+msgstr ""
+
+#: apps/inventory/models/item_production.py:56
+#: apps/inventory/models/stock_entry.py:76
+msgid "Unit Cost"
+msgstr ""
+
+#: apps/inventory/models/item_production.py:57
+msgid "Cost per unit of finished product"
+msgstr ""
+
+#: apps/inventory/models/item_production.py:63
+msgid "Total Cost"
+msgstr ""
+
+#: apps/inventory/models/item_production.py:64
+msgid "Total cost of this production batch"
+msgstr ""
+
+#: apps/inventory/models/item_production.py:71
+msgid "Creators"
+msgstr ""
+
+#: apps/inventory/models/item_production.py:75
+msgid "Notes"
+msgstr ""
+
+#: apps/inventory/models/item_production.py:84
+msgid "Item Production"
+msgstr ""
+
+#: apps/inventory/models/item_production.py:85
+msgid "Item Productions"
+msgstr ""
+
+#: apps/inventory/models/product.py:23
+msgid "Yes"
+msgstr ""
+
+#: apps/inventory/models/product.py:24
+msgid "No"
+msgstr ""
+
+#: apps/inventory/models/product.py:28
+msgid "Raw Ingredient"
+msgstr ""
+
+#: apps/inventory/models/product.py:29
+msgid "Processed Ingredient"
+msgstr ""
+
+#: apps/inventory/models/product.py:30
+#, fuzzy
+#| msgid "Menu Category"
+msgid "Menu Item"
 msgstr "دسته بندی منو"
 
-#: apps/menu/models.py:28
-msgid "Menu Categories"
-msgstr "دسته بندی های منو"
+#: apps/inventory/models/product.py:31
+msgid "Consumable"
+msgstr ""
 
-#: apps/menu/models.py:39
-msgid "Price"
-msgstr "قیمت"
+#: apps/inventory/models/product.py:34
+#: apps/purchasing/models/supplier_visitor.py:18 apps/user/models.py:63
+msgid "Name"
+msgstr "نام"
 
-#: apps/menu/models.py:41
+#: apps/inventory/models/product.py:37 apps/menu/models.py:22
+#: apps/menu/models.py:46
 msgid "Description"
 msgstr "توضیحات"
 
-#: apps/menu/models.py:51
+#: apps/inventory/models/product.py:40
+msgid "Product Type"
+msgstr ""
+
+#: apps/inventory/models/product.py:48
+msgid "Is Countable"
+msgstr ""
+
+#: apps/inventory/models/product.py:51
+msgid "Indicates if the product consume by number or weight."
+msgstr ""
+
+#: apps/inventory/models/product.py:54
+msgid "Track Inventory"
+msgstr ""
+
+#: apps/inventory/models/product.py:56
+msgid "Indicates if the product inventory should be tracked."
+msgstr ""
+
+#: apps/inventory/models/product.py:59 apps/purchasing/models/supplier.py:21
+#: apps/purchasing/models/supplier_visitor.py:27
+#, fuzzy
+#| msgid "Is Active?"
+msgid "Active"
+msgstr "فعال؟"
+
+#: apps/inventory/models/product.py:65
+msgid "Products"
+msgstr ""
+
+#: apps/inventory/models/recipe.py:25
+msgid "The product that this recipe is for."
+msgstr ""
+
+#: apps/inventory/models/recipe.py:29
+msgid "Instruction"
+msgstr ""
+
+#: apps/inventory/models/recipe.py:33
+msgid "General preparation instructions."
+msgstr ""
+
+#: apps/inventory/models/recipe.py:37
+msgid "Preparation Time (minutes)"
+msgstr ""
+
+#: apps/inventory/models/recipe.py:40
+msgid "Time needed to prepare this recipe."
+msgstr ""
+
+#: apps/inventory/models/recipe.py:54
+msgid "Recipe cannot be created for raw products."
+msgstr ""
+
+#: apps/inventory/models/recipe.py:62 apps/menu/models.py:74
+msgid "Recipes"
+msgstr ""
+
+#: apps/inventory/models/recipe_component.py:19
+msgid "The recipe this component belongs to."
+msgstr ""
+
+#: apps/inventory/models/recipe_component.py:26
+msgid "Component"
+msgstr ""
+
+#: apps/inventory/models/recipe_component.py:27
+msgid "The product (ingredient) used in this recipe."
+msgstr ""
+
+#: apps/inventory/models/recipe_component.py:31
+#: apps/inventory/models/stock_entry.py:57
+#: apps/purchasing/models/purchase_item.py:27
+msgid "Quantity"
+msgstr ""
+
+#: apps/inventory/models/recipe_component.py:35
+msgid "Amount of product used in this recipe."
+msgstr ""
+
+#: apps/inventory/models/recipe_component.py:39
+#: apps/purchasing/models/purchase_invoice.py:51
+#: apps/purchasing/models/purchase_item.py:48
+#: apps/purchasing/models/supplier.py:23
+msgid "Note"
+msgstr ""
+
+#: apps/inventory/models/recipe_component.py:43
+msgid "Optional note about this component."
+msgstr ""
+
+#: apps/inventory/models/recipe_component.py:51
+msgid "A product cannot be a component of its own recipe."
+msgstr ""
+
+#: apps/inventory/models/recipe_component.py:55
+msgid "Quantity must be greater than zero."
+msgstr ""
+
+#: apps/inventory/models/recipe_component.py:62
+msgid "Recipe Component"
+msgstr ""
+
+#: apps/inventory/models/recipe_component.py:63
+msgid "Recipe Components"
+msgstr ""
+
+#: apps/inventory/models/stock_entry.py:25
+msgid "Purchase In"
+msgstr ""
+
+#: apps/inventory/models/stock_entry.py:26
+msgid "Production In"
+msgstr ""
+
+#: apps/inventory/models/stock_entry.py:27
+msgid "Return In"
+msgstr ""
+
+#: apps/inventory/models/stock_entry.py:29
+msgid "Adjustment In"
+msgstr ""
+
+#: apps/inventory/models/stock_entry.py:33
+msgid "Production Out"
+msgstr ""
+
+#: apps/inventory/models/stock_entry.py:34
+msgid "Sale Out"
+msgstr ""
+
+#: apps/inventory/models/stock_entry.py:35
+msgid "Return Out"
+msgstr ""
+
+#: apps/inventory/models/stock_entry.py:37
+msgid "Adjustment Out"
+msgstr ""
+
+#: apps/inventory/models/stock_entry.py:39
+msgid "Waste / Spoilage Out"
+msgstr ""
+
+#: apps/inventory/models/stock_entry.py:50
+msgid "Movement Type"
+msgstr ""
+
+#: apps/inventory/models/stock_entry.py:61
+msgid "Amount moved in or out of stock. Positive for IN, negative for OUT."
+msgstr ""
+
+#: apps/inventory/models/stock_entry.py:66
+msgid "Remaining Quantity"
+msgstr ""
+
+#: apps/inventory/models/stock_entry.py:70
+msgid ""
+"Remaining amount from this entry after partial usage. Used for FIFO "
+"calculations."
+msgstr ""
+
+#: apps/inventory/models/stock_entry.py:81
+msgid "Cost per unit at the time of entry."
+msgstr ""
+
+#: apps/inventory/models/stock_entry.py:92
+msgid "Is Depleted"
+msgstr ""
+
+#: apps/inventory/models/stock_entry.py:94
+msgid "True if remaining_quantity is zero."
+msgstr ""
+
+#: apps/inventory/models/stock_entry.py:102
+msgid "Stock Entry"
+msgstr ""
+
+#: apps/inventory/models/stock_entry.py:103
+msgid "Stock Entries"
+msgstr ""
+
+#: apps/inventory/models/stock_entry.py:121
+msgid "Remaining quantity cannot exceed total quantity."
+msgstr ""
+
+#: apps/inventory/models/stock_entry.py:134
+msgid "IN movements must have positive quantity."
+msgstr ""
+
+#: apps/inventory/models/stock_entry.py:146
+msgid "OUT movements must have negative quantity."
+msgstr ""
+
+#: apps/menu/models.py:16 apps/menu/models.py:42 apps/utils/models.py:21
+msgid "Title"
+msgstr ""
+
+#: apps/menu/models.py:19 apps/menu/models.py:49 apps/user/models.py:67
+msgid "Slug"
+msgstr "اسلاگ"
+
+#: apps/menu/models.py:32
+msgid "Menu Category"
+msgstr "دسته بندی منو"
+
+#: apps/menu/models.py:33
+msgid "Menu Categories"
+msgstr "دسته بندی های منو"
+
+#: apps/menu/models.py:44
+msgid "Price"
+msgstr "قیمت"
+
+#: apps/menu/models.py:55
 msgid "Category"
 msgstr "دسته بندی"
 
-#: apps/menu/models.py:56
+#: apps/menu/models.py:59
 msgid "Thumbnail"
 msgstr "عکس بند انگشتی"
 
-#: apps/menu/models.py:64
+#: apps/menu/models.py:66
 msgid "Extra Images"
 msgstr "عکس های دیگر"
 
-#: apps/menu/models.py:68
+#: apps/menu/models.py:69
 msgid "Is Available"
 msgstr "در دسترس؟"
 
-#: apps/menu/models.py:82
+#: apps/menu/models.py:106
 msgid "Menu"
 msgstr "منو"
 
-#: apps/menu/models.py:83
+#: apps/menu/models.py:107
 msgid "Menus"
 msgstr "منو ها"
+
+#: apps/purchasing/models/purchase_invoice.py:13
+msgid "Draft"
+msgstr ""
+
+#: apps/purchasing/models/purchase_invoice.py:14
+#, fuzzy
+#| msgid "Confirm password"
+msgid "Confirmed"
+msgstr "تأیید رمز"
+
+#: apps/purchasing/models/purchase_invoice.py:15
+msgid "Canceled"
+msgstr ""
+
+#: apps/purchasing/models/purchase_invoice.py:16
+msgid "Returned"
+msgstr ""
+
+#: apps/purchasing/models/purchase_invoice.py:26
+msgid "Issue Date"
+msgstr ""
+
+#: apps/purchasing/models/purchase_invoice.py:29
+msgid "The date that invoice was issued."
+msgstr ""
+
+#: apps/purchasing/models/purchase_invoice.py:34
+#: apps/purchasing/models/supplier.py:11
+msgid "Supplier Name"
+msgstr ""
+
+#: apps/purchasing/models/purchase_invoice.py:42
+msgid "Discount Amount"
+msgstr ""
+
+#: apps/purchasing/models/purchase_invoice.py:47
+msgid ""
+"Total discount applied to the invoice. This does not affect item unit prices."
+msgstr ""
+
+#: apps/purchasing/models/purchase_invoice.py:54
+msgid "Invoice Final Cost"
+msgstr ""
+
+#: apps/purchasing/models/purchase_invoice.py:57
+msgid "Final cost after applying tax and discount"
+msgstr ""
+
+#: apps/purchasing/models/purchase_invoice.py:65
+msgid "Registered By"
+msgstr ""
+
+#: apps/purchasing/models/purchase_invoice.py:69
+msgid "Status"
+msgstr ""
+
+#: apps/purchasing/models/purchase_invoice.py:75
+#: apps/purchasing/models/purchase_item.py:16
+msgid "Purchase Invoice"
+msgstr ""
+
+#: apps/purchasing/models/purchase_invoice.py:76
+msgid "Purchase Invoices"
+msgstr ""
+
+#: apps/purchasing/models/purchase_invoice.py:87
+msgid "Purchase date cannot be in the future"
+msgstr ""
+
+#: apps/purchasing/models/purchase_item.py:30
+msgid "Purchased quantity of the product"
+msgstr ""
+
+#: apps/purchasing/models/purchase_item.py:34
+#, fuzzy
+#| msgid "Price"
+msgid "Unit Price"
+msgstr "قیمت"
+
+#: apps/purchasing/models/purchase_item.py:37
+msgid "Unit purchase price of the product (before tax or discount)"
+msgstr ""
+
+#: apps/purchasing/models/purchase_item.py:41
+msgid "Expiry Date"
+msgstr ""
+
+#: apps/purchasing/models/purchase_item.py:44
+msgid "Only required for perishable products"
+msgstr ""
+
+#: apps/purchasing/models/purchase_item.py:56
+msgid "Purchase Item"
+msgstr ""
+
+#: apps/purchasing/models/purchase_item.py:57
+msgid "Purchase Items"
+msgstr ""
+
+#: apps/purchasing/models/supplier.py:13
+msgid "Related Products"
+msgstr ""
+
+#: apps/purchasing/models/supplier.py:17
+msgid "Company Visitor"
+msgstr ""
+
+#: apps/purchasing/models/supplier.py:22 apps/user/models.py:128
+msgid "Address"
+msgstr "آدرس"
+
+#: apps/purchasing/models/supplier.py:28
+msgid "Supplier"
+msgstr ""
+
+#: apps/purchasing/models/supplier.py:29
+msgid "Suppliers"
+msgstr ""
+
+#: apps/purchasing/models/supplier_visitor.py:14
+msgid "Phone number must be in the format 0XXXXXXXXXX"
+msgstr ""
+
+#: apps/purchasing/models/supplier_visitor.py:18
+msgid "Visitor name or company name"
+msgstr ""
+
+#: apps/purchasing/models/supplier_visitor.py:21
+msgid "Phone Numbers"
+msgstr ""
+
+#: apps/purchasing/models/supplier_visitor.py:32
+msgid "Supplier Visitor"
+msgstr ""
+
+#: apps/purchasing/models/supplier_visitor.py:33
+msgid "Supplier Visitors"
+msgstr ""
 
 #: apps/user/admin.py:12
 msgid "Password"
@@ -93,13 +529,13 @@ msgstr "شماره تلفن باید ثبت شود"
 msgid "A superuser must also be staff."
 msgstr "مدیر باید از کارکنان باشد"
 
+#: apps/user/models.py:52
+msgid "Mobile number must be in the format 09XXXXXXXXX"
+msgstr ""
+
 #: apps/user/models.py:57
 msgid "Mobile"
 msgstr "موبایل"
-
-#: apps/user/models.py:63
-msgid "Name"
-msgstr "نام"
 
 #: apps/user/models.py:72
 msgid "Is Active?"
@@ -149,10 +585,6 @@ msgstr "ایمیل"
 msgid "Is Email Verified?"
 msgstr "ایمیل تأیید شده است؟"
 
-#: apps/user/models.py:128
-msgid "Address"
-msgstr "آدرس"
-
 #: apps/user/models.py:131
 msgid "Birth Day"
 msgstr "تاریخ تولد"
@@ -161,22 +593,30 @@ msgstr "تاریخ تولد"
 msgid "Sex"
 msgstr "جنسیت"
 
-#: apps/utils/models.py:15 apps/utils/models.py:32
+#: apps/utils/models.py:12 apps/utils/models.py:25
 msgid "Create Date"
 msgstr "تاریخ ساخت"
 
-#: apps/utils/models.py:17
+#: apps/utils/models.py:14
 msgid "Update Date"
 msgstr "تاریخ به روز رسانی"
 
-#: apps/utils/models.py:29
+#: apps/utils/models.py:22
 msgid "Alt Text"
 msgstr "متن جایگزین"
 
-#: apps/utils/models.py:30 apps/utils/models.py:36
+#: apps/utils/models.py:23 apps/utils/models.py:29
 msgid "Image"
 msgstr "عکس"
 
-#: apps/utils/models.py:37
+#: apps/utils/models.py:30
 msgid "Images"
 msgstr "عکس ها"
+
+#: config/urls.py:12
+msgid "Chino Admin Panel"
+msgstr ""
+
+#: config/urls.py:13 config/urls.py:14
+msgid "Chino Admin"
+msgstr ""

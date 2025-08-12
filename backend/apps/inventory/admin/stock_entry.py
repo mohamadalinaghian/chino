@@ -1,10 +1,22 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from ..models import StockEntry
+from jalali_date.widgets import AdminJalaliDateWidget
+from jalali_date.admin import ModelAdminJalaliMixin
+from django import forms
+
+
+class StockEntryAdminForm(forms.ModelForm):
+    class Meta:
+        model = StockEntry
+        fields = "__all__"
+        widgets = {
+            "created_at": AdminJalaliDateWidget,
+        }
 
 
 @admin.register(StockEntry)
-class StockEntryAdmin(admin.ModelAdmin):
+class StockEntryAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
     """
     Admin interface for StockEntry model.
     - Shows key movement and cost details.
@@ -12,6 +24,7 @@ class StockEntryAdmin(admin.ModelAdmin):
     - Read-only for system-generated fields to prevent accidental edits.
     """
 
+    form = StockEntryAdminForm
     list_display = (
         "id",
         "product",
@@ -23,6 +36,7 @@ class StockEntryAdmin(admin.ModelAdmin):
         "created_at",
         "source_document",
     )
+
     list_filter = (
         "movement_type",
         "is_depleted",

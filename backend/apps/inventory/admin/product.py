@@ -1,5 +1,6 @@
 from django.contrib import admin
 from apps.inventory.models import Product
+from .recipe import RecipeInline
 
 
 @admin.register(Product)
@@ -21,3 +22,4 @@ class ProductAdmin(admin.ModelAdmin):
     search_fields = ("name", "description")
     ordering = ("name",)
     list_per_page = 25
+    inlines = (RecipeInline,)

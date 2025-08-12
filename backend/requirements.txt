@@ -13,4 +13,3 @@ python-slugify
 gunicorn
 setuptools
 packaging
-django-treebeard

@@ -1,18 +1,31 @@
+from django import forms
 from django.contrib import admin
 from ..models import PurchaseInvoice
 from .purchase_item import PurchaseItemInline
 from .signals import purchase_item_post_save_admin  # it will active signal
 from django.db.models import Sum
+from jalali_date.widgets import AdminJalaliDateWidget
+from jalali_date.admin import ModelAdminJalaliMixin
+
+
+class PurchaseInvoiceAdminForm(forms.ModelForm):
+    class Meta:
+        model = PurchaseInvoice
+        fields = "__all__"
+        widget = {
+            "issue_date": AdminJalaliDateWidget,
+        }
 
 
 @admin.register(PurchaseInvoice)
-class PurchaseInvoiceAdmin(admin.ModelAdmin):
+class PurchaseInvoiceAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
     """
     Admin for managing PurchaseInvoices.
     - Shows supplier, date, status, and final cost.
     - Allows inline editing of purchase items.
     """
 
+    form = PurchaseInvoiceAdminForm
     list_display = ("id", "issue_date", "supplier", "status", "invoice_final_cost")
     list_filter = ("status", "issue_date", "supplier")
     search_fields = ("supplier__name", "note")

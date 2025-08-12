@@ -18,6 +18,9 @@ AUTH_USER_MODEL = env("DJANGO_AUTH_USER_MODEL", default=("user.Account"))
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+USE_THOUSAND_SEPARATOR = True
+DECIMAL_SEPARATOR = "."
+THOUSAND_SEPARATOR = "/"
 
 
 try:
