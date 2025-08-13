@@ -5,6 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from django.conf import settings
 from ...utils.models import TimeStampedModel
+from jalali_date import date2jalali
 
 from ..managers.purchase_invoice import PurchaseInvoiceManager
 
@@ -80,7 +81,7 @@ class PurchaseInvoice(TimeStampedModel):
         ]
 
     def __str__(self):
-        return f"#{self.pk} - {self.issue_date}"
+        return f"#{self.pk} - {date2jalali(self.issue_date).strftime('%Y/%m/%d')}"
 
     def clean(self):
         if self.issue_date > timezone.now().date():

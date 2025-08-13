@@ -4,7 +4,6 @@ from ..models import StockEntry
 from jalali_date.widgets import AdminJalaliDateWidget
 from jalali_date.admin import ModelAdminJalaliMixin
 from django import forms
-from ...utils.number_separator import format_number
 
 
 class StockEntryAdminForm(forms.ModelForm):
@@ -27,7 +26,6 @@ class StockEntryAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
 
     form = StockEntryAdminForm
     list_display = (
-        "id",
         "product",
         "movement_type",
         "formatted_quantity",
@@ -73,6 +71,7 @@ class StockEntryAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
     date_hierarchy = "created_at"
     ordering = ("-created_at",)
     readonly_fields = ("created_at", "updated_at", "source_document")
+    exclude = ("content_type", "object_id")
 
     autocomplete_fields = ("product",)
 

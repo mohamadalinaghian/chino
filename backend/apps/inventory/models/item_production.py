@@ -71,8 +71,9 @@ class ItemProduction(TimeStampedModel):
         verbose_name=_("Creators"),
         related_name="produced_items",
     )
-    notes = models.TextField(
+    notes = models.CharField(
         verbose_name=_("Notes"),
+        max_length=255,
         blank=True,
         null=True,
     )

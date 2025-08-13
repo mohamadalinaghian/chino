@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-12 18:08+0330\n"
+"POT-Creation-Date: 2025-08-13 12:30+0330\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,23 +18,48 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: apps/inventory/admin/stock_entry.py:46
+#: apps/inventory/admin/recipe.py:39 apps/inventory/models/recipe.py:62
+msgid "Recipe cannot be created for raw products."
+msgstr "برای مواد خام نمیتوانید رسپی بنویسید"
+
+#: apps/inventory/admin/stock_entry.py:43
+#: apps/inventory/models/recipe_component.py:31
+#: apps/inventory/models/stock_entry.py:57
+#: apps/purchasing/admin/purchase_item.py:52
+#: apps/purchasing/models/purchase_item.py:27
+msgid "Quantity"
+msgstr "مقدار"
+
+#: apps/inventory/admin/stock_entry.py:48
+#: apps/inventory/models/stock_entry.py:66
+msgid "Remaining Quantity"
+msgstr "مقدار باقی مانده"
+
+#: apps/inventory/admin/stock_entry.py:54
+#: apps/inventory/models/item_production.py:56
+#: apps/inventory/models/stock_entry.py:76
+msgid "Unit Cost"
+msgstr "قیمت واحد"
+
+#: apps/inventory/admin/stock_entry.py:61
+#: apps/inventory/admin/stock_entry.py:85
 msgid "(No source)"
 msgstr "بدون منبع"
 
-#: apps/inventory/admin/stock_entry.py:48
+#: apps/inventory/admin/stock_entry.py:63
+#: apps/inventory/admin/stock_entry.py:87
 msgid "Source Document"
 msgstr "گزارش منبع"
 
 #: apps/inventory/models/item_production.py:28
-#: apps/inventory/models/product.py:64 apps/inventory/models/recipe.py:23
+#: apps/inventory/models/product.py:64 apps/inventory/models/recipe.py:31
 #: apps/inventory/models/stock_entry.py:45
 #: apps/purchasing/models/purchase_item.py:22
 msgid "Product"
 msgstr "کالا"
 
 #: apps/inventory/models/item_production.py:36
-#: apps/inventory/models/recipe.py:61
+#: apps/inventory/models/recipe.py:69
 #: apps/inventory/models/recipe_component.py:18
 msgid "Recipe"
 msgstr "رسپی"
@@ -54,11 +79,6 @@ msgstr "مقدار خروجی"
 #: apps/inventory/models/item_production.py:50
 msgid "Total quantity of product obtained after production"
 msgstr "کل مقدار خروجی به دست آمده از تولید"
-
-#: apps/inventory/models/item_production.py:56
-#: apps/inventory/models/stock_entry.py:76
-msgid "Unit Cost"
-msgstr "قیمت واحد"
 
 #: apps/inventory/models/item_production.py:57
 msgid "Cost per unit of finished product"
@@ -80,11 +100,11 @@ msgstr "تولید کننده گان"
 msgid "Notes"
 msgstr "توضیحات"
 
-#: apps/inventory/models/item_production.py:84
+#: apps/inventory/models/item_production.py:85
 msgid "Item Production"
 msgstr "تولید آیتم"
 
-#: apps/inventory/models/item_production.py:85
+#: apps/inventory/models/item_production.py:86
 msgid "Item Productions"
 msgstr "تولید آیتم ها"
 
@@ -114,7 +134,7 @@ msgstr "دسته بندی منو"
 msgid "Consumable"
 msgstr "جانبی"
 
-#: apps/inventory/models/product.py:34
+#: apps/inventory/models/product.py:34 apps/inventory/models/recipe.py:20
 #: apps/purchasing/models/supplier_visitor.py:18 apps/user/models.py:63
 msgid "Name"
 msgstr "نام"
@@ -155,31 +175,33 @@ msgstr "فعال؟"
 msgid "Products"
 msgstr "کالاها"
 
-#: apps/inventory/models/recipe.py:25
+#: apps/inventory/models/recipe.py:24
+#, fuzzy
+#| msgid "Time needed to prepare this recipe."
+msgid "Unique name for the recipe."
+msgstr "زمان مورد نیاز برای تولید بر اساس این رسپی"
+
+#: apps/inventory/models/recipe.py:33
 msgid "The product that this recipe is for."
 msgstr "کالایی که این رسپی برای آن استفاده میشود"
 
-#: apps/inventory/models/recipe.py:29
+#: apps/inventory/models/recipe.py:37
 msgid "Instruction"
 msgstr "دستورالعمل"
 
-#: apps/inventory/models/recipe.py:33
+#: apps/inventory/models/recipe.py:41
 msgid "General preparation instructions."
 msgstr "توضیحات کلی آماده سازی"
 
-#: apps/inventory/models/recipe.py:37
+#: apps/inventory/models/recipe.py:45
 msgid "Preparation Time (minutes)"
 msgstr "زمان آماده سازی (به دقیقه)"
 
-#: apps/inventory/models/recipe.py:40
+#: apps/inventory/models/recipe.py:48
 msgid "Time needed to prepare this recipe."
 msgstr "زمان مورد نیاز برای تولید بر اساس این رسپی"
 
-#: apps/inventory/models/recipe.py:54
-msgid "Recipe cannot be created for raw products."
-msgstr "برای مواد خام نمیتوانید رسپی بنویسید"
-
-#: apps/inventory/models/recipe.py:62 apps/menu/models.py:74
+#: apps/inventory/models/recipe.py:70 apps/menu/models.py:74
 msgid "Recipes"
 msgstr "رسپی ها"
 
@@ -195,18 +217,12 @@ msgstr "عضو"
 msgid "The product (ingredient) used in this recipe."
 msgstr "کالا (ماده اولیه) که برای این رسپی استفاده شده است"
 
-#: apps/inventory/models/recipe_component.py:31
-#: apps/inventory/models/stock_entry.py:57
-#: apps/purchasing/models/purchase_item.py:27
-msgid "Quantity"
-msgstr "مقدار"
-
 #: apps/inventory/models/recipe_component.py:35
 msgid "Amount of product used in this recipe."
 msgstr "مقدار کالا استفاده شده در این رسپی"
 
 #: apps/inventory/models/recipe_component.py:39
-#: apps/purchasing/models/purchase_invoice.py:51
+#: apps/purchasing/models/purchase_invoice.py:52
 #: apps/purchasing/models/purchase_item.py:48
 #: apps/purchasing/models/supplier.py:23
 msgid "Note"
@@ -274,17 +290,17 @@ msgstr "نوع حرکت"
 
 #: apps/inventory/models/stock_entry.py:61
 msgid "Amount moved in or out of stock. Positive for IN, negative for OUT."
-msgstr "مقداری که به انبار وارد یا از آن خارج شده است. برای ورود مقدار مثبت و برای خروج مقدار منفی"
-
-#: apps/inventory/models/stock_entry.py:66
-msgid "Remaining Quantity"
-msgstr "مقدار باقی مانده"
+msgstr ""
+"مقداری که به انبار وارد یا از آن خارج شده است. برای ورود مقدار مثبت و برای "
+"خروج مقدار منفی"
 
 #: apps/inventory/models/stock_entry.py:70
 msgid ""
 "Remaining amount from this entry after partial usage. Used for FIFO "
 "calculations."
-msgstr "مقدار باقی مانده از این ورودی کالا بعد از اینکه بخشی از آن مصرف شد. مورد استفاده در سیستم FIFO"
+msgstr ""
+"مقدار باقی مانده از این ورودی کالا بعد از اینکه بخشی از آن مصرف شد. مورد "
+"استفاده در سیستم FIFO"
 
 #: apps/inventory/models/stock_entry.py:81
 msgid "Cost per unit at the time of entry."
@@ -300,11 +316,11 @@ msgstr "بله اگر مقدار باقی مانده صفر شده است"
 
 #: apps/inventory/models/stock_entry.py:102
 msgid "Stock Entry"
-msgstr "انبار روودی"
+msgstr "انبار کالا"
 
 #: apps/inventory/models/stock_entry.py:103
 msgid "Stock Entries"
-msgstr "انبار ورودی ها"
+msgstr "انبار کالاها"
 
 #: apps/inventory/models/stock_entry.py:121
 msgid "Remaining quantity cannot exceed total quantity."
@@ -362,82 +378,85 @@ msgstr "منو"
 msgid "Menus"
 msgstr "منوها"
 
-#: apps/purchasing/models/purchase_invoice.py:13
+#: apps/purchasing/admin/purchase_invoice.py:42
+#: apps/purchasing/models/purchase_invoice.py:55
+msgid "Invoice Final Cost"
+msgstr "کل هزینه فاکتور"
+
+#: apps/purchasing/admin/purchase_item.py:57
+#: apps/purchasing/models/purchase_item.py:34
+#, fuzzy
+#| msgid "Price"
+msgid "Unit Price"
+msgstr "قیمت"
+
+#: apps/purchasing/models/purchase_invoice.py:14
 msgid "Draft"
 msgstr "پیش نویس"
 
-#: apps/purchasing/models/purchase_invoice.py:14
+#: apps/purchasing/models/purchase_invoice.py:15
 msgid "Confirmed"
 msgstr "تأیید شده"
 
-#: apps/purchasing/models/purchase_invoice.py:15
+#: apps/purchasing/models/purchase_invoice.py:16
 msgid "Canceled"
 msgstr "لغو شده"
 
-#: apps/purchasing/models/purchase_invoice.py:16
+#: apps/purchasing/models/purchase_invoice.py:17
 msgid "Returned"
 msgstr "مرجوع شده"
 
-#: apps/purchasing/models/purchase_invoice.py:26
+#: apps/purchasing/models/purchase_invoice.py:27
 msgid "Issue Date"
 msgstr "تاریخ صدور"
 
-#: apps/purchasing/models/purchase_invoice.py:29
+#: apps/purchasing/models/purchase_invoice.py:30
 msgid "The date that invoice was issued."
 msgstr "تاریخی که فاکتور صادر شده است"
 
-#: apps/purchasing/models/purchase_invoice.py:34
+#: apps/purchasing/models/purchase_invoice.py:35
 #: apps/purchasing/models/supplier.py:11
 msgid "Supplier Name"
 msgstr "نام تأمین کننده"
 
-#: apps/purchasing/models/purchase_invoice.py:42
+#: apps/purchasing/models/purchase_invoice.py:43
 msgid "Discount Amount"
 msgstr "مقدار تخفیف"
 
-#: apps/purchasing/models/purchase_invoice.py:47
+#: apps/purchasing/models/purchase_invoice.py:48
 msgid ""
 "Total discount applied to the invoice. This does not affect item unit prices."
-msgstr "کل تخفیف اعمال شده در فاکتور. این مبلغ روی قیمت واحد آیتم ها تأثیر نمیگذارد"
+msgstr ""
+"کل تخفیف اعمال شده در فاکتور. این مبلغ روی قیمت واحد آیتم ها تأثیر نمیگذارد"
 
-#: apps/purchasing/models/purchase_invoice.py:54
-msgid "Invoice Final Cost"
-msgstr "کل هزینه فاکتور"
-
-#: apps/purchasing/models/purchase_invoice.py:57
+#: apps/purchasing/models/purchase_invoice.py:58
 msgid "Final cost after applying tax and discount"
 msgstr "کل هزینه فاکتور بعد از اعمال تخفیف و مالیات و هزینه های جانبی"
 
-#: apps/purchasing/models/purchase_invoice.py:65
+#: apps/purchasing/models/purchase_invoice.py:66
 msgid "Registered By"
 msgstr "ثبت شده توسط"
 
-#: apps/purchasing/models/purchase_invoice.py:69
+#: apps/purchasing/models/purchase_invoice.py:70
 msgid "Status"
 msgstr "وضعیت"
 
-#: apps/purchasing/models/purchase_invoice.py:75
+#: apps/purchasing/models/purchase_invoice.py:76
 #: apps/purchasing/models/purchase_item.py:16
 msgid "Purchase Invoice"
 msgstr "فاکتور خرید"
 
-#: apps/purchasing/models/purchase_invoice.py:76
+#: apps/purchasing/models/purchase_invoice.py:77
 msgid "Purchase Invoices"
 msgstr "فاکتور های خرید"
 
-#: apps/purchasing/models/purchase_invoice.py:87
+#: apps/purchasing/models/purchase_invoice.py:88
 msgid "Purchase date cannot be in the future"
 msgstr "تاریخ فاکتور نمیتواند برای آینده باشد"
 
 #: apps/purchasing/models/purchase_item.py:30
 msgid "Purchased quantity of the product"
 msgstr "مقدار کالا خریداری شده"
-
-#: apps/purchasing/models/purchase_item.py:34
-#, fuzzy
-#| msgid "Price"
-msgid "Unit Price"
-msgstr "قیمت"
 
 #: apps/purchasing/models/purchase_item.py:37
 msgid "Unit purchase price of the product (before tax or discount)"
@@ -611,10 +630,10 @@ msgstr "عکس"
 msgid "Images"
 msgstr "عکس ها"
 
-#: config/urls.py:12
+#: config/urls.py:13
 msgid "Chino Admin Panel"
 msgstr "پنل ادمین چینو"
 
-#: config/urls.py:13 config/urls.py:14
+#: config/urls.py:14 config/urls.py:15
 msgid "Chino Admin"
 msgstr "ادمین چینو"

@@ -1,3 +1,4 @@
+from ast import mod
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
@@ -15,6 +16,13 @@ class Recipe(TimeStampedModel):
 
     ALLOWED_RECIPE_PRODUCT_TYPES = ["PROCESSED", "MENU_ITEM", "CONSUMABLE"]
 
+    name = models.CharField(
+        verbose_name=_("Name"),
+        max_length=255,
+        unique=True,
+        db_index=True,
+        help_text=_("Unique name for the recipe."),
+    )
     product = models.ForeignKey(
         "inventory.Product",
         on_delete=models.CASCADE,
@@ -55,7 +63,7 @@ class Recipe(TimeStampedModel):
             )
 
     def __str__(self):
-        return f"{self.product.name} - {self.updated_at.strftime('%Y-%m-%d')}"
+        return f"{self.name}"
 
     class Meta:
         verbose_name = _("Recipe")
