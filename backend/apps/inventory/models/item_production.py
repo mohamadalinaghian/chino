@@ -1,4 +1,5 @@
 from django.db import models
+from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 from apps.utils.models import TimeStampedModel
 from django.contrib.auth import get_user_model
@@ -70,6 +71,7 @@ class ItemProduction(TimeStampedModel):
         get_user_model(),
         verbose_name=_("Creators"),
         related_name="produced_items",
+        limit_choices_to={"is_staff": True},
     )
     notes = models.CharField(
         verbose_name=_("Notes"),
@@ -77,6 +79,16 @@ class ItemProduction(TimeStampedModel):
         blank=True,
         null=True,
     )
+
+    def clean(self):
+        """
+        Validate that creators are staff members.
+        """
+        super().clean()
+        if self.recipe and self.recipe.product_id != self.product_id:
+            raise ValidationError(_("Selected recipe does not belong to this product."))
+        if not self.creators.filter(is_staff=True).all():
+            raise ValidationError(_("Creators must be staff members."))
 
     def __str__(self):
         return f"{self.product.name} - {self.output_quantity} @ {self.unit_cost}"

@@ -1,7 +1,9 @@
-from ast import mod
-from django.db import models
+from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+
+from ..services.recipe_component_normalizer import normalize_components
+
 from ...utils.models import TimeStampedModel
 
 
@@ -47,6 +49,13 @@ class Recipe(TimeStampedModel):
         blank=True,
         help_text=_("Time needed to prepare this recipe."),
     )
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+            # Only normalize if it's new or explicitly requested
+            normalize_components(self)
 
     def clean(self):
         """

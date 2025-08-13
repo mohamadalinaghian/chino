@@ -4,6 +4,7 @@ from ..models import ItemProduction
 from django.contrib.auth import get_user_model
 from jalali_date.admin import AdminJalaliDateWidget
 from jalali_date.admin import ModelAdminJalaliMixin
+from ..services import item_production_service
 
 
 class ItemProductionForm(forms.ModelForm):
@@ -45,7 +46,6 @@ class ItemProductionAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
         "updated_at",
     )
 
-    def formfield_for_manytomany(self, db_field, request, **kwargs):
-        if db_field.name == "creators":
-            kwargs["queryset"] = get_user_model().objects.filter(is_staff=True)
-        return super().formfield_for_manytomany(db_field, request, **kwargs)
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        item_production_service.process_production(form.instance)

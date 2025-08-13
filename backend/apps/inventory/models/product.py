@@ -50,6 +50,16 @@ class Product(models.Model):
         choices=CONSUME_TYPE,
         help_text=_("Indicates if the product consume by number or weight."),
     )
+    unit_weight = models.DecimalField(
+        _("Unit_weight"),
+        max_digits=10,
+        decimal_places=2,
+        help_text=_(
+            "In scenarios that product is countable but we need it's unit weight"
+        ),
+        null=True,
+        blank=True,
+    )
     track_inventory = models.BooleanField(
         verbose_name=_("Track Inventory"),
         default=False,
