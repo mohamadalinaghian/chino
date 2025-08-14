@@ -94,9 +94,9 @@ class StockEntry(TimeStampedModel):
         help_text=_("True if remaining_quantity is zero."),
     )
 
-    #  from apps.inventory.managers.stock_entry import StockEntryManager
+    from ..managers.stock_entry import StockEntryManager
 
-    # objects = StockEntryManager()
+    objects = StockEntryManager()
 
     class Meta:
         verbose_name = _("Stock Entry")
@@ -105,6 +105,7 @@ class StockEntry(TimeStampedModel):
         indexes = [
             models.Index(fields=["product", "movement_type"]),
             models.Index(fields=["product", "created_at"]),
+            models.Index(fields=["is_depleted", "created_at", "pk"]),
         ]
 
     def __str__(self):
