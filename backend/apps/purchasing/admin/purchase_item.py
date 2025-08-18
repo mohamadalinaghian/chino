@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib import admin
+from django.http import HttpRequest
 from ..models import PurchaseItem
 from jalali_date.widgets import AdminJalaliDateWidget
 from jalali_date.admin import ModelAdminJalaliMixin, TabularInlineJalaliMixin
@@ -54,7 +55,12 @@ class PurchaseItemAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
     def formatted_unit_price(self, obj):
         return format_number(obj.unit_price)
 
-    formatted_unit_price.short_description = _("Unit Price") # pyright: ignore[reportFunctionMemberAccess]
+    formatted_unit_price.short_description = _(
+        "Unit Price"
+    )
+
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        return False
 
     search_fields = ("product__name", "purchase_invoice__id")
     list_filter = ("expiry_date",)

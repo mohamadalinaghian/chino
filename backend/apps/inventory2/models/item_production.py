@@ -43,28 +43,32 @@ class ItemProduction(TimeStampedModel):
         verbose_name=_("Input Quantity"),
         help_text=_("Total quantity of input materials (before production loss)"),
         max_digits=10,
-        decimal_places=3,
+        decimal_places=2,
     )
 
     output_quantity = models.DecimalField(
         verbose_name=_("Output Quantity"),
         help_text=_("Total quantity of product obtained after production"),
         max_digits=10,
-        decimal_places=3,
+        decimal_places=2,
     )
 
     unit_cost = models.DecimalField(
         verbose_name=_("Unit Cost"),
         help_text=_("Cost per unit of finished product"),
-        max_digits=12,
-        decimal_places=4,
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
     )
 
     total_cost = models.DecimalField(
         verbose_name=_("Total Cost"),
         help_text=_("Total cost of this production batch"),
-        max_digits=14,
-        decimal_places=4,
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
     )
 
     creators = models.ManyToManyField(
@@ -87,8 +91,6 @@ class ItemProduction(TimeStampedModel):
         super().clean()
         if self.recipe and self.recipe.product_id != self.product_id:
             raise ValidationError(_("Selected recipe does not belong to this product."))
-        if not self.creators.filter(is_staff=True).all():
-            raise ValidationError(_("Creators must be staff members."))
 
     def __str__(self):
         return f"{self.product.name} - {self.output_quantity} @ {self.unit_cost}"

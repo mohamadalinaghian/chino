@@ -1,5 +1,5 @@
 from django.contrib import admin
-from apps.inventory.models import Product
+from apps.inventory2.models import Product
 from .recipe import RecipeInline
 import nested_admin
 

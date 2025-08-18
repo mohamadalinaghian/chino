@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
+
+from ...utils.number_separator import format_number
 from ..models import StockEntry
 from jalali_date.widgets import AdminJalaliDateWidget
 from jalali_date.admin import ModelAdminJalaliMixin
@@ -28,31 +30,16 @@ class StockEntryAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
     list_display = (
         "product",
         "movement_type",
-        "formatted_quantity",
-        "formatted_remaining_quantity",
-        "formatted_unit_cost",
+        "initial_quantity",
+        "remaining_quantity",
+        "unit_cost",
         "is_depleted",
         "created_at",
         "source_document",
     )
 
-    # formatted columns must return str
     def formatted_quantity(self, obj):
-        return format_number(obj.quantity)
-
-    formatted_quantity.short_description = _("Quantity")
-
-    def formatted_remaining_quantity(self, obj):
-        return format_number(obj.remaining_quantity)
-
-    formatted_remaining_quantity.short_description = _("Remaining Quantity")
-    formatted_remaining_quantity.admin_order_field = "remaining_quantity"
-
-    def formatted_unit_cost(self, obj):
-        return format_number(obj.unit_cost)
-
-    formatted_unit_cost.short_description = _("Unit Cost")
-    formatted_unit_cost.admin_order_field = "unit_cost"
+        return format_number(obj.initial_quantity)
 
     # source_document as you already had
     def source_document(self, obj):

@@ -66,6 +66,7 @@ class RecipeInline(nested_admin.NestedTabularInline):
     model = Recipe
     extra = 0
     fields = (
+        "name",
         "instruction",
         "prepared_time",
     )

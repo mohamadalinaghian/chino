@@ -20,7 +20,7 @@ def create_invoice_with_items(invoice_data: dict, items_data: list):
         PurchaseInvoice instance.
     """
     from apps.purchasing.models import PurchaseInvoice, PurchaseItem
-    from apps.inventory.models import Product, StockEntry
+    from apps.inventory2.models import Product, StockEntry
 
     with transaction.atomic():
         invoice = PurchaseInvoice.objects.create(**invoice_data)

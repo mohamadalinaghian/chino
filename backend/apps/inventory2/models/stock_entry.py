@@ -53,10 +53,10 @@ class StockEntry(TimeStampedModel):
         db_index=True,
     )
 
-    quantity = models.DecimalField(
-        verbose_name=_("Quantity"),
+    initial_quantity = models.DecimalField(
+        verbose_name=_("Initial Quantity"),
         max_digits=10,
-        decimal_places=3,
+        decimal_places=2,
         help_text=_(
             "Amount moved in or out of stock. Positive for IN, negative for OUT."
         ),
@@ -65,7 +65,7 @@ class StockEntry(TimeStampedModel):
     remaining_quantity = models.DecimalField(
         verbose_name=_("Remaining Quantity"),
         max_digits=10,
-        decimal_places=3,
+        decimal_places=2,
         help_text=_(
             "Remaining amount from this entry after partial usage. "
             "Used for FIFO calculations."
@@ -74,8 +74,8 @@ class StockEntry(TimeStampedModel):
 
     unit_cost = models.DecimalField(
         verbose_name=_("Unit Cost"),
-        max_digits=12,
-        decimal_places=4,
+        max_digits=10,
+        decimal_places=2,
         null=True,
         blank=True,
         help_text=_("Cost per unit at the time of entry."),
@@ -104,12 +104,11 @@ class StockEntry(TimeStampedModel):
         ordering = ("-created_at",)  # Newest entries first
         indexes = [
             models.Index(fields=["product", "movement_type"]),
-            models.Index(fields=["product", "created_at"]),
-            models.Index(fields=["is_depleted", "created_at", "pk"]),
+            models.Index(fields=["is_depleted", "product", "created_at"]),
         ]
 
     def __str__(self):
-        return f"{self.product.name} - {self.movement_type} - {self.quantity}"
+        return f"{self.product.name} - {self.movement_type} - {self.initial_quantity}"
 
     def clean(self):
         """
@@ -118,7 +117,7 @@ class StockEntry(TimeStampedModel):
         """
         from django.core.exceptions import ValidationError
 
-        if abs(self.remaining_quantity) > abs(self.quantity):
+        if abs(self.remaining_quantity) > abs(self.initial_quantity):
             raise ValidationError(_("Remaining quantity cannot exceed total quantity."))
 
         # Ensure quantity sign convention
@@ -130,7 +129,7 @@ class StockEntry(TimeStampedModel):
                 self.MovementType.RETURN_IN,
                 self.MovementType.ADJUSTMENT_IN,
             }
-            and self.quantity < 0
+            and self.initial_quantity < 0
         ):
             raise ValidationError(_("IN movements must have positive quantity."))
 
@@ -142,14 +141,14 @@ class StockEntry(TimeStampedModel):
                 self.MovementType.RETURN_OUT,
                 self.MovementType.ADJUSTMENT_OUT,
             }
-            and self.quantity > 0
+            and self.initial_quantity > 0
         ):
             raise ValidationError(_("OUT movements must have negative quantity."))
 
-        def save(self, *args, **kwargs):
-            # keep is_depleted consistent with remaining_quantity
-            try:
-                self.is_depleted = Decimal(self.remaining_quantity) <= Decimal("0")
-            except Exception:
-                self.is_depleted = False
-            super().save(*args, **kwargs)
+    def save(self, *args, **kwargs):
+        # keep is_depleted consistent with remaining_quantity
+        try:
+            self.is_depleted = Decimal(self.remaining_quantity) <= Decimal("0")
+        except Exception:
+            self.is_depleted = False
+        super().save(*args, **kwargs)

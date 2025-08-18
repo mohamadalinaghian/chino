@@ -23,11 +23,7 @@ def format_number(value) -> str:
     if "." in s:
         s = s.rstrip("0").rstrip(".")
     # split integer and fraction
-    if "." in s:
-        int_part, frac_part = s.split(".", 1)
-    else:
-        int_part, frac_part = s, None
-
+    int_part, frac_part = s.split(".", 1) if "." in s else (s, None)
     # add thousands separator to integer part (english commas)
     try:
         int_part_with_sep = "{:,}".format(int(int_part))

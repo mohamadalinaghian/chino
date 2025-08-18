@@ -15,9 +15,5 @@ def calculate_total_output_weight(recipe):
         product = comp.component
         qty = comp.quantity
 
-        if product.is_countable:
-            total_weight += qty * product.unit_weight
-        else:
-            total_weight += qty
-
+        total_weight += qty * product.unit_weight if product.is_countable else qty
     return total_weight

@@ -17,7 +17,7 @@ from django.utils.timezone import now
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Sum, F, DecimalField
 from ...models import PurchaseItem, PurchaseInvoice
-from ....inventory.models import StockEntry
+from ....inventory2.models import StockEntry
 
 
 @receiver(post_save, sender=PurchaseItem)
