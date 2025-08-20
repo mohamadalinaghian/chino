@@ -5,13 +5,14 @@ services:
     env_file: .env.dev
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    expose:
-      - "5432"
+    ports:
+      - "5432:5432"
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: dev
     command: python manage.py runserver 0.0.0.0:8000
     env_file: .env.dev
     volumes:
@@ -22,7 +23,6 @@ services:
       - "8000:8000"
     depends_on:
       - db
-    restart: unless-stopped
 
   frontend:
     build:
@@ -31,12 +31,11 @@ services:
     env_file: .env.dev
     volumes:
       - ./frontend/nextjs_code:/app
-      - /app/node_modules
-    expose:
-      - "3000"
+      - node_modules_cach:/app/node_modules
+    ports:
+      - "3000:3000"
     depends_on:
       - backend
-    restart: unless-stopped
 
   nginx:
     build:
@@ -51,9 +50,9 @@ services:
     depends_on:
       - backend
       - frontend
-    restart: unless-stopped
 
 volumes:
   postgres_data:
   static_volume:
   media_volume:
+  node_modules_cach:

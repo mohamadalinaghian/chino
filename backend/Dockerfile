@@ -1,55 +1,70 @@
 # -----------------------------
-# Stage 1: Build wheel cache
+# Base image
 # -----------------------------
-FROM python:3.13-slim AS builder
-
-# Install build tools for any packages that need compilation
-RUN apt-get update \
-    && apt-get install --no-install-recommends -y \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-COPY requirements.txt .
-
-# Create a virtualenv and install dependencies into it
-RUN python -m venv /venv \
-    && /venv/bin/pip install --upgrade pip setuptools wheel \
-    && /venv/bin/pip install -r requirements.txt \
-    && chown -R 1000:1000 /venv
-
-
-# -----------------------------
-# Stage 2: Runtime
-# -----------------------------
-FROM python:3.13-slim AS runtime
-
-# Create a non-root user
-RUN useradd --system --uid 1000 --no-create-home --shell /usr/sbin/nologin python \
-    && apt-get update \
-    && apt-get install --no-install-recommends -y gettext \
-    && rm -rf /var/lib/apt/lists/*
+FROM python:3.13-slim AS base
 
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH="/app" \
-    PATH="/venv/bin:$PATH"
+  PYTHONDONTWRITEBYTECODE=1 \
+  PATH="/venv/bin:$PATH"
 
 WORKDIR /app
 
-# Copy only the venv from the builder
-COPY --from=builder /venv /venv
+# Dependencies needed for both dev/prod
+RUN apt-get update && apt-get install --no-install-recommends -y \
+  build-essential \
+  libjpeg-dev \
+  zlib1g-dev \
+  libpng-dev \
+  gettext \
+  && rm -rf /var/lib/apt/lists/*
 
-# Copy application code
-COPY --chown=python:python . /app/
+# Create venv
+RUN python -m venv /venv
 
-# Prepare runtime dirs
+COPY requirements /requirements
+
+# -----------------------------
+# Install production deps
+# -----------------------------
+FROM base AS deps-prod
+RUN /venv/bin/pip install --upgrade pip setuptools wheel \
+  && /venv/bin/pip install -r /requirements/prod.txt
+
+# -----------------------------
+# Install dev deps
+# -----------------------------
+FROM base AS deps-dev
+RUN /venv/bin/pip install --upgrade pip setuptools wheel \
+  && /venv/bin/pip install -r /requirements/dev.txt
+
+# -----------------------------
+# Runtime image (prod)
+# -----------------------------
+FROM base AS prod
+
+COPY --from=deps-prod /venv /venv
+COPY . /app
+
 RUN mkdir -p /app/staticfiles /app/media \
-    && chown -R python:python /app/staticfiles /app/media
+  && chown -R 1000:1000 /app/staticfiles /app/media
 
-USER python
+USER 1000
 
 EXPOSE 8000
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
 
-CMD ["gunicorn", "your_project.wsgi:application", "--bind", "0.0.0.0:8000"]
+# -----------------------------
+# Runtime image (dev)
+# -----------------------------
+FROM base AS dev
+
+COPY --from=deps-dev /venv /venv
+COPY . /app
+
+RUN mkdir -p /app/staticfiles /app/media \
+  && chown -R 1000:1000 /app/staticfiles /app/media
+
+USER 1000
+
+EXPOSE 8000
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

@@ -24,6 +24,7 @@ To store products expiry date and managing them.
 ## Rules
 
 - Provide a query set method to retrieve items expiring within N days
+- After expiring record must deleted
 
 ---
 

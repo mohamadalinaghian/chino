@@ -1,5 +1,16 @@
 # Product
 
+<!--toc:start-->
+
+- [Product](#product)
+  - [Purpose](#purpose)
+  - [Example](#example) - [Raw Material](#raw-material) - [Processed item](#processed-item) - [Sell item](#sell-item) - [Consumable](#consumable)
+  - [Fields](#fields)
+  - [Indexes](#indexes)
+  - [Rules](#rules)
+  - [Usage](#usage) - [Fields](#fields) - [Product 1](#product-1) - [Product 2](#product-2) - [Product 3](#product-3) - [Product 4](#product-4)
+  <!--toc:end-->
+
 ## Purpose
 
 Store all the metadata about any kind of product and goods that use in café.
@@ -34,6 +45,7 @@ Store all the metadata about any kind of product and goods that use in café.
 - countable
 - type
 - stock_traceable
+- is_active
 
 ---
 
@@ -41,6 +53,7 @@ Store all the metadata about any kind of product and goods that use in café.
 
 - name
 - type
+- is_active (partial index on is_active=True)
 
 ---
 
@@ -54,7 +67,8 @@ Store all the metadata about any kind of product and goods that use in café.
 
 - Adding metadata about:
   - Milk: expiry traceable, weightily and is a raw material
-  - Vanilla milk: a processed item that measure with weight and we need to trace its expiry duration
+  - Vanilla milk: a processed item that measure with weight and we need to trace
+    its expiry duration
   - espresso: a menu item for sell
   - Toilet paper: is a consumable product that maybe i can trace its stock
 
@@ -68,6 +82,7 @@ Store all the metadata about any kind of product and goods that use in café.
     - expiry_traceable: True
     - stock_traceable: True
     - countable: False
+    - is_active: True
 
 ---
 

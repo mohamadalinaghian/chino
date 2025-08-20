@@ -1,0 +1,12 @@
+{
+  "name": "Python DevContainer",
+  "dockerFile": "../backend/Dockerfile",
+  "context": "../backend/",
+  "remoteUser": "python",
+  "settings": {
+    "python.defaultInterpreterPath": "/usr/local/bin/python"
+  },
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace,type=bind"
+  ]
+}

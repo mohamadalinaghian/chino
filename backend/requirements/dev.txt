@@ -1,0 +1,9 @@
+-r prod.txt
+
+pytest
+pytest-django
+factory_boy
+coverage
+black
+ruff
+pre-commit

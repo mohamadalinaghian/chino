@@ -1,0 +1,14 @@
+asgiref
+Django
+django-environ
+django-jalali-date
+djangorestframework
+jalali_core
+jdatetime
+psycopg2-binary
+sqlparse
+django-ordered-model
+pillow
+python-slugify
+gunicorn
+packaging
