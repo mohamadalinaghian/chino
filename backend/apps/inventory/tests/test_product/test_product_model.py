@@ -1,6 +1,7 @@
 import pytest
 from apps.inventory.models import Product
 from django.core.exceptions import ValidationError
+from django.db.utils import IntegrityError
 
 from ..factories import ProductFactory
 
@@ -35,3 +36,18 @@ class TestProduct:
         assert any(
             uq.name == "uq_product_name_type" for uq in Product._meta.constraints
         )
+
+    def test_error_on_nameless_product(self):
+        p = ProductFactory.build()
+        p.name = None
+
+        with pytest.raises(ValidationError):
+            p.full_clean()
+
+    def test_error_on_duplicate_product(self):
+
+        name = "test_error"
+        ProductFactory(name=name)
+
+        with pytest.raises(IntegrityError):
+            ProductFactory(name=name)

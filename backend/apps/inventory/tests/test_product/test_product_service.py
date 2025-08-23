@@ -31,3 +31,24 @@ class TestProductService:
         p.refresh_from_db()
 
         assert p.is_active is False
+
+        p, _ = ProductService.get_or_create_product(**product)
+
+        assert p.is_active is False
+
+    def test_error_on_create_without_name(self, product):
+        product = product.pop("name")
+
+        with pytest.raises(TypeError):
+            ProductService.get_or_create_product(**product)
+
+    def test_error_on_create_without_type(self, product):
+        product = product.pop("type")
+
+        with pytest.raises(TypeError):
+            ProductService.get_or_create_product(**product)
+
+    def test_error_on_get_nonexisted_id(self, product):
+        result = ProductService.deactivate_product(1)
+
+        assert result == 0
