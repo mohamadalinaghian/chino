@@ -1,6 +1,9 @@
 from apps.utils.models import TimeStampedModel
-from django.contrib.auth.models import (AbstractBaseUser, BaseUserManager,
-                                        PermissionsMixin)
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    BaseUserManager,
+    PermissionsMixin,
+)
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
