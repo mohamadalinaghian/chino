@@ -9,22 +9,50 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Image',
+            name="Image",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=50, unique=True, verbose_name='Title')),
-                ('alt_text', models.CharField(blank=True, max_length=50, verbose_name='Alt Text')),
-                ('image', models.ImageField(upload_to=apps.utils.upload_path.image_path, verbose_name='Image')),
-                ('created_at', models.DateTimeField(default=django.utils.timezone.now, editable=False, verbose_name='Create Date')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "title",
+                    models.CharField(max_length=50, unique=True, verbose_name="Title"),
+                ),
+                (
+                    "alt_text",
+                    models.CharField(
+                        blank=True, max_length=50, verbose_name="Alt Text"
+                    ),
+                ),
+                (
+                    "image",
+                    models.ImageField(
+                        upload_to=apps.utils.upload_path.image_path,
+                        verbose_name="Image",
+                    ),
+                ),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now,
+                        editable=False,
+                        verbose_name="Create Date",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Image',
-                'verbose_name_plural': 'Images',
+                "verbose_name": "Image",
+                "verbose_name_plural": "Images",
             },
         ),
     ]

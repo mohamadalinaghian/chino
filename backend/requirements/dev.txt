@@ -2,8 +2,10 @@
 
 pytest
 pytest-django
+pytest-cov
 factory_boy
 coverage
 black
 ruff
 pre-commit
+freezegun

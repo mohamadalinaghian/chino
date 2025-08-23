@@ -49,8 +49,8 @@ class TestMenu:
 
     def test_ordering_within_category(self):
         cat = MenuCategory.objects.create(title="Test")
-        m1 = Menu.objects.create(title="A", category=cat)
-        m2 = Menu.objects.create(title="B", category=cat)
+        Menu.objects.create(title="A", category=cat)
+        Menu.objects.create(title="B", category=cat)
         m3 = Menu.objects.create(title="C", category=cat)
 
         m3.up()

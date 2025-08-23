@@ -12,5 +12,5 @@ INSTALLED_APPS = [
     "apps.user",
     "ordered_model",
     "apps.utils",
-    # "apps.inventory",
+    "apps.inventory",
 ]

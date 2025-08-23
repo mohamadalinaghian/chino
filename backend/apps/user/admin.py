@@ -2,7 +2,6 @@ from apps.user.models import Account, Profile
 from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from jalali_date.admin import ModelAdminJalaliMixin
 from jalali_date.widgets import AdminJalaliDateWidget

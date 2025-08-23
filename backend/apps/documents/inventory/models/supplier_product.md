@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This model defines the many-to-many relationship between Supplier and Product.  
+This model defines the many-to-many relationship between Supplier and Product.
 It stores supplier-details for each product, such as brand and last recorded purchase price.
 
 ---

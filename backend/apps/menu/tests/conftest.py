@@ -1,10 +1,11 @@
+import io
+
 import pytest
-from apps.menu.models import Menu, MenuCategory
+from apps.menu.models import MenuCategory
 from apps.utils.models import Image
 from django.core.files.uploadedfile import SimpleUploadedFile
-from rest_framework.test import APIClient
 from PIL import Image as PILImage
-import io
+from rest_framework.test import APIClient
 
 
 @pytest.fixture

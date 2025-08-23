@@ -36,8 +36,8 @@ export default async function MenuPage() {
 	return (
 		<main className="container mx-auto px-4 py-8">
 			<h1 className="text-2xl text-center font-bold mb-8">Cafe Chino Menu</h1>
-			{/* 
-        Pass data to client component 
+			{/*
+        Pass data to client component
         Even if fetch fails, empty arrays will be passed
         Client component should handle empty state appropriately
       */}

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Manages products, suppliers, invoices, stock, recipes, production, and reports.  
+Manages products, suppliers, invoices, stock, recipes, production, and reports.
 Keeps track of product availability, expiry dates, purchase history, and production costs.
 
 ---

@@ -1,12 +1,25 @@
 {
-  "name": "Python DevContainer",
-  "dockerFile": "../backend/Dockerfile",
-  "context": "../backend/",
-  "remoteUser": "python",
-  "settings": {
-    "python.defaultInterpreterPath": "/usr/local/bin/python"
-  },
-  "mounts": [
-    "source=${localWorkspaceFolder},target=/workspace,type=bind"
-  ]
+	"name": "Chino Backend Dev",
+	"dockerComposeFile": "../compose.dev.yml",
+	"service": "backend",
+	"workspaceFolder": "/app",
+	"shutdownAction": "stopCompose",
+
+	"mounts": [
+		"source=${localWorkspaceFolder}/backend,target=/app,type=bind,consistency=cached"
+	],
+
+	"settings": {
+		"python.defaultInterpreterPath": "/usr/local/bin/python",
+		"editor.formatOnSave": true
+	},
+
+	"extensions": [
+		"ms-python.python",
+		"ms-python.vscode-pylance",
+		"batisteo.vscode-django",
+		"charliermarsh.ruff"
+	],
+
+	"postCreateCommand": "pip install -r requirements/dev.txt"
 }

@@ -17,9 +17,10 @@ def test_attach_extra_image_to_menu(menu_item, image):
 
 @pytest.fixture
 def image_file():
+    import io
+
     from django.core.files.uploadedfile import SimpleUploadedFile
     from PIL import Image as PILImage
-    import io
 
     img = PILImage.new("RGB", (100, 100), color="blue")
     buf = io.BytesIO()

@@ -1,10 +1,12 @@
+from io import BytesIO
+
 from apps.utils.upload_path import image_path
+from django.core.files.base import ContentFile
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from io import BytesIO
-from PIL import Image as PILImage, UnidentifiedImageError
-from django.core.files.base import ContentFile
+from PIL import Image as PILImage
+from PIL import UnidentifiedImageError
 
 
 class TimeStampedModel(models.Model):

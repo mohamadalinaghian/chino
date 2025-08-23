@@ -2,11 +2,10 @@
 
 ## 0. Preflight
 
-- [ ] init testing stack: pytest, pytest-django, factory_boy, coverage
-- [ ] add `make test`, `make lint`, `pre-commit`
-- [ ] add `apps/<app>/services/__init__.py` + `tests/` layout
-- [ ] CI minimal (run tests + flake8/ruff + isort)
-- [ ] sample data fixtures (`fixtures/minimal.json`)
+- [x] init testing stack: pytest, pytest-django, factory_boy, coverage
+- [x] add `make test`, `make lint`, `pre-commit`
+- [x] add `apps/<app>/services/__init__.py` + `tests/` layout
+- [x] CI minimal (run tests + flake8/ruff + isort)
 
 ---
 
@@ -15,10 +14,11 @@
 ### 1.1 Product
 
 - [x] model + migration
-- [ ] admin
-- [ ] factory `ProductFactory`
+- [x] factory `ProductFactory`
 - [ ] service: `product.get_or_create_sku`, `product.validate_unit`
 - [ ] tests: model (fields, clean), service
+- [ ] admin
+- [ ] sample data fixtures (`fixtures/minimal.json`)
 
 ### 1.2 Supplier
 
@@ -27,6 +27,7 @@
 - [ ] factory `SupplierFactory`
 - [ ] service: `supplier.upsert`
 - [ ] tests: model, service
+- [ ] sample data fixtures (`fixtures/minimal.json`)
 
 ---
 
@@ -39,6 +40,7 @@
 - [ ] factory `SupplierProductFactory`
 - [ ] service: price policy, default pack size
 - [ ] tests: model, service
+- [ ] sample data fixtures (`fixtures/minimal.json`)
 
 ### 2.2 PurchaseInvoice (depends: Supplier)
 
@@ -47,6 +49,7 @@
 - [ ] factory `PurchaseInvoiceFactory`
 - [ ] service: create + status transitions (draft→posted)
 - [ ] tests: model, service
+- [ ] sample data fixtures (`fixtures/minimal.json`)
 
 ### 2.3 PurchaseItem (depends: PurchaseInvoice, Product/SupplierProduct)
 
@@ -55,6 +58,7 @@
 - [ ] factory `PurchaseItemFactory`
 - [ ] service: item validation, tax/discount calc
 - [ ] tests: model, service
+- [ ] sample data fixtures (`fixtures/minimal.json`)
 
 ### 2.4 ExpiryPurchaseItem (depends: PurchaseItem)
 
@@ -63,11 +67,13 @@
 - [ ] factory `ExpiryPurchaseItemFactory`
 - [ ] service: auto-split by expiry batch
 - [ ] tests: model, service
+- [ ] sample data fixtures (`fixtures/minimal.json`)
 
 ### 2.x Purchasing integration
 
 - [ ] integration test: invoice posting creates FIFO stock entries (reserved)
 - [ ] fixtures for typical invoices
+- [ ] sample data fixtures (`fixtures/minimal.json`)
 
 ---
 

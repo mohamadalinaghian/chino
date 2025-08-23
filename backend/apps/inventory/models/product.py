@@ -26,12 +26,14 @@ class Product(models.Model):
 
     # Fields
     name = models.CharField(_("Name"), max_length=128, db_index=True)
-    expiry_traceable = models.BooleanField(_("Expiry Traceable"), choices=BOOLEANTEXT)
-    countable = models.BooleanField(_("Countable"), choices=BOOLEANTEXT)
+    is_expiry_traceable = models.BooleanField(
+        _("Expiry Traceable"), choices=BOOLEANTEXT
+    )
+    is_countable = models.BooleanField(_("Countable"), choices=BOOLEANTEXT)
     type = models.CharField(
         _("Product Type"), max_length=15, choices=ProductType.choices, db_index=True
     )
-    stock_traceable = models.BooleanField(_("Stock Traceable"), choices=BOOLEANTEXT)
+    is_stock_traceable = models.BooleanField(_("Stock Traceable"), choices=BOOLEANTEXT)
     is_active = models.BooleanField(_("Is Active Product"), choices=BOOLEANTEXT)
     note = models.CharField(_("Note"), max_length=128, null=True, blank=True)
 
@@ -41,11 +43,20 @@ class Product(models.Model):
 
     # Meta
     class Meta:
+        app_label = "inventory"
         verbose_name = _("Product")
         verbose_name_plural = _("Products")
         ordering = ("type",)
-        indexes = models.Index(
-            fields=("is_active",),
-            name="is_active_idx",
-            condition=models.Q(is_active=True),
+        indexes = (
+            models.Index(
+                fields=("is_active",),
+                name="is_active_idx",
+                condition=models.Q(is_active=True),
+            ),
+        )
+        constraints = (
+            models.UniqueConstraint(
+                fields=("name", "type"),
+                name="uq_product_name_type",
+            ),
         )

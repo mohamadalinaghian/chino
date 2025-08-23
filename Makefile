@@ -38,3 +38,12 @@ dbshell:
 
 log:
 	$(PODMAN) logs
+
+test_backend:
+	$(PODMAN) exec backend pytest
+
+lint_backend:
+	$(PODMAN) exec backend ruff check .
+
+format_backend:
+	$(PODMAN) exec backend ruff format .

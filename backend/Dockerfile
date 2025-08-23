@@ -46,7 +46,7 @@ COPY --from=deps-prod /venv /venv
 COPY . /app
 
 RUN mkdir -p /app/staticfiles /app/media \
-  && chown -R 1000:1000 /app/staticfiles /app/media
+  && chown -R 1000:1000 /app
 
 USER 1000
 
@@ -62,9 +62,9 @@ COPY --from=deps-dev /venv /venv
 COPY . /app
 
 RUN mkdir -p /app/staticfiles /app/media \
-  && chown -R 1000:1000 /app/staticfiles /app/media
+  && chown -R 1000:1000 /app
 
-USER 1000
+# USER 1000
 
 EXPOSE 8000
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

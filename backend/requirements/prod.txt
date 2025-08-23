@@ -12,3 +12,5 @@ pillow
 python-slugify
 gunicorn
 packaging
+django-nested-admin
+setuptools
