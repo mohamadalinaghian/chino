@@ -15,19 +15,18 @@
 
 - [x] model + migration
 - [x] factory `ProductFactory`
-- [ ] service: `product.get_or_create_sku`, `product.validate_unit`
-- [ ] tests: model (fields, clean), service
-- [ ] admin
-- [ ] sample data fixtures (`fixtures/minimal.json`)
+- [x] service: `product.get_or_create`, `product.diactivate_product`
+- [x] tests: model (fields, clean), service
+- [x] admin
 
 ### 1.2 Supplier
 
-- [ ] model + migration
-- [ ] admin
-- [ ] factory `SupplierFactory`
-- [ ] service: `supplier.upsert`
-- [ ] tests: model, service
-- [ ] sample data fixtures (`fixtures/minimal.json`)
+- [x] model
+- [x] SupplierProduct model + migration
+- [x] inline admin for SupplierProduct
+- [x] admin
+- [x] factory `SupplierFactory`
+- [x] tests: model
 
 ---
 
@@ -35,7 +34,6 @@
 
 ### 2.1 SupplierProduct (depends: Product, Supplier)
 
-- [ ] model + migration
 - [ ] admin
 - [ ] factory `SupplierProductFactory`
 - [ ] service: price policy, default pack size
@@ -185,3 +183,5 @@
 - [ ] unit tests ≥ 90% for service, key branches covered
 - [ ] integration tests for the group
 - [ ] docs (README in app + docstrings on services)
+
+<<<=== FILE SEPARATOR ===>>>
