@@ -1,3 +1,5 @@
+## /home/mohamad/chino_project/backend/apps/documents/inventory/roadmap.md
+
 # Roadmap (priority-based, dependency-first)
 
 ## 0. Preflight
@@ -35,19 +37,15 @@
 ### 2.1 SupplierProduct (depends: Product, Supplier)
 
 - [x] admin
-- [ ] factory `SupplierProductFactory`
-- [ ] service: price policy, default pack size
-- [ ] tests: model, service
-- [ ] sample data fixtures (`fixtures/minimal.json`)
+- [x] factory `SupplierProductFactory`
+- [x] tests: model
 
 ### 2.2 PurchaseInvoice (depends: Supplier)
 
-- [ ] model + migration
-- [ ] admin
-- [ ] factory `PurchaseInvoiceFactory`
-- [ ] service: create + status transitions (draft→posted)
-- [ ] tests: model, service
-- [ ] sample data fixtures (`fixtures/minimal.json`)
+- [x] model + migration
+- [x] admin
+- [x] factory `PurchaseInvoiceFactory`
+- [x] tests: model, service
 
 ### 2.3 PurchaseItem (depends: PurchaseInvoice, Product/SupplierProduct)
 
@@ -183,5 +181,7 @@
 - [ ] unit tests ≥ 90% for service, key branches covered
 - [ ] integration tests for the group
 - [ ] docs (README in app + docstrings on services)
+
+<<<=== FILE SEPARATOR ===>>>
 
 <<<=== FILE SEPARATOR ===>>>

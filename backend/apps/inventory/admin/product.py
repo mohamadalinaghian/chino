@@ -10,6 +10,7 @@ class ProductAdmin(admin.ModelAdmin):
         "name",
         "type",
     )
+    list_editable = ("type",)
     list_filter = (
         "type",
         "is_countable",

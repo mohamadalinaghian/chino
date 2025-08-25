@@ -10,6 +10,7 @@ class SupplierAdmin(admin.ModelAdmin):
         "company_name",
         "info",
     )
+    list_editable = ("info",)
     search_fields = ("company_name",)
     list_filter = (("products", admin.RelatedOnlyFieldListFilter),)
     inlines = (SupplierProductInline,)

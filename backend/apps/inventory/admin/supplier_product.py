@@ -14,6 +14,8 @@ class SupplierProductInline(admin.TabularInline):
 
 @admin.register(SupplierProduct)
 class SupplierProductAdmin(admin.ModelAdmin):
+    list_display = ("supplier", "product", "brand", "last_purchase_price")
+    list_editable = ("brand",)
     list_filter = (
         "supplier",
         "product",
