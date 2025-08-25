@@ -34,7 +34,7 @@
 
 ### 2.1 SupplierProduct (depends: Product, Supplier)
 
-- [ ] admin
+- [x] admin
 - [ ] factory `SupplierProductFactory`
 - [ ] service: price policy, default pack size
 - [ ] tests: model, service
