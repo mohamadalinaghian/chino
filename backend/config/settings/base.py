@@ -38,3 +38,7 @@ else:
     assert re.search(r"[A-Z]", SECRET_KEY)
     assert re.search(r"[0-9]", SECRET_KEY)
     assert len(SECRET_KEY) >= 50
+
+
+# Business Logics
+PURCHASE_VALID_CHANGE_RATIO = env("PURCHASE_VALID_CHANGE_RATIO", default="0.10")

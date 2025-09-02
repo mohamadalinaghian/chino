@@ -9,6 +9,7 @@ class PurchaseInvoiceFactory(factory.django.DjangoModelFactory):
 
     issue_date = factory.LazyFunction(timezone.now)
     staff = factory.SubFactory(
-        "apps.user.tests.factories.AccountFactory", is_staff=True
+        "apps.user.tests.factories.AccountFactory",
+        is_staff=True,
     )
     supplier = None

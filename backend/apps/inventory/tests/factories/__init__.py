@@ -1,5 +1,6 @@
 from .product import ProductFactory
 from .purchase_invoice import PurchaseInvoiceFactory
+from .purchase_item import PurchaseItemFactory
 from .supplier import SupplierFactory
 from .supplier_product import SupplierProductFactory
 
@@ -8,4 +9,5 @@ __all__ = (
     "SupplierFactory",
     "SupplierProductFactory",
     "PurchaseInvoiceFactory",
+    "PurchaseItemFactory",
 )

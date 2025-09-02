@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -36,6 +38,9 @@ class Product(models.Model):
     is_stock_traceable = models.BooleanField(_("Stock Traceable"), choices=BOOLEANTEXT)
     is_active = models.BooleanField(_("Is Active Product"), choices=BOOLEANTEXT)
     note = models.CharField(_("Note"), max_length=128, null=True, blank=True)
+    last_purchased_price = models.DecimalField(
+        _("Last price"), max_digits=10, decimal_places=2, default=Decimal("0")
+    )
 
     # Methods
     def __str__(self):

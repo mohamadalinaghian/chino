@@ -13,3 +13,6 @@ class ProductFactory(factory.django.DjangoModelFactory):
     is_countable = False
     is_expiry_traceable = False
     note = None
+    last_purchased_price = factory.Faker(
+        "pydecimal", left_digits=5, right_digits=2, positive=True
+    )

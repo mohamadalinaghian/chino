@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils import timezone
+from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
+from persiantools.jdatetime import JalaliDate
 
 
 class PurchaseInvoice(models.Model):
@@ -29,9 +31,21 @@ class PurchaseInvoice(models.Model):
         blank=True,
     )
 
+    # Property
+    @cached_property
+    def jalali_issue_date(self):
+        return JalaliDate(self.issue_date).strftime("%c", locale="fa")
+
+    @cached_property
+    def total_cost(self):
+        result = self.items.aggregate(
+            total=models.Sum(models.F("purchased_unit_price") * models.F("quantity"))
+        )
+        return result["total"]
+
     # Method
     def __str__(self) -> str:
-        return f"{self.issue_date}"
+        return f"{self.jalali_issue_date}"
 
     def clean(self):
         """

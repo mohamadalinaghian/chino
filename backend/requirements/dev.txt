@@ -9,3 +9,7 @@ black
 ruff
 pre-commit
 freezegun
+ptpython
+django-extensions
+ipython
+bpython

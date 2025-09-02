@@ -35,6 +35,15 @@ class SupplierProduct(models.Model):
     last_price_date = models.DateField(
         _("Last price date"), default=timezone.localdate, null=True, blank=True
     )
+    invoice_related = models.ForeignKey(
+        "inventory.PurchaseInvoice",
+        models.CASCADE,
+        verbose_name=_("Related invoice"),
+        help_text=_("The Purchase item record related to this price"),
+        related_name="supplied_info",
+        null=True,
+        blank=True,
+    )
 
     # Methods
     def __str__(self):

@@ -9,8 +9,9 @@ class TestPurchaseInvoice:
     # Happy path
     def test_create_invoice(self):
         pi = PurchaseInvoiceFactory()
+
         assert pi.pk is not None
-        assert str(pi) == str(pi.issue_date)
+        assert str(pi) == str(pi.jalali_issue_date)
         assert pi.staff.is_staff is True
 
     def test_invoice_with_supplier(self):
@@ -24,7 +25,3 @@ class TestPurchaseInvoice:
         unstaff = AccountFactory(is_staff=False)
         with pytest.raises(ValidationError):
             PurchaseInvoiceFactory(staff=unstaff)
-
-    def test_string_representation(self):
-        pi = PurchaseInvoiceFactory()
-        assert str(pi) == str(pi.issue_date)

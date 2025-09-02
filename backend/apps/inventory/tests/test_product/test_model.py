@@ -9,6 +9,7 @@ from ..factories import ProductFactory
 @pytest.mark.django_db
 class TestProduct:
 
+    # Happy path
     def test_factory_creates_product(self):
         p = ProductFactory()
         assert p.pk is not None

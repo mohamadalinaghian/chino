@@ -1,3 +1,5 @@
+from .base import DEBUG
+
 INSTALLED_APPS = [
     "nested_admin",
     "django.contrib.admin",
@@ -14,3 +16,6 @@ INSTALLED_APPS = [
     "apps.utils",
     "apps.inventory",
 ]
+
+if DEBUG:
+    INSTALLED_APPS += ["django_extensions"]

@@ -14,3 +14,6 @@ class SupplierProductFactory(factory.django.DjangoModelFactory):
         "pydecimal", left_digits=5, right_digits=2, positive=True
     )
     last_price_date = factory.LazyFunction(timezone.now)
+    invoice_related = factory.SubFactory(
+        "apps.inventory.tests.factories.PurchaseInvoiceFactory"
+    )

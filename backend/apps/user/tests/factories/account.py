@@ -1,5 +1,3 @@
-import random
-
 import factory
 from apps.user.models import Account
 
@@ -8,7 +6,7 @@ class AccountFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Account
 
-    mobile = "0" + "".join(str(random.randint(0, 9)) for _ in range(10))
+    mobile = factory.Sequence(lambda n: f"0900000{n:04}")
     name = factory.Sequence(lambda n: f"user {n}")
     is_active = True
     is_superuser = False

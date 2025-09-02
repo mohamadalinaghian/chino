@@ -39,7 +39,7 @@ class ProfileAdminForm(forms.ModelForm):
         model = Profile
         fields = "__all__"
         widgets = {
-            "birth_date": AdminJalaliDateWidget,  # ⬅️ استفاده از ویجت شمسی
+            "birth_date": AdminJalaliDateWidget,
         }
 
 
