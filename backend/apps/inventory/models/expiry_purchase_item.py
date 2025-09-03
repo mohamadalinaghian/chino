@@ -1,5 +1,4 @@
 from django.db import models
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 
@@ -12,10 +11,11 @@ class ExpiryPurchaseItem(models.Model):
     purchased_item = models.ForeignKey(
         "inventory.PurchaseItem",
         models.CASCADE,
-        related_name="expiration date",
+        related_name="expiration_dates",
         verbose_name=_("Purchased Item"),
+        db_index=True,
     )
-    expiry_date = models.DateField(_("Expiry Date"), default=timezone.now)
+    expiry_date = models.DateField(_("Expiry Date"), db_index=True)
 
     # Meta
     class Meta:
@@ -25,4 +25,4 @@ class ExpiryPurchaseItem(models.Model):
 
     # Methods
     def __str__(self):
-        return f"{self.purchased_item.name} {self.expiry_date}"
+        return f"{self.purchased_item.purchased_product} {self.expiry_date}"

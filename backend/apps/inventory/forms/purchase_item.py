@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from django import forms
 from django.utils.translation import gettext_lazy as _
-from jalali_date.admin import AdminJalaliDateWidget
+from jalali_date.admin import AdminJalaliDateWidget, JalaliDateField
 
 from ..models import PurchaseItem
 from ..services.purchase_item import ZERO, PurchaseItemService
@@ -49,7 +49,7 @@ class PurchaseItemInlineForm(forms.ModelForm):
     package_count = forms.DecimalField(
         label=_("Number of packages"), max_digits=10, decimal_places=2, required=False
     )
-    expiry_date = forms.DateField(
+    expiry_date = JalaliDateField(
         label=_("Expiry date"), required=False, widget=AdminJalaliDateWidget
     )
 

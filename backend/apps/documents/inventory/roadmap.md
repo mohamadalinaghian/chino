@@ -1,5 +1,3 @@
-## /home/mohamad/chino_project/backend/apps/documents/inventory/roadmap.md
-
 # Roadmap (priority-based, dependency-first)
 
 ## 0. Preflight
@@ -49,21 +47,19 @@
 
 ### 2.3 PurchaseItem (depends: PurchaseInvoice, Product/SupplierProduct)
 
-- [ ] model + migration
-- [ ] admin
-- [ ] factory `PurchaseItemFactory`
-- [ ] service: item validation, tax/discount calc
-- [ ] tests: model, service
-- [ ] sample data fixtures (`fixtures/minimal.json`)
+- [x] model + migration
+- [x] admin
+- [x] factory `PurchaseItemFactory`
+- [x] service: item validation
+- [x] tests: model, service
 
 ### 2.4 ExpiryPurchaseItem (depends: PurchaseItem)
 
-- [ ] model + migration
-- [ ] admin
-- [ ] factory `ExpiryPurchaseItemFactory`
-- [ ] service: auto-split by expiry batch
-- [ ] tests: model, service
-- [ ] sample data fixtures (`fixtures/minimal.json`)
+- [x] model + migration
+- [x] admin
+- [x] factory `ExpiryPurchaseItemFactory`
+- [x] service
+- [x] tests: model, service
 
 ### 2.x Purchasing integration
 
@@ -181,6 +177,8 @@
 - [ ] unit tests ≥ 90% for service, key branches covered
 - [ ] integration tests for the group
 - [ ] docs (README in app + docstrings on services)
+
+<<<=== FILE SEPARATOR ===>>>
 
 <<<=== FILE SEPARATOR ===>>>
 

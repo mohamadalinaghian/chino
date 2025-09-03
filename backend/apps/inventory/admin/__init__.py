@@ -1,3 +1,4 @@
+from .expiry_purchase_item import ExpiryPurchaseItemAdmin
 from .product import ProductAdmin
 from .purchase_invoice import PurchaseInvoiceAdmin
 from .purchase_item import PurchaseItemInline
@@ -10,6 +11,6 @@ __all__ = (
     "SupplierProductInline",
     "SupplierProductAdmin",
     "PurchaseInvoiceAdmin",
-    # "PurchaseItemAdmin",
+    "ExpiryPurchaseItemAdmin",
     "PurchaseItemInline",
 )
