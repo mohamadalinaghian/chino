@@ -61,24 +61,17 @@
 - [x] service
 - [x] tests: model, service
 
-### 2.x Purchasing integration
-
-- [ ] integration test: invoice posting creates FIFO stock entries (reserved)
-- [ ] fixtures for typical invoices
-- [ ] sample data fixtures (`fixtures/minimal.json`)
-
 ---
 
 ## 3. Stock engine
 
 ### 3.1 Stock (depends: Product, PurchaseItem)
 
-- [ ] model + migration (`StockEntry` with `movement_type`: PURCHASE|PRODUCTION_IN|CONSUME|ADJUSTMENT|WASTE)
-- [ ] admin
-- [ ] factory `StockEntryFactory`
-- [ ] service: `stock.post_purchase`, `stock.consume_fifo`, `stock.produce`, `stock.adjust`, `stock.waste`
-- [ ] service: FIFO cost calculator (pure, deterministic)
-- [ ] tests: model invariants, FIFO edge cases, negative prevention
+- [x] model + migration (`StockEntry` with `movement_type`: PURCHASE|PRODUCTION_IN|CONSUME|ADJUSTMENT|WASTE)
+- [x] admin
+- [x] factory `StockEntryFactory`
+- [x] service: `stock.post_purchase`, (after creating relative models:) => `stock.consume_fifo`, `stock.produce`, `stock.adjust`, `stock.waste`
+- [x] tests: model invariants, FIFO edge cases, negative prevention
 
 ### 3.x Stock integration
 
@@ -177,9 +170,3 @@
 - [ ] unit tests ≥ 90% for service, key branches covered
 - [ ] integration tests for the group
 - [ ] docs (README in app + docstrings on services)
-
-<<<=== FILE SEPARATOR ===>>>
-
-<<<=== FILE SEPARATOR ===>>>
-
-<<<=== FILE SEPARATOR ===>>>

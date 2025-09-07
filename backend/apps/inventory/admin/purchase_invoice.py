@@ -9,7 +9,12 @@ from persiantools.jdatetime import JalaliDate
 
 from ...utils.jalali_date_list_filter import JalaliDateFieldListFilter
 from ..models import PurchaseInvoice
-from ..services import ExpiryPurchaseItemService, ProductService, SupplierProductService
+from ..services import (
+    ExpiryPurchaseItemService,
+    ProductService,
+    StockService,
+    SupplierProductService,
+)
 from .purchase_item import PurchaseItemInline
 
 
@@ -64,6 +69,7 @@ class PurchaseInvoiceAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
                 price = form.cleaned_data["purchased_unit_price"]
                 brand = form.cleaned_data.get("brand")
                 expiry_date = form.cleaned_data.get("expiry_date")
+                quantity = form.cleaned_data["quantity"]
 
                 prod_service.update_last_price(product, price)
 
@@ -72,6 +78,8 @@ class PurchaseInvoiceAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
 
                 if expiry_date:
                     expiry_sv.add_expiry_date(form.instance, expiry_date)
+
+                StockService.add_purchase_to_stock(product, price, quantity)
 
     #
     def _parse_jalali_range(self, term: str):

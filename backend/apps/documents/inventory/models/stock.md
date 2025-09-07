@@ -21,6 +21,7 @@ record will be deleted if remaining quantity raise to Zero so search would be ea
 ## Relations
 
 - stored_product => Product (One To Many)
+- created_at => PurchaseInvoice (One To Many)
 
 ---
 
