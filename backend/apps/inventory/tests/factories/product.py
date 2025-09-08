@@ -7,7 +7,15 @@ class ProductFactory(factory.django.DjangoModelFactory):
         model = Product
 
     name = factory.Sequence(lambda n: f"product-{n}")
-    type = Product.ProductType.RAW
+    type = factory.Iterator(
+        [
+            Product.ProductType.RAW,
+            Product.ProductType.CONSUMABLE,
+            Product.ProductType.PROCESSED,
+            Product.ProductType.SELLABLE,
+        ]
+    )
+
     is_active = True
     is_stock_traceable = True
     is_countable = False

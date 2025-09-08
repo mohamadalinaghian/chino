@@ -48,7 +48,7 @@ class TestProduct:
     def test_error_on_duplicate_product(self):
 
         name = "test_error"
-        ProductFactory(name=name)
+        ProductFactory(name=name, type="RAW")
 
         with pytest.raises(IntegrityError):
-            ProductFactory(name=name)
+            ProductFactory(name=name, type="RAW")

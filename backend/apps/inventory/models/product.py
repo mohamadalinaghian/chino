@@ -24,7 +24,7 @@ class Product(models.Model):
         RAW = "RAW", _("Raw Material")
         PROCESSED = "PROCESSED", _("Processed Material")
         SELLABLE = "SELLABLE", _("Sellable")
-        CONSUMABLE = "Consumable", _("Consumable")
+        CONSUMABLE = "CONSUMABLE", _("Consumable")
 
     # Fields
     name = models.CharField(_("Name"), max_length=128, db_index=True)
