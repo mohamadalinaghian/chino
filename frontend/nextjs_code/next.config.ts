@@ -7,6 +7,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-ing: true,
-  },
-});
