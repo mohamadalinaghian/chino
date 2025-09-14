@@ -1,0 +1,61 @@
+services:
+  db-staging:
+    image: postgres:alpine
+    restart: always
+    env_file:
+      - .env.staging
+    volumes:
+      - postgres_data_staging:/var/lib/postgresql/data
+    expose:
+      - "5432"
+
+  backend-staging:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: prod
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
+    restart: always
+    env_file:
+      - .env.staging
+    volumes:
+      - ./backend:/app
+      - static_volume_staging:/app/staticfiles
+      - media_volume_staging:/app/media
+    expose:
+      - "8000"
+    depends_on:
+      - db-staging
+
+  frontend-staging:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    restart: always
+    env_file:
+      - .env.staging
+    expose:
+      - "3000"
+    depends_on:
+      - backend-staging
+
+  nginx-staging:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile.prod
+    restart: always
+    depends_on:
+      - backend-staging
+      - frontend-staging
+    ports:
+      - "8080:80" # HTTP تست
+      - "8443:443" # HTTPS تست (بدون certbot، self-signed می‌تونی بزنی)
+    volumes:
+      - static_volume_staging:/app/staticfiles:ro
+      - media_volume_staging:/app/media:ro
+      # ⚠️ certbot intentionally removed for staging
+
+volumes:
+  postgres_data_staging:
+  static_volume_staging:
+  media_volume_staging:
