@@ -73,28 +73,22 @@
 - [x] service: `stock.post_purchase`, (after creating relative models:) => `stock.consume_fifo`, `stock.produce`, `stock.adjust`, `stock.waste`
 - [x] tests: model invariants, FIFO edge cases, negative prevention
 
-### 3.x Stock integration
-
-- [ ] integration test: posting invoice → `stock.post_purchase`
-- [ ] integration test: querying on-hand by product and batch
-
----
 
 ## 4. Production
 
 ### 4.1 Recipe (depends: Product)
 
-- [ ] model + migration
-- [ ] admin
-- [ ] factory `RecipeFactory`
-- [ ] tests: model
+- [x] model + migration
+- [x] admin
+- [x] factory `RecipeFactory`
+- [x] tests: model
 
 ### 4.2 RecipeComponent (depends: Recipe, Product)
 
-- [ ] model + migration
-- [ ] admin
-- [ ] factory `RecipeComponentFactory`
-- [ ] tests: model
+- [x] model + migration
+- [x] admin
+- [x] factory `RecipeComponentFactory`
+- [x] tests: model, service, admin
 
 ### 4.3 ItemProduction (depends: Recipe, Stock)
 

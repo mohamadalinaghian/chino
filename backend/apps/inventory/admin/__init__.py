@@ -3,6 +3,7 @@ from .product import ProductAdmin
 from .purchase_invoice import PurchaseInvoiceAdmin
 from .purchase_item import PurchaseItemInline
 from .recipe import Recipe
+from .recipe_component import RecipeComponentInline
 from .stock import Stock
 from .supplier import SupplierAdmin
 from .supplier_product import SupplierProductAdmin, SupplierProductInline
@@ -17,4 +18,5 @@ __all__ = (
     "PurchaseItemInline",
     "Stock",
     "Recipe",
+    "RecipeComponentInline",
 )
