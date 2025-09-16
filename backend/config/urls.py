@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 
 urlpatterns = [
     path("api/admin/", admin.site.urls),
-    path("api/menu/", include("nested_admin.urls")),
+    path("api/menu/", include("menu.urls")),
     path("api/admin/_nested_admin/", include("nested_admin.urls")),
 ]
 
