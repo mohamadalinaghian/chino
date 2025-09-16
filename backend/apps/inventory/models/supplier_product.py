@@ -39,7 +39,6 @@ class SupplierProduct(models.Model):
         "inventory.PurchaseInvoice",
         models.CASCADE,
         verbose_name=_("Related invoice"),
-        help_text=_("The Purchase item record related to this price"),
         related_name="supplied_info",
         null=True,
         blank=True,
