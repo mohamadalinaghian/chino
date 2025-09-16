@@ -299,6 +299,7 @@ msgstr "رسپی"
 msgid "Recipes"
 msgstr "رسپی ها"
 
+
 #: apps/inventory/models/recipe_component.py:14
 #: apps/inventory/models/recipe_component.py:37
 msgid "Recipe component"
