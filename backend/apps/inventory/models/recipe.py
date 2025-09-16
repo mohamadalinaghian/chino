@@ -53,5 +53,5 @@ class Recipe(TimeStampedModel):
     # Meta
     class Meta:
         verbose_name = _("Recipe")
-        verbose_name = _("Recipes")
+        verbose_name_plural = _("Recipes")
         ordering = ("-updated_at",)

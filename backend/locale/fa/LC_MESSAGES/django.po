@@ -8,36 +8,31 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-16 15:01+0330\n"
+"POT-Creation-Date: 2025-09-16 15:55+0330\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"Language: fa\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
-
 #: apps/inventory/admin/purchase_item.py:19
-#, fuzzy
-#| msgid "Production In"
 msgid "Product Info"
-msgstr "تولید"
+msgstr "اطلاعات کالا"
 
 #: apps/inventory/admin/purchase_item.py:25
 msgid "Quantity & Packaging"
-msgstr "مقدار و دسته بندی"
+msgstr "مقدار و بسته بندی"
 
 #: apps/inventory/admin/purchase_item.py:31
-#, fuzzy
-#| msgid "Price"
 msgid "Pricing"
-msgstr "قیمت"
+msgstr "قیمت گذاری"
 
 #: apps/inventory/admin/supplier_product.py:43
 #: apps/inventory/models/supplier_product.py:36
 msgid "Last price date"
-msgstr "تاریخ ثبت آخرین قیمت"
+msgstr "تاریخ آخرین قیمت"
 
 #: apps/inventory/forms/purchase_invoice.py:12
 msgid "Tax persent"
@@ -45,29 +40,23 @@ msgstr "درصد مالیات"
 
 #: apps/inventory/forms/purchase_invoice.py:15
 msgid "Amount of tax that appliy to total cost"
-msgstr "مقدار مالیات اعمال شده در کل قیمت"
+msgstr "مقدار مالیات اعمال شده در کل هزینه"
 
 #: apps/inventory/forms/purchase_invoice.py:19
-#, fuzzy
-#| msgid "Discount Amount"
 msgid "Discount persent"
-msgstr "مقدار تخفیف"
+msgstr "درصد تخفیف"
 
 #: apps/inventory/forms/purchase_invoice.py:22
-#, fuzzy
-#| msgid "Amount of product used in this recipe."
 msgid "Amount of discount on purchasing this item"
-msgstr "مقدار کالا استفاده شده در این رسپی"
+msgstr "مقدار تخفیف روی خرید این آیتم"
 
 #: apps/inventory/forms/purchase_item.py:34
-#, fuzzy
-#| msgid "Total Cost"
 msgid "Total cost"
 msgstr "کل هزینه"
 
 #: apps/inventory/forms/purchase_item.py:37
 msgid "Final cost for purchasing this item"
-msgstr "آخرین قیمت خرید این آیتم"
+msgstr "هزینه نهایی برای خرید این آیتم"
 
 #: apps/inventory/forms/purchase_item.py:41
 #: apps/inventory/models/supplier_product.py:27
@@ -76,19 +65,17 @@ msgstr "برند"
 
 #: apps/inventory/forms/purchase_item.py:43
 msgid "Add brand of item if supplier supply multiple kind of it"
-msgstr "اگر تأمین کننده چندین مدل از این کالا را تأمین میکند، برای آن برند مشخص کنید"
+msgstr "اگر تأمین کننده چندین مدل از این کالا را تأمین میکند باید برند برای آن مشخص کند"
 
 #: apps/inventory/forms/purchase_item.py:47
 msgid "Quantity per package"
-msgstr "مقدار هر بسته"
+msgstr "مقدار در یک بسته"
 
 #: apps/inventory/forms/purchase_item.py:50
 msgid "Number of packages"
 msgstr "تعداد بسته"
 
 #: apps/inventory/forms/purchase_item.py:53
-#, fuzzy
-#| msgid "Expiry Date"
 msgid "Expiry date"
 msgstr "تاریخ انقضا"
 
@@ -98,51 +85,41 @@ msgstr "تاریخ انقضا"
 #: apps/inventory/forms/purchase_item.py:82
 #: apps/inventory/forms/purchase_item.py:88
 msgid "Only positive numbers"
-msgstr "فقط اعداد مثبت!"
+msgstr "فقط اعداد مثبت"
 
 #: apps/inventory/forms/purchase_item.py:126
 msgid ""
 "Unit price deviates too much from the last purchase price. Please confirm "
 "with a manager."
-msgstr "بهای پرداختی جدید با قیمت خرید قبلی بسیار اختلاف دارد، لطفا با مدیر در ارتباط باشید"
+msgstr "قیمت واحد کالا خرید شده اختلاف زیادی با قیمت خرید قبلی دارد، با مدیر هماهنگ کنید."
 
 #: apps/inventory/forms/stock.py:32
-#, fuzzy
-#| msgid "Remaining quantity cannot exceed total quantity."
 msgid "Remaining quantity can not be greater than initial."
-msgstr "مقدار باقی مانده نمیتواند از کل مقدار بیشتر باشد"
+msgstr "مقدار باقی مانده نمیتواند از مقدار اولیه بیشتر شده باشد."
 
 #: apps/inventory/models/expiry_purchase_item.py:15
-#, fuzzy
-#| msgid "Purchase Item"
 msgid "Purchased Item"
-msgstr "خرید کالا"
+msgstr "کالا خریده شده"
 
 #: apps/inventory/models/expiry_purchase_item.py:18
 msgid "Expiry Date"
 msgstr "تاریخ انقضا"
 
 #: apps/inventory/models/expiry_purchase_item.py:22
-#, fuzzy
-#| msgid "Purchase Item"
 msgid "Expiry Purchase Item"
-msgstr "خرید کالا"
+msgstr "تاریخ انقضا کالا"
 
 #: apps/inventory/models/expiry_purchase_item.py:23
-#, fuzzy
-#| msgid "Purchase Items"
 msgid "Expiry Purchase Items"
-msgstr "خرید کالاها"
+msgstr "تاریخ انقضا کالاها"
 
 #: apps/inventory/models/item_production.py:17
 msgid "Used recipe"
 msgstr "رسپی مورد استفاده"
 
 #: apps/inventory/models/item_production.py:21
-#, fuzzy
-#| msgid "Quantity"
 msgid "Used quantity"
-msgstr "مقدار"
+msgstr "مقدار استفاده شده"
 
 #: apps/inventory/models/item_production.py:24
 msgid "Produced quantity"
@@ -154,7 +131,7 @@ msgstr "قیمت واحد"
 
 #: apps/inventory/models/item_production.py:28
 msgid "Cost per unit of finished product"
-msgstr "هزینه تمام شده کالا تولید شده، به ازای یک واحد"
+msgstr "قیمت واحد کالا نهایی"
 
 #: apps/inventory/models/item_production.py:36
 msgid "Creators"
@@ -165,16 +142,12 @@ msgid "Notes"
 msgstr "توضیحات"
 
 #: apps/inventory/models/item_production.py:53
-#, fuzzy
-#| msgid "Item Production"
 msgid "Item production"
 msgstr "تولید آیتم"
 
 #: apps/inventory/models/item_production.py:54
-#, fuzzy
-#| msgid "Item Production"
 msgid "Items Production"
-msgstr "تولید آیتم"
+msgstr "تولید آیتم ها"
 
 #: apps/inventory/models/product.py:21
 msgid "Yes"
@@ -189,10 +162,8 @@ msgid "Raw Material"
 msgstr "کالا اولیه"
 
 #: apps/inventory/models/product.py:25
-#, fuzzy
-#| msgid "Processed Ingredient"
 msgid "Processed Material"
-msgstr "مواد فرآوری شده"
+msgstr "کالا فرآوری شده"
 
 #: apps/inventory/models/product.py:26
 msgid "Sellable"
@@ -208,14 +179,10 @@ msgid "Name"
 msgstr "نام"
 
 #: apps/inventory/models/product.py:32
-#, fuzzy
-#| msgid "Expiry Date"
 msgid "Expiry Traceable"
-msgstr "تاریخ انقضا"
+msgstr "فساد پذیر"
 
 #: apps/inventory/models/product.py:34
-#, fuzzy
-#| msgid "Is Countable"
 msgid "Countable"
 msgstr "قابل شمارش"
 
@@ -225,23 +192,19 @@ msgstr "نوع کالا"
 
 #: apps/inventory/models/product.py:38
 msgid "Stock Traceable"
-msgstr "نیاز به انبار گردانی"
+msgstr "قابل انبارگردانی"
 
 #: apps/inventory/models/product.py:39
-#, fuzzy
-#| msgid "Item Production"
 msgid "Is Active Product"
-msgstr "تولید آیتم"
+msgstr "آیا کالا فعال است؟"
 
 #: apps/inventory/models/product.py:40
 msgid "Note"
-msgstr "توضیحات"
+msgstr "توضیح"
 
 #: apps/inventory/models/product.py:42
-#, fuzzy
-#| msgid "Price"
 msgid "Last price"
-msgstr "قیمت"
+msgstr "آخرین قیمت"
 
 #: apps/inventory/models/product.py:52
 #: apps/inventory/models/supplier_product.py:23
@@ -253,16 +216,12 @@ msgid "Products"
 msgstr "کالاها"
 
 #: apps/inventory/models/purchase_invoice.py:14
-#, fuzzy
-#| msgid "Issue Date"
 msgid "Issue date"
-msgstr "تاریخ صدور"
+msgstr "تاریخ فاکتور"
 
 #: apps/inventory/models/purchase_invoice.py:20
-#, fuzzy
-#| msgid "Is Staff?"
 msgid "Staff"
-msgstr "پرسنل؟"
+msgstr "کارمند"
 
 #: apps/inventory/models/purchase_invoice.py:22
 msgid "Person who purchased"
@@ -276,7 +235,7 @@ msgstr "تأمین کننده"
 
 #: apps/inventory/models/purchase_invoice.py:57
 msgid "Chosen staff must be a staff member."
-msgstr "فرد انتخاب شده باید جزو پرسنل کافه باشد"
+msgstr "شخص مشخص شده باید از پرسنل کافه باشد"
 
 #: apps/inventory/models/purchase_invoice.py:68
 #: apps/inventory/models/purchase_item.py:18
@@ -289,13 +248,11 @@ msgstr "فاکتور های خرید"
 
 #: apps/inventory/models/purchase_item.py:19
 msgid "Invoice which item belongs to"
-msgstr "فاکتور خرید این کالا"
+msgstr "فاکتوری که آیتم در آن خریده شده است"
 
 #: apps/inventory/models/purchase_item.py:26
-#, fuzzy
-#| msgid "Purchased quantity of the product"
 msgid "Purchased product"
-msgstr "مقدار کالا خریداری شده"
+msgstr "کالا خریده شده"
 
 #: apps/inventory/models/purchase_item.py:30
 #: apps/inventory/models/recipe_component.py:25
@@ -303,10 +260,8 @@ msgid "Quantity"
 msgstr "مقدار"
 
 #: apps/inventory/models/purchase_item.py:35
-#, fuzzy
-#| msgid "Purchase Invoice"
 msgid "Purchased unit price"
-msgstr "فاکتور خرید"
+msgstr "قیمت واحد خرید"
 
 #: apps/inventory/models/purchase_item.py:49
 msgid "Purchase Item"
@@ -317,32 +272,24 @@ msgid "Purchase Items"
 msgstr "خرید کالاها"
 
 #: apps/inventory/models/recipe.py:20
-#, fuzzy
-#| msgid "Time needed to prepare this recipe."
 msgid "Unique name for recipe to recognizing it"
-msgstr "زمان مورد نیاز برای تولید بر اساس این رسپی"
+msgstr "نامی یکتا برای شناسایی رسپی ها از هم"
 
 #: apps/inventory/models/recipe.py:26
-#, fuzzy
-#| msgid "Product"
 msgid "Produced product"
-msgstr "کالا"
+msgstr "کالا تولید شده"
 
 #: apps/inventory/models/recipe.py:34
 msgid "Instruction"
 msgstr "دستورالعمل"
 
 #: apps/inventory/models/recipe.py:41
-#, fuzzy
-#| msgid "Create Date"
 msgid "Create date"
 msgstr "تاریخ ساخت"
 
 #: apps/inventory/models/recipe.py:47
-#, fuzzy
-#| msgid "Update Date"
 msgid "Update date"
-msgstr "تاریخ به روز رسانی"
+msgstr "تاریخ به روزرسانی"
 
 #: apps/inventory/models/recipe.py:55
 msgid "Recipe"
@@ -354,121 +301,88 @@ msgstr "رسپی ها"
 
 #: apps/inventory/models/recipe_component.py:14
 #: apps/inventory/models/recipe_component.py:37
-#, fuzzy
-#| msgid "Recipe Component"
 msgid "Recipe component"
-msgstr "یک جزء رسپی"
+msgstr "جزء رسپی"
 
 #: apps/inventory/models/recipe_component.py:21
 msgid "Consumed product"
 msgstr "کالا استفاده شده"
 
 #: apps/inventory/models/recipe_component.py:28
-#, fuzzy
-#| msgid "Amount of product used in this recipe."
 msgid "quantity of product consumed in 1 atomic unit of recipe."
-msgstr "مقدار کالا استفاده شده در این رسپی"
+msgstr "مقدار مصرف شده از کالا در مقدار واحد رسپی"
 
 #: apps/inventory/models/recipe_component.py:38
-#, fuzzy
-#| msgid "Recipe Components"
 msgid "Recipe components"
 msgstr "اجزای رسپی"
 
 #: apps/inventory/models/stock.py:17
-#, fuzzy
-#| msgid "Related Products"
 msgid "Stored porduct"
-msgstr "کالاهای مرتبط"
+msgstr "کالا انبار شده"
 
 #: apps/inventory/models/stock.py:21
-#, fuzzy
-#| msgid "Input Quantity"
 msgid "Initial quantity"
-msgstr "مقدار ورودی"
+msgstr "مقدار اولیه"
 
 #: apps/inventory/models/stock.py:24
-#, fuzzy
-#| msgid "Remaining Quantity"
 msgid "Remaining quantity"
 msgstr "مقدار باقی مانده"
 
 #: apps/inventory/models/stock.py:27
-#, fuzzy
-#| msgid "Price"
 msgid "Unit price"
-msgstr "قیمت"
+msgstr "قیمت واحد"
 
 #: apps/inventory/models/stock.py:30
-#, fuzzy
-#| msgid "Create Date"
 msgid "Created at"
-msgstr "تاریخ ساخت"
+msgstr "ساخته شده در"
 
 #: apps/inventory/models/stock.py:40
-#, fuzzy
-#| msgid "Stock Entry"
 msgid "Stock"
-msgstr "انبار کالا"
+msgstr "انبار"
 
 #: apps/inventory/models/supplier.py:12
 msgid "Company Name"
 msgstr "نام شرکت"
 
 #: apps/inventory/models/supplier.py:13
-#, fuzzy
-#| msgid "Instruction"
 msgid "Information"
-msgstr "دستورالعمل"
+msgstr "اطلاعات"
 
 #: apps/inventory/models/supplier.py:18
-#, fuzzy
-#| msgid "Related Products"
 msgid "Supplied Products"
-msgstr "کالاهای مرتبط"
+msgstr "کالاهای تأمین شده"
 
 #: apps/inventory/models/supplier.py:25
 msgid "Suppliers"
 msgstr "تأمین کننده ها"
 
 #: apps/inventory/models/supplier_product.py:33
-#, fuzzy
-#| msgid "Purchase Invoice"
 msgid "Last purchase price"
-msgstr "فاکتور خرید"
+msgstr "قیمت آخرین خرید"
 
 #: apps/inventory/models/supplier_product.py:41
-#, fuzzy
-#| msgid "Related Products"
 msgid "Related invoice"
-msgstr "کالاهای مرتبط"
+msgstr "فاکتور مربوطه"
 
+#: apps/inventory/models/supplier_product.py:53
+msgid "Supplier Related Product"
+msgstr "کالا مرتبط با تأمین کننده"
 
 #: apps/inventory/models/supplier_product.py:54
-#, fuzzy
-#| msgid "Related Products"
-msgid "Supplier Related Product"
-msgstr "کالاهای مرتبط"
-
-#: apps/inventory/models/supplier_product.py:55
-#, fuzzy
-#| msgid "Related Products"
 msgid "Supplier Related Products"
-msgstr "کالاهای مرتبط"
+msgstr "کالاهای مرتبط با تأمین کننده"
 
 #: apps/inventory/services/expiry_purchase_item.py:22
 msgid "This is not a valid purchase, product is expired"
-msgstr "تاریخ انقضای کالا گذشته است، این خرید درست نیست!"
+msgstr "کالا از قبل فاسد شده است، این خرید مجاز نیست"
 
 #: apps/inventory/services/expiry_purchase_item.py:30
 msgid "This product is not expiry traceable"
 msgstr "این کالا فساد پذیر نیست"
 
 #: apps/inventory/services/product.py:17
-#, fuzzy
-#| msgid "Production Out"
 msgid "Product is not exists."
-msgstr "مصرف کالا تولید شده"
+msgstr "کالا وجود ندارد"
 
 #: apps/inventory/services/purchase_item.py:30
 msgid "Quantity can't be Zero"
@@ -476,43 +390,39 @@ msgstr "مقدار نمیتواند صفر باشد"
 
 #: apps/inventory/services/purchase_item.py:41
 msgid "Can not assign both quantity styles"
-msgstr "هر دو روش مشخص کردن مقدار کالا نباید پر شود"
+msgstr "نمیتوانید هر دو روش مقدار دهی را پر کنید"
 
 #: apps/inventory/services/purchase_item.py:47
 msgid "Package quantity and package count must assigned together"
-msgstr "تعداد در یک بسته و کل تعداد بسته ها باید هردو مقدار دهی شوند"
+msgstr "مقدار هر بسته و تعداد بسته با هم باید مشخص شود"
 
 #: apps/inventory/services/purchase_item.py:87
 msgid "Enter total cost or unit price not both"
-msgstr "یا قیمت واحد را مقدار دهی کنید یا کل هزینه. هر دو با هم مجاز نیست"
+msgstr "یا قیمت واحد یا کل هزینه را وارد کنید، نه هردو"
 
 #: apps/inventory/services/purchase_item.py:94
 msgid "You must assign unit price or total price"
-msgstr "شما باید یا قیمت واحد یا کل هزینه را مقدار دهی کنید"
+msgstr "قیمت واحد یا کل هزینه باید مقدار دهی شود."
 
 #: apps/inventory/services/recipe.py:23
 msgid "You can not write recipe for this type of product"
 msgstr "برای این نوع از کالا نمیتوانید رسپی بنویسید"
 
 #: apps/inventory/services/recipe_component.py:24
-#, fuzzy
-#| msgid "Recipe Components"
 msgid "Recipe does not exist"
-msgstr "اجزای رسپی"
+msgstr "رسپی وجود ندارد"
 
 #: apps/inventory/services/recipe_component.py:31
-#, fuzzy
-#| msgid "Quantity must be greater than zero."
 msgid "Total quantity must be greater than zero."
-msgstr "مقدار باید مثبت باشد"
+msgstr "مقدار کل باید مثبت باشد"
 
 #: apps/inventory/services/stock.py:16
 msgid "Product is not stock traceable"
-msgstr "کالا نمیتواند انبارگردانی شود"
+msgstr "کالا قابل انبارگردانی نیست"
 
 #: apps/inventory/services/supplier_product.py:30
 msgid "Product is not in supplier provided list. Check agian or add it first"
-msgstr "این کالا در لیست کالاهای مورد تأمین این تأمین کننده نیست، مجدد بررسی کند یا ابتدا آن را برای تأمین کننده ثبت کنید"
+msgstr "این کالا در لیست کالاهای تأمین کننده نیست. مجدد بررسی کنید یا ابتدا آن را اضافه کنید به لیست."
 
 #: apps/menu/models.py:15 apps/menu/models.py:41 apps/utils/models.py:23
 msgid "Title"
@@ -544,15 +454,15 @@ msgstr "دسته بندی"
 
 #: apps/menu/models.py:58
 msgid "Thumbnail"
-msgstr "عکس بند انگشتی"
+msgstr "بند انگشتی"
 
 #: apps/menu/models.py:65
 msgid "Extra Images"
-msgstr "عکس های دیگر"
+msgstr "عکس های بیشتر"
 
 #: apps/menu/models.py:68
 msgid "Is Available"
-msgstr "در دسترس؟"
+msgstr "آیا فعال است؟"
 
 #: apps/menu/models.py:99
 msgid "Menu"
@@ -560,19 +470,19 @@ msgstr "منو"
 
 #: apps/menu/models.py:100
 msgid "Menus"
-msgstr "منوها"
+msgstr "منو ها"
 
 #: apps/user/admin.py:11
 msgid "Password"
-msgstr "رمز"
+msgstr "گذرواژه"
 
 #: apps/user/admin.py:12
 msgid "Confirm password"
-msgstr "تأیید رمز"
+msgstr "تأیید گذرواژه"
 
 #: apps/user/admin.py:67
 msgid "Personal info"
-msgstr "مشخصات فردی"
+msgstr "اطلاعات شخصی"
 
 #: apps/user/admin.py:69
 msgid "Permissions"
@@ -584,15 +494,15 @@ msgstr "تاریخ های مهم"
 
 #: apps/user/models.py:19
 msgid "The given mobile must be set"
-msgstr "شماره تلفن باید ثبت شود"
+msgstr "شماره موبایل حتما باید وارد شود"
 
 #: apps/user/models.py:31
 msgid "A superuser must also be staff."
 msgstr "مدیر باید از کارکنان باشد"
 
 #: apps/user/models.py:52
-msgid "Mobile number must be in the format 09XXXXXXXXX"
-msgstr "شماره موبایل باید با این فرمت باشد: 0XXXXXXXXXX"
+msgid "Mobile number must be in the format 0XXXXXXXXXX"
+msgstr "شماره تلفن باید در قالب '0XXXXXXXXXX' باشد"
 
 #: apps/user/models.py:57
 msgid "Mobile"
@@ -600,15 +510,15 @@ msgstr "موبایل"
 
 #: apps/user/models.py:72
 msgid "Is Active?"
-msgstr "فعال؟"
+msgstr "آیا فعال است؟"
 
 #: apps/user/models.py:73
 msgid "Is Superuser?"
-msgstr "مدیر؟"
+msgstr "آیا مدیر است؟"
 
 #: apps/user/models.py:74
 msgid "Is Staff?"
-msgstr "پرسنل؟"
+msgstr "آیا کارمند است؟"
 
 #: apps/user/models.py:90
 msgid "User Account"
@@ -620,11 +530,11 @@ msgstr "حساب کاربرها"
 
 #: apps/user/models.py:110
 msgid "Profile"
-msgstr "پروفایل"
+msgstr "پرفایل"
 
 #: apps/user/models.py:111
 msgid "Profiles"
-msgstr "پروفایل ها"
+msgstr "پرفایل ها"
 
 #: apps/user/models.py:113 apps/user/tests/test_profile.py:84
 msgid "Male"
@@ -644,7 +554,7 @@ msgstr "ایمیل"
 
 #: apps/user/models.py:125
 msgid "Is Email Verified?"
-msgstr "ایمیل تأیید شده است؟"
+msgstr "آیا ایمیل تأیید شده است؟"
 
 #: apps/user/models.py:128
 msgid "Address"
@@ -667,10 +577,8 @@ msgid "Today"
 msgstr "امروز"
 
 #: apps/utils/jalali_date_list_filter.py:24
-#, fuzzy
-#| msgid "Registered By"
 msgid "Yesterday"
-msgstr "ثبت شده توسط"
+msgstr "دیروز"
 
 #: apps/utils/jalali_date_list_filter.py:25
 msgid "This week"
@@ -698,7 +606,7 @@ msgstr "تاریخ ساخت"
 
 #: apps/utils/models.py:16
 msgid "Update Date"
-msgstr "تاریخ به روز رسانی"
+msgstr "تاریخ به روزرسانی"
 
 #: apps/utils/models.py:24
 msgid "Alt Text"
@@ -714,8 +622,8 @@ msgstr "عکس ها"
 
 #: config/urls.py:13
 msgid "Chino Admin Panel"
-msgstr "پنل ادمین چینو"
+msgstr "پنل مدیریتی چینو"
 
 #: config/urls.py:14 config/urls.py:15
 msgid "Chino Admin"
-msgstr "ادمین چینو"
+msgstr "مدیر چینو"
