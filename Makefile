@@ -7,43 +7,43 @@ update:
 	git pull && make full_down && make up
 
 build:
-	$(PODMAN) build
+	$(DOCKER) build
 
 up:
-	$(PODMAN) up -d
+	$(DOCKER) up -d
 
 up_back:
-	$(PODMAN) up -d backend
+	$(DOCKER) up -d backend
 
 front_bash:
-	$(PODMAN) exec frontend bash
+	$(DOCKER) exec frontend bash
 
 rest:
-	$(PODMAN) restart
+	$(DOCKER) restart
 
 down:
-	$(PODMAN) down
+	$(DOCKER) down
 
 full_down:
-	$(PODMAN) down --rmi local
+	$(DOCKER) down --rmi local
 
 back_bash:
-	$(PODMAN) exec backend bash
+	$(DOCKER) exec backend bash
 
 shell:
-	$(PODMAN) exec backend python manage.py shell
+	$(DOCKER) exec backend python manage.py shell
 
 dbshell:
-	$(PODMAN) exec db sh
+	$(DOCKER) exec db sh
 
 log:
-	$(PODMAN) logs
+	$(DOCKER) logs
 
 test_backend:
-	$(PODMAN) exec backend pytest
+	$(DOCKER) exec backend pytest
 
 lint_backend:
-	$(PODMAN) exec backend ruff check .
+	$(DOCKER) exec backend ruff check .
 
 format_backend:
-	$(PODMAN) exec backend ruff format .
+	$(DOCKER) exec backend ruff format .
