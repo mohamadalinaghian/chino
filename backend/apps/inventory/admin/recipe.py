@@ -18,6 +18,7 @@ class RecipeAdmin(admin.ModelAdmin):
     )
     readonly_fields = ("jalali_created_at", "jalali_updated_at")
     inlines = (RecipeComponentInline,)
+    autocomplete_fields = ("produced_product",)
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
