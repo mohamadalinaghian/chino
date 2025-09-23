@@ -32,4 +32,6 @@ class RecipeAdmin(admin.ModelAdmin):
         super().save_related(request, form, formsets, change)
 
         # normalize components after all related objects are saved
+        if form.instance.produced_product.is_countable:
+            return
         RecipeComponentService.normalize_quantity(form.instance.id)
