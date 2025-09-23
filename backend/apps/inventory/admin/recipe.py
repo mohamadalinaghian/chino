@@ -17,7 +17,7 @@ class RecipeAdmin(admin.ModelAdmin):
         "jalali_updated_at",
     )
     search_fields = ("name", "produced_product")
-    list_filter = ("jalali_created_at", "produced_product")
+    list_filter = ("created_at", "produced_product")
     readonly_fields = ("jalali_created_at", "jalali_updated_at")
     inlines = (RecipeComponentInline,)
     autocomplete_fields = ("produced_product",)
