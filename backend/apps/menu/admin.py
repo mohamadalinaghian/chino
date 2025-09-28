@@ -13,16 +13,15 @@ class MenuCategoryAdmin(OrderedModelAdmin):
 @admin.register(Menu)
 class MenuAdmin(OrderedModelAdmin):
     list_display = (
-        "title",
-        "related_product",
+        "name",
         "category",
         "price",
         "is_available",
         "move_up_down_links",
     )
     list_filter = ("category", "is_available")
-    search_fields = ("title", "description")
+    search_fields = ("name", "description")
     filter_horizontal = ("images",)
-    prepopulated_fields = {"slug": ("title",)}
-    autocomplete_fields = ["category", "related_product"]
-    list_editable = ("price", "related_product")
+    prepopulated_fields = {"slug": ("name",)}
+    autocomplete_fields = ["category", "name"]
+    list_editable = ("price",)

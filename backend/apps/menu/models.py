@@ -40,16 +40,16 @@ class MenuCategory(OrderedModel):
 
 class Menu(OrderedModel):
 
-    related_product = models.ForeignKey(
+    name = models.ForeignKey(
         "inventory.Product",
         models.CASCADE,
-        verbose_name=_("Related product"),
+        verbose_name=_("Name"),
         null=True,
         limit_choices_to={"type__in": (Product.ProductType.SELLABLE,)},
     )
-    title = models.CharField(
-        verbose_name=_("Title"), max_length=50, unique=True, db_index=True
-    )
+    # title = models.CharField(
+    #     verbose_name=_("Title"), max_length=50, unique=True, db_index=True
+    # )
     price = models.IntegerField(verbose_name=_("Price"), null=True, blank=True)
     description = models.CharField(
         verbose_name=_("Description"), blank=True, null=True, max_length=255
@@ -81,9 +81,9 @@ class Menu(OrderedModel):
 
     def save(self, *args, **kwargs):
         if not self.slug or self.slug != slugify(
-            str(self.title), separator="-", allow_unicode=True
+            str(self.name), separator="-", allow_unicode=True
         ):
-            self.slug = slugify(str(self.title), separator="-", allow_unicode=True)
+            self.slug = slugify(str(self.name), separator="-", allow_unicode=True)
 
         initial_thumbnail = self.thumbnail
 
@@ -111,4 +111,4 @@ class Menu(OrderedModel):
         ordering = ("order",)
 
     def __str__(self):
-        return str(self.title)
+        return str(self.name)
