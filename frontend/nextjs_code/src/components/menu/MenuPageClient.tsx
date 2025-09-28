@@ -25,7 +25,7 @@ export default function MenuPageClient({ categories, items }: Props) {
 		if (!q) return items;
 		return items.filter(
 			(item) =>
-				item.title.toLowerCase().includes(q) ||
+				item.name.toLowerCase().includes(q) ||
 				item.description?.toLowerCase().includes(q),
 		);
 	}, [items, query]);
