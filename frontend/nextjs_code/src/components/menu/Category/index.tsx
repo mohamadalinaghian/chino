@@ -6,7 +6,7 @@ interface CategoryProps {
 	title: string;
 	description?: string | null;
 	items: {
-		title: string;
+		name: string;
 		description?: string | null;
 		price?: number;
 		thumbnail?: string | null;
@@ -32,8 +32,8 @@ export default function Category({ title, description, items }: CategoryProps) {
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
 				{items.map((item, idx) => (
 					<MenuItem
-						key={`${title}-${item.title}-${idx}`}
-						title={item.title}
+						key={`${title}-${item.name}-${idx}`}
+						name={item.name}
 						description={item.description || ""}
 						price={item.price || 0}
 						thumbnail={item.thumbnail || null}
