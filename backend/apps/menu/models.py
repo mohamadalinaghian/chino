@@ -81,9 +81,9 @@ class Menu(OrderedModel):
 
     def save(self, *args, **kwargs):
         if not self.slug or self.slug != slugify(
-            str(self.name), separator="-", allow_unicode=True
+            str(self.name.name), separator="-", allow_unicode=True
         ):
-            self.slug = slugify(str(self.name), separator="-", allow_unicode=True)
+            self.slug = slugify(str(self.name.name), separator="-", allow_unicode=True)
 
         initial_thumbnail = self.thumbnail
 
