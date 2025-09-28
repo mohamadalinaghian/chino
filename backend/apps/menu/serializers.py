@@ -32,3 +32,6 @@ class MenuSerializer(serializers.ModelSerializer):
             "images",
             "category",
         )
+
+    def get_name(self, obj):
+        return obj.name.name
