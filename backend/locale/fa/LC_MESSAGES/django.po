@@ -452,7 +452,6 @@ msgid "Menu Categories"
 msgstr "دسته بندی های منو"
 
 #: apps/menu/models.py:46
-#, fuzzy
 msgid "Related product"
 msgstr "کالا مرتبط"
 
