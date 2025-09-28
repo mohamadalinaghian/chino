@@ -14,6 +14,7 @@ class MenuCategoryAdmin(OrderedModelAdmin):
 class MenuAdmin(OrderedModelAdmin):
     list_display = (
         "title",
+        "related_product",
         "category",
         "price",
         "is_available",
@@ -23,5 +24,5 @@ class MenuAdmin(OrderedModelAdmin):
     search_fields = ("title", "description")
     filter_horizontal = ("images",)
     prepopulated_fields = {"slug": ("title",)}
-    autocomplete_fields = ["category"]
-    list_editable = ("price",)
+    autocomplete_fields = ["category", "related_product"]
+    list_editable = ("price", "related_product")
