@@ -13,8 +13,8 @@ class MenuCategoryAdmin(OrderedModelAdmin):
 @admin.register(Menu)
 class MenuAdmin(OrderedModelAdmin):
     list_display = (
-        "name",
         "category",
+        "name",
         "price",
         "is_available",
         "move_up_down_links",
