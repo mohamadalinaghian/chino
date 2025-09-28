@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-16 15:55+0330\n"
+"POT-Creation-Date: 2025-09-28 10:17+0330\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
 #: apps/inventory/admin/purchase_item.py:19
 msgid "Product Info"
 msgstr "اطلاعات کالا"
@@ -65,7 +66,9 @@ msgstr "برند"
 
 #: apps/inventory/forms/purchase_item.py:43
 msgid "Add brand of item if supplier supply multiple kind of it"
-msgstr "اگر تأمین کننده چندین مدل از این کالا را تأمین میکند باید برند برای آن مشخص کند"
+msgstr ""
+"اگر تأمین کننده چندین مدل از این کالا را تأمین میکند باید برند برای آن مشخص "
+"کند"
 
 #: apps/inventory/forms/purchase_item.py:47
 msgid "Quantity per package"
@@ -91,7 +94,9 @@ msgstr "فقط اعداد مثبت"
 msgid ""
 "Unit price deviates too much from the last purchase price. Please confirm "
 "with a manager."
-msgstr "قیمت واحد کالا خرید شده اختلاف زیادی با قیمت خرید قبلی دارد، با مدیر هماهنگ کنید."
+msgstr ""
+"قیمت واحد کالا خرید شده اختلاف زیادی با قیمت خرید قبلی دارد، با مدیر هماهنگ "
+"کنید."
 
 #: apps/inventory/forms/stock.py:32
 msgid "Remaining quantity can not be greater than initial."
@@ -299,7 +304,6 @@ msgstr "رسپی"
 msgid "Recipes"
 msgstr "رسپی ها"
 
-
 #: apps/inventory/models/recipe_component.py:14
 #: apps/inventory/models/recipe_component.py:37
 msgid "Recipe component"
@@ -423,53 +427,61 @@ msgstr "کالا قابل انبارگردانی نیست"
 
 #: apps/inventory/services/supplier_product.py:30
 msgid "Product is not in supplier provided list. Check agian or add it first"
-msgstr "این کالا در لیست کالاهای تأمین کننده نیست. مجدد بررسی کنید یا ابتدا آن را اضافه کنید به لیست."
+msgstr ""
+"این کالا در لیست کالاهای تأمین کننده نیست. مجدد بررسی کنید یا ابتدا آن را "
+"اضافه کنید به لیست."
 
-#: apps/menu/models.py:15 apps/menu/models.py:41 apps/utils/models.py:23
+#: apps/menu/models.py:17 apps/menu/models.py:51 apps/utils/models.py:23
 msgid "Title"
 msgstr "عنوان"
 
-#: apps/menu/models.py:18 apps/menu/models.py:48 apps/user/models.py:67
+#: apps/menu/models.py:20 apps/menu/models.py:58 apps/user/models.py:67
 msgid "Slug"
 msgstr "اسلاگ"
 
-#: apps/menu/models.py:21 apps/menu/models.py:45
+#: apps/menu/models.py:23 apps/menu/models.py:55
 msgid "Description"
 msgstr "توضیحات"
 
-#: apps/menu/models.py:31
+#: apps/menu/models.py:33
 msgid "Menu Category"
 msgstr "دسته بندی منو"
 
-#: apps/menu/models.py:32
+#: apps/menu/models.py:34
 msgid "Menu Categories"
 msgstr "دسته بندی های منو"
 
-#: apps/menu/models.py:43
+#: apps/menu/models.py:46
+#, fuzzy
+#| msgid "Supplier Related Product"
+msgid "Related product"
+msgstr "کالا مرتبط با تأمین کننده"
+
+#: apps/menu/models.py:53
 msgid "Price"
 msgstr "قیمت"
 
-#: apps/menu/models.py:54
+#: apps/menu/models.py:64
 msgid "Category"
 msgstr "دسته بندی"
 
-#: apps/menu/models.py:58
+#: apps/menu/models.py:68
 msgid "Thumbnail"
 msgstr "بند انگشتی"
 
-#: apps/menu/models.py:65
+#: apps/menu/models.py:75
 msgid "Extra Images"
 msgstr "عکس های بیشتر"
 
-#: apps/menu/models.py:68
+#: apps/menu/models.py:78
 msgid "Is Available"
 msgstr "آیا فعال است؟"
 
-#: apps/menu/models.py:99
+#: apps/menu/models.py:109
 msgid "Menu"
 msgstr "منو"
 
-#: apps/menu/models.py:100
+#: apps/menu/models.py:110
 msgid "Menus"
 msgstr "منو ها"
 
@@ -502,7 +514,9 @@ msgid "A superuser must also be staff."
 msgstr "مدیر باید از کارکنان باشد"
 
 #: apps/user/models.py:52
-msgid "Mobile number must be in the format 0XXXXXXXXXX"
+#, fuzzy
+#| msgid "Mobile number must be in the format 0XXXXXXXXXX"
+msgid "Mobile number must be in the format 09XXXXXXXXX"
 msgstr "شماره تلفن باید در قالب '0XXXXXXXXXX' باشد"
 
 #: apps/user/models.py:57

@@ -9,6 +9,8 @@ from PIL import Image as PILImage
 from PIL import UnidentifiedImageError
 from slugify import slugify
 
+from ..inventory.models import Product
+
 
 class MenuCategory(OrderedModel):
     title = models.CharField(
@@ -37,6 +39,14 @@ class MenuCategory(OrderedModel):
 
 
 class Menu(OrderedModel):
+
+    related_product = models.ForeignKey(
+        "inventory.Product",
+        models.CASCADE,
+        verbose_name=_("Related product"),
+        null=True,
+        limit_choices_to={"type__in": (Product.ProductType.SELLABLE,)},
+    )
     title = models.CharField(
         verbose_name=_("Title"), max_length=50, unique=True, db_index=True
     )
