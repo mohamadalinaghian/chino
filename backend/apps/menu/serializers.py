@@ -19,6 +19,7 @@ class MenuSerializer(serializers.ModelSerializer):
     category = MenuCategorySerializer()
     images = ImageSerializer(many=True)
     thumbnail = serializers.ImageField()
+    name = serializers.SerializerMethodField()
 
     class Meta:
         model = Menu
