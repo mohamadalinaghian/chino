@@ -453,9 +453,8 @@ msgstr "دسته بندی های منو"
 
 #: apps/menu/models.py:46
 #, fuzzy
-#| msgid "Supplier Related Product"
 msgid "Related product"
-msgstr "کالا مرتبط با تأمین کننده"
+msgstr "کالا مرتبط"
 
 #: apps/menu/models.py:53
 msgid "Price"
