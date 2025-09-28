@@ -4,7 +4,7 @@ export interface IMenuCategory {
 }
 
 export interface IMenuItem {
-	title: string;
+	name: string;
 	price?: number;
 	description?: string | null;
 	thumbnail?: string | null;

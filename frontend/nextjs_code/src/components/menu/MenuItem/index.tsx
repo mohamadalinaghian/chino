@@ -4,7 +4,7 @@ import { ItemThumbnail } from "./ItemThumbnail";
 import ItemDescription from "./ItemDescription";
 
 interface MenuItemProps {
-	title: string;
+	name: string;
 	description: string;
 	price: number;
 	thumbnail: string | null;
@@ -19,7 +19,7 @@ interface MenuItemProps {
  * - Light hover interaction
  */
 export default function MenuItem({
-	title,
+	name,
 	description,
 	price,
 	thumbnail,
@@ -42,10 +42,10 @@ export default function MenuItem({
 				animationFillMode: "forwards",
 			}}
 		>
-			{thumbnail && <ItemThumbnail src={thumbnail} alt={title} />}
+			{thumbnail && <ItemThumbnail src={thumbnail} alt={name} />}
 
 			<div className="flex-1 min-w-0">
-				<ItemTitle>{title}</ItemTitle>
+				<ItemTitle>{name}</ItemTitle>
 				{price > 0 && <ItemPrice price={price} />}
 				<ItemDescription text={description} />
 			</div>
