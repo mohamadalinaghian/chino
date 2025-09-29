@@ -1,4 +1,5 @@
 from .expiry_purchase_item import ExpiryPurchaseItemService
+from .item_production import ItemProductionService
 from .product import ProductService
 from .purchase_item import PurchaseItemService
 from .recipe import RecipeService
@@ -14,4 +15,5 @@ __all__ = (
     "StockService",
     "RecipeService",
     "RecipeComponentService",
+    "ItemProductionService",
 )

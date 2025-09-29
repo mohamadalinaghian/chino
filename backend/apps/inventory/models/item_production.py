@@ -8,6 +8,7 @@ from ...utils.models import TimeStampedModel
 class ItemProduction(TimeStampedModel):
     """
     Every item production in the café is stored in this model.
+    It's a reporter model, history of what when and by whoom created.
     """
 
     # Fields
@@ -22,14 +23,6 @@ class ItemProduction(TimeStampedModel):
     )
     produced_quantity = models.DecimalField(
         _("Produced quantity"), max_digits=10, decimal_places=2
-    )
-    unit_cost = models.DecimalField(
-        verbose_name=_("Unit Cost"),
-        help_text=_("Cost per unit of finished product"),
-        max_digits=10,
-        decimal_places=2,
-        null=True,
-        blank=True,
     )
     cooperators = models.ManyToManyField(
         get_user_model(),

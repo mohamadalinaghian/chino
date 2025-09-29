@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-28 10:17+0330\n"
+"POT-Creation-Date: 2025-09-29 20:15+0330\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -118,39 +118,31 @@ msgstr "تاریخ انقضا کالا"
 msgid "Expiry Purchase Items"
 msgstr "تاریخ انقضا کالاها"
 
-#: apps/inventory/models/item_production.py:17
+#: apps/inventory/models/item_production.py:18
 msgid "Used recipe"
 msgstr "رسپی مورد استفاده"
 
-#: apps/inventory/models/item_production.py:21
+#: apps/inventory/models/item_production.py:22
 msgid "Used quantity"
 msgstr "مقدار استفاده شده"
 
-#: apps/inventory/models/item_production.py:24
+#: apps/inventory/models/item_production.py:25
 msgid "Produced quantity"
 msgstr "مقدار تولید شده"
 
-#: apps/inventory/models/item_production.py:27
-msgid "Unit Cost"
-msgstr "قیمت واحد"
-
-#: apps/inventory/models/item_production.py:28
-msgid "Cost per unit of finished product"
-msgstr "قیمت واحد کالا نهایی"
-
-#: apps/inventory/models/item_production.py:36
+#: apps/inventory/models/item_production.py:29
 msgid "Creators"
 msgstr "تولید کننده گان"
 
-#: apps/inventory/models/item_production.py:41
+#: apps/inventory/models/item_production.py:34
 msgid "Notes"
 msgstr "توضیحات"
 
-#: apps/inventory/models/item_production.py:53
+#: apps/inventory/models/item_production.py:46
 msgid "Item production"
 msgstr "تولید آیتم"
 
-#: apps/inventory/models/item_production.py:54
+#: apps/inventory/models/item_production.py:47
 msgid "Items Production"
 msgstr "تولید آیتم ها"
 
@@ -179,7 +171,7 @@ msgid "Consumable"
 msgstr "جانبی"
 
 #: apps/inventory/models/product.py:30 apps/inventory/models/recipe.py:17
-#: apps/user/models.py:63
+#: apps/menu/models.py:46 apps/user/models.py:63
 msgid "Name"
 msgstr "نام"
 
@@ -321,27 +313,27 @@ msgstr "مقدار مصرف شده از کالا در مقدار واحد رسپ
 msgid "Recipe components"
 msgstr "اجزای رسپی"
 
-#: apps/inventory/models/stock.py:17
+#: apps/inventory/models/stock.py:18
 msgid "Stored porduct"
 msgstr "کالا انبار شده"
 
-#: apps/inventory/models/stock.py:21
+#: apps/inventory/models/stock.py:22
 msgid "Initial quantity"
 msgstr "مقدار اولیه"
 
-#: apps/inventory/models/stock.py:24
+#: apps/inventory/models/stock.py:25
 msgid "Remaining quantity"
 msgstr "مقدار باقی مانده"
 
-#: apps/inventory/models/stock.py:27
+#: apps/inventory/models/stock.py:28
 msgid "Unit price"
 msgstr "قیمت واحد"
 
-#: apps/inventory/models/stock.py:30
+#: apps/inventory/models/stock.py:31
 msgid "Created at"
 msgstr "ساخته شده در"
 
-#: apps/inventory/models/stock.py:40
+#: apps/inventory/models/stock.py:43
 msgid "Stock"
 msgstr "انبار"
 
@@ -385,6 +377,12 @@ msgstr "کالا از قبل فاسد شده است، این خرید مجاز �
 msgid "This product is not expiry traceable"
 msgstr "این کالا فساد پذیر نیست"
 
+#: apps/inventory/services/item_production.py:20
+#: apps/inventory/services/stock.py:49
+#| msgid "Total quantity must be greater than zero."
+msgid "Requested quantity must be greater than zero."
+msgstr "مقدار کل باید مثبت باشد"
+
 #: apps/inventory/services/product.py:17
 msgid "Product is not exists."
 msgstr "کالا وجود ندارد"
@@ -421,7 +419,7 @@ msgstr "رسپی وجود ندارد"
 msgid "Total quantity must be greater than zero."
 msgstr "مقدار کل باید مثبت باشد"
 
-#: apps/inventory/services/stock.py:16
+#: apps/inventory/services/stock.py:22
 msgid "Product is not stock traceable"
 msgstr "کالا قابل انبارگردانی نیست"
 
@@ -431,7 +429,7 @@ msgstr ""
 "این کالا در لیست کالاهای تأمین کننده نیست. مجدد بررسی کنید یا ابتدا آن را "
 "اضافه کنید به لیست."
 
-#: apps/menu/models.py:17 apps/menu/models.py:51 apps/utils/models.py:23
+#: apps/menu/models.py:17 apps/utils/models.py:23
 msgid "Title"
 msgstr "عنوان"
 
@@ -450,10 +448,6 @@ msgstr "دسته بندی منو"
 #: apps/menu/models.py:34
 msgid "Menu Categories"
 msgstr "دسته بندی های منو"
-
-#: apps/menu/models.py:46
-msgid "Related product"
-msgstr "کالا مرتبط"
 
 #: apps/menu/models.py:53
 msgid "Price"
@@ -512,7 +506,6 @@ msgid "A superuser must also be staff."
 msgstr "مدیر باید از کارکنان باشد"
 
 #: apps/user/models.py:52
-#, fuzzy
 #| msgid "Mobile number must be in the format 0XXXXXXXXXX"
 msgid "Mobile number must be in the format 09XXXXXXXXX"
 msgstr "شماره تلفن باید در قالب '0XXXXXXXXXX' باشد"
@@ -640,3 +633,12 @@ msgstr "پنل مدیریتی چینو"
 #: config/urls.py:14 config/urls.py:15
 msgid "Chino Admin"
 msgstr "مدیر چینو"
+
+#~ msgid "Unit Cost"
+#~ msgstr "قیمت واحد"
+
+#~ msgid "Cost per unit of finished product"
+#~ msgstr "قیمت واحد کالا نهایی"
+
+#~ msgid "Related product"
+#~ msgstr "کالا مرتبط"

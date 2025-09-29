@@ -79,7 +79,7 @@ class PurchaseInvoiceAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
                 if expiry_date:
                     expiry_sv.add_expiry_date(form.instance, expiry_date)
 
-                StockService.add_purchase_to_stock(product, price, quantity)
+                StockService.add_to_stock(product, price, quantity)
 
     #
     def _parse_jalali_range(self, term: str):

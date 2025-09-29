@@ -92,11 +92,10 @@
 
 ### 4.3 ItemProduction (depends: Recipe, Stock)
 
-- [ ] model + migration (stores unit_cost computed via FIFO at production time)
-- [ ] admin
-- [ ] factory `ItemProductionFactory`
-- [ ] service: `production.produce(recipe, qty)` → consumes components via FIFO, produces target product, persists cost
-- [ ] tests: model, service (costing), rollback safety on partial failure
+- [x] model + migration
+- [x] admin
+- [x] service: `production.produce(recipe, qty)`
+- [x] tests: model, service
 
 ### 4.4 ProductionConsumeReport (depends: ItemProduction)
 

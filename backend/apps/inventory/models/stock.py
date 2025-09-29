@@ -2,6 +2,8 @@ from django.db import models
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 
+from ..managers import StockManager
+
 
 class Stock(models.Model):
     """
@@ -30,6 +32,8 @@ class Stock(models.Model):
         verbose_name=_("Created at"),
         default=now,
     )
+
+    objects = StockManager()
 
     # Methods
     def __str__(self) -> str:

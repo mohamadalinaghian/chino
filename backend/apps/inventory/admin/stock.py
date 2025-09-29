@@ -8,3 +8,10 @@ from ..models import Stock
 @admin.register(Stock)
 class StockAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
     form = StockForm
+
+    list_display = (
+        "stored_product",
+        "initial_quantity",
+        "remaining_quantity",
+        "unit_price",
+    )

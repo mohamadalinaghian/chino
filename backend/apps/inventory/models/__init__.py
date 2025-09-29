@@ -1,4 +1,5 @@
 from .expiry_purchase_item import ExpiryPurchaseItem
+from .item_production import ItemProduction
 from .product import Product
 from .purchase_invoice import PurchaseInvoice
 from .purchase_item import PurchaseItem
@@ -18,4 +19,5 @@ __all__ = (
     "Stock",
     "Recipe",
     "RecipeComponent",
+    "ItemProduction",
 )

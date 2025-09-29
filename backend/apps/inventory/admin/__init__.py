@@ -1,4 +1,5 @@
 from .expiry_purchase_item import ExpiryPurchaseItemAdmin
+from .item_production import ItemProductionAdmin
 from .product import ProductAdmin
 from .purchase_invoice import PurchaseInvoiceAdmin
 from .purchase_item import PurchaseItemInline
@@ -19,4 +20,5 @@ __all__ = (
     "Stock",
     "Recipe",
     "RecipeComponentInline",
+    "ItemProductionAdmin",
 )

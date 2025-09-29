@@ -1,4 +1,5 @@
 from .expiry_purchase_item import ExpiryPurchaseItemFactory
+from .item_production import ItemProductionFactory
 from .product import ProductFactory
 from .purchase_invoice import PurchaseInvoiceFactory
 from .purchase_item import PurchaseItemFactory
@@ -18,4 +19,5 @@ __all__ = (
     "StockFactory",
     "RecipeFactory",
     "RecipeComponentFactory",
+    "ItemProductionFactory",
 )
