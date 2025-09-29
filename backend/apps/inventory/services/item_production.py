@@ -4,8 +4,6 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 
-from . import RecipeService, StockService
-
 
 class ItemProductionService:
     """
@@ -21,6 +19,8 @@ class ItemProductionService:
         if used_qt <= 0:
             raise ValidationError(_("Requested quantity must be greater than zero."))
         # Retrive recipe components
+        from . import RecipeService
+
         rc_comps = RecipeService.get_all_ingredients(recipe)
 
         total_cost = Decimal("0")
@@ -28,6 +28,8 @@ class ItemProductionService:
 
         # Pass through all componnets and Calculate total.
         with transaction.atomic():
+            from . import StockService
+
             for comp in rc_comps:
 
                 # How much of this component will used.
