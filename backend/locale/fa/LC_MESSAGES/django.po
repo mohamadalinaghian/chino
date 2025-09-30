@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-29 20:15+0330\n"
+"POT-Creation-Date: 2025-09-30 17:52+0330\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -135,6 +135,7 @@ msgid "Creators"
 msgstr "تولید کننده گان"
 
 #: apps/inventory/models/item_production.py:34
+#: apps/inventory/models/visitor.py:31
 msgid "Notes"
 msgstr "توضیحات"
 
@@ -171,7 +172,8 @@ msgid "Consumable"
 msgstr "جانبی"
 
 #: apps/inventory/models/product.py:30 apps/inventory/models/recipe.py:17
-#: apps/menu/models.py:46 apps/user/models.py:63
+#: apps/inventory/models/visitor.py:27 apps/menu/models.py:46
+#: apps/user/models.py:63
 msgid "Name"
 msgstr "نام"
 
@@ -179,36 +181,36 @@ msgstr "نام"
 msgid "Expiry Traceable"
 msgstr "فساد پذیر"
 
-#: apps/inventory/models/product.py:34
+#: apps/inventory/models/product.py:35
 msgid "Countable"
 msgstr "قابل شمارش"
 
-#: apps/inventory/models/product.py:36
+#: apps/inventory/models/product.py:38
 msgid "Product Type"
 msgstr "نوع کالا"
 
-#: apps/inventory/models/product.py:38
+#: apps/inventory/models/product.py:41
 msgid "Stock Traceable"
 msgstr "قابل انبارگردانی"
 
-#: apps/inventory/models/product.py:39
+#: apps/inventory/models/product.py:44
 msgid "Is Active Product"
 msgstr "آیا کالا فعال است؟"
 
-#: apps/inventory/models/product.py:40
+#: apps/inventory/models/product.py:46
 msgid "Note"
 msgstr "توضیح"
 
-#: apps/inventory/models/product.py:42
+#: apps/inventory/models/product.py:48
 msgid "Last price"
 msgstr "آخرین قیمت"
 
-#: apps/inventory/models/product.py:52
+#: apps/inventory/models/product.py:58
 #: apps/inventory/models/supplier_product.py:23
 msgid "Product"
 msgstr "کالا"
 
-#: apps/inventory/models/product.py:53
+#: apps/inventory/models/product.py:59
 msgid "Products"
 msgstr "کالاها"
 
@@ -313,27 +315,27 @@ msgstr "مقدار مصرف شده از کالا در مقدار واحد رسپ
 msgid "Recipe components"
 msgstr "اجزای رسپی"
 
-#: apps/inventory/models/stock.py:18
+#: apps/inventory/models/stock.py:19
 msgid "Stored porduct"
 msgstr "کالا انبار شده"
 
-#: apps/inventory/models/stock.py:22
+#: apps/inventory/models/stock.py:23
 msgid "Initial quantity"
 msgstr "مقدار اولیه"
 
-#: apps/inventory/models/stock.py:25
+#: apps/inventory/models/stock.py:26
 msgid "Remaining quantity"
 msgstr "مقدار باقی مانده"
 
-#: apps/inventory/models/stock.py:28
+#: apps/inventory/models/stock.py:29
 msgid "Unit price"
 msgstr "قیمت واحد"
 
-#: apps/inventory/models/stock.py:31
+#: apps/inventory/models/stock.py:32
 msgid "Created at"
 msgstr "ساخته شده در"
 
-#: apps/inventory/models/stock.py:43
+#: apps/inventory/models/stock.py:44
 msgid "Stock"
 msgstr "انبار"
 
@@ -369,6 +371,28 @@ msgstr "کالا مرتبط با تأمین کننده"
 msgid "Supplier Related Products"
 msgstr "کالاهای مرتبط با تأمین کننده"
 
+#: apps/inventory/models/visitor.py:15
+#| msgid "Mobile number must be in the format 09XXXXXXXXX"
+msgid "Phone number must be in the format 0XXXXXXXXXX"
+msgstr "شماره تلفن باید در قالب '0XXXXXXXXXX' باشد"
+
+#: apps/inventory/models/visitor.py:20 apps/user/models.py:57
+msgid "Mobile"
+msgstr "موبایل"
+
+#: apps/inventory/models/visitor.py:36
+#| msgid "Supplier"
+msgid "supplier"
+msgstr "تأمین کننده"
+
+#: apps/inventory/models/visitor.py:45
+msgid "Visitor"
+msgstr "ویزیتور"
+
+#: apps/inventory/models/visitor.py:46
+msgid "Visitors"
+msgstr "ویزیتورها"
+
 #: apps/inventory/services/expiry_purchase_item.py:22
 msgid "This is not a valid purchase, product is expired"
 msgstr "کالا از قبل فاسد شده است، این خرید مجاز نیست"
@@ -379,7 +403,6 @@ msgstr "این کالا فساد پذیر نیست"
 
 #: apps/inventory/services/item_production.py:20
 #: apps/inventory/services/stock.py:49
-#| msgid "Total quantity must be greater than zero."
 msgid "Requested quantity must be greater than zero."
 msgstr "مقدار کل باید مثبت باشد"
 
@@ -506,13 +529,8 @@ msgid "A superuser must also be staff."
 msgstr "مدیر باید از کارکنان باشد"
 
 #: apps/user/models.py:52
-#| msgid "Mobile number must be in the format 0XXXXXXXXXX"
 msgid "Mobile number must be in the format 09XXXXXXXXX"
 msgstr "شماره تلفن باید در قالب '0XXXXXXXXXX' باشد"
-
-#: apps/user/models.py:57
-msgid "Mobile"
-msgstr "موبایل"
 
 #: apps/user/models.py:72
 msgid "Is Active?"

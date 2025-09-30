@@ -15,6 +15,9 @@ up:
 up_back:
 	$(DOCKER) up -d backend
 
+pup_back:
+	$(PODMAN) up -d backend
+
 front_bash:
 	$(DOCKER) exec frontend bash
 
@@ -29,6 +32,9 @@ full_down:
 
 back_bash:
 	$(DOCKER) exec backend bash
+
+pback_bash:
+	$(PODMAN) exec backend bash
 
 shell:
 	$(DOCKER) exec backend python manage.py shell

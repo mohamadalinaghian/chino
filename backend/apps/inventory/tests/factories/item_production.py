@@ -1,13 +1,12 @@
 import factory
 from apps.inventory.models import ItemProduction
-from apps.inventory.tests.factories import RecipeFactory
 
 
 class ItemProductionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = ItemProduction
 
-    used_recipe = factory.SubFactory(RecipeFactory)
+    used_recipe = factory.SubFactory("apps.inventory.tests.factories.RecipeFactory")
     used_quantity = factory.Faker(
         "pydecimal", right_digits=2, left_digits=3, positive=True
     )

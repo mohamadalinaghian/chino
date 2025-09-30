@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from ..models.supplier import Supplier
 from .supplier_product import SupplierProductInline
+from .visitor import VisitorInline
 
 
 @admin.register(Supplier)
@@ -13,4 +14,4 @@ class SupplierAdmin(admin.ModelAdmin):
     list_editable = ("info",)
     search_fields = ("company_name",)
     list_filter = (("products", admin.RelatedOnlyFieldListFilter),)
-    inlines = (SupplierProductInline,)
+    inlines = (SupplierProductInline, VisitorInline)

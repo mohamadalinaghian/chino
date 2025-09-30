@@ -8,6 +8,7 @@ from .recipe_component import RecipeComponent
 from .stock import Stock
 from .supplier import Supplier
 from .supplier_product import SupplierProduct
+from .visitor import Visitor
 
 __all__ = (
     "Product",
@@ -20,4 +21,5 @@ __all__ = (
     "Recipe",
     "RecipeComponent",
     "ItemProduction",
+    "Visitor",
 )

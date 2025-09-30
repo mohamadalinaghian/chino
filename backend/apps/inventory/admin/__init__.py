@@ -8,6 +8,7 @@ from .recipe_component import RecipeComponentInline
 from .stock import Stock
 from .supplier import SupplierAdmin
 from .supplier_product import SupplierProductAdmin, SupplierProductInline
+from .visitor import Visitor, VisitorInline
 
 __all__ = (
     "ProductAdmin",
@@ -21,4 +22,6 @@ __all__ = (
     "Recipe",
     "RecipeComponentInline",
     "ItemProductionAdmin",
+    "Visitor",
+    "VisitorInline",
 )

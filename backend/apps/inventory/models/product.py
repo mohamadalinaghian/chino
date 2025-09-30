@@ -29,14 +29,20 @@ class Product(models.Model):
     # Fields
     name = models.CharField(_("Name"), max_length=128, db_index=True)
     is_expiry_traceable = models.BooleanField(
-        _("Expiry Traceable"), choices=BOOLEANTEXT
+        _("Expiry Traceable"), choices=BOOLEANTEXT, default=False
     )
-    is_countable = models.BooleanField(_("Countable"), choices=BOOLEANTEXT)
+    is_countable = models.BooleanField(
+        _("Countable"), choices=BOOLEANTEXT, default=True
+    )
     type = models.CharField(
         _("Product Type"), max_length=15, choices=ProductType.choices, db_index=True
     )
-    is_stock_traceable = models.BooleanField(_("Stock Traceable"), choices=BOOLEANTEXT)
-    is_active = models.BooleanField(_("Is Active Product"), choices=BOOLEANTEXT)
+    is_stock_traceable = models.BooleanField(
+        _("Stock Traceable"), choices=BOOLEANTEXT, default=True
+    )
+    is_active = models.BooleanField(
+        _("Is Active Product"), choices=BOOLEANTEXT, default=True
+    )
     note = models.CharField(_("Note"), max_length=128, null=True, blank=True)
     last_purchased_price = models.DecimalField(
         _("Last price"), max_digits=10, decimal_places=2, default=Decimal("0")
