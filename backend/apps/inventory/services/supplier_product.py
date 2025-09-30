@@ -21,7 +21,7 @@ class SupplierProductService:
 
         with transaction.atomic():
             try:
-                if brand is None:
+                if brand is None or brand == "":
                     obj = SupplierProduct.objects.select_for_update().get(
                         supplier=invoice.supplier, product=product
                     )
