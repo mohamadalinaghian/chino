@@ -27,7 +27,7 @@ class Visitor(models.Model):
         max_length=32,
         db_index=True,
     )
-    notes = models.CharField(_("Notes"), max_length=128)
+    notes = models.CharField(_("Notes"), max_length=128, null=True, blank=True)
     related_supplier = models.ForeignKey(
         "inventory.Supplier",
         models.CASCADE,
