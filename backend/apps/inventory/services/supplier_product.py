@@ -21,9 +21,14 @@ class SupplierProductService:
 
         with transaction.atomic():
             try:
-                obj = SupplierProduct.objects.select_for_update().get(
-                    supplier=invoice.supplier, product=product, brand=brand
-                )
+                if brand is None:
+                    obj = SupplierProduct.objects.select_for_update().get(
+                        supplier=invoice.supplier, product=product
+                    )
+                else:
+                    obj = SupplierProduct.objects.select_for_update().get(
+                        supplier=invoice.supplier, product=product, brand=brand
+                    )
             except SupplierProduct.DoesNotExist:
                 raise ValidationError(
                     _(
