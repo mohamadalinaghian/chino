@@ -26,7 +26,7 @@ class Stock(models.Model):
         verbose_name=_("Remaining quantity"), max_digits=10, decimal_places=2
     )
     unit_price = models.DecimalField(
-        verbose_name=_("Unit price"), max_digits=10, decimal_places=2
+        verbose_name=_("Unit price"), max_digits=10, decimal_places=4
     )
     create_at = models.DateField(
         verbose_name=_("Created at"),

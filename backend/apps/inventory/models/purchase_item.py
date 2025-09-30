@@ -32,7 +32,7 @@ class PurchaseItem(models.Model):
         decimal_places=2,
     )
     purchased_unit_price = models.DecimalField(
-        _("Purchased unit price"), max_digits=10, decimal_places=2, blank=True
+        _("Purchased unit price"), max_digits=10, decimal_places=4, blank=True
     )
 
     # Property

@@ -30,7 +30,7 @@ class SupplierProduct(models.Model):
         blank=True,
     )
     last_purchase_price = models.DecimalField(
-        _("Last purchase price"), max_digits=10, decimal_places=2, null=True, blank=True
+        _("Last purchase price"), max_digits=10, decimal_places=4, null=True, blank=True
     )
     last_price_date = models.DateField(
         _("Last price date"), default=timezone.localdate, null=True, blank=True

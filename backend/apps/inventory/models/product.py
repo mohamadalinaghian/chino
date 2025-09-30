@@ -45,7 +45,7 @@ class Product(models.Model):
     )
     note = models.CharField(_("Note"), max_length=128, null=True, blank=True)
     last_purchased_price = models.DecimalField(
-        _("Last price"), max_digits=10, decimal_places=2, default=Decimal("0")
+        _("Last price"), max_digits=10, decimal_places=4, default=Decimal("0")
     )
 
     # Methods
