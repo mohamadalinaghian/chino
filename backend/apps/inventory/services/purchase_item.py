@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 ZERO = Decimal("0")
-THREE_DEC = Decimal("0.001")
+FOUR_DEC = Decimal("0.0001")
 
 
 class PurchaseItemService:
@@ -88,7 +88,7 @@ class PurchaseItemService:
 
             _unit_price = PurchaseItemService.get_unit_price(final_quantity, total_cost)
 
-            return _unit_price.quantize(THREE_DEC)
+            return _unit_price.quantize(FOUR_DEC)
 
         if not unit_price or unit_price == Decimal("0"):
             raise ValidationError(_("You must assign unit price or total price"))
@@ -98,4 +98,4 @@ class PurchaseItemService:
         if not product.is_countable:
             unit_price = unit_price / Decimal("1000")
         # Round to 3 decimal
-        return unit_price.quantize(THREE_DEC)
+        return unit_price.quantize(FOUR_DEC)
