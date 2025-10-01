@@ -27,7 +27,11 @@ class PurchaseItemInlineForm(forms.ModelForm):
             "quantity",
         )
 
-    purchased_unit_price = forms.DecimalField(initial=ZERO, required=False)
+    purchased_unit_price = forms.DecimalField(
+        initial=ZERO,
+        required=False,
+        label=_("Unit price"),
+    )
 
     quantity = forms.DecimalField(required=False, initial=ZERO, label=_("Quantity"))
     total_cost = forms.DecimalField(
@@ -112,7 +116,7 @@ class PurchaseItemInlineForm(forms.ModelForm):
             )
 
             _unit_price = _service.valid_unit_price(
-                _unit_price, _total_cost, _final_qty
+                _product, _unit_price, _total_cost, _final_qty
             )
 
             from django.conf import settings

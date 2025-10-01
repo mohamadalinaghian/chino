@@ -88,27 +88,38 @@ class TestPurchaseItemService:
 
     # -------------------- valid_unit_price --------------------
     def test_valid_unit_price_with_total_cost(self):
+        product = ProductFactory()
         result = PurchaseItemService.valid_unit_price(
-            unit_price=None, total_cost=Decimal("200"), final_quantity=Decimal("10")
+            product,
+            unit_price=None,
+            total_cost=Decimal("200"),
+            final_quantity=Decimal("10"),
         )
         assert result == Decimal("20.00")
 
     def test_valid_unit_price_with_both_total_and_unit_raises(self):
         with pytest.raises(ValidationError):
+            product = ProductFactory()
             PurchaseItemService.valid_unit_price(
+                product,
                 unit_price=Decimal("10"),
                 total_cost=Decimal("200"),
                 final_quantity=Decimal("10"),
             )
 
     def test_valid_unit_price_with_only_unit_price(self):
+        product = ProductFactory()
         result = PurchaseItemService.valid_unit_price(
-            unit_price=Decimal("12.345"), total_cost=None, final_quantity=Decimal("10")
+            product,
+            unit_price=Decimal("12.345"),
+            total_cost=None,
+            final_quantity=Decimal("10"),
         )
-        assert result == Decimal("12.34")  # rounded to 2 decimals
+        assert result == Decimal("0.012")
 
     def test_valid_unit_price_without_any_price_raises(self):
         with pytest.raises(ValidationError):
+            product = ProductFactory()
             PurchaseItemService.valid_unit_price(
-                unit_price=None, total_cost=None, final_quantity=Decimal("10")
+                product, unit_price=None, total_cost=None, final_quantity=Decimal("10")
             )
