@@ -29,7 +29,7 @@ class PurchaseItemInlineForm(forms.ModelForm):
 
     purchased_unit_price = forms.DecimalField(initial=ZERO, required=False)
 
-    quantity = forms.DecimalField(required=False, initial=ZERO)
+    quantity = forms.DecimalField(required=False, initial=ZERO, label=_("Quantity"))
     total_cost = forms.DecimalField(
         label=_("Total cost"),
         max_digits=10,

@@ -4,5 +4,5 @@ class ProductAdjustmentService:
     """
 
     @staticmethod
-    def adjust_product(product, previouse_qt, currenr_qt, staff):
+    def adjust_product(product, previous_qt, currenr_qt, staff):
         pass
