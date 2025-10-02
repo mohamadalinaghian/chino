@@ -10,10 +10,11 @@ from PIL import UnidentifiedImageError
 
 
 class TimeStampedModel(models.Model):
-    created_at = models.DateTimeField(
-        verbose_name=_("Create Date"), default=timezone.now
+    created_at = models.DateField(
+        _("Create date"),
+        default=timezone.localdate,
     )
-    updated_at = models.DateTimeField(verbose_name=_("Update Date"), auto_now=True)
+    updated_at = models.DateField(_("Update Date"), auto_now=True)
 
     class Meta:
         abstract = True
