@@ -37,7 +37,7 @@ class PurchaseItemInlineForm(forms.ModelForm):
     total_cost = forms.DecimalField(
         label=_("Total cost"),
         max_digits=10,
-        decimal_places=2,
+        decimal_places=4,
         help_text=_("Final cost for purchasing this item"),
         required=False,
     )
@@ -48,10 +48,10 @@ class PurchaseItemInlineForm(forms.ModelForm):
         required=False,
     )
     package_quantity = forms.DecimalField(
-        label=_("Quantity per package"), max_digits=10, decimal_places=2, required=False
+        label=_("Quantity per package"), max_digits=10, decimal_places=4, required=False
     )
     package_count = forms.DecimalField(
-        label=_("Number of packages"), max_digits=10, decimal_places=2, required=False
+        label=_("Number of packages"), max_digits=10, decimal_places=4, required=False
     )
     expiry_date = JalaliDateField(
         label=_("Expiry date"), required=False, widget=AdminJalaliDateWidget
