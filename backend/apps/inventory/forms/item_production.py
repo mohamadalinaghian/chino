@@ -1,5 +1,5 @@
 from django import forms
-from jalali_date.widgets import AdminJalaliDateWidget
+from jalali_date.admin import AdminJalaliDateWidget
 
 from ..models import ItemProduction
 
