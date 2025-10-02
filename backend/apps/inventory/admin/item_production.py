@@ -1,19 +1,19 @@
 from django.contrib import admin
+from jalali_date.admin import ModelAdminJalaliMixin
 
+from ..forms import ItemProductionForm
 from ..models import ItemProduction
 from ..services import ItemProductionService, StockService
 
 
 @admin.register(ItemProduction)
-class ItemProductionAdmin(admin.ModelAdmin):
+class ItemProductionAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
+    form = ItemProductionForm
     list_display = (
         "used_recipe__produced_product",
         "produced_quantity",
     )
-    readonly_fields = (
-        "created_at",
-        "updated_at",
-    )
+    readonly_fields = ("updated_at",)
     search_fields = ("used_recipe__produced_product__name", "cooperators__name")
     autocomplete_fields = ("used_recipe",)
 
