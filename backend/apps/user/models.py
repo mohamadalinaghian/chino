@@ -7,8 +7,10 @@ from django.contrib.auth.models import (
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
+from django.utils.functional import cached_property
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
+from persiantools.jdatetime import JalaliDate
 
 
 class AccountManager(BaseUserManager):
@@ -73,6 +75,13 @@ class Account(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     is_superuser = models.BooleanField(default=False, verbose_name=_("Is Superuser?"))
     is_staff = models.BooleanField(default=False, verbose_name=_("Is Staff?"))
 
+    # Properties
+
+    @cached_property
+    def jalali_create_date(self):
+        return JalaliDate(self.created_at).strftime("%c", locale="fa")
+
+    # Methods
     def save(self, *args, **kwargs):
         """
         Override save method to set slug.

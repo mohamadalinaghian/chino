@@ -57,7 +57,7 @@ class AccountAdmin(BaseUserAdmin):
     add_form = AccountCreationForm
     inlines = (ProfileInline,)
 
-    list_display = ("mobile", "name", "is_staff", "is_superuser", "created_at")
+    list_display = ("mobile", "name", "is_staff", "is_superuser", "jalali_create_date")
     list_filter = ("is_staff", "is_superuser", "is_active")
     search_fields = ("mobile", "name")
     ordering = ("-created_at",)
