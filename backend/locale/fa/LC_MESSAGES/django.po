@@ -227,7 +227,7 @@ msgstr "کالاها"
 
 #: apps/inventory/models/product_adjustment_report.py:24
 msgid "Report Date"
-msgstr "تاریخ انقضا"
+msgstr "تاریخ گزارش"
 
 #: apps/inventory/models/product_adjustment_report.py:26
 #: apps/inventory/models/purchase_invoice.py:21
@@ -236,15 +236,15 @@ msgstr "کارمند"
 
 #: apps/inventory/models/product_adjustment_report.py:29
 msgid "Previous quantity"
-msgstr "مقدار تولید شده"
+msgstr "مقدار قبلی"
 
 #: apps/inventory/models/product_adjustment_report.py:32
 msgid "Current quantity"
-msgstr "مقدار استفاده شده"
+msgstr "مقدار فعلی"
 
 #: apps/inventory/models/product_adjustment_report.py:35
 msgid "Cost"
-msgstr "قیمت واحد"
+msgstr "بها"
 
 #: apps/inventory/models/product_adjustment_report.py:50
 msgid "No change no report!"
