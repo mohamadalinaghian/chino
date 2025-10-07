@@ -18,6 +18,23 @@ class StockQuerySet(models.QuerySet):
             .select_for_update(skip_locked=True)
         )
 
+    def get_total(self, product):
+        """Returns all amount of product"""
+        return (
+            self.filter(stored_product=product).aggregate(
+                total_qt=models.Sum("remaining_quantity")
+            )["total_qt"]
+            or 0
+        )
+
+    def max_price(self, product):
+        return (
+            self.filter(stored_product=product).aggregate(max=models.Max("unit_price"))[
+                "max"
+            ]
+            or 0
+        )
+
 
 class StockManager(models.Manager):
     def get_queryset(self):
@@ -28,3 +45,9 @@ class StockManager(models.Manager):
         Shortcut to get the first-in stock entry.
         """
         return self.get_queryset().first_in(product=product)
+
+    def get_total(self, product):
+        return self.get_queryset().get_total(product)
+
+    def max_price(self, product):
+        return self.get_queryset().max_price(product)

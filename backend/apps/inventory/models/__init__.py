@@ -1,7 +1,7 @@
 from .expiry_purchase_item import ExpiryPurchaseItem
 from .item_production import ItemProduction
 from .product import Product
-from .product_adjusment_report import ProductAdjusmentReport
+from .product_adjustment_report import ProductAdjustmentReport
 from .purchase_invoice import PurchaseInvoice
 from .purchase_item import PurchaseItem
 from .recipe import Recipe
@@ -23,5 +23,5 @@ __all__ = (
     "RecipeComponent",
     "ItemProduction",
     "Visitor",
-    "ProductAdjusmentReport",
+    "ProductAdjustmentReport",
 )

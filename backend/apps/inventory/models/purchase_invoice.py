@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -14,7 +15,7 @@ class PurchaseInvoice(models.Model):
     issue_date = models.DateField(_("Issue date"), default=timezone.now, db_index=True)
     # Time stamped maybe later
     staff = models.ForeignKey(
-        "user.Account",
+        get_user_model(),
         on_delete=models.PROTECT,
         related_name="purchase_invoices",
         verbose_name=_("Staff"),

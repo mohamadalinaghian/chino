@@ -1,6 +1,7 @@
 from .expiry_purchase_item import ExpiryPurchaseItemService
 from .item_production import ItemProductionService
 from .product import ProductService
+from .product_adjustment_report import ProductAdjustmentService
 from .purchase_item import PurchaseItemService
 from .recipe import RecipeService
 from .recipe_component import RecipeComponentService
@@ -16,4 +17,5 @@ __all__ = (
     "RecipeService",
     "RecipeComponentService",
     "ItemProductionService",
+    "ProductAdjustmentService",
 )

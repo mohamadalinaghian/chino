@@ -13,7 +13,7 @@ ZERO = Decimal("0")
 class StockService:
     """
     Managing FIFO.
-    Add product after purchasing.
+    Add product after purchasing or production or Warehouse management.
     """
 
     @staticmethod

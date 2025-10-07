@@ -21,11 +21,15 @@ pup_back:
 front_bash:
 	$(DOCKER) exec frontend bash
 
-rest:
+reset:
 	$(DOCKER) restart
+preset:
+	$(PODMAN) restart
 
 down:
 	$(DOCKER) down
+pdown:
+	$(PODMAN) down
 
 full_down:
 	$(DOCKER) down --rmi local
@@ -44,6 +48,8 @@ dbshell:
 
 log:
 	$(DOCKER) logs
+plogs:
+	$(PODMAN) logs
 
 test_backend:
 	$(DOCKER) exec backend pytest
