@@ -61,4 +61,4 @@ format_backend:
 	$(DOCKER) exec backend ruff format .
 
 git_reset:
-	git pull && make rest
+	git pull && make reset
