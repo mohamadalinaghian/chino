@@ -8,7 +8,7 @@ urlpatterns = [
     path("api/admin/", admin.site.urls),
     path("api/menu/", include("apps.menu.urls")),
     path("api/admin/_nested_admin/", include("nested_admin.urls")),
-    path("ledger/", include("django_ledger.urls", namespace="django_ledger")),
+    path("api/ledger/", include("django_ledger.urls", namespace="django_ledger")),
 ]
 
 admin.site.index_title = _("Chino Admin Panel")
