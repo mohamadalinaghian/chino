@@ -226,8 +226,6 @@ msgid "Products"
 msgstr "کالاها"
 
 #: apps/inventory/models/product_adjustment_report.py:24
-#, fuzzy
-#| msgid "Expiry Date"
 msgid "Report Date"
 msgstr "تاریخ انقضا"
 
@@ -237,20 +235,14 @@ msgid "Staff"
 msgstr "کارمند"
 
 #: apps/inventory/models/product_adjustment_report.py:29
-#, fuzzy
-#| msgid "Produced quantity"
 msgid "Previous quantity"
 msgstr "مقدار تولید شده"
 
 #: apps/inventory/models/product_adjustment_report.py:32
-#, fuzzy
-#| msgid "Used quantity"
 msgid "Current quantity"
 msgstr "مقدار استفاده شده"
 
 #: apps/inventory/models/product_adjustment_report.py:35
-#, fuzzy
-#| msgid "Unit Cost"
 msgid "Cost"
 msgstr "قیمت واحد"
 
