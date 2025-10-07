@@ -32,7 +32,6 @@ class ProductAdjustmentReportAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
     autocomplete_fields = ("product", "staff")
 
     def save_model(self, request, obj, form, change):
-        super().save_model(request, obj, form, change)
 
         ProductAdjustmentService.adjust_product(
             obj.product, obj.staff, obj.current_quantity
