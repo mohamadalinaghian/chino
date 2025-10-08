@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-07 20:38+0330\n"
+"POT-Creation-Date: 2025-10-08 19:41+0330\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -111,6 +111,23 @@ msgstr ""
 #: apps/inventory/forms/stock.py:32
 msgid "Remaining quantity can not be greater than initial."
 msgstr "مقدار باقی مانده نمیتواند از مقدار اولیه بیشتر شده باشد."
+
+#: apps/inventory/models/adjustment_report_session.py:16
+msgid "Report Date"
+msgstr "تاریخ گزارش"
+
+#: apps/inventory/models/adjustment_report_session.py:18
+#: apps/inventory/models/purchase_invoice.py:21
+msgid "Staff"
+msgstr "کارمند"
+
+#: apps/inventory/models/adjustment_report_session.py:32
+msgid "Adjustment report session"
+msgstr "جلسه گزارش تغیرات"
+
+#: apps/inventory/models/adjustment_report_session.py:33
+msgid "Adjustment report sessions"
+msgstr "جلسات گزارش تغیرات"
 
 #: apps/inventory/models/expiry_purchase_item.py:15
 msgid "Purchased Item"
@@ -216,7 +233,7 @@ msgid "Last price"
 msgstr "آخرین قیمت"
 
 #: apps/inventory/models/product.py:58
-#: apps/inventory/models/product_adjustment_report.py:21
+#: apps/inventory/models/product_adjustment_report.py:17
 #: apps/inventory/models/supplier_product.py:23
 msgid "Product"
 msgstr "کالا"
@@ -225,36 +242,31 @@ msgstr "کالا"
 msgid "Products"
 msgstr "کالاها"
 
+#: apps/inventory/models/product_adjustment_report.py:21
+msgid "Session"
+msgstr "جلسه"
+
 #: apps/inventory/models/product_adjustment_report.py:24
-msgid "Report Date"
-msgstr "تاریخ گزارش"
-
-#: apps/inventory/models/product_adjustment_report.py:26
-#: apps/inventory/models/purchase_invoice.py:21
-msgid "Staff"
-msgstr "کارمند"
-
-#: apps/inventory/models/product_adjustment_report.py:29
 msgid "Previous quantity"
 msgstr "مقدار قبلی"
 
-#: apps/inventory/models/product_adjustment_report.py:32
+#: apps/inventory/models/product_adjustment_report.py:27
 msgid "Current quantity"
 msgstr "مقدار فعلی"
 
-#: apps/inventory/models/product_adjustment_report.py:35
+#: apps/inventory/models/product_adjustment_report.py:30
 msgid "Cost"
 msgstr "بها"
 
-#: apps/inventory/models/product_adjustment_report.py:50
+#: apps/inventory/models/product_adjustment_report.py:40
 msgid "No change no report!"
 msgstr "تغیراتی صورت نگرفته، گزارش ثبت نخواهد شد"
 
-#: apps/inventory/models/product_adjustment_report.py:54
+#: apps/inventory/models/product_adjustment_report.py:44
 msgid "Product Adjustment Report"
 msgstr "گزارش تغییرات کالا"
 
-#: apps/inventory/models/product_adjustment_report.py:55
+#: apps/inventory/models/product_adjustment_report.py:45
 msgid "Products Adjustment Report"
 msgstr "گزارشات تغیرات کالا"
 
