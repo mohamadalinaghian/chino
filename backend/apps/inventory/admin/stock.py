@@ -14,4 +14,6 @@ class StockAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
         "initial_quantity",
         "remaining_quantity",
         "unit_price",
+        "create_at",
     )
+    ordering = ("create_at",)
