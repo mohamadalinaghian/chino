@@ -1,3 +1,4 @@
+from .adjustment_report_session import AdjustmentReportSession
 from .expiry_purchase_item import ExpiryPurchaseItem
 from .item_production import ItemProduction
 from .product import Product
@@ -24,4 +25,5 @@ __all__ = (
     "ItemProduction",
     "Visitor",
     "ProductAdjustmentReport",
+    "AdjustmentReportSession",
 )

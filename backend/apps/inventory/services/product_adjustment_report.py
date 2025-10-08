@@ -10,7 +10,7 @@ class ProductAdjustmentService:
     """
 
     @staticmethod
-    def adjust_product(product, staff, current_quantity):
+    def adjust_product(product, session, current_quantity):
         """
         User add product new quantity.
         Calculate diffrences and add it to Stock and ProductAdjustmentReport.
@@ -32,8 +32,8 @@ class ProductAdjustmentService:
             total_cost = StockService.reserve_fifo(product, reduction_qt)
             # Add Report
             ProductAdjustmentReport.objects.create(
+                session=session,
                 product=product,
-                staff=staff,
                 previous_quantity=total_stock_qt,
                 current_quantity=current_quantity,
                 cost=total_cost,
@@ -61,7 +61,7 @@ class ProductAdjustmentService:
             # Add Report
             ProductAdjustmentReport.objects.create(
                 product=product,
-                staff=staff,
+                session=session,
                 previous_quantity=total_stock_qt,
                 current_quantity=current_quantity,
             )

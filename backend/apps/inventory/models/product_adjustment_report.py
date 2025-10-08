@@ -1,10 +1,6 @@
-from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.utils import timezone
-from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
-from persiantools.jdatetime import JalaliDate
 
 
 class ProductAdjustmentReport(models.Model):
@@ -21,9 +17,8 @@ class ProductAdjustmentReport(models.Model):
         verbose_name=_("Product"),
         db_index=True,
     )
-    report_date = models.DateField(_("Report Date"), default=timezone.now)
-    staff = models.ForeignKey(
-        get_user_model(), models.SET_NULL, verbose_name=_("Staff"), null=True
+    session = models.ForeignKey(
+        "inventory.AdjustmentReportSession", models.CASCADE, verbose_name=_("Session")
     )
     previous_quantity = models.DecimalField(
         _("Previous quantity"), decimal_places=2, max_digits=10
@@ -35,14 +30,9 @@ class ProductAdjustmentReport(models.Model):
         _("Cost"), max_digits=10, decimal_places=4, null=True, blank=True
     )
 
-    # Property
-    @cached_property
-    def jalali_report_date(self):
-        return JalaliDate(self.report_date).strftime("%c", locale="fa")
-
     # Method
     def __str__(self) -> str:
-        return f"{self.product}: #{self.jalali_report_date}"
+        return f"{self.product}: #{self.session.jalali_report_date}"
 
     def clean(self) -> None:
         super().clean()

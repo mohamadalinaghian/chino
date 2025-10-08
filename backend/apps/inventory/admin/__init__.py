@@ -1,7 +1,8 @@
+from .adjustment_report_session import AdjustmentReportSessionAdmin
 from .expiry_purchase_item import ExpiryPurchaseItemAdmin
 from .item_production import ItemProductionAdmin
 from .product import ProductAdmin
-from .product_adjustment_report import ProductAdjustmentReportAdmin
+from .product_adjustment_report import ProductAdjustmentReportInline
 from .purchase_invoice import PurchaseInvoiceAdmin
 from .purchase_item import PurchaseItemInline
 from .recipe import Recipe
@@ -25,5 +26,6 @@ __all__ = (
     "ItemProductionAdmin",
     "Visitor",
     "VisitorInline",
-    "ProductAdjustmentReportAdmin",
+    "ProductAdjustmentReportInline",
+    "AdjustmentReportSessionAdmin",
 )
