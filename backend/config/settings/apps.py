@@ -9,7 +9,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    "django_ledger",
     "jalali_date",
     "apps.menu",
     "apps.user",

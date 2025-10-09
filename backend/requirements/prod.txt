@@ -15,4 +15,3 @@ packaging
 django-nested-admin
 setuptools
 persiantools
-django-ledger
