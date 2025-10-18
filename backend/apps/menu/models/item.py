@@ -71,12 +71,10 @@ class Menu(OrderedModel):
           - stable slug based on product name
           - preserve existing thumbnail post-processing
         """
-        if self.name_id:
-            wanted_slug = slugify(
-                str(self.name.name), separator="-", allow_unicode=True
-            )
-            if not self.slug or self.slug != wanted_slug:
-                self.slug = wanted_slug
+        if not self.slug or self.slug != slugify(
+            str(self.name.name), separator="-", allow_unicode=True
+        ):
+            self.slug = slugify(str(self.name.name), separator="-", allow_unicode=True)
 
         initial_thumbnail = self.thumbnail
         super().save(*args, **kwargs)
