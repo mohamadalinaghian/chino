@@ -15,7 +15,7 @@ class SiteSettingsAdmin(admin.ModelAdmin):
 
     @admin.display(description=_("Jalali update date"))
     def jalali_date(self, obj):
-        return obj.jalali_update_date
+        return obj.jalali_update_date or None
 
     def has_add_permission(self, request):
         return not SiteSettings.objects.exists()

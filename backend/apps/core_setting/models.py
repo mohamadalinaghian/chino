@@ -46,6 +46,9 @@ class SiteSettings(models.Model):
     # Property
     @cached_property
     def jalali_update_date(self):
+        # updated_at is None on add form (unsaved instance)
+        if not self.updated_at:
+            return None
         return JalaliDate(self.updated_at).strftime("%c", locale="fa")
 
     class Meta:
