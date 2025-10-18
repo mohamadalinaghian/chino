@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-08 19:41+0330\n"
+"POT-Creation-Date: 2025-10-18 21:02+0330\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,34 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: apps/core_setting/admin.py:15
+msgid "Jalali update date"
+msgstr "تاریخ جلالی به روزرسانی"
+
+#: apps/core_setting/models.py:18
+msgid "Singleton key"
+msgstr "کلید یگانگی"
+
+#: apps/core_setting/models.py:23
+msgid "Profit margin"
+msgstr "حاشیه سود"
+
+#: apps/core_setting/models.py:28
+msgid "Tax rate"
+msgstr "درصد مالیات"
+
+#: apps/core_setting/models.py:34
+msgid "Overhead value"
+msgstr "هزینه بالا دستی"
+
+#: apps/core_setting/models.py:40
+msgid "Purchase valid change ratio"
+msgstr "تلورانس مجاز قیمت خرید"
+
+#: apps/core_setting/models.py:51 apps/core_setting/models.py:52
+msgid "Site Settings"
+msgstr "تنظیمات سایت"
 
 #: apps/inventory/admin/purchase_item.py:19
 msgid "Product Info"
@@ -51,56 +79,57 @@ msgstr "درصد تخفیف"
 msgid "Amount of discount on purchasing this item"
 msgstr "مقدار تخفیف روی خرید این آیتم"
 
-#: apps/inventory/forms/purchase_item.py:33 apps/inventory/models/stock.py:29
+#: apps/inventory/forms/purchase_item.py:34 apps/inventory/models/stock.py:29
 msgid "Unit price"
 msgstr "قیمت واحد"
 
-#: apps/inventory/forms/purchase_item.py:36
+#: apps/inventory/forms/purchase_item.py:37
 #: apps/inventory/models/purchase_item.py:30
 #: apps/inventory/models/recipe_component.py:25
+#: apps/sale/models/sale_item.py:28
 msgid "Quantity"
 msgstr "مقدار"
 
-#: apps/inventory/forms/purchase_item.py:38
+#: apps/inventory/forms/purchase_item.py:39
 msgid "Total cost"
 msgstr "کل هزینه"
 
-#: apps/inventory/forms/purchase_item.py:41
+#: apps/inventory/forms/purchase_item.py:42
 msgid "Final cost for purchasing this item"
 msgstr "هزینه نهایی برای خرید این آیتم"
 
-#: apps/inventory/forms/purchase_item.py:45
+#: apps/inventory/forms/purchase_item.py:46
 #: apps/inventory/models/supplier_product.py:27
 msgid "Brand"
 msgstr "برند"
 
-#: apps/inventory/forms/purchase_item.py:47
+#: apps/inventory/forms/purchase_item.py:48
 msgid "Add brand of item if supplier supply multiple kind of it"
 msgstr ""
 "اگر تأمین کننده چندین مدل از این کالا را تأمین میکند باید برند برای آن مشخص "
 "کند"
 
-#: apps/inventory/forms/purchase_item.py:51
+#: apps/inventory/forms/purchase_item.py:52
 msgid "Quantity per package"
 msgstr "مقدار در یک بسته"
 
-#: apps/inventory/forms/purchase_item.py:54
+#: apps/inventory/forms/purchase_item.py:55
 msgid "Number of packages"
 msgstr "تعداد بسته"
 
-#: apps/inventory/forms/purchase_item.py:57
+#: apps/inventory/forms/purchase_item.py:58
 msgid "Expiry date"
 msgstr "تاریخ انقضا"
 
-#: apps/inventory/forms/purchase_item.py:65
-#: apps/inventory/forms/purchase_item.py:73
-#: apps/inventory/forms/purchase_item.py:80
-#: apps/inventory/forms/purchase_item.py:86
-#: apps/inventory/forms/purchase_item.py:92
+#: apps/inventory/forms/purchase_item.py:66
+#: apps/inventory/forms/purchase_item.py:74
+#: apps/inventory/forms/purchase_item.py:81
+#: apps/inventory/forms/purchase_item.py:87
+#: apps/inventory/forms/purchase_item.py:93
 msgid "Only positive numbers"
 msgstr "فقط اعداد مثبت"
 
-#: apps/inventory/forms/purchase_item.py:130
+#: apps/inventory/forms/purchase_item.py:133
 msgid ""
 "Unit price deviates too much from the last purchase price. Please confirm "
 "with a manager."
@@ -118,6 +147,7 @@ msgstr "تاریخ گزارش"
 
 #: apps/inventory/models/adjustment_report_session.py:18
 #: apps/inventory/models/purchase_invoice.py:21
+#: apps/sale/models/sale_invoice.py:21
 msgid "Staff"
 msgstr "کارمند"
 
@@ -199,7 +229,7 @@ msgid "Consumable"
 msgstr "جانبی"
 
 #: apps/inventory/models/product.py:30 apps/inventory/models/recipe.py:17
-#: apps/inventory/models/visitor.py:26 apps/menu/models.py:46
+#: apps/inventory/models/visitor.py:26 apps/menu/models/item.py:21
 #: apps/user/models.py:65
 msgid "Name"
 msgstr "نام"
@@ -228,17 +258,21 @@ msgstr "آیا کالا فعال است؟"
 msgid "Note"
 msgstr "توضیح"
 
-#: apps/inventory/models/product.py:48
+#: apps/inventory/models/product.py:50
+msgid "Active recipe"
+msgstr "رسپی مورد استفاده"
+
+#: apps/inventory/models/product.py:56
 msgid "Last price"
 msgstr "آخرین قیمت"
 
-#: apps/inventory/models/product.py:58
+#: apps/inventory/models/product.py:66
 #: apps/inventory/models/product_adjustment_report.py:17
 #: apps/inventory/models/supplier_product.py:23
 msgid "Product"
 msgstr "کالا"
 
-#: apps/inventory/models/product.py:59
+#: apps/inventory/models/product.py:67
 msgid "Products"
 msgstr "کالاها"
 
@@ -271,6 +305,7 @@ msgid "Products Adjustment Report"
 msgstr "گزارشات تغیرات کالا"
 
 #: apps/inventory/models/purchase_invoice.py:15
+#: apps/sale/models/sale_invoice.py:15
 msgid "Issue date"
 msgstr "تاریخ فاکتور"
 
@@ -285,6 +320,7 @@ msgid "Supplier"
 msgstr "تأمین کننده"
 
 #: apps/inventory/models/purchase_invoice.py:58
+#: apps/sale/models/sale_invoice.py:57
 msgid "Chosen staff must be a staff member."
 msgstr "شخص مشخص شده باید از پرسنل کافه باشد"
 
@@ -467,11 +503,11 @@ msgstr "نمیتوانید هر دو روش مقدار دهی را پر کنید
 msgid "Package quantity and package count must assigned together"
 msgstr "مقدار هر بسته و تعداد بسته با هم باید مشخص شود"
 
-#: apps/inventory/services/purchase_item.py:87
+#: apps/inventory/services/purchase_item.py:88
 msgid "Enter total cost or unit price not both"
 msgstr "یا قیمت واحد یا کل هزینه را وارد کنید، نه هردو"
 
-#: apps/inventory/services/purchase_item.py:94
+#: apps/inventory/services/purchase_item.py:95
 msgid "You must assign unit price or total price"
 msgstr "قیمت واحد یا کل هزینه باید مقدار دهی شود."
 
@@ -497,53 +533,106 @@ msgstr ""
 "این کالا در لیست کالاهای تأمین کننده نیست. مجدد بررسی کنید یا ابتدا آن را "
 "اضافه کنید به لیست."
 
-#: apps/menu/models.py:17 apps/utils/models.py:24
+#: apps/menu/admin.py:31
+msgid "Suggested price"
+msgstr "قیمت پیشنهادی"
+
+#: apps/menu/models/category.py:9 apps/utils/models.py:24
 msgid "Title"
 msgstr "عنوان"
 
-#: apps/menu/models.py:20 apps/menu/models.py:58 apps/user/models.py:69
+#: apps/menu/models/category.py:12 apps/menu/models/item.py:31
+#: apps/user/models.py:69
 msgid "Slug"
 msgstr "اسلاگ"
 
-#: apps/menu/models.py:23 apps/menu/models.py:55
+#: apps/menu/models/category.py:15 apps/menu/models/item.py:28
 msgid "Description"
 msgstr "توضیحات"
 
-#: apps/menu/models.py:33
+#: apps/menu/models/category.py:25
 msgid "Menu Category"
 msgstr "دسته بندی منو"
 
-#: apps/menu/models.py:34
+#: apps/menu/models/category.py:26
 msgid "Menu Categories"
 msgstr "دسته بندی های منو"
 
-#: apps/menu/models.py:53
+#: apps/menu/models/item.py:25
 msgid "Price"
 msgstr "قیمت"
 
-#: apps/menu/models.py:64
+#: apps/menu/models/item.py:37
 msgid "Category"
 msgstr "دسته بندی"
 
-#: apps/menu/models.py:68
+#: apps/menu/models/item.py:41
 msgid "Thumbnail"
 msgstr "بند انگشتی"
 
-#: apps/menu/models.py:75
+#: apps/menu/models/item.py:48
 msgid "Extra Images"
 msgstr "عکس های بیشتر"
 
-#: apps/menu/models.py:78
+#: apps/menu/models/item.py:51
 msgid "Is Available"
 msgstr "آیا فعال است؟"
 
-#: apps/menu/models.py:109
+#: apps/menu/models/item.py:102
 msgid "Menu"
 msgstr "منو"
 
-#: apps/menu/models.py:110
+#: apps/menu/models/item.py:103
 msgid "Menus"
 msgstr "منو ها"
+
+#: apps/menu/services/menu.py:39
+msgid "Site settings not configured"
+msgstr "تنظیمات سایت به درستی اعمال نشده است"
+
+#: apps/menu/services/menu.py:93
+msgid "Set active recipe first"
+msgstr "ابتدا رسپی مورد استفاده را مشخص کنید"
+
+#: apps/menu/services/menu.py:151
+msgid "There is no price record for this product"
+msgstr "برای این کالا هیچ سابقه قیمتی وجود ندارد"
+
+#: apps/sale/models/sale_invoice.py:23
+msgid "Person who sales products"
+msgstr "مسئول فروش"
+
+#: apps/sale/models/sale_invoice.py:29
+msgid "Gest of cafe who buy products"
+msgstr "میهمان کافه که خرید را انجام داده"
+
+#: apps/sale/models/sale_invoice.py:63
+msgid "Sale Invoice"
+msgstr "فاکتور فروش"
+
+#: apps/sale/models/sale_invoice.py:64
+msgid "Sale Invoices"
+msgstr "فاکتور های فروش"
+
+#: apps/sale/models/sale_item.py:17
+msgid "Sale invoice"
+msgstr "فاکتور فروش"
+
+#: apps/sale/models/sale_item.py:24
+msgid "Sold product"
+msgstr "کالا فروحته شده"
+
+#: apps/sale/models/sale_item.py:30
+msgid "Sold unit price"
+msgstr "قیمت واحد فروش"
+
+#: apps/sale/models/sale_item.py:44
+msgid "Sale item"
+msgstr "فروش آیتم"
+
+#: apps/sale/models/sale_item.py:45
+msgid "Sale items"
+msgstr "فروش آیتم ها"
 
 #: apps/user/admin.py:11
 msgid "Password"
@@ -689,11 +778,11 @@ msgstr "تاریخ ساخت"
 msgid "Images"
 msgstr "عکس ها"
 
-#: config/urls.py:14
+#: config/urls.py:13
 msgid "Chino Admin Panel"
 msgstr "پنل مدیریتی چینو"
 
-#: config/urls.py:15 config/urls.py:16
+#: config/urls.py:14 config/urls.py:15
 msgid "Chino Admin"
 msgstr "مدیر چینو"
 

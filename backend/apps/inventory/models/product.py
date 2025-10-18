@@ -44,6 +44,14 @@ class Product(models.Model):
         _("Is Active Product"), choices=BOOLEANTEXT, default=True
     )
     note = models.CharField(_("Note"), max_length=128, null=True, blank=True)
+    active_recipe = models.ForeignKey(
+        "inventory.Recipe",
+        models.SET_NULL,
+        verbose_name=_("Active recipe"),
+        related_name="product_produced",
+        null=True,
+        blank=True,
+    )
     last_purchased_price = models.DecimalField(
         _("Last price"), max_digits=10, decimal_places=5, default=Decimal("0")
     )

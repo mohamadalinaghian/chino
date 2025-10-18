@@ -1,5 +1,6 @@
 from apps.menu.models import Menu, MenuCategory
 from django.contrib import admin
+from django.utils.translation import gettext_lazy as _
 from ordered_model.admin import OrderedModelAdmin
 
 
@@ -15,6 +16,7 @@ class MenuAdmin(OrderedModelAdmin):
     list_display = (
         "name",
         "category",
+        "suggest_price_dis",
         "price",
         "is_available",
         "move_up_down_links",
@@ -25,3 +27,7 @@ class MenuAdmin(OrderedModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
     autocomplete_fields = ["category", "name"]
     list_editable = ("price",)
+
+    @admin.display(description=_("Suggested price"))
+    def suggest_price_dis(self, obj):
+        return obj.suggested_price

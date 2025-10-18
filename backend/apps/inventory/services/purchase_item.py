@@ -73,6 +73,7 @@ class PurchaseItemService:
             return True
 
         change_ratio = abs(unit_price - last_unit_price) / last_unit_price
+        change_ratio *= 100
 
         return change_ratio <= valid_change_ratio
 

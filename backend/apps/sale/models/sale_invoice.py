@@ -1,0 +1,65 @@
+from django.contrib.auth import get_user_model
+from django.db import models
+from django.utils import timezone
+from django.utils.functional import cached_property
+from django.utils.translation import gettext_lazy as _
+from persiantools.jdatetime import JalaliDate
+
+
+class SaleInvoice(models.Model):
+    """
+    Parent of a sale. store meta data about a sale.
+    """
+
+    # Fields
+    issue_date = models.DateField(_("Issue date"), default=timezone.now, db_index=True)
+
+    staff = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.PROTECT,
+        related_name="sale_invoices",
+        verbose_name=_("Staff"),
+        limit_choices_to={"is_staff": True},
+        help_text=_("Person who sales products"),
+    )
+    customer = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.PROTECT,
+        related_name="buy_invoices",
+        help_text=_("Gest of cafe who buy products"),
+    )
+    # payments method
+    #
+
+    # Property
+    @cached_property
+    def jalali_issue_date(self):
+        return JalaliDate(self.issue_date).strftime("%c", locale="fa")
+
+    @cached_property
+    def total_cost(self):
+        result = self.items.aggregate(
+            total=models.Sum(models.F("sold_unit_price") * models.F("quantity"))
+        )
+        return result["total"]
+
+    # Method
+    def __str__(self) -> str:
+        return f"{self.jalali_issue_date}"
+
+    def clean(self):
+        """
+        Check for staff.
+        """
+        if self.staff.is_staff is False:
+            from django.core.exceptions import ValidationError
+
+            raise ValidationError({"staff": _("Chosen staff must be a staff member.")})
+
+        super().clean()
+
+    # Meta
+    class Meta:
+        verbose_name = _("Sale Invoice")
+        verbose_name_plural = _("Sale Invoices")
+        ordering = ("-issue_date",)

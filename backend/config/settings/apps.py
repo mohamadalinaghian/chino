@@ -15,6 +15,8 @@ INSTALLED_APPS = [
     "ordered_model",
     "apps.utils",
     "apps.inventory",
+    "apps.sale",
+    "apps.core_setting",
 ]
 
 if DEBUG:

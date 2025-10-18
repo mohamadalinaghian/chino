@@ -13,7 +13,7 @@ class PurchaseItem(models.Model):
     # Fields
     purchase_invoice = models.ForeignKey(
         "inventory.PurchaseInvoice",
-        models.PROTECT,
+        models.CASCADE,
         related_name="items",
         verbose_name=_("Purchase Invoice"),
         help_text=_("Invoice which item belongs to"),

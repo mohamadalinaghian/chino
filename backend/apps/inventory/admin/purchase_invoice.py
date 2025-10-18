@@ -31,7 +31,7 @@ class PurchaseInvoiceAdminForm(forms.ModelForm):
 @admin.register(PurchaseInvoice)
 class PurchaseInvoiceAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
     form = PurchaseInvoiceAdminForm
-    list_display = ("jalali_issue_date", "staff", "supplier")
+    list_display = ("jalali_issue_date", "staff", "supplier", "total_cost")
     # list_editable = ("staff", "supplier")
     list_select_related = ("staff", "supplier")
     list_per_page = 10

@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django import forms
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from jalali_date.admin import AdminJalaliDateWidget, JalaliDateField
 
@@ -119,13 +120,15 @@ class PurchaseItemInlineForm(forms.ModelForm):
                 _product, _unit_price, _total_cost, _final_qty
             )
 
-            from django.conf import settings
+            from ...core_setting.models import SiteSettings
 
-            _ratio = settings.PURCHASE_VALID_CHANGE_RATIO
+            _ratio = SiteSettings.objects.get(
+                singleton_key="default"
+            ).purchase_valid_change_ratio
             _ratio = Decimal(_ratio)
 
             if not _service.within_change_ratio(_product, _unit_price, _ratio):
-                raise forms.ValidationError(
+                raise ValidationError(
                     _(
                         "Unit price deviates too much from the last purchase price. Please confirm with a manager."
                     )
