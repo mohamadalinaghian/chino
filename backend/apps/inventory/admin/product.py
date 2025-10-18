@@ -7,6 +7,7 @@ from ..models import Product
 class ProductAdmin(admin.ModelAdmin):
     list_display = ("name", "type", "active_recipe", "last_purchased_price")
     list_editable = ("last_purchased_price", "active_recipe")
+    autocomplete_fields = ("active_recipe",)
     list_filter = (
         "type",
         "is_countable",
