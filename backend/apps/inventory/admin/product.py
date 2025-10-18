@@ -5,8 +5,8 @@ from ..models import Product
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ("name", "type", "last_purchased_price")
-    list_editable = ("last_purchased_price",)
+    list_display = ("name", "type", "active_recipe", "last_purchased_price")
+    list_editable = ("last_purchased_price", "active_recipe")
     list_filter = (
         "type",
         "is_countable",
