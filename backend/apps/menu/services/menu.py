@@ -124,7 +124,7 @@ class MenuItemService:
 
     # ---------- Public API ----------
     @classmethod
-    def suggested_price(cls, product) -> int:
+    def suggested_price(cls, product):
         """
         Main entry:
           - Try FIFO unit price of the product itself (finished/processed stock).
@@ -157,4 +157,4 @@ class MenuItemService:
 
         # 3) Apply formula and deterministic rounding to integer
         raw_price = cls._apply_formula(unit_cost)
-        return cls._round_int(raw_price)
+        return cls._round_int(raw_price), cls._round_int(unit_cost)

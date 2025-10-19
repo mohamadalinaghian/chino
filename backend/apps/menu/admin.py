@@ -16,6 +16,7 @@ class MenuAdmin(OrderedModelAdmin):
     list_display = (
         "name",
         "category",
+        "material_cost_dis",
         "suggest_price_dis",
         "price",
         "is_available",
@@ -31,3 +32,7 @@ class MenuAdmin(OrderedModelAdmin):
     @admin.display(description=_("Suggested price"))
     def suggest_price_dis(self, obj):
         return obj.suggested_price
+
+    @admin.display(description=_("Material cost"))
+    def material_cost_dis(self, obj):
+        return obj.material_cost

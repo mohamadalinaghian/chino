@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-18 21:02+0330\n"
+"POT-Creation-Date: 2025-10-19 10:51+0330\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,31 +18,31 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: apps/core_setting/admin.py:15
+#: apps/core_setting/admin.py:16
 msgid "Jalali update date"
 msgstr "تاریخ جلالی به روزرسانی"
 
-#: apps/core_setting/models.py:18
+#: apps/core_setting/models.py:19
 msgid "Singleton key"
 msgstr "کلید یگانگی"
 
-#: apps/core_setting/models.py:23
+#: apps/core_setting/models.py:24
 msgid "Profit margin"
 msgstr "حاشیه سود"
 
-#: apps/core_setting/models.py:28
+#: apps/core_setting/models.py:29
 msgid "Tax rate"
 msgstr "درصد مالیات"
 
-#: apps/core_setting/models.py:34
+#: apps/core_setting/models.py:35
 msgid "Overhead value"
 msgstr "هزینه بالا دستی"
 
-#: apps/core_setting/models.py:40
+#: apps/core_setting/models.py:41
 msgid "Purchase valid change ratio"
 msgstr "تلورانس مجاز قیمت خرید"
 
-#: apps/core_setting/models.py:51 apps/core_setting/models.py:52
+#: apps/core_setting/models.py:55 apps/core_setting/models.py:56
 msgid "Site Settings"
 msgstr "تنظیمات سایت"
 
@@ -533,9 +533,13 @@ msgstr ""
 "این کالا در لیست کالاهای تأمین کننده نیست. مجدد بررسی کنید یا ابتدا آن را "
 "اضافه کنید به لیست."
 
-#: apps/menu/admin.py:31
+#: apps/menu/admin.py:32
 msgid "Suggested price"
 msgstr "قیمت پیشنهادی"
+
+#: apps/menu/admin.py:36
+msgid "Material cost"
+msgstr "هزینه مواد"
 
 #: apps/menu/models/category.py:9 apps/utils/models.py:24
 msgid "Title"
@@ -578,11 +582,11 @@ msgstr "عکس های بیشتر"
 msgid "Is Available"
 msgstr "آیا فعال است؟"
 
-#: apps/menu/models/item.py:102
+#: apps/menu/models/item.py:128
 msgid "Menu"
 msgstr "منو"
 
-#: apps/menu/models/item.py:103
+#: apps/menu/models/item.py:129
 msgid "Menus"
 msgstr "منو ها"
 
@@ -590,11 +594,11 @@ msgstr "منو ها"
 msgid "Site settings not configured"
 msgstr "تنظیمات سایت به درستی اعمال نشده است"
 
-#: apps/menu/services/menu.py:93
+#: apps/menu/services/menu.py:94
 msgid "Set active recipe first"
 msgstr "ابتدا رسپی مورد استفاده را مشخص کنید"
 
-#: apps/menu/services/menu.py:151
+#: apps/menu/services/menu.py:152
 msgid "There is no price record for this product"
 msgstr "برای این کالا هیچ سابقه قیمتی وجود ندارد"
 

@@ -52,18 +52,46 @@ class Menu(OrderedModel):
 
     order_with_respect_to = "category"
 
-    @cached_property
-    def suggested_price(self) -> int | None:
+    def _get_suggested_tuple(self):
         """
-        Always-up-to-date computed price. No DB storage.
-        Returns int or None if inputs are incomplete.
+        Call service once and cache result on the instance.
+        Expected service return:
+          - (price:int, material_cost:Decimal)  OR
+          - price:int   (legacy)
+        Returns:
+          (price:int|None, material_cost:Decimal|None) or (None, None) on failure.
         """
         if not self.name_id:
-            return None
+            return (None, None)
+
+        # simple per-instance memoization
+        if hasattr(self, "_suggested_cache"):
+            return self._suggested_cache
+
         try:
-            return MenuItemService.suggested_price(self.name)
+            res = MenuItemService.suggested_price(self.name)
         except Exception:
-            return None
+            self._suggested_cache = (None, None)
+            return self._suggested_cache
+
+        # normalize to tuple
+        if isinstance(res, tuple):
+            price, mat_cost = res
+        else:
+            price, mat_cost = res, None
+
+        self._suggested_cache = (price, mat_cost)
+        return self._suggested_cache
+
+    @cached_property
+    def suggested_price(self) -> int | None:
+        price, _ = self._get_suggested_tuple()
+        return price
+
+    @cached_property
+    def material_cost(self) -> int | None:
+        _, mat_cost = self._get_suggested_tuple()
+        return mat_cost
 
     def save(self, *args, **kwargs):
         """
