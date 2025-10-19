@@ -2,7 +2,6 @@ from io import BytesIO
 
 from django.core.files.base import ContentFile
 from django.db import models
-from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from ordered_model.models import OrderedModel
 from PIL import Image as PILImage
@@ -83,12 +82,12 @@ class Menu(OrderedModel):
         self._suggested_cache = (price, mat_cost)
         return self._suggested_cache
 
-    @cached_property
+    @property
     def suggested_price(self) -> int | None:
         price, _ = self._get_suggested_tuple()
         return price
 
-    @cached_property
+    @property
     def material_cost(self) -> int | None:
         _, mat_cost = self._get_suggested_tuple()
         return mat_cost
