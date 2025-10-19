@@ -1,4 +1,5 @@
 from django import forms
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from jalali_date.admin import AdminJalaliDateWidget
 
@@ -28,6 +29,6 @@ class StockForm(forms.ModelForm):
         remaining_quantity = cleaned["remaining_quantity"]
 
         if remaining_quantity > initial_quantity:
-            raise forms.ValidationError(
+            raise ValidationError(
                 _("Remaining quantity can not be greater than initial.")
             )

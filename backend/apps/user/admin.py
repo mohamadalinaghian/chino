@@ -2,6 +2,7 @@ from apps.user.models import Account, Profile
 from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from jalali_date.admin import ModelAdminJalaliMixin
 from jalali_date.widgets import AdminJalaliDateWidget
@@ -17,7 +18,7 @@ class AccountCreationForm(forms.ModelForm):
 
     def clean_password2(self):
         if self.cleaned_data["password1"] != self.cleaned_data["password2"]:
-            raise forms.ValidationError("Passwords don't match")
+            raise ValidationError("Passwords don't match")
         return self.cleaned_data["password2"]
 
     def save(self, commit=True):

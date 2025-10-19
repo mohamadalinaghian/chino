@@ -63,7 +63,7 @@ class PurchaseItemInlineForm(forms.ModelForm):
         _unit_price = self.cleaned_data["purchased_unit_price"]
 
         if _unit_price and _unit_price < ZERO:
-            raise forms.ValidationError(_("Only positive numbers"))
+            raise ValidationError(_("Only positive numbers"))
 
         return _unit_price
 
@@ -71,26 +71,26 @@ class PurchaseItemInlineForm(forms.ModelForm):
         _quantity = self.cleaned_data["quantity"]
 
         if _quantity and _quantity < ZERO:
-            raise forms.ValidationError(_("Only positive numbers"))
+            raise ValidationError(_("Only positive numbers"))
 
         return _quantity
 
     def clean_total_cost(self):
         _total_cost = self.cleaned_data["total_cost"]
         if _total_cost and _total_cost <= ZERO:
-            raise forms.ValidationError(_("Only positive numbers"))
+            raise ValidationError(_("Only positive numbers"))
         return _total_cost
 
     def clean_package_count(self):
         _pakhage_count = self.cleaned_data["package_count"]
         if _pakhage_count and _pakhage_count <= ZERO:
-            raise forms.ValidationError(_("Only positive numbers"))
+            raise ValidationError(_("Only positive numbers"))
         return _pakhage_count
 
     def clean_package_quantity(self):
         _package_quantity = self.cleaned_data["package_quantity"]
         if _package_quantity and _package_quantity <= ZERO:
-            raise forms.ValidationError(_("Only positive numbers"))
+            raise ValidationError(_("Only positive numbers"))
         return _package_quantity
 
     ## TODO clean expiry date
