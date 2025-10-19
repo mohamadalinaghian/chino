@@ -54,11 +54,18 @@ class MenuItemService:
         return Decimal(tr_percent) / Decimal("100")
 
     @classmethod
-    def _overhead_value(cls) -> Decimal:
+    def _overhead_bar_value(cls) -> Decimal:
         """
         Overhead value is modeled as a fixed amount per serving (Decimal).
         """
-        return Decimal(cls._settings().overhead_value)
+        return Decimal(cls._settings().overhead_bar_value)
+
+    @classmethod
+    def _overhead_food_value(cls) -> Decimal:
+        """
+        Overhead value is modeled as a fixed amount per serving (Decimal).
+        """
+        return Decimal(cls._settings().overhead_food_value)
 
     # ---------- FIFO (peek) ----------
     @staticmethod
@@ -106,11 +113,19 @@ class MenuItemService:
 
     # ---------- Price math & rounding ----------
     @classmethod
-    def _apply_formula(cls, unit_cost: Decimal) -> Decimal:
+    def _apply_formula(cls, unit_cost: Decimal, item_type) -> Decimal:
         """
         final = (unit_cost + overhead_value) * (1 + profit_margin) * (1 + tax_rate)
         """
-        base = unit_cost + cls._overhead_value()
+        from ..models import MenuCategory
+
+        if item_type == MenuCategory.Group.BAR_ITEM:
+            base = unit_cost + cls._overhead_bar_value()
+        elif item_type == MenuCategory.Group.FOOD:
+            base = unit_cost + cls._overhead_food_value()
+        else:
+            raise ValidationError(_("For this item no parent group submited"))
+
         price_ex_tax = base * (Decimal("1") + cls._profit_margin_frac())
         final = price_ex_tax * (Decimal("1") + cls._tax_rate_frac())
         return final
@@ -156,5 +171,10 @@ class MenuItemService:
                 unit_cost += Decimal(rc.quantity) * comp_price
 
         # 3) Apply formula and deterministic rounding to integer
-        raw_price = cls._apply_formula(unit_cost)
+        from ..models import Menu
+
+        item_type = (
+            Menu.objects.select_related("category").get(id=product.id).parent_group
+        )
+        raw_price = cls._apply_formula(unit_cost, item_type)
         return cls._round_int(raw_price), cls._round_int(unit_cost)

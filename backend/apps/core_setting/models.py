@@ -31,8 +31,14 @@ class SiteSettings(models.Model):
         validators=[pct_0_to_100_exclusive],
     )
 
-    overhead_value = models.DecimalField(
-        _("Overhead value"),
+    overhead_bar_value = models.DecimalField(
+        _("Overhead bar value"),
+        max_digits=10,
+        decimal_places=4,
+        default=Decimal("0.00"),
+    )
+    overhead_food_value = models.DecimalField(
+        _("Overhead food value"),
         max_digits=10,
         decimal_places=4,
         default=Decimal("0.00"),

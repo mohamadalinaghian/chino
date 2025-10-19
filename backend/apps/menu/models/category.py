@@ -5,6 +5,14 @@ from slugify import slugify
 
 
 class MenuCategory(OrderedModel):
+
+    class Group(models.TextChoices):
+        BAR_ITEM = "BAR", _("Bar item")
+        FOOD = "FOOD", _("Food")
+
+    parent_group = models.CharField(
+        _("Parent group"), max_length=10, default=Group.BAR_ITEM, choices=Group.choices
+    )
     title = models.CharField(
         verbose_name=_("Title"), max_length=50, unique=True, db_index=True
     )
