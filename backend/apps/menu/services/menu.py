@@ -174,7 +174,9 @@ class MenuItemService:
         from ..models import Menu
 
         item_type = (
-            Menu.objects.select_related("category").get(id=product.id).parent_group
+            Menu.objects.select_related("category")
+            .get(id=product.id)
+            .category.parent_group
         )
         raw_price = cls._apply_formula(unit_cost, item_type)
         return cls._round_int(raw_price), cls._round_int(unit_cost)
