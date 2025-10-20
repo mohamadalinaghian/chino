@@ -28,7 +28,11 @@ class Menu(OrderedModel):
         verbose_name=_("Description"), blank=True, null=True, max_length=255
     )
     slug = models.SlugField(
-        verbose_name=_("Slug"), max_length=50, unique=True, allow_unicode=True
+        verbose_name=_("Slug"),
+        max_length=50,
+        unique=True,
+        allow_unicode=True,
+        blank=True,
     )
     category = models.ForeignKey(
         "menu.MenuCategory",
