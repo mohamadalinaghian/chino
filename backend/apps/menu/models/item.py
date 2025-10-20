@@ -32,6 +32,7 @@ class Menu(OrderedModel):
         max_length=50,
         unique=True,
         allow_unicode=True,
+        null=True,  # For admin
         blank=True,
     )
     category = models.ForeignKey(
