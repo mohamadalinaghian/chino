@@ -61,15 +61,13 @@ class Menu(OrderedModel):
         Returns:
           (price:int|None, material_cost:Decimal|None) or (None, None) on failure.
         """
-        if not self.name_id:
-            return (None, None)
 
         # simple per-instance memoization
         if hasattr(self, "_suggested_cache"):
             return self._suggested_cache
 
         try:
-            res = MenuItemService.suggested_price(self.name)
+            res = MenuItemService.suggested_price(self.name.id)
         except Exception:
             self._suggested_cache = (None, None)
             return self._suggested_cache

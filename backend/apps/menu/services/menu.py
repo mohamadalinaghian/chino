@@ -69,7 +69,7 @@ class MenuItemService:
 
     # ---------- FIFO (peek) ----------
     @staticmethod
-    def _fifo_first_unit_price(product) -> Decimal | None:
+    def _fifo_first_unit_price(product_id) -> Decimal | None:
         """
         Return the unit_price of the oldest (FIFO) stock layer that still has remaining
         quantity for the given product. This does NOT consume stock. If no such layer
@@ -78,7 +78,7 @@ class MenuItemService:
         from ...inventory.models import Stock
 
         row = (
-            Stock.objects.filter(stored_product=product, remaining_quantity__gt=0)
+            Stock.objects.filter(stored_product=product_id, remaining_quantity__gt=0)
             .order_by("create_at")  # FIFO: oldest first
             .values_list("unit_price", flat=True)
             .first()
@@ -87,21 +87,20 @@ class MenuItemService:
 
     # ---------- Recipe ----------
     @staticmethod
-    def _active_recipe_components(product):
+    def _active_recipe_components(product_id):
         """
         Return queryset of RecipeComponent for the product's active recipe.
         Product.active_recipe is a nullable FK to Recipe.
         """
-        from ...inventory.models import Product as InvProduct
-        from ...inventory.models import RecipeComponent
+        from ...inventory.models import Product, RecipeComponent
 
-        prod = InvProduct.objects.only("id", "active_recipe").get(id=product.id)
-        recipe = prod.active_recipe
-        if recipe is None:
+        prod = Product.objects.only("id", "active_recipe").get(id=product_id)
+        recipe_id = prod.active_recipe
+        if recipe_id is None:
             raise ValidationError(_("Set active recipe first"))
 
         return (
-            RecipeComponent.objects.filter(recipe=recipe)
+            RecipeComponent.objects.filter(recipe=recipe_id)
             .select_related("consume_product")
             .only(
                 "id",
@@ -139,21 +138,21 @@ class MenuItemService:
 
     # ---------- Public API ----------
     @classmethod
-    def suggested_price(cls, product):
+    def suggested_price(cls, product_id):
         """
         Main entry:
-          - Try FIFO unit price of the product itself (finished/processed stock).
-          - If not available, compute from active recipe components using FIFO or
+        - Try FIFO unit price of the product itself (finished/processed stock).
+        - If not available, compute from active recipe components using FIFO or
             last_purchased_price fallback.
-          - Apply pricing formula and return an integer price.
+        - Apply pricing formula and return an integer price.
         """
         # 1) Try product's own FIFO layer (peek)
-        unit_cost = cls._fifo_first_unit_price(product)
+        unit_cost = cls._fifo_first_unit_price(product_id)
 
         # 2) If missing, sum component costs from active recipe
         if unit_cost is None:
             unit_cost = Decimal("0")
-            components = cls._active_recipe_components(product)
+            components = cls._active_recipe_components(product_id)
 
             for rc in components:
                 comp = rc.consume_product  # FK object
@@ -175,7 +174,7 @@ class MenuItemService:
 
         item_type = (
             Menu.objects.select_related("category")
-            .get(id=product.id)
+            .get(name=product_id)
             .category.parent_group
         )
         raw_price = cls._apply_formula(unit_cost, item_type)
