@@ -14,6 +14,7 @@ class MenuCategoryAdmin(OrderedModelAdmin):
 @admin.register(Menu)
 class MenuAdmin(OrderedModelAdmin):
     list_display = (
+        "id",
         "name",
         "category",
         "material_cost_dis",
