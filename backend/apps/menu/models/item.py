@@ -67,7 +67,7 @@ class Menu(OrderedModel):
             return self._suggested_cache
 
         try:
-            res = MenuItemService.suggested_price(self.name.id)
+            res = MenuItemService.suggested_price(self)
         except Exception:
             self._suggested_cache = (None, None)
             return self._suggested_cache

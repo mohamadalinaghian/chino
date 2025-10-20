@@ -25,7 +25,6 @@ class MenuAdmin(OrderedModelAdmin):
     list_filter = ("category", "is_available")
     search_fields = ("name__name", "description")
     filter_horizontal = ("images",)
-    prepopulated_fields = {"slug": ("name",)}
     autocomplete_fields = ["category", "name"]
     list_editable = ("price",)
 

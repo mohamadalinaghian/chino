@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-19 10:51+0330\n"
+"POT-Creation-Date: 2025-10-20 12:07+0330\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -35,14 +35,18 @@ msgid "Tax rate"
 msgstr "درصد مالیات"
 
 #: apps/core_setting/models.py:35
-msgid "Overhead value"
-msgstr "هزینه بالا دستی"
+msgid "Overhead bar value"
+msgstr "هزینه بالا دستی بار"
 
 #: apps/core_setting/models.py:41
+msgid "Overhead food value"
+msgstr "هزینه بالا دستی غذا"
+
+#: apps/core_setting/models.py:47
 msgid "Purchase valid change ratio"
 msgstr "تلورانس مجاز قیمت خرید"
 
-#: apps/core_setting/models.py:55 apps/core_setting/models.py:56
+#: apps/core_setting/models.py:61 apps/core_setting/models.py:62
 msgid "Site Settings"
 msgstr "تنظیمات سایت"
 
@@ -137,7 +141,7 @@ msgstr ""
 "قیمت واحد کالا خرید شده اختلاف زیادی با قیمت خرید قبلی دارد، با مدیر هماهنگ "
 "کنید."
 
-#: apps/inventory/forms/stock.py:32
+#: apps/inventory/forms/stock.py:33
 msgid "Remaining quantity can not be greater than initial."
 msgstr "مقدار باقی مانده نمیتواند از مقدار اولیه بیشتر شده باشد."
 
@@ -533,32 +537,44 @@ msgstr ""
 "این کالا در لیست کالاهای تأمین کننده نیست. مجدد بررسی کنید یا ابتدا آن را "
 "اضافه کنید به لیست."
 
-#: apps/menu/admin.py:32
+#: apps/menu/admin.py:31
 msgid "Suggested price"
 msgstr "قیمت پیشنهادی"
 
-#: apps/menu/admin.py:36
+#: apps/menu/admin.py:35
 msgid "Material cost"
 msgstr "هزینه مواد"
 
-#: apps/menu/models/category.py:9 apps/utils/models.py:24
+#: apps/menu/models/category.py:10
+msgid "Bar item"
+msgstr "بار آیتم"
+
+#: apps/menu/models/category.py:11
+msgid "Food"
+msgstr "غذا"
+
+#: apps/menu/models/category.py:14
+msgid "Parent group"
+msgstr "گروه اصلی"
+
+#: apps/menu/models/category.py:17 apps/utils/models.py:24
 msgid "Title"
 msgstr "عنوان"
 
-#: apps/menu/models/category.py:12 apps/menu/models/item.py:31
+#: apps/menu/models/category.py:20 apps/menu/models/item.py:31
 #: apps/user/models.py:69
 msgid "Slug"
 msgstr "اسلاگ"
 
-#: apps/menu/models/category.py:15 apps/menu/models/item.py:28
+#: apps/menu/models/category.py:23 apps/menu/models/item.py:28
 msgid "Description"
 msgstr "توضیحات"
 
-#: apps/menu/models/category.py:25
+#: apps/menu/models/category.py:33
 msgid "Menu Category"
 msgstr "دسته بندی منو"
 
-#: apps/menu/models/category.py:26
+#: apps/menu/models/category.py:34
 msgid "Menu Categories"
 msgstr "دسته بندی های منو"
 
@@ -582,23 +598,27 @@ msgstr "عکس های بیشتر"
 msgid "Is Available"
 msgstr "آیا فعال است؟"
 
-#: apps/menu/models/item.py:128
+#: apps/menu/models/item.py:126
 msgid "Menu"
 msgstr "منو"
 
-#: apps/menu/models/item.py:129
+#: apps/menu/models/item.py:127
 msgid "Menus"
 msgstr "منو ها"
 
-#: apps/menu/services/menu.py:39
+#: apps/menu/services/menu.py:16
 msgid "Site settings not configured"
 msgstr "تنظیمات سایت به درستی اعمال نشده است"
 
-#: apps/menu/services/menu.py:94
+#: apps/menu/services/menu.py:55
 msgid "Set active recipe first"
 msgstr "ابتدا رسپی مورد استفاده را مشخص کنید"
 
-#: apps/menu/services/menu.py:152
+#: apps/menu/services/menu.py:77
+msgid "For this item no parent group submited"
+msgstr "برای گروه این آیتم دسته بندی اصلی مشخص نشده است"
+
+#: apps/menu/services/menu.py:107
 msgid "There is no price record for this product"
 msgstr "برای این کالا هیچ سابقه قیمتی وجود ندارد"
 
@@ -638,23 +658,23 @@ msgstr "فروش آیتم"
 msgid "Sale items"
 msgstr "فروش آیتم ها"
 
-#: apps/user/admin.py:11
+#: apps/user/admin.py:12
 msgid "Password"
 msgstr "گذرواژه"
 
-#: apps/user/admin.py:12
+#: apps/user/admin.py:13
 msgid "Confirm password"
 msgstr "تأیید گذرواژه"
 
-#: apps/user/admin.py:67
+#: apps/user/admin.py:68
 msgid "Personal info"
 msgstr "اطلاعات شخصی"
 
-#: apps/user/admin.py:69
+#: apps/user/admin.py:70
 msgid "Permissions"
 msgstr "دسترسی ها"
 
-#: apps/user/admin.py:80
+#: apps/user/admin.py:81
 msgid "Important dates"
 msgstr "تاریخ های مهم"
 
