@@ -74,7 +74,7 @@ backup_db:
 	  "~/"*) BD="$$HOME/$${BD#\~/}";; \
 	esac; \
 	mkdir -p "$$BD"; \
-	DATE="$(shell jdate +%d-%b-%Y)-$(shell date +%H%M%S)"; \
+	DATE="$$(shell jdate +%d-%b-%Y)-$$(shell date +%H%M%S)"; \
 	DEST="$$BD/db_$$DATE.sql.gz"; \
 	echo "==> writing $$DEST"; \
 	docker compose -f compose.prod.yml exec -T db sh -c 'pg_dump -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"' \
