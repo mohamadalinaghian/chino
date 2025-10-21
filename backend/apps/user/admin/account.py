@@ -1,11 +1,11 @@
-from apps.user.models import Account, Profile
+from apps.user.models import Account
 from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
-from jalali_date.admin import ModelAdminJalaliMixin
-from jalali_date.widgets import AdminJalaliDateWidget
+
+from .profile import ProfileInline
 
 
 class AccountCreationForm(forms.ModelForm):
@@ -33,23 +33,6 @@ class AccountChangeForm(forms.ModelForm):
     class Meta:
         model = Account
         fields = ("mobile", "name", "is_active", "is_staff", "is_superuser")
-
-
-class ProfileAdminForm(forms.ModelForm):
-    class Meta:
-        model = Profile
-        fields = "__all__"
-        widgets = {
-            "birth_date": AdminJalaliDateWidget,
-        }
-
-
-class ProfileInline(admin.StackedInline):
-    model = Profile
-    form = ProfileAdminForm
-    can_delete = False
-    verbose_name_plural = "Profile"
-    fk_name = "user"
 
 
 @admin.register(Account)
@@ -105,11 +88,3 @@ class AccountAdmin(BaseUserAdmin):
         if not obj:
             return []
         return super().get_inline_instances(request, obj)
-
-
-@admin.register(Profile)
-class ProfileAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
-    form = ProfileAdminForm
-    list_display = ("user", "email", "birth_date", "sex", "is_email_verified")
-    search_fields = ("user__mobile", "user__name", "email", "address")
-    list_filter = ("sex", "is_email_verified")

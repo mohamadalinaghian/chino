@@ -8,11 +8,18 @@ from persiantools.jdatetime import JalaliDate
 
 class SaleInvoice(models.Model):
     """
-    Parent of a sale. store meta data about a sale.
+    Parent of a sale. store meta data about a sale invoice.
     """
 
+    class BillStatus(models.TextChoices):
+        OPEN = "OPEN", _("Open")
+        PARTIALLY_PAID = "PARTIAL", _("Partially paid")
+        PAID = "PAID", _("Paid")
+
     # Fields
-    issue_date = models.DateField(_("Issue date"), default=timezone.now, db_index=True)
+    issue_date = models.DateTimeField(
+        _("Issue date"), default=timezone.now, db_index=True
+    )
 
     staff = models.ForeignKey(
         get_user_model(),
@@ -28,13 +35,23 @@ class SaleInvoice(models.Model):
         related_name="buy_invoices",
         help_text=_("Gest of cafe who buy products"),
     )
-    # payments method
-    #
+    note = models.CharField(_("Note"), max_length=128, null=True, blank=True)
+    bill_status = models.CharField(
+        _("Bill status"),
+        max_length=16,
+        choices=BillStatus.choices,
+        default=BillStatus.OPEN,
+    )
+    bill_total = models.DecimalField(
+        _("Bill total"),
+        max_digits=10,
+        decimal_places=4,
+    )
 
     # Property
     @cached_property
     def jalali_issue_date(self):
-        return JalaliDate(self.issue_date).strftime("%c", locale="fa")
+        return JalaliDate(self.issue_date.date()).strftime("%c", locale="fa")
 
     @cached_property
     def total_cost(self):
@@ -63,3 +80,7 @@ class SaleInvoice(models.Model):
         verbose_name = _("Sale Invoice")
         verbose_name_plural = _("Sale Invoices")
         ordering = ("-issue_date",)
+        indexes = [
+            models.Index(fields=("issue_date",)),
+            models.Index(fields=("bill_status",)),
+        ]

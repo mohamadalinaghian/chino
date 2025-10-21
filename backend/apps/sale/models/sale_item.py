@@ -50,3 +50,7 @@ class SaleItem(models.Model):
                 name="uq_sale_item",
             ),
         )
+        indexes = [
+            models.Index(fields=("sale_invoice",)),
+            models.Index(fields=("product",)),
+        ]
