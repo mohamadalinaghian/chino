@@ -80,21 +80,24 @@ _guard_prod:
 
 backup: _guard_prod
 	@set -eu; \
-	# Expand ~ safely (portable)
+	# --- Expand ~ without bashisms/exec
 	BD="$(BACKUP_DIR)"; \
-	BD=$$(eval echo $$BD); \
-	# Jalali timestamp from backend container (fallback to Gregorian)
+	case "$$BD" in \
+	  "~") BD="$$HOME";; \
+	  "~/"*) BD="$$HOME/$${BD#\~/}";; \
+	esac; \
+	# --- Jalali timestamp from backend (fallback to Gregorian)
 	DATE="$$( \
-		$(DOCKER) exec -T backend sh -c "python -c \"import sys; \
+		$(DOCKER) exec -T backend sh -c "python -c 'import sys; \
 try: \
     from persiantools.jdatetime import JalaliDateTime as JDT; \
     try: \
-        from zoneinfo import ZoneInfo; tz = ZoneInfo('Asia/Tehran') \
+        from zoneinfo import ZoneInfo; tz = ZoneInfo(\"Asia/Tehran\") \
     except Exception: \
-        import pytz; tz = pytz.timezone('Asia/Tehran'); \
-    print(JDT.now(tz).strftime('%Y%m%d_%H%M%S')) \
+        import pytz; tz = pytz.timezone(\"Asia/Tehran\"); \
+    print(JDT.now(tz).strftime(\"%Y%m%d_%H%M%S\")) \
 except Exception: \
-    print('')\"" 2>/dev/null || true \
+    print(\"\")'" 2>/dev/null || true \
 	)"; \
 	if [ -z "$$DATE" ]; then DATE="$$(TZ=Asia/Tehran date +%Y%m%d_%H%M%S)"; fi; \
 	DEST="$$BD/$$DATE"; \
@@ -140,11 +143,11 @@ except Exception: \
 	if [ -n "$$FILES" ]; then sha256sum $$FILES > SHA256SUMS.txt; else : > SHA256SUMS.txt; fi; \
 	echo "==> backup completed: $$DEST"
 
-# Remove backups older than KEEP_DAYS (default 7)
 KEEP_DAYS ?= 7
 backup_rotate:
 	@set -eu; \
-	BD="$(BACKUP_DIR)"; BD=$$(eval echo $$BD); \
+	BD="$(BACKUP_DIR)"; \
+	case "$$BD" in "~") BD="$$HOME";; "~/"*) BD="$$HOME/$${BD#\~/}";; esac; \
 	if [ ! -d "$$BD" ]; then echo "no $$BD to rotate"; exit 0; fi; \
 	echo "==> pruning backups older than $(KEEP_DAYS) days in $$BD"; \
 	find "$$BD" -maxdepth 1 -mindepth 1 -type d -mtime +$(KEEP_DAYS) -print -exec rm -rf {} \; || true; \
