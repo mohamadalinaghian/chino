@@ -68,10 +68,15 @@ git_reset:
 
 backup_db:
 	@set -eu; \
-	mkdir -p /backup; \
+	BD="$(BACKUP_DIR)"; \
+	case "$$BD" in \
+	  "~") BD="$$HOME";; \
+	  "~/"*) BD="$$HOME/$${BD#\~/}";; \
+	esac; \
+	mkdir -p "$$BD"; \
 	DATE="$$(date +%Y%m%d_%H%M%S)"; \
-	DEST="/backup/db_$$DATE.sql.gz"; \
+	DEST="$$BD/db_$$DATE.sql.gz"; \
 	echo "==> writing $$DEST"; \
-	docker compose -f compose.prod.yml exec -T db sh -c 'PGPASSWORD="$$POSTGRES_PASSWORD" pg_dump -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"' \
+	docker compose -f compose.prod.yml exec -T db sh -c 'pg_dump -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"' \
 	| gzip -c > "$$DEST"; \
 	echo "==> done: $$DEST"
