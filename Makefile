@@ -65,11 +65,13 @@ git_reset:
 
 
 
+# ------------------- Backups (prod-only, docker-only) -------------------
+
 BACKUP_DIR ?= ~/backup
 
 .PHONY: backup backup_rotate backup_restore_notes
 
-# Internal guard: fail if not prod
+# Guard: only allow on production compose
 _guard_prod:
 	@if [[ "$(ENV)" != "prod" ]]; then \
 		echo "✖ backup allowed only when ENV=prod (current: $(ENV))"; \
@@ -78,8 +80,15 @@ _guard_prod:
 
 backup: _guard_prod
 	@set -euo pipefail; \
-	DATE="$$(date +%Y%m%d_%H%M%S)"; \
-	DEST="$(BACKUP_DIR)/$$DATE"; \
+	# Normalize ~ to $HOME to avoid redirection problems
+	BD="$(BACKUP_DIR)"; \
+	BD="$${BD/#\~/$${HOME}}"; \
+	# Jalali timestamp in Asia/Tehran via backend Python; fallback to Gregorian
+	DATE="$$( \
+		$(DOCKER) exec backend sh -lc 'python - <<PY 2>/dev/null || true\ntry:\n from persiantools.jdatetime import JalaliDateTime as JDT\n try:\n  from zoneinfo import ZoneInfo\n  tz = ZoneInfo(\"Asia/Tehran\")\n except Exception:\n  import pytz; tz = pytz.timezone(\"Asia/Tehran\")\n print(JDT.now(tz).strftime(\"%Y%m%d_%H%M%S\"))\nexcept Exception:\n pass\nPY' \
+	)"; \
+	if [[ -z "$$DATE" ]]; then DATE="$$(TZ=Asia/Tehran date +%Y%m%d_%H%M%S)"; fi; \
+	DEST="$$BD/$$DATE"; \
 	mkdir -p "$$DEST"; \
 	echo "==> [$$DATE] starting backup into $$DEST"; \
 	\
@@ -100,20 +109,53 @@ backup: _guard_prod
 		> "$$DEST/db.schema.sql"; \
 	\
 	echo "==> archiving media directory from backend"; \
-	# if /app/media doesn't exist, skip quietly
-	$(DOCKER) exec backend sh -lc 'cd /app && test -d media && tar -czf - media || exit 0' \
-		> "$$DEST/media.tgz"; \
+	if $(DOCKER) exec backend sh -lc 'test -d /app/media'; then \
+		$(DOCKER) exec backend sh -lc 'tar -C /app -czf - media' > "$$DEST/media.tgz"; \
+	else \
+		echo "   (no /app/media — skipping)"; \
+	fi; \
+	\
+	echo "==> archiving static directory from backend"; \
+	if $(DOCKER) exec backend sh -lc 'test -d /app/static'; then \
+		$(DOCKER) exec backend sh -lc 'tar -C /app -czf - static' > "$$DEST/static.tgz"; \
+	else \
+		echo "   (no /app/static — skipping)"; \
+	fi; \
 	\
 	echo "==> checksums"; \
-	( cd "$$DEST" && sha256sum * > SHA256SUMS.txt ) || true; \
-	\
+	cd "$$DEST"; \
+	FILES=""; \
+	for f in globals.sql db.custom.dump db.plain.sql db.schema.sql media.tgz static.tgz; do \
+		[[ -f "$$f" ]] && FILES="$$FILES $$f"; \
+	done; \
+	if [[ -n "$$FILES" ]]; then sha256sum $$FILES > SHA256SUMS.txt; else touch SHA256SUMS.txt; fi; \
 	echo "==> backup completed: $$DEST"
 
 # Remove backups older than KEEP_DAYS (default 7)
 KEEP_DAYS ?= 7
 backup_rotate:
 	@set -euo pipefail; \
-	test -d "$(BACKUP_DIR)" || { echo "no $(BACKUP_DIR) to rotate"; exit 0; }; \
-	echo "==> pruning backups older than $(KEEP_DAYS) days in $(BACKUP_DIR)"; \
-	find "$(BACKUP_DIR)" -maxdepth 1 -type d -mtime +$(KEEP_DAYS) -print -exec rm -rf {} \; || true; \
+	BD="$(BACKUP_DIR)"; BD="$${BD/#\~/$${HOME}}"; \
+	if [[ ! -d "$$BD" ]]; then echo "no $$BD to rotate"; exit 0; fi; \
+	echo "==> pruning backups older than $(KEEP_DAYS) days in $$BD"; \
+	find "$$BD" -maxdepth 1 -mindepth 1 -type d -mtime +$(KEEP_DAYS) -print -exec rm -rf {} \; || true; \
 	echo "==> rotation done"
+
+backup_restore_notes:
+	@cat <<'EOF'
+Disaster restore (high-level):
+
+# 1) Roles / globals
+psql -U postgres -h <host> -f globals.sql
+
+# 2) DB (preferred: custom dump)
+createdb <new_db>
+pg_restore -U <user> -d <new_db> -c --if-exists db.custom.dump
+
+#    or from plain SQL (slower, readable)
+psql -U <user> -d <new_db> -f db.plain.sql
+
+# 3) Media / Static
+tar -xzf media.tgz -C /app
+tar -xzf static.tgz -C /app
+EOF
