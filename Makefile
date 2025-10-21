@@ -1,77 +1,7 @@
-SHELL := /bin/bash
-include .env.make
-DOCKER := docker compose -f compose.$(ENV).yml
-PODMAN := podman-compose -f compose.$(ENV).yml
-
-update:
-	git pull && make full_down && make up
-
-build:
-	$(DOCKER) build
-
-up:
-	$(DOCKER) up -d
-
-up_back:
-	$(DOCKER) up -d backend
-
-pup_back:
-	$(PODMAN) up -d backend
-
-front_bash:
-	$(DOCKER) exec frontend bash
-
-reset:
-	$(DOCKER) restart
-preset:
-	$(PODMAN) restart
-
-down:
-	$(DOCKER) down
-pdown:
-	$(PODMAN) down
-
-full_down:
-	$(DOCKER) down --rmi local
-
-back_bash:
-	$(DOCKER) exec backend bash
-
-pback_bash:
-	$(PODMAN) exec backend bash
-
-shell:
-	$(DOCKER) exec backend python manage.py shell
-
-dbshell:
-	$(DOCKER) exec db sh
-
-log:
-	$(DOCKER) logs
-plogs:
-	$(PODMAN) logs
-
-test_backend:
-	$(DOCKER) exec backend pytest
-
-lint_backend:
-	$(DOCKER) exec backend ruff check .
-
-format_backend:
-	$(DOCKER) exec backend ruff format .
-
-git_reset:
-	git pull && make reset
-
-
-
-# ------------------- Backups (prod-only, docker-only) -------------------
-
 BACKUP_DIR ?= ~/backup
 
 .PHONY: backup backup_rotate backup_restore_notes
 
-# Guard: only allow on production compose
 _guard_prod:
 	@if [[ "$(ENV)" != "prod" ]]; then \
 		echo "✖ backup allowed only when ENV=prod (current: $(ENV))"; \
@@ -80,12 +10,21 @@ _guard_prod:
 
 backup: _guard_prod
 	@set -euo pipefail; \
-	# Normalize ~ to $HOME to avoid redirection problems
+	# --- Expand ~ safely (portable)
 	BD="$(BACKUP_DIR)"; \
-	BD="$${BD/#\~/$${HOME}}"; \
-	# Jalali timestamp in Asia/Tehran via backend Python; fallback to Gregorian
+	BD="$$(eval echo $$BD)"; \
+	# --- Jalali timestamp from backend container (fallback to Gregorian)
 	DATE="$$( \
-		$(DOCKER) exec backend sh -lc 'python - <<PY 2>/dev/null || true\ntry:\n from persiantools.jdatetime import JalaliDateTime as JDT\n try:\n  from zoneinfo import ZoneInfo\n  tz = ZoneInfo(\"Asia/Tehran\")\n except Exception:\n  import pytz; tz = pytz.timezone(\"Asia/Tehran\")\n print(JDT.now(tz).strftime(\"%Y%m%d_%H%M%S\"))\nexcept Exception:\n pass\nPY' \
+		$(DOCKER) exec backend python -c '\
+try:\
+    from persiantools.jdatetime import JalaliDateTime as JDT;\
+    try:\
+        from zoneinfo import ZoneInfo; tz = ZoneInfo("Asia/Tehran")\
+    except Exception:\
+        import pytz; tz = pytz.timezone("Asia/Tehran")\
+    print(JDT.now(tz).strftime("%Y%m%d_%H%M%S"))\
+except Exception:\
+    print("")' 2>/dev/null || true \
 	)"; \
 	if [[ -z "$$DATE" ]]; then DATE="$$(TZ=Asia/Tehran date +%Y%m%d_%H%M%S)"; fi; \
 	DEST="$$BD/$$DATE"; \
@@ -131,11 +70,10 @@ backup: _guard_prod
 	if [[ -n "$$FILES" ]]; then sha256sum $$FILES > SHA256SUMS.txt; else touch SHA256SUMS.txt; fi; \
 	echo "==> backup completed: $$DEST"
 
-# Remove backups older than KEEP_DAYS (default 7)
 KEEP_DAYS ?= 7
 backup_rotate:
 	@set -euo pipefail; \
-	BD="$(BACKUP_DIR)"; BD="$${BD/#\~/$${HOME}}"; \
+	BD="$(BACKUP_DIR)"; BD="$$(eval echo $$BD)"; \
 	if [[ ! -d "$$BD" ]]; then echo "no $$BD to rotate"; exit 0; fi; \
 	echo "==> pruning backups older than $(KEEP_DAYS) days in $$BD"; \
 	find "$$BD" -maxdepth 1 -mindepth 1 -type d -mtime +$(KEEP_DAYS) -print -exec rm -rf {} \; || true; \
