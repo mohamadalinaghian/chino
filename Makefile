@@ -142,20 +142,15 @@ backup_rotate:
 	echo "==> rotation done"
 
 backup_restore_notes:
-	@cat <<'EOF'
-Disaster restore (high-level):
-
-# 1) Roles / globals
-psql -U postgres -h <host> -f globals.sql
-
-# 2) DB (preferred: custom dump)
-createdb <new_db>
-pg_restore -U <user> -d <new_db> -c --if-exists db.custom.dump
-
-#    or from plain SQL (slower, readable)
-psql -U <user> -d <new_db> -f db.plain.sql
-
-# 3) Media / Static
-tar -xzf media.tgz -C /app
-tar -xzf static.tgz -C /app
-EOF
+	@printf "%b" "\
+Disaster restore (high-level):\n\n\
+# 1) Roles / globals\n\
+psql -U postgres -h <host> -f globals.sql\n\n\
+# 2) DB (preferred: custom dump)\n\
+createdb <new_db>\n\
+pg_restore -U <user> -d <new_db> -c --if-exists db.custom.dump\n\n\
+#    or from plain SQL (slower, readable)\n\
+psql -U <user> -d <new_db> -f db.plain.sql\n\n\
+# 3) Media / Static\n\
+tar -xzf media.tgz -C /app\n\
+tar -xzf static.tgz -C /app\n"
