@@ -82,3 +82,15 @@ backup_db:
 	docker compose -f compose.prod.yml exec -T db sh -c 'pg_dump -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"' \
 	| gzip -c > "$$DEST"; \
 	echo "==> done: $$DEST"
+
+
+backup_clean:
+	@set -eu; \
+	BD="$(BACKUP_DIR)"; \
+	case "$$BD" in "~") BD="$$HOME";; "~/"*) BD="$$HOME/$${BD#\~/}";; esac; \
+	if [ ! -d "$$BD" ]; then \
+		echo "✖ No backup directory found at $$BD"; exit 0; \
+	fi; \
+	echo "==> Removing backup files older than 7 days in $$BD"; \
+	find "$$BD" -type f -name 'db_*.sql.gz' -mtime +0 -print -delete || true; \
+	echo "==> Cleanup complete"
