@@ -65,7 +65,6 @@ git_reset:
 
 
 
-# ---- Backup (prod-only, docker-only) -----------------------------------------
 BACKUP_DIR ?= ~/backup
 
 .PHONY: backup backup_rotate backup_restore_notes
@@ -118,26 +117,3 @@ backup_rotate:
 	echo "==> pruning backups older than $(KEEP_DAYS) days in $(BACKUP_DIR)"; \
 	find "$(BACKUP_DIR)" -maxdepth 1 -type d -mtime +$(KEEP_DAYS) -print -exec rm -rf {} \; || true; \
 	echo "==> rotation done"
-
-backup_restore_notes:
-	@cat <<'EOF'
-Disaster restore (high-level):
-
-# 1) Roles / globals
-psql -U postgres -h <host> -f globals.sql
-
-# 2) DB (preferred: custom dump)
-createdb <new_db>
-pg_restore -U <user> -d <new_db> -c --if-exists db.custom.dump
-
-#    or from plain SQL (slower, readable)
-psql -U <user> -d <new_db> -f db.plain.sql
-
-# 3) Media
-tar -xzf media.tgz -C /app
-
-# Notes:
-# - Dumps use credentials already present inside your `db` container
-#   (POSTGRES_USER/POSTGRES_DB/POSTGRES_PASSWORD).
-# - Ensure the service names remain 'db' and 'backend' in compose.prod.yml.
-EOF
