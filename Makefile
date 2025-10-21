@@ -92,5 +92,46 @@ backup_clean:
 		echo "✖ No backup directory found at $$BD"; exit 0; \
 	fi; \
 	echo "==> Removing backup files older than 7 days in $$BD"; \
-	find "$$BD" -type f -name 'db_*.sql.gz' -mtime +0 -print -delete || true; \
+	find "$$BD" -type f -name 'db_*.sql.gz' -mtime +7 -print -delete || true; \
 	echo "==> Cleanup complete"
+
+
+# -------------------- Short aliases (Docker = d*, Podman = p*) --------------------
+.PHONY: \
+  d dup dub ddown dfd dlogs drst dbash dfbash dshell dbsh dtest dlint dfmt dgr dbkup dbclean dbuild dupb \
+  p pub pdown pfd plogs prst pbash pfbash pshell pdbsh
+
+# ---- Docker (d*) ----
+d: up                         # bring up all services (docker)
+dup: up                       # alias (same as d)
+dub: up_back                  # bring up backend only (docker)
+ddown: down                   # stop all (docker)
+dfd: full_down                # full down + remove local images (docker)
+dlogs: log                    # docker compose logs
+drst: reset                   # docker compose restart
+dbash: back_bash              # bash into backend (docker)
+dfbash: front_bash            # bash into frontend (docker)
+dshell: shell                 # Django manage.py shell (docker)
+dbsh: dbshell                 # shell into db container (docker)
+dbuild: build                 # docker compose build
+dupb: up_back                 # explicit alias spelling
+
+dtest: test_backend           # pytest (docker)
+dlint: lint_backend           # ruff check (docker)
+dfmt: format_backend          # ruff format (docker)
+dgr: git_reset                # git pull && restart (docker)
+
+dbkup: backup_db              # DB backup (docker)
+dbclean: backup_clean         # cleanup backups older than 7d
+
+# ---- Podman (p*) ----
+p: pup_back                   # bring up backend only (podman)
+pub: pup_back                 # alias spelling
+pdown: pdown                  # stop all (podman)
+pfd: pdown                    # (no full_down for podman in your file; reuse pdown)
+plogs: plogs                  # podman-compose logs
+prst: preset                  # podman-compose restart
+pbash: pback_bash             # bash into backend (podman)
+pfbash:                       # (no podman frontend target defined; left empty on purpose)
+pshell:                       # (no podman django shell target; define later if needed)
+pdbsh:                        # (no podman db shell target defined; define later if needed)
