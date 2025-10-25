@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from decimal import ROUND_HALF_UP, Decimal
+from typing import Tuple  # For suggested_price return type
 
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from ...core_setting.models import SiteSettings
+from ...inventory.models import Product, RecipeComponent, Stock
+from ..models import MenuCategory
 
 Q0 = Decimal("1")
 
@@ -14,10 +17,10 @@ class MenuItemService:
     # ---------- Settings ----------
     @staticmethod
     def _settings() -> SiteSettings:
-        s = SiteSettings.get()
-        if not s:
+        try:
+            return SiteSettings.objects.get()
+        except ObjectDoesNotExist:
             raise ValidationError(_("Site settings not configured"))
-        return s
 
     @classmethod
     def _profit_margin_frac(cls) -> Decimal:
@@ -37,9 +40,7 @@ class MenuItemService:
 
     # ---------- FIFO (peek) ----------
     @staticmethod
-    def _fifo_first_unit_price(product) -> Decimal | None:
-        from ...inventory.models import Stock
-
+    def _fifo_first_unit_price(product: Product) -> Decimal | None:
         row = (
             Stock.objects.filter(stored_product=product, remaining_quantity__gt=0)
             .order_by("create_at", "id")
@@ -50,9 +51,7 @@ class MenuItemService:
 
     # ---------- Recipe ----------
     @staticmethod
-    def _active_recipe_components(product):
-        from ...inventory.models import RecipeComponent
-
+    def _active_recipe_components(product: Product):
         recipe = getattr(product, "active_recipe", None)
         if recipe is None:
             raise ValidationError(_("Set active recipe first"))
@@ -69,37 +68,36 @@ class MenuItemService:
 
     # ---------- Formula ----------
     @classmethod
-    def _apply_formula(cls, unit_cost: Decimal, parent_group) -> Decimal:
-        from ..models import MenuCategory
-
+    def _apply_formula(cls, unit_cost: Decimal, parent_group: str) -> Decimal:
         if parent_group == MenuCategory.Group.BAR_ITEM:
             base = unit_cost + cls._overhead_bar_value()
         elif parent_group == MenuCategory.Group.FOOD:
             base = unit_cost + cls._overhead_food_value()
         else:
-            raise ValidationError(_("For this item no parent group submited"))
-        price_ex_tax = base * (Decimal("1") + cls._profit_margin_frac())
-        final = price_ex_tax * (Decimal("1") + cls._tax_rate_frac())
+            raise ValidationError(_("For this item no parent group submitted"))
+        price_ex_tax = base * (Q0 + cls._profit_margin_frac())
+        final = price_ex_tax * (Q0 + cls._tax_rate_frac())
         return final
 
     @staticmethod
     def _round_int(amount: Decimal) -> int:
         return int(amount.quantize(Q0, rounding=ROUND_HALF_UP))
 
-    # ---------- Public API ----------
+    # ---------- Shared Logic ----------
     @classmethod
-    def suggested_price(cls, menu):
+    def _calculate_unit_cost(cls, product: Product) -> Decimal:
         """
-        Input: instance of Menu
-        Output: (final_price_int, unit_cost_int)
+        Centralized method to compute unit cost with fallbacks:
+        - FIFO stock price
+        - Recipe components (if active_recipe exists)
+        - last_purchased_price (for raw/processed without recipe/stock)
         """
-        product = menu.name  # Product
-        parent_group = menu.category.parent_group
-
         unit_cost = cls._fifo_first_unit_price(product)
+        if unit_cost is not None:
+            return unit_cost
 
-        if unit_cost is None:
-            unit_cost = Decimal("0")
+        unit_cost = Decimal("0")
+        if product.active_recipe:
             for rc in cls._active_recipe_components(product):
                 comp = rc.consume_product
                 comp_price = cls._fifo_first_unit_price(comp)
@@ -110,6 +108,49 @@ class MenuItemService:
                             _("There is no price record for this product")
                         )
                 unit_cost += Decimal(rc.quantity) * comp_price
+        else:
+            unit_cost = Decimal(product.last_purchased_price or 0)
+            if unit_cost <= 0:
+                raise ValidationError(_("No price record for this product"))
 
+        return unit_cost
+
+    # ---------- Public API ----------
+    @classmethod
+    def suggested_price(cls, menu_id: int) -> Tuple[int, int]:
+        """
+        Input: menu_id (int)
+        Output: (final_price_int, unit_cost_int)
+        """
+        from ..models import Menu  # Avoid circular imports
+
+        try:
+            menu = Menu.objects.select_related("name", "category").get(id=menu_id)
+        except ObjectDoesNotExist:
+            raise ValidationError(_("Menu item not found"))
+
+        product = menu.name  # Product instance
+        parent_group = menu.category.parent_group
+
+        unit_cost = cls._calculate_unit_cost(product)
         raw_price = cls._apply_formula(unit_cost, parent_group)
         return cls._round_int(raw_price), cls._round_int(unit_cost)
+
+    @classmethod
+    def extra_req_cost(cls, product_id: int, quantity: Decimal) -> int:
+        """
+        Calculate final price (not cost) of extra request in order.
+        Skips tax and overhead intentionally.
+        """
+        if quantity <= 0:
+            raise ValidationError(_("Quantity must be positive"))
+
+        try:
+            product = Product.objects.get(id=product_id)
+        except ObjectDoesNotExist:
+            raise ValidationError(_("Product not found"))
+
+        unit_cost = cls._calculate_unit_cost(product)
+        unit_price = unit_cost * (Q0 + cls._profit_margin_frac())
+        final_price = unit_price * quantity
+        return cls._round_int(final_price)

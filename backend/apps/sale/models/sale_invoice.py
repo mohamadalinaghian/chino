@@ -15,6 +15,7 @@ class SaleInvoice(models.Model):
         OPEN = "OPEN", _("Open")
         PARTIALLY_PAID = "PARTIAL", _("Partially paid")
         PAID = "PAID", _("Paid")
+        REFUND = "REFUND", _("Refund")
 
     # Fields
     issue_date = models.DateTimeField(
@@ -34,6 +35,8 @@ class SaleInvoice(models.Model):
         on_delete=models.PROTECT,
         related_name="buy_invoices",
         help_text=_("Gest of cafe who buy products"),
+        null=True,
+        blank=True,
     )
     note = models.CharField(_("Note"), max_length=128, null=True, blank=True)
     bill_status = models.CharField(
@@ -42,11 +45,6 @@ class SaleInvoice(models.Model):
         choices=BillStatus.choices,
         default=BillStatus.OPEN,
     )
-    bill_total = models.DecimalField(
-        _("Bill total"),
-        max_digits=10,
-        decimal_places=4,
-    )
 
     # Property
     @cached_property
@@ -54,7 +52,7 @@ class SaleInvoice(models.Model):
         return JalaliDate(self.issue_date.date()).strftime("%c", locale="fa")
 
     @cached_property
-    def total_cost(self):
+    def total_revenue(self):
         result = self.items.aggregate(
             total=models.Sum(models.F("sold_unit_price") * models.F("quantity"))
         )

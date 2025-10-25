@@ -10,6 +10,14 @@ class SaleItem(models.Model):
     Store sale items.
     """
 
+    class SaleMethod(models.TextChoices):
+        """
+        It's use for service to determine shape of consumption.
+        """
+
+        PHANTOM = "PHANTOM", _("Phantom")
+        STOCK = "STOCK", _("Stock")
+
     # Fields
     sale_invoice = models.ForeignKey(
         "sale.SaleInvoice",
@@ -28,6 +36,9 @@ class SaleItem(models.Model):
     quantity = models.DecimalField(_("Quantity"), max_digits=10, decimal_places=3)
     sold_unit_price = models.DecimalField(
         _("Sold unit price"), max_digits=10, decimal_places=4
+    )
+    discount_amount = models.DecimalField(
+        _("Discount amount"), max_digits=10, decimal_places=4, null=True, blank=True
     )
 
     # Property

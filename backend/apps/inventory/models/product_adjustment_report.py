@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -21,7 +23,7 @@ class ProductAdjustmentReport(models.Model):
         "inventory.AdjustmentReportSession", models.CASCADE, verbose_name=_("Session")
     )
     previous_quantity = models.DecimalField(
-        _("Previous quantity"), decimal_places=2, max_digits=10
+        _("Previous quantity"), decimal_places=2, max_digits=10, default=Decimal("0")
     )
     current_quantity = models.DecimalField(
         verbose_name=_("Current quantity"), max_digits=10, decimal_places=2
