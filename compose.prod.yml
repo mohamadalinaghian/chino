@@ -53,7 +53,7 @@ services:
     volumes:
       - static_volume:/app/staticfiles:ro
       - media_volume:/app/media:ro
-      - /srv/certs/chinocafe.ir:/etc/letsencrypt/live/chinocafe.ir:ro
+      - /etc/letsencrypt/live/chinocafe.ir:/etc/letsencrypt/live/chinocafe.ir:ro
 
 volumes:
   postgres_data:
