@@ -1,4 +1,5 @@
-from typing import Tuple
+from decimal import Decimal
+from typing import List, Tuple
 
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
@@ -10,6 +11,13 @@ class RecipeService:
     """
     Controll writing recipe for acceptable products.
     """
+
+    FRACTION_MAP = {
+        Decimal("0.667"): (2, 3),
+        Decimal("0.333"): (1, 3),
+        Decimal("0.167"): (1, 6),
+        Decimal("0.833"): (5, 6),
+    }
 
     @staticmethod
     def validate_product(product):
@@ -34,24 +42,14 @@ class RecipeService:
         )
 
     @staticmethod
-    def get_all_ingredients(recipe):
+    def get_all_ingredients(recipe) -> List[Tuple[int, Decimal]]:
         """
-        Retrieves the components of a specific recipe and the amount of each consumed ingredient
-        as a list of tuples, using the product IDs instead of names.
-
-        Args:
-        - recipe (Recipe): A Recipe object.
-
-        Returns:
-        - A list of tuples, each containing the ID of the consumed product and the consumed quantity.
+        Returns [(product_id, exact_ratio_per_1g_output), ...]
         """
-        # Use values_list to get only the ID of the consume_product
-        components = recipe.components.all()
-
-        # Initialize the list of components (using only product IDs)
-        component_list = [
-            (component.consume_product.id, component.quantity)
-            for component in components
-        ]
-
-        return component_list
+        result = []
+        for comp in recipe.components.all():
+            raw = comp.quantity.quantize(Decimal("0.001"))  # 1 mg precision
+            num, den = RecipeService.FRACTION_MAP.get(raw, (None, None))
+            ratio = Decimal(num) / Decimal(den) if num and den else Decimal(raw)
+            result.append((comp.consume_product.id, ratio))
+        return result

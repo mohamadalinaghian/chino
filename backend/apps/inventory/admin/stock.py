@@ -17,3 +17,5 @@ class StockAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
         "create_at",
     )
     ordering = ("create_at",)
+    list_select_related = ("stored_product",)
+    search_fields = ("stored_product__name",)

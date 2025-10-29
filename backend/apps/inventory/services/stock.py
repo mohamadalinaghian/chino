@@ -7,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from ..models import Product, Stock
 
 ZERO = Decimal("0")
+TOLERANCE = Decimal("0.001")
 
 
 class StockService:
@@ -37,48 +38,48 @@ class StockService:
         return obj
 
     @staticmethod
-    def reserve_fifo(product, requested_qty):
+    def reserve_fifo(product, requested_qty: Decimal):
         """
-        Reserves (consumes) requested_qty from stock lots in FIFO order.
-
-        Returns cost of consumed product (with updated remaining quantities).
-        Raises InsufficientStockError if total available < requested_qty.
+        Consumes *exactly* ``requested_qty`` from FIFO stock.
+        Returns the total cost of the consumed lots.
         """
         if requested_qty <= 0:
             raise ValidationError(_("Requested quantity must be greater than zero."))
 
         total_cost = ZERO
-        remaining_amount = Decimal(requested_qty)
+        remaining = requested_qty
 
         with transaction.atomic():
-            # Lock and get available stock in FIFO order
-            stock_entries = Stock.objects.first_in(product=product)  # type: ignore
-
-            for entry in stock_entries:
-                if remaining_amount <= 0:
+            # ``first_in`` must return a QuerySet ordered by entry date (FIFO)
+            for entry in Stock.objects.first_in(product=product):
+                if remaining <= 0:
                     break
 
-                if entry.remaining_quantity >= remaining_amount:
-                    # Enough stock in this entry
-                    total_cost += remaining_amount * entry.unit_price
-                    entry.remaining_quantity -= remaining_amount
+                # -----------------------------------------------------------------
+                # 1. Use the *exact* Decimal that came from the fraction map.
+                #    No quantize / ROUND_FLOOR here – the caller already gave us
+                #    a mathematically exact value (e.g. 1000.0 or 500.0).
+                # -----------------------------------------------------------------
+                if entry.remaining_quantity >= remaining:
+                    # enough in this lot
+                    total_cost += remaining * entry.unit_price
+                    entry.remaining_quantity -= remaining
                     entry.save(update_fields=("remaining_quantity",))
-                    remaining_amount = ZERO
+                    remaining = ZERO
                 else:
-                    # Use all of this entry and continue
+                    # take everything from this lot
                     total_cost += entry.remaining_quantity * entry.unit_price
-                    remaining_amount -= entry.remaining_quantity
+                    remaining -= entry.remaining_quantity
                     entry.remaining_quantity = ZERO
                     entry.save(update_fields=("remaining_quantity",))
 
-                if remaining_amount <= Decimal("0.001"):  # 1 mg
-                    remaining_amount = Decimal("0")
-                else:
-                    product = Product.objects.get(id=product)
-                    raise ValidationError(
-                        _(
-                            f"Not enough stock for product: {product} short by: {remaining_amount} "
-                        )
-                    )
-
+            # -----------------------------------------------------------------
+            # 2. Final safety-net: ignore a shortage that is smaller than 1 mg.
+            # -----------------------------------------------------------------
+            if remaining > TOLERANCE:
+                prod = Product.objects.get(id=product)
+                raise ValidationError(
+                    _(f"Not enough stock for {prod}: short by {remaining}")
+                )
+            # else: remaining ≤ 1 mg → treat as fully consumed
             return total_cost
