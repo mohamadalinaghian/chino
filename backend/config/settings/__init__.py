@@ -3,7 +3,6 @@ from .base import *  # noqa: F403
 from .database import *  # noqa: F403
 from .i18n import *  # noqa: F403
 from .jalali import *  # noqa: F403
-from .logging import *  # noqa: F403
 from .middleware import *  # noqa: F403
 from .security import *  # noqa: F403
 from .static import *  # noqa: F403

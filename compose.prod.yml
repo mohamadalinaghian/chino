@@ -14,12 +14,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: prod
-    command: >
-      gunicorn config.wsgi:application
-      --bind 0.0.0.0:8000
-      --log-level error
-      --access-logfile /app/logs/gunicorn_access.log
-      --error-logfile /app/logs/gunicorn_errors.log
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
     restart: always
     env_file:
       - .env
@@ -27,16 +22,10 @@ services:
       - ./backend:/app
       - static_volume:/app/staticfiles
       - media_volume:/app/media
-      - ./logs:/app/logs
     expose:
       - "8000"
     depends_on:
       - db
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
 
   frontend:
     build:
