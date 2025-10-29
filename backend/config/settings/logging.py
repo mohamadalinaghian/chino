@@ -1,112 +1,66 @@
-import sys
+import os
 
 from .base import BASE_DIR, DEBUG
 
-# ------------------------------------------------------------------
-# LOG DIRECTORY (already created in Dockerfile + host mount)
-# ------------------------------------------------------------------
 LOG_DIR = BASE_DIR / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+os.chmod(LOG_DIR, 0o777)  # Force writable
 
-# ------------------------------------------------------------------
-# LOGGING CONFIGURATION
-# ------------------------------------------------------------------
+
+def safe_handler(filename, level="INFO", max_bytes=10_485_760, backup_count=7):
+    path = LOG_DIR / filename
+    try:
+        open(path, "a").close()
+        return {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": str(path),
+            "maxBytes": max_bytes,
+            "backupCount": backup_count,
+            "formatter": "json",
+            "encoding": "utf-8",
+            "level": level,
+        }
+    except:  # noqa: E722
+        return None
+
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    # ====================== FORMATTERS ======================
     "formatters": {
         "json": {
             "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
-            "format": "%(asctime)s %(levelname)s %(name)s %(module)s %(funcName)s %(lineno)d %(message)s %(pathname)s %(process)d %(thread)d %(exc_info)s",
-            "datefmt": "%Y-%m-%dT%H:%M:%S%z",
+            "format": "%(asctime)s %(levelname)s %(name)s %(module)s %(lineno)d %(message)s %(exc_info)s",
         },
-        "verbose": {
-            "format": "[{levelname}] {asctime} | {name}.{funcName}:{lineno} | {message}",
-            "style": "{",
-            "datefmt": "%Y-%m-%d %H:%M:%S",
-        },
+        "verbose": {"format": "[{levelname}] {asctime} | {name} | {message}"},
     },
-    # ====================== HANDLERS ======================
     "handlers": {
-        # 1. Console → Docker logs (json in prod, readable in dev)
         "console": {
             "class": "logging.StreamHandler",
-            "stream": sys.stdout,
             "formatter": "json" if not DEBUG else "verbose",
-            "level": "INFO" if DEBUG else "WARNING",
-        },
-        # 2. All app logs (INFO+) → app.log
-        "app_file": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "filename": LOG_DIR / "app.log",
-            "maxBytes": 10_485_760,  # 10MB
-            "backupCount": 7,
-            "formatter": "json",
-            "encoding": "utf-8",
-            "level": "INFO",
-        },
-        # 3. **ERRORS ONLY** → errors.log (this is your 500 catcher)
-        "error_file": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "filename": LOG_DIR / "errors.log",
-            "maxBytes": 5_242_880,  # 5MB
-            "backupCount": 10,
-            "formatter": "json",
-            "encoding": "utf-8",
-            "level": "ERROR",
-        },
-        # 4. Django server errors (500s) → force to error_file
-        "django_server": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "filename": LOG_DIR / "django_500.log",
-            "maxBytes": 5_242_880,
-            "backupCount": 10,
-            "formatter": "json",
-            "encoding": "utf-8",
-            "level": "ERROR",
         },
     },
-    # ====================== LOGGERS ======================
     "loggers": {
-        # --- Your apps: log INFO+ to app.log, ERROR+ to errors.log ---
-        "apps": {
-            "level": "INFO" if DEBUG else "WARNING",
-            "handlers": ["console", "app_file", "error_file"],
-            "propagate": False,
-        },
-        # --- Django core: catch 500, DB, template errors ---
-        "django": {
-            "level": "WARNING",
-            "handlers": ["console", "error_file", "django_server"],
-            "propagate": False,
-        },
-        # --- Django request: 500 errors from views ---
+        "django": {"level": "ERROR", "handlers": ["console"], "propagate": False},
         "django.request": {
             "level": "ERROR",
-            "handlers": ["console", "error_file", "django_server"],
-            "propagate": False,
-        },
-        # --- Django DB: query errors, timeouts ---
-        "django.db.backends": {
-            "level": "ERROR",
-            "handlers": ["error_file", "django_server"],
-            "propagate": False,
-        },
-        # --- Gunicorn: worker crashes, timeouts ---
-        "gunicorn.error": {
-            "level": "ERROR",
-            "handlers": ["console", "error_file"],
-            "propagate": False,
-        },
-        "gunicorn.access": {
-            "level": "INFO",
             "handlers": ["console"],
             "propagate": False,
         },
     },
-    # ====================== ROOT ======================
-    "root": {
-        "level": "WARNING",
-        "handlers": ["console", "app_file", "error_file"],
-    },
+    "root": {"level": "INFO", "handlers": ["console"]},
 }
+
+# Add file handlers safely
+for name, args in [
+    ("app_file", ("app.log", "INFO")),
+    ("error_file", ("errors.log", "ERROR", 5_242_880, 10)),
+    ("django_500", ("django_500.log", "ERROR", 5_242_880, 10)),
+]:
+    h = safe_handler(*args)
+    if h:
+        LOGGING["handlers"][name] = h
+        for logger in ["django", "django.request", "root"]:
+            LOGGING["loggers"].setdefault(logger, {})["handlers"] = LOGGING["loggers"][
+                logger
+            ].get("handlers", []) + [name]
