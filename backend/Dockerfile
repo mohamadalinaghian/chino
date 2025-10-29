@@ -43,6 +43,7 @@ RUN /venv/bin/pip install --upgrade pip setuptools wheel \
 FROM base AS prod
 
 COPY --from=deps-prod /venv /venv
+RUN mkdir -p /app/logs && chmod 755 /app/logs
 COPY . /app
 
 RUN mkdir -p /app/staticfiles /app/media \

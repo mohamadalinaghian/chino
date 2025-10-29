@@ -76,7 +76,7 @@ backup_db:
 	mkdir -p "$$BD"; \
 	E_NOW="$$(TZ=Asia/Tehran date +%s)"; \
 	E_Y="$$(expr $$E_NOW - 86400)"; \
-	DATE="$$(TZ=Asia/Tehran jdate -d "%s;$$E_Y" +%d-%b-%Y__%H:%M)"; \
+	DATE="$$(TZ=Asia/Tehran jdate -d "%s;$$E_Y" +%d-%b-%Y)"; \
 	DEST="$$BD/db_$$DATE.sql.gz"; \
 	echo "==> writing $$DEST"; \
 	docker compose -f compose.prod.yml exec -T db sh -c 'pg_dump -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"' \
