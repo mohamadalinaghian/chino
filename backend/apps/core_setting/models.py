@@ -3,6 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
@@ -36,15 +37,29 @@ class SiteSettings(models.Model):
         max_digits=10,
         decimal_places=4,
         default=Decimal("0.00"),
+        validators=[MinValueValidator(Decimal("0.00"))],
     )
     overhead_food_value = models.DecimalField(
         _("Overhead food value"),
         max_digits=10,
         decimal_places=4,
         default=Decimal("0.00"),
+        validators=[MinValueValidator(Decimal("0.00"))],
     )
     purchase_valid_change_ratio = models.PositiveSmallIntegerField(
         _("Purchase valid change ratio")
+    )
+
+    thumbnail_quality = models.PositiveSmallIntegerField(
+        _("Thumbnail quality"),
+        default=75,
+        validators=[MinValueValidator(1), MaxValueValidator(95)],
+    )
+    thumbnail_max_width = models.PositiveSmallIntegerField(
+        _("Thumbnail max width"), default=200, validators=[MinValueValidator(50)]
+    )
+    thumbnail_max_height = models.PositiveSmallIntegerField(
+        _("Thumbnail max height"), default=200, validators=[MinValueValidator(50)]
     )
 
     updated_at = models.DateTimeField(auto_now=True)

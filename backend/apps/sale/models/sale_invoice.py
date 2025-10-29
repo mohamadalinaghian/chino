@@ -1,3 +1,5 @@
+from itertools import chain
+
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils import timezone
@@ -57,6 +59,25 @@ class SaleInvoice(models.Model):
             total=models.Sum(models.F("sold_unit_price") * models.F("quantity"))
         )
         return result["total"]
+
+    @property
+    def transactions(self):
+        """
+        Unified list of ALL payment transactions.
+        """
+        return sorted(
+            chain(
+                self.pos_transaction_transactions.all(),
+                self.cash_transaction_transactions.all(),
+                self.card_to_card_transactions.all(),
+            ),
+            key=lambda t: t.pay_day,
+            reverse=True,
+        )
+
+    @property
+    def total_paid(self):
+        return sum(t.amount for t in self.transactions)
 
     # Method
     def __str__(self) -> str:

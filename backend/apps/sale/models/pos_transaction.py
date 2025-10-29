@@ -1,31 +1,28 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from .transaction import Transaction
 
-class PosTransactions(models.Model):
+
+class PosTransaction(Transaction):
     """
-    Every pos transaction record will store here.
+    Records POS terminal transactions.
     """
 
-    # Fields
-    payment_record = models.ForeignKey(
-        "sale.SaleInvoicePayment",
-        models.CASCADE,
-        verbose_name=_("Payment record"),
-    )
     target_account = models.ForeignKey(
         "user.BankAccount",
-        models.PROTECT,
+        on_delete=models.PROTECT,
         verbose_name=_("Target account"),
         related_name="pos_transactions",
     )
 
-    # Method
     def __str__(self) -> str:
-        return f"{self.payment_record.pay_day}: #{self.target_account.name}"
+        return f"{self.pay_day}: #{self.target_account.account_owner}"
 
-    # Meta
+    def save(self, *args, **kwargs):
+        self.payment_type = self.PaymentType.POS
+        super().save(*args, **kwargs)
+
     class Meta:
-        verbose_name = _("Pos transaction")
-        verbose_name_plural = _("Pos transactions")
-        ordering = ("payment_record__pay_day",)
+        verbose_name = _("POS transaction")
+        verbose_name_plural = _("POS transactions")

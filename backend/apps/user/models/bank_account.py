@@ -16,7 +16,11 @@ class BankAccount(models.Model):
         verbose_name=_("Related user"),
         related_name="bank_accounts",
     )
-    name = models.CharField(_("Name"), max_length=16, db_index=True, unique=True)
+    bank_name = models.CharField(
+        _("Name"),
+        max_length=32,
+        db_index=True,
+    )
     card_number = models.CharField(
         _("Card number"),
         max_length=16,
@@ -25,7 +29,7 @@ class BankAccount(models.Model):
     )
     account_owner = models.CharField(
         _("Account owner"),
-        max_length=12,
+        max_length=32,
     )
 
     # Method

@@ -4,7 +4,6 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 
-from ..exceptions import InsufficientStockError
 from ..models import Product, Stock
 
 ZERO = Decimal("0")
@@ -72,12 +71,14 @@ class StockService:
                     entry.remaining_quantity = ZERO
                     entry.save(update_fields=("remaining_quantity",))
 
-            if remaining_amount > 0:
-                product = Product.objects.get(id=product)
-                raise InsufficientStockError(
-                    _(
-                        f"Not enough stock for product: {product} short by: {remaining_amount} "
+                if remaining_amount <= Decimal("0.001"):  # 1 mg
+                    remaining_amount = Decimal("0")
+                else:
+                    product = Product.objects.get(id=product)
+                    raise ValidationError(
+                        _(
+                            f"Not enough stock for product: {product} short by: {remaining_amount} "
+                        )
                     )
-                )
 
             return total_cost

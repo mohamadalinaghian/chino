@@ -19,8 +19,8 @@ class Menu(OrderedModel):
         "inventory.Product",
         models.CASCADE,
         verbose_name=_("Name"),
-        null=True,
         limit_choices_to={"type__in": (Product.ProductType.SELLABLE,)},
+        related_name="menu_items",
     )
     price = models.IntegerField(verbose_name=_("Price"), null=True, blank=True)
 
@@ -113,12 +113,24 @@ class Menu(OrderedModel):
         # thumbnail post-processing (unchanged)
         if initial_thumbnail and hasattr(initial_thumbnail, "file"):
             try:
+                from ...core_setting.models import SiteSettings
+
+                settings = SiteSettings.get()
+
                 initial_thumbnail.file.seek(0)
                 img = PILImage.open(initial_thumbnail.file).convert("RGB")
-                img.thumbnail((200, 200), PILImage.LANCZOS)
+                img.thumbnail(
+                    (settings.thumbnail_max_width, settings.thumbnail_max_height),
+                    PILImage.LANCZOS,
+                )
 
                 buffer = BytesIO()
-                img.save(buffer, format="WEBP", optimize=True, quality=75)
+                img.save(
+                    buffer,
+                    format="WEBP",
+                    optimize=True,
+                    quality=settings.thumbnail_quality,
+                )
                 buffer.seek(0)
 
                 path = menu_thumbnail_path(self, "")

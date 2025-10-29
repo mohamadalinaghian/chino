@@ -109,10 +109,10 @@ ddown: down                   # stop all (docker)
 dfd: full_down                # full down + remove local images (docker)
 dlogs: log                    # docker compose logs
 drst: reset                   # docker compose restart
-dbash: back_bash              # bash into backend (docker)
+dbs: back_bash              # bash into backend (docker)
 dfbash: front_bash            # bash into frontend (docker)
 dshell: shell                 # Django manage.py shell (docker)
-dbsh: dbshell                 # shell into db container (docker)
+dds: dbshell                 # shell into db container (docker)
 dbuild: build                 # docker compose build
 dupb: up_back                 # explicit alias spelling
 
@@ -131,7 +131,7 @@ pdown: pdown                  # stop all (podman)
 pfd: pdown                    # (no full_down for podman in your file; reuse pdown)
 plogs: plogs                  # podman-compose logs
 prst: preset                  # podman-compose restart
-pbash: pback_bash             # bash into backend (podman)
+pbs: pback_bash             # bash into backend (podman)
 pfbash:                       # (no podman frontend target defined; left empty on purpose)
 pshell:                       # (no podman django shell target; define later if needed)
 pdbsh:                        # (no podman db shell target defined; define later if needed)

@@ -48,4 +48,9 @@ class Stock(models.Model):
             models.Index(
                 name="idx_stored_product_create", fields=("stored_product", "create_at")
             ),
+            models.Index(
+                fields=["create_at", "id"],
+                name="idx_stock_fifo_peek",
+                condition=models.Q(remaining_quantity__gt=0),
+            ),
         )

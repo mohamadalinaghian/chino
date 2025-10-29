@@ -5,6 +5,9 @@ from slugify import slugify
 
 
 class MenuCategory(OrderedModel):
+    """
+    Represents menu categories with ordering and grouping.
+    """
 
     class Group(models.TextChoices):
         BAR_ITEM = "BAR", _("Bar item")
