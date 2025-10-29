@@ -73,6 +73,10 @@ class StockService:
                     entry.remaining_quantity = ZERO
                     entry.save(update_fields=("remaining_quantity",))
 
+                # === DELETE IF EMPTY ===
+                if entry.remaining_quantity <= TOLERANCE:
+                    entry.delete()  # ← CLEANUP
+            # ===========================
             # -----------------------------------------------------------------
             # 2. Final safety-net: ignore a shortage that is smaller than 1 mg.
             # -----------------------------------------------------------------

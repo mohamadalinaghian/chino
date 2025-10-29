@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import models
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
@@ -38,6 +40,11 @@ class Stock(models.Model):
     # Methods
     def __str__(self) -> str:
         return f"{self.stored_product}: {self.create_at}"
+
+    def save(self, *args, **kwargs):
+        if self.remaining_quantity <= Decimal("0.001"):
+            self.remaining_quantity = Decimal("0")
+        super().save(*args, **kwargs)
 
     # Meta
     class Meta:
