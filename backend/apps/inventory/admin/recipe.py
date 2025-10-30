@@ -16,7 +16,7 @@ class RecipeAdmin(admin.ModelAdmin):
         "jalali_created_at",
         "jalali_updated_at",
     )
-    ordering = ("-jalali_updated_at",)
+    ordering = ("-updated_at",)
     search_fields = ("name", "produced_product__name")
     list_filter = ("created_at", "produced_product__type", "produced_product")
     readonly_fields = ("jalali_created_at", "jalali_updated_at")
