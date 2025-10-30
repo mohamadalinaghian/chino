@@ -8,7 +8,7 @@ from .recipe_component import RecipeComponentInline
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     model = Recipe
-    list_display = ("name", "produced_product", "instruction", "jalali_created_at")
+    list_display = ("name", "produced_product", "instruction", "jalali_updated_at")
     fields = (
         "name",
         "produced_product",
@@ -16,6 +16,7 @@ class RecipeAdmin(admin.ModelAdmin):
         "jalali_created_at",
         "jalali_updated_at",
     )
+    ordering = ("-jalali_updated_at",)
     search_fields = ("name", "produced_product__name")
     list_filter = ("created_at", "produced_product__type", "produced_product")
     readonly_fields = ("jalali_created_at", "jalali_updated_at")
