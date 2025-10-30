@@ -1,50 +1,84 @@
+import json
+import logging
 from pathlib import Path
 
-from .base import DEBUG
-
-LOG_DIR = Path("/app/logs")  # ← MATCH MOUNT
-
-# Ensure directory exists (safe)
+LOG_DIR = Path("/app/logs")
 LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+# Ensure files exist
+(LOG_DIR / "django_500.json").touch(exist_ok=True)
+(LOG_DIR / "django_500.txt").touch(exist_ok=True)
+
+
+class PrettyJsonFormatter(logging.Formatter):
+    def format(self, record):
+        log_data = {
+            "time": self.formatTime(record, "%Y-%m-%d %H:%M:%S"),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+        }
+        if record.exc_info:
+            log_data["error"] = self.formatException(record.exc_info)
+        if hasattr(record, "request"):
+            log_data["request"] = record.request
+        return json.dumps(log_data, ensure_ascii=False, indent=2)
+
+
+class CleanTextFormatter(logging.Formatter):
+    def format(self, record):
+        lines = [
+            f"[{record.levelname}] {self.formatTime(record, '%Y-%m-%d %H:%M:%S')}",
+            f"Logger: {record.name}",
+            f"Message: {record.getMessage()}",
+        ]
+        if record.exc_info:
+            lines.append("Traceback:")
+            lines.extend(self.formatException(record.exc_info).split("\n"))
+        if hasattr(record, "request"):
+            lines.append(f"Request: {record.request}")
+        return "\n".join(lines) + "\n" + ("─" * 50)
+
 
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "json": {
-            "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
-            "format": "%(asctime)s %(levelname)s %(name)s %(module)s %(lineno)d %(message)s %(exc_info)s",
-        },
-        "simple": {"format": "%(levelname)s %(asctime)s %(name)s %(message)s"},
+        "pretty_json": {"()": PrettyJsonFormatter},
+        "clean_text": {"()": CleanTextFormatter},
+        "console": {"format": "%(levelname)s %(message)s"},
     },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
-            "formatter": "json" if not DEBUG else "simple",
+            "formatter": "console",
         },
-        "error_file": {
+        "json_file": {
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": LOG_DIR / "django_errors.log",
-            "maxBytes": 5_242_880,
-            "backupCount": 10,
-            "formatter": "json",
+            "filename": LOG_DIR / "django_500.json",
+            "maxBytes": 5_000_000,
+            "backupCount": 5,
+            "formatter": "pretty_json",
+            "level": "ERROR",
+        },
+        "text_file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": LOG_DIR / "django_500.txt",
+            "maxBytes": 5_000_000,
+            "backupCount": 5,
+            "formatter": "clean_text",
             "level": "ERROR",
         },
     },
     "loggers": {
         "django.request": {
             "level": "ERROR",
-            "handlers": ["console", "error_file"],
-            "propagate": False,
-        },
-        "django.server": {
-            "level": "ERROR",
-            "handlers": ["console", "error_file"],
+            "handlers": ["console", "json_file", "text_file"],
             "propagate": False,
         },
     },
     "root": {
         "level": "WARNING",
-        "handlers": ["console", "error_file"],
+        "handlers": ["console", "json_file", "text_file"],
     },
 }
