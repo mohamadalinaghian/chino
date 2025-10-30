@@ -67,9 +67,9 @@ class SaleInvoice(models.Model):
         """
         return sorted(
             chain(
-                self.pos_transaction_transactions.all(),
-                self.cash_transaction_transactions.all(),
-                self.card_to_card_transactions.all(),
+                self.postransaction_transactions.all(),
+                self.cashtransaction_transactions.all(),
+                self.cardtocard_transactions.all(),
             ),
             key=lambda t: t.pay_day,
             reverse=True,

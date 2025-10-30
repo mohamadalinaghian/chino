@@ -47,6 +47,10 @@ shell:
 dbshell:
 	$(DOCKER) exec db sh
 
+
+pdbsh:
+	$(PODMAN) exec db sh
+
 log:
 	$(DOCKER) logs
 plogs:
@@ -134,4 +138,3 @@ prst: preset                  # podman-compose restart
 pbs: pback_bash             # bash into backend (podman)
 pfbash:                       # (no podman frontend target defined; left empty on purpose)
 pshell:                       # (no podman django shell target; define later if needed)
-pdbsh:                        # (no podman db shell target defined; define later if needed)

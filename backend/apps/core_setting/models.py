@@ -47,7 +47,7 @@ class SiteSettings(models.Model):
         validators=[MinValueValidator(Decimal("0.00"))],
     )
     purchase_valid_change_ratio = models.PositiveSmallIntegerField(
-        _("Purchase valid change ratio")
+        _("Purchase valid change ratio"), default=0
     )
 
     thumbnail_quality = models.PositiveSmallIntegerField(

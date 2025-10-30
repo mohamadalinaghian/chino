@@ -29,6 +29,7 @@ class MenuFactory(DjangoModelFactory):
         format="WEBP",
     )
     is_available = True
+    # skip_postgeneration_save = True
 
     @factory.post_generation
     def images(self, create, extracted, **kwargs):
