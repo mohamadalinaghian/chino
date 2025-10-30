@@ -45,6 +45,7 @@ FROM base AS prod
 COPY --from=deps-prod /venv /venv
 COPY . /app
 
+RUN mkdir -p /app/logs && chmod 777 /app/logs
 RUN mkdir -p /app/staticfiles /app/media \
   && chown -R 1000:1000 /app
 
