@@ -213,3 +213,5 @@ frontend/nextjs_code/node_modules/
 
 # Nginx SSL Certificates (mapped in production)
 nginx/ssl/
+backend/logs/
+logs/
