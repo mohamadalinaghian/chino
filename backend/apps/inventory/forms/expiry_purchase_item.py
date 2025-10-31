@@ -18,5 +18,5 @@ class ExpiryPurchaseItemForm(forms.ModelForm):
         Date must be in feature.
         """
         date = self.cleaned_data["expiry_date"]
-        ExpiryPurchaseItemService.date_validation(date)
+        ExpiryPurchaseItemService._validate_date(date)
         return date

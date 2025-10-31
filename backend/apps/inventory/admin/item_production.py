@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.contrib import admin
 from jalali_date.admin import ModelAdminJalaliMixin
 
@@ -31,7 +33,7 @@ class ItemProductionAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
         if obj.produced_quantity > 0:
             unit_cost = total_cost / obj.produced_quantity
         else:
-            unit_cost = 0
+            unit_cost = Decimal("0")
 
         # Step 3: Record the produced item in the stock
         # Add produced item to stock

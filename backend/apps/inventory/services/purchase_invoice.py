@@ -1,22 +1,28 @@
+from __future__ import annotations
+
 from decimal import Decimal
 
 from django.db import transaction
 
-from ..models import PurchaseItem
+from ..models import PurchaseInvoice, PurchaseItem
 
 
-class PurcahseInvoiceService:
-    """
-    Calculate total cost of invoice.
-    """
+class PurchaseInvoiceService:
+    """Calculate the total cost of a purchase invoice – type-safe."""
 
     @staticmethod
     @transaction.atomic
-    def get_total_cost(invoice):
-        items = PurchaseItem.objects.filter(purchase_invoice=invoice).all()
-        total_cost = Decimal("0")
+    def get_total_cost(invoice: PurchaseInvoice) -> Decimal:
+        """
+        Sum ``PurchaseItem.total_cost`` for all items belonging to the invoice.
 
-        for item in items:
-            total_cost += item.total_cost
+        Args:
+            invoice: The ``PurchaseInvoice`` instance.
 
-        return total_cost
+        Returns:
+            Total cost as ``Decimal``.
+        """
+        total = Decimal("0")
+        for item in PurchaseItem.objects.filter(purchase_invoice=invoice):
+            total += item.total_cost
+        return total

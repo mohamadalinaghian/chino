@@ -1,42 +1,51 @@
+from __future__ import annotations
+
+from decimal import Decimal
+
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 
-from ..models import SupplierProduct
+from ..models import Product, PurchaseInvoice, SupplierProduct
 
 
 class SupplierProductService:
-    """
-    Service layer for keeping SupplierProduct records up to date
-    based on purchase invoices.
-    """
+    """Keep ``SupplierProduct`` records in sync with purchases – type-safe."""
 
     @staticmethod
-    def has_supplier(invoice) -> bool:
-        """Check if the invoice has a supplier assigned (without extra query)."""
-        return bool(invoice and invoice.supplier_id)
+    def has_supplier(invoice: PurchaseInvoice) -> bool:
+        """Return ``True`` if the invoice has a supplier attached."""
+        return bool(invoice.supplier_id)
 
     @staticmethod
-    def update_supplier_product(invoice, product, price, brand=None):
+    @transaction.atomic
+    def update_supplier_product(
+        invoice: PurchaseInvoice,
+        product: Product,
+        price: Decimal,
+        brand: str | None = None,
+    ) -> None:
+        """
+        Update (or raise if missing) the ``SupplierProduct`` link.
 
-        with transaction.atomic():
-            try:
-                if brand is None or brand == "":
-                    obj = SupplierProduct.objects.select_for_update().get(
-                        supplier=invoice.supplier, product=product
-                    )
-                else:
-                    obj = SupplierProduct.objects.select_for_update().get(
-                        supplier=invoice.supplier, product=product, brand=brand
-                    )
-            except SupplierProduct.DoesNotExist:
-                raise ValidationError(
-                    _(
-                        "Product is not in supplier provided list. Check agian or add it first"
-                    )
-                )
+        Args:
+            invoice: The ``PurchaseInvoice`` that contains the price.
+            product: The ``Product`` being purchased.
+            price: Unit price from the invoice.
+            brand: Optional brand identifier.
+        """
+        qs = SupplierProduct.objects.select_for_update()
+        try:
+            if brand:
+                obj = qs.get(supplier=invoice.supplier, product=product, brand=brand)
+            else:
+                obj = qs.get(supplier=invoice.supplier, product=product)
+        except SupplierProduct.DoesNotExist as exc:
+            raise ValidationError(
+                _("Product is not in the supplier’s list. Add it first or check again.")
+            ) from exc
 
-            obj.last_purchase_price = price
-            obj.invoice_related = invoice
-            obj.brand = brand
-            obj.save()
+        obj.last_purchase_price = price
+        obj.invoice_related = invoice
+        obj.brand = brand
+        obj.save()

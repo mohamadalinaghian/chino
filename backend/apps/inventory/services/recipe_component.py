@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import math
 
 from django.core.exceptions import ValidationError
@@ -8,31 +10,21 @@ from ..models import Recipe
 
 
 class RecipeComponentService:
-    """
-    Used for normalizing consume quantities.
-    Validate consume product.
-    """
+    """Normalize component quantities so their sum equals 1 – type-safe."""
 
     @staticmethod
-    def normalize_quantity(recipe_id: int) -> None:
+    def normalize_quantity(recipe: Recipe) -> None:
         """
-        Normalize the component quantities of a recipe so that their sum equals 1.
+        Ensure that the sum of ``quantity`` fields on all components equals 1.
+
+        Args:
+            recipe: The ``Recipe`` whose components must be normalised.
         """
-        try:
-            recipe = Recipe.objects.prefetch_related("components").get(id=recipe_id)
-        except Recipe.DoesNotExist:
-            raise ValidationError(_("Recipe does not exist"))
-
-        total_quantity = (
-            recipe.components.aggregate(total=Sum("quantity"))["total"] or 0
-        )
-
-        if total_quantity <= 0:
+        total = recipe.components.aggregate(total=Sum("quantity"))["total"] or 0
+        if total <= 0:
             raise ValidationError(_("Total quantity must be greater than zero."))
 
-        # if already normalized, skip
-        if math.isclose(total_quantity, 1, rel_tol=1e-6):
+        if math.isclose(total, 1, rel_tol=1e-6):
             return
 
-        # update all components in a single query
-        recipe.components.update(quantity=F("quantity") / total_quantity)
+        recipe.components.update(quantity=F("quantity") / total)

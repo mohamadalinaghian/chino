@@ -1,102 +1,88 @@
+from __future__ import annotations
+
 from decimal import Decimal, DivisionByZero
 
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+
+from ..models import Product
 
 ZERO = Decimal("0")
 FOUR_DEC = Decimal("0.0001")
 
 
 class PurchaseItemService:
-    """
-    Calculate unit_price from user total_cost entry.
-
-    Only simple quantity or package maner must provide.
-
-    Get last purchased price or 0 to protect human error
-
-    Check that user invoice is reasonable.
-
-    Check for entring kind of price afterall.
-
-    """
+    """Price calculations for a purchase item – fully type-safe."""
 
     @staticmethod
-    def get_unit_price(final_quantity, total_cost):
-
+    def get_unit_price(final_quantity: Decimal, total_cost: Decimal) -> Decimal:
+        """Derive unit price from total cost and quantity."""
         try:
-            return Decimal(total_cost / final_quantity)
-        except DivisionByZero:
-            raise ValidationError(_("Quantity can't be Zero"))
+            return (total_cost / final_quantity).quantize(FOUR_DEC)
+        except DivisionByZero as exc:
+            raise ValidationError(_("Quantity can't be zero")) from exc
 
     @staticmethod
-    def valid_final_quantity(simple_quantity, package_quantity, package_count):
+    def valid_final_quantity(
+        simple_quantity: Decimal | None,
+        package_quantity: Decimal | None,
+        package_count: int | None,
+    ) -> Decimal:
         """
-        Accept either a simple quantity OR a package-based input (qty per package × count).
-        Returns the final quantity to be stored on the model.
-        """
+        Accept **either** a simple quantity **or** package data.
 
+        Returns the final quantity that will be stored.
+        """
         if simple_quantity and simple_quantity != ZERO:
             if package_count or package_quantity:
-                raise ValidationError(_("Can not assign both quantity styles"))
-
+                raise ValidationError(_("Cannot assign both quantity styles"))
             return simple_quantity
 
-        if not package_count or not package_quantity:
+        if not package_quantity or not package_count:
             raise ValidationError(
-                _("Package quantity and package count must assigned together")
+                _("Package quantity and package count must be assigned together")
             )
-
-        return Decimal(package_quantity * package_count)
-
-    @staticmethod
-    def get_last_price_or_zero(product):
-        """
-        Return last purchased unit price of the product if available, else 0.
-        """
-        value = product.last_purchased_price
-        try:
-            return Decimal(value) if value is not None else ZERO
-        except Exception:
-            return ZERO
+        return Decimal(package_quantity) * Decimal(package_count)
 
     @staticmethod
-    def within_change_ratio(product, unit_price, valid_change_ratio: Decimal):
-        """
-        Check for user number's error.
-        """
+    def get_last_price_or_zero(product: Product) -> Decimal:
+        """Return the last purchased unit price or ``0``."""
+        price = product.last_purchased_price
+        return Decimal(price) if price is not None else ZERO
 
-        last_unit_price = PurchaseItemService.get_last_price_or_zero(product)
-
-        if last_unit_price is None or last_unit_price == ZERO:
-            # For first purchase
+    @staticmethod
+    def within_change_ratio(
+        product: Product, unit_price: Decimal, valid_change_ratio: Decimal
+    ) -> bool:
+        """Check that the new price is within the allowed percentage change."""
+        last = PurchaseItemService.get_last_price_or_zero(product)
+        if last == ZERO:
             return True
-
-        change_ratio = abs(unit_price - last_unit_price) / last_unit_price
-        change_ratio *= 100
-
-        return change_ratio <= valid_change_ratio
+        change = abs(unit_price - last) / last * 100
+        return change <= valid_change_ratio
 
     @staticmethod
-    def valid_unit_price(product, unit_price, total_cost, final_quantity):
+    def valid_unit_price(
+        product: Product,
+        unit_price: Decimal | None,
+        total_cost: Decimal | None,
+        final_quantity: Decimal,
+    ) -> Decimal:
         """
-        Validate price or cost and return correct unit price.
-        """
+        Validate input and return the final unit price (rounded to 4 dp).
 
+        * ``total_cost`` → calculate unit price.
+        * ``unit_price`` → use it (adjust for non-countable products).
+        """
         if total_cost:
-            if unit_price and unit_price != Decimal("0"):
-                raise ValidationError(_("Enter total cost or unit price not both"))
+            if unit_price and unit_price != ZERO:
+                raise ValidationError(_("Enter total cost **or** unit price, not both"))
+            price = PurchaseItemService.get_unit_price(final_quantity, total_cost)
+        elif not unit_price or unit_price == ZERO:
+            raise ValidationError(_("You must provide unit price or total cost"))
+        else:
+            price = unit_price
 
-            _unit_price = PurchaseItemService.get_unit_price(final_quantity, total_cost)
-
-            return _unit_price.quantize(FOUR_DEC)
-
-        if not unit_price or unit_price == Decimal("0"):
-            raise ValidationError(_("You must assign unit price or total price"))
-
-        # Check if product is not countable, devide unit price by 1000
-        # Beacause of user will enter unit price for 1000 gr not 1 gr
         if not product.is_countable:
-            unit_price = unit_price / Decimal("1000")
-        # Round to 3 decimal
-        return unit_price.quantize(FOUR_DEC)
+            price /= Decimal("1000")  # user enters price per 1000 g
+        return price.quantize(FOUR_DEC)
