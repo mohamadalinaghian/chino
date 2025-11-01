@@ -45,3 +45,5 @@ media/
 *.db
 docker-compose.override.yml
 *.sqlite3
+
+logs/

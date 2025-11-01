@@ -53,14 +53,6 @@ LOGGING = {
             "class": "logging.StreamHandler",
             "formatter": "console",
         },
-        "json_file": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "filename": LOG_DIR / "django_500.json",
-            "maxBytes": 5_000_000,
-            "backupCount": 5,
-            "formatter": "pretty_json",
-            "level": "ERROR",
-        },
         "text_file": {
             "class": "logging.handlers.RotatingFileHandler",
             "filename": LOG_DIR / "django_500.txt",
