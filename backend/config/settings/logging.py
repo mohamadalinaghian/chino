@@ -6,7 +6,6 @@ LOG_DIR = Path("/app/logs")
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 # Ensure files exist
-(LOG_DIR / "django_500.json").touch(exist_ok=True)
 (LOG_DIR / "django_500.txt").touch(exist_ok=True)
 
 
@@ -28,7 +27,8 @@ class PrettyJsonFormatter(logging.Formatter):
 class CleanTextFormatter(logging.Formatter):
     def format(self, record):
         lines = [
-            f"[{record.levelname}] {self.formatTime(record, '%Y-%m-%d %H:%M:%S')}",
+            f"[{record.levelname}] {self.formatTime(
+                record, '%Y-%m-%d %H:%M:%S')}",
             f"Logger: {record.name}",
             f"Message: {record.getMessage()}",
         ]
@@ -65,12 +65,12 @@ LOGGING = {
     "loggers": {
         "django.request": {
             "level": "ERROR",
-            "handlers": ["console", "json_file", "text_file"],
+            "handlers": ["console", "text_file"],
             "propagate": False,
         },
     },
     "root": {
         "level": "WARNING",
-        "handlers": ["console", "json_file", "text_file"],
+        "handlers": ["console", "text_file"],
     },
 }

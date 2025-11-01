@@ -11,6 +11,7 @@ from persiantools.jdatetime import JalaliDate
 from ...utils.jalali_date_list_filter import JalaliDateFieldListFilter
 from ..models import AdjustmentReportSession
 from ..services import ProductAdjustmentService
+from .mixins import ValidationErrorMessageMixin
 from .product_adjustment_report import ProductAdjustmentReportInline
 
 
@@ -22,7 +23,9 @@ class AdjustmentReportSessionForm(forms.ModelForm):
 
 
 @admin.register(AdjustmentReportSession)
-class AdjustmentReportSessionAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
+class AdjustmentReportSessionAdmin(
+    ValidationErrorMessageMixin, ModelAdminJalaliMixin, admin.ModelAdmin
+):
     inlines = (ProductAdjustmentReportInline,)
     list_display = ("jalali_report_date", "staff")
     list_select_related = ("staff",)

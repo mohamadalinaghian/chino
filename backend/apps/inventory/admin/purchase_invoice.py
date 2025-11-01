@@ -15,10 +15,11 @@ from ..services import (
     StockService,
     SupplierProductService,
 )
+from .mixins import ValidationErrorMessageMixin
 from .purchase_item import PurchaseItemInline
 
 
-# TODO Move to separate file
+# TO-DO Move to separate file
 class PurchaseInvoiceAdminForm(forms.ModelForm):
     class Meta:
         model = PurchaseInvoice
@@ -29,7 +30,9 @@ class PurchaseInvoiceAdminForm(forms.ModelForm):
 
 
 @admin.register(PurchaseInvoice)
-class PurchaseInvoiceAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
+class PurchaseInvoiceAdmin(
+    ValidationErrorMessageMixin, ModelAdminJalaliMixin, admin.ModelAdmin
+):
     form = PurchaseInvoiceAdminForm
     list_display = ("jalali_issue_date", "staff", "supplier", "total_cost")
     # list_editable = ("staff", "supplier")

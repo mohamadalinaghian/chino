@@ -6,10 +6,13 @@ from jalali_date.admin import ModelAdminJalaliMixin
 from ..forms import ItemProductionForm
 from ..models import ItemProduction
 from ..services import ItemProductionService, StockService
+from .mixins import ValidationErrorMessageMixin
 
 
 @admin.register(ItemProduction)
-class ItemProductionAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
+class ItemProductionAdmin(
+    ValidationErrorMessageMixin, ModelAdminJalaliMixin, admin.ModelAdmin
+):
     form = ItemProductionForm
     list_display = (
         "used_recipe__produced_product",
