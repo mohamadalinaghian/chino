@@ -27,7 +27,9 @@ class StockService:
     def _ensure_traceable(product: Product) -> None:
         """Raise ``ValidationError`` if the product is not stock-traceable."""
         if not product.is_stock_traceable:
-            raise ValidationError(_("Product is not stock traceable"))
+            raise ValidationError(
+                _("Product is not stock traceable") + ": " + product.name
+            )
 
     # --------------------------------------------------------------------- #
     # Public API
