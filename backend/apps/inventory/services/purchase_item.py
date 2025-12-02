@@ -83,6 +83,6 @@ class PurchaseItemService:
         else:
             price = unit_price
 
-        if not product.is_countable:
-            price /= Decimal("1000")  # user enters price per 1000 g
+        # if not product.is_countable:
+        #     price /= Decimal("1000")  # user enters price per 1000 g
         return price.quantize(FOUR_DEC)

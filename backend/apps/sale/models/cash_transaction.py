@@ -1,29 +1,30 @@
-from django.contrib.auth import get_user_model
+from __future__ import annotations
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from .transaction import Transaction
 
-
-class CashTransaction(Transaction):
+class CashTransaction(models.Model):
     """
-    Records cash payment transactions.
+    Cash-specific transaction details.
     """
 
-    staff = models.ForeignKey(
-        get_user_model(),
-        on_delete=models.PROTECT,
-        verbose_name=_("Staff"),
-        related_name="cash_transactions",
+    transaction = models.OneToOneField(
+        "sale.Transaction",
+        on_delete=models.CASCADE,
+        related_name="cash_details",
+        primary_key=True,
+    )
+    cash_register_id = models.CharField(
+        _("Cash register ID"),
+        max_length=20,
+        blank=True,
+        default="",
     )
 
-    def __str__(self) -> str:
-        return f"{self.pay_day}: {self.amount}"
-
-    def save(self, *args, **kwargs):
-        self.payment_type = self.PaymentType.CASH
-        super().save(*args, **kwargs)
-
     class Meta:
-        verbose_name = _("Cash transaction")
-        verbose_name_plural = _("Cash transactions")
+        verbose_name = _("Cash Transaction")
+        verbose_name_plural = _("Cash Transactions")
+
+    def __str__(self) -> str:
+        return f"Cash: {self.transaction}"

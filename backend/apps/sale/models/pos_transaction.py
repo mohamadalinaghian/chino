@@ -1,14 +1,21 @@
+from __future__ import annotations
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from .transaction import Transaction
 
-
-class PosTransaction(Transaction):
+class PosTransaction(models.Model):
     """
-    Records POS terminal transactions.
+    POS-specific transaction details.
+    Links to base Transaction.
     """
 
+    transaction = models.OneToOneField(
+        "sale.Transaction",
+        on_delete=models.CASCADE,
+        related_name="pos_details",
+        primary_key=True,
+    )
     target_account = models.ForeignKey(
         "user.BankAccount",
         on_delete=models.PROTECT,
@@ -16,13 +23,9 @@ class PosTransaction(Transaction):
         related_name="pos_transactions",
     )
 
-    def __str__(self) -> str:
-        return f"{self.pay_day}: #{self.target_account.account_owner}"
-
-    def save(self, *args, **kwargs):
-        self.payment_type = self.PaymentType.POS
-        super().save(*args, **kwargs)
-
     class Meta:
-        verbose_name = _("POS transaction")
-        verbose_name_plural = _("POS transactions")
+        verbose_name = _("POS Transaction")
+        verbose_name_plural = _("POS Transactions")
+
+    def __str__(self) -> str:
+        return f"POS: {self.transaction}"

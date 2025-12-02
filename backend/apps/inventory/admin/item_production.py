@@ -6,13 +6,10 @@ from jalali_date.admin import ModelAdminJalaliMixin
 from ..forms import ItemProductionForm
 from ..models import ItemProduction
 from ..services import ItemProductionService, StockService
-from .mixins import ValidationErrorMessageMixin
 
 
 @admin.register(ItemProduction)
-class ItemProductionAdmin(
-    ValidationErrorMessageMixin, ModelAdminJalaliMixin, admin.ModelAdmin
-):
+class ItemProductionAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
     form = ItemProductionForm
     list_display = (
         "used_recipe__produced_product",
@@ -24,7 +21,8 @@ class ItemProductionAdmin(
 
     def save_model(self, request, obj, form, change):
         """
-        Override the save_model to calculate the total cost, unit cost, and record the produced item in stock.
+        Override the save_model to calculate the total cost, unit cost,
+        and record the produced item in stock.
         """
         # Step 1: Calculate the total cost of production
         # and update quantity of component after usage

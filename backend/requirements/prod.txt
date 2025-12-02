@@ -17,3 +17,5 @@ setuptools
 persiantools
 django-cors-headers
 python-json-logger==2.0.7
+django_filter
+django-ninja

@@ -37,8 +37,8 @@ class PurchaseItemInlineForm(forms.ModelForm):
     quantity = forms.DecimalField(required=False, initial=ZERO, label=_("Quantity"))
     total_cost = forms.DecimalField(
         label=_("Total cost"),
-        max_digits=10,
-        decimal_places=4,
+        max_digits=12,
+        decimal_places=5,
         help_text=_("Final cost for purchasing this item"),
         required=False,
     )
@@ -93,9 +93,9 @@ class PurchaseItemInlineForm(forms.ModelForm):
             raise ValidationError(_("Only positive numbers"))
         return _package_quantity
 
-    ## TODO clean expiry date
+    # TODO clean expiry date
 
-    ## Big clean
+    # Big clean
     def clean(self):
         cleaned = super().clean()
 

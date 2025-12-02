@@ -11,3 +11,14 @@ export interface IMenuItem {
 	images?: string[];
 	category: IMenuCategory;
 }
+
+export interface IMenuItemSale {
+  id: number;
+  name:string
+  price: number
+}
+
+export interface IMenuCategorySale{
+  category:string
+  items: IMenuItemSale[]
+}

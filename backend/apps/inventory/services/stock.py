@@ -39,7 +39,7 @@ class StockService:
         """
         Create a new stock entry for *exactly* ``quantity`` of ``product``.
 
-        Args:
+        Arguments:
             product: The ``Product`` instance to store.
             unit_price: Price per unit (Decimal).
             quantity: Quantity to add (must be > 0).

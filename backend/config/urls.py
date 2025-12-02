@@ -1,3 +1,4 @@
+from api.router import api
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
@@ -8,6 +9,7 @@ urlpatterns = [
     path("api/admin/", admin.site.urls),
     path("api/menu/", include("apps.menu.urls")),
     path("api/admin/_nested_admin/", include("nested_admin.urls")),
+    path("api/", api.urls),
 ]
 
 admin.site.index_title = _("Chino Admin Panel")

@@ -1,6 +1,7 @@
-from .card_to_card import CardToCard
+from .card_to_card_transaction import CardToCardTransaction
 from .cash_transaction import CashTransaction
 from .daily_financial_report import DailyFinancialReport
+from .permissions import KitchenPermissions, SalePermissions
 from .pos_transaction import PosTransaction
 from .sale_invoice import SaleInvoice
 from .sale_item import SaleItem
@@ -11,7 +12,9 @@ __all__ = (
     "SaleItem",
     "PosTransaction",
     "CashTransaction",
-    "CardToCard",
+    "CardToCardTransaction",
     "Transaction",
     "DailyFinancialReport",
+    "SalePermissions",
+    "KitchenPermissions",
 )

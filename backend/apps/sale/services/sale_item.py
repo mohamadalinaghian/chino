@@ -1,77 +1,114 @@
+from __future__ import annotations
+
 from decimal import Decimal
 
+from apps.inventory.models import Product
+from apps.inventory.services import ItemProductionService, StockService
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 
-from ...inventory.models import Product
-from ...inventory.services import StockService
-from ...menu.models import Menu
-
 
 class SaleItemService:
     """
-    Check sale's price.
-    Check Stock for remaining quantity of item.
-    Reduce quantity of item in Stock by every sale from StockService.
+    Business rules for sale items:
+    - Stock consumption
+    - COGS calculation
+    - Validation
     """
 
-    @staticmethod
-    def is_saleable(product_id):
-        """
-        Only sell_able  product allow to sell.
-        """
-
-        obj = Product.objects.only("id", "type").get(id=product_id)
-
-        if obj.type == Product.ProductType.SELLABLE:
-            return True
-
-        raise ValidationError(_("Only Sellable product allowed for sale"))
+    # ========== VALIDATION ========== #
 
     @staticmethod
-    def is_price_reasonable(product_id):
+    def validate_saleable(product: Product) -> None:
         """
-        Check if price of sale at least is:
-            sale_price  >=  item_cost * 1.5
+        Ensure product can be sold.
+
+        Raises:
+            ValidationError: If product is not sellable or inactive
         """
+        if not product.is_active:
+            raise ValidationError(_(f"Product '{product.name}' is not active"))
 
-        obj = Menu.objects.only("id", "price").get(name_id=product_id)
+        if product.type != Product.ProductType.SELLABLE:
+            raise ValidationError(
+                _(
+                    f"Product '{
+                  product.name}' is not sellable (type: {product.type})"
+                )
+            )
 
-        price = obj.price
-        cost = obj.material_cost
-
-        if cost is None or cost == 0:
-            raise ValidationError(_("System can't determine cost of item"))
-
-        if price <= cost * 1.5:
-            raise ValidationError(_("Your price is to low"))
-
-        return True
+    # ========== STOCK CONSUMPTION & COGS ========== #
 
     @staticmethod
-    def fifo_consume(product_id, quantity, item_sale_mchanism):
+    @transaction.atomic
+    def consume_and_calculate_cost(
+        product: Product,
+        quantity: Decimal,
+        sale_method: str,
+    ) -> Decimal:
         """
-        If it's sale from Stock, we reduce amount of item in Stock.
-        If it's a phantom production, we reduce components of item from Stock.
+        Consume stock and return the material cost (COGS).
+
+        Args:
+            product: Product being sold
+            quantity: Quantity to consume
+            sale_method: "STOCK" or "PHANTOM"
+
+        Returns:
+            Material cost (COGS) as Decimal
+
+        Raises:
+            ValidationError: If insufficient stock or invalid method
         """
-        from ..models import SaleItem
+        if quantity <= 0:
+            raise ValidationError(_("Quantity must be positive"))
 
-        tp = SaleItem.SaleMethod
+        if sale_method == "STOCK":
+            # Direct FIFO consumption
+            cost = StockService.reserve_fifo(product, quantity)
+            return cost
 
-        with transaction.atomic():
-            if item_sale_mchanism == tp.STOCK:
-                StockService.reserve_fifo(product_id, quantity)
-            elif item_sale_mchanism == tp.PHANTOM:
-                obj = Product.objects.only("id", "active_recipe").get(id=product_id)
-                recipe = obj.active_recipe
+        elif sale_method == "PHANTOM":
+            # Made-to-order: recursively resolve recipe
+            recipe = product.active_recipe
+            if not recipe:
+                raise ValidationError(_(f"No active recipe for '{product.name}'"))
 
-                if recipe is None:
-                    raise ValidationError(_("No active recipe for phantom production"))
+            # Use ItemProductionService for recursive cost calculation
+            cost = ItemProductionService.get_production_total_cost(
+                recipe=recipe,
+                used_qt=quantity,
+            )
+            return cost
 
-                from ...inventory.models import RecipeComponent
+        else:
+            raise ValidationError(_(f"Invalid sale method: {sale_method}"))
 
-                components = RecipeComponent.objects.filter(recipe_id=recipe)
-                for cp in components:
-                    cp_qt = cp.quantity * Decimal(quantity)
-                    StockService.reserve_fifo(cp.consume_product, cp_qt)
+    @staticmethod
+    def calculate_item_profit(
+        unit_price: Decimal,
+        quantity: Decimal,
+        discount: Decimal,
+        material_cost: Decimal,
+    ) -> Decimal:
+        """Calculate profit for a single item"""
+        revenue = (unit_price * quantity) - discount
+        profit = revenue - material_cost
+        return profit
+
+    @staticmethod
+    def calculate_margin_percentage(
+        unit_price: Decimal,
+        quantity: Decimal,
+        discount: Decimal,
+        material_cost: Decimal,
+    ) -> Decimal:
+        """Calculate profit margin as percentage"""
+        revenue = (unit_price * quantity) - discount
+        if revenue == 0:
+            return Decimal("0")
+
+        profit = revenue - material_cost
+        margin = (profit / revenue) * 100
+        return margin.quantize(Decimal("0.01"))

@@ -2,12 +2,11 @@ from django.contrib import admin
 
 from ..models import Recipe
 from ..services import RecipeComponentService, RecipeService
-from .mixins import ValidationErrorMessageMixin
 from .recipe_component import RecipeComponentInline
 
 
 @admin.register(Recipe)
-class RecipeAdmin(ValidationErrorMessageMixin, admin.ModelAdmin):
+class RecipeAdmin(admin.ModelAdmin):
     model = Recipe
     list_display = ("name", "produced_product", "instruction", "jalali_updated_at")
     fields = (

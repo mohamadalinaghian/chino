@@ -35,3 +35,28 @@ class MenuSerializer(serializers.ModelSerializer):
 
     def get_name(self, obj):
         return obj.name.name
+
+
+#####
+# For SALE operations.serializers
+#####
+
+
+class MenuItemSaleListSerializer(serializers.ModelSerializer):
+    """
+    Lightweight serializer for sale operations.
+    Returns only essential fields for item selection.
+    """
+
+    name = serializers.CharField(source="name.name", read_only=True)
+    category = serializers.CharField(source="category.title", read_only=True)
+
+    class Meta:
+        model = Menu
+        fields = ("id", "name", "price", "category")
+        read_only_fields = (
+            "id",
+            "name",
+            "price",
+            "category",
+        )
