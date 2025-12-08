@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 
 export const metadata: Metadata = {
 	title: {
@@ -45,7 +46,11 @@ export default function RootLayout({
 }) {
 	return (
 		<html lang="fa" dir="rtl">
-			<body className="main-container container mx-auto">{children}</body>
+			<body className="main-container container mx-auto">
+				<AuthProvider showLoading={false}>
+					{children}
+				</AuthProvider>
+			</body>
 		</html>
 	);
 }

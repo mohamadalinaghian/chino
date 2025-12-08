@@ -12,12 +12,18 @@ from ..services import ItemProductionService, StockService
 class ItemProductionAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
     form = ItemProductionForm
     list_display = (
-        "used_recipe__produced_product",
+        "produced_product_name",
         "produced_quantity",
     )
     readonly_fields = ("updated_at",)
-    search_fields = ("used_recipe__produced_product__name", "cooperators__name")
+    search_fields = ("produced_product_name", "cooperators__name")
     autocomplete_fields = ("used_recipe",)
+
+    @admin.display(description="Produced Product", ordering="produced_product_name")
+    def produced_product_name(self, obj):
+        if obj.used_recipe and obj.used_recipe.produced_product:
+            return obj.used_recipe.produced_product.name
+        return "-"
 
     def save_model(self, request, obj, form, change):
         """

@@ -88,3 +88,27 @@ body {
 		background-position: -200% 0;
 	}
 }
+
+
+
+.ltr {
+  direction: ltr !important;
+  text-align: left !important;
+}
+
+/* Optional: Force RTL for specific elements if needed */
+.rtl {
+  direction: rtl !important;
+  text-align: right !important;
+}
+
+/* Ensure input placeholder is also LTR in LTR inputs */
+input.ltr::placeholder {
+  text-align: left;
+  direction: ltr;
+}
+
+/* Fix focus ring position for LTR inputs in RTL context */
+input.ltr:focus {
+  outline-offset: 0;
+}

@@ -1,7 +1,6 @@
 services:
   db:
     image: postgres:18-alpine
-    restart: unless-stopped
     env_file: .env.dev
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -39,6 +38,7 @@ services:
       - "3000:3000"
     depends_on:
       - backend
+    command: sh -c "npm install && npm run dev"
 
   nginx:
     build:
