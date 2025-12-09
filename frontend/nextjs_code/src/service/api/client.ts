@@ -16,7 +16,7 @@
  * Base API URL from environment variables
  * Falls back to localhost if not set
  */
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_DJANGO_URL || 'http://localhost:8000/api';
 
 /**
  * API request configuration options

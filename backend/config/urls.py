@@ -2,12 +2,11 @@ from api.router import api
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import path
 from django.utils.translation import gettext_lazy as _
 
 urlpatterns = [
     path("api/admin/", admin.site.urls),
-    path("api/admin/_nested_admin/", include("nested_admin.urls")),
     path("api/", api.urls),
 ]
 

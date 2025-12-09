@@ -1,7 +1,7 @@
 # -----------------------------
 # Base image
 # -----------------------------
-FROM python:slim AS base
+FROM python:3.12-slim AS base
 
 ENV PYTHONUNBUFFERED=1 \
   PYTHONDONTWRITEBYTECODE=1 \
@@ -28,14 +28,16 @@ COPY requirements /requirements
 # -----------------------------
 FROM base AS deps-prod
 RUN /venv/bin/pip install --upgrade pip setuptools wheel \
-  && /venv/bin/pip install -r /requirements/prod.txt
+  && /venv/bin/pip install -r /requirements/prod.txt \
+  -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 # -----------------------------
 # Install dev deps
 # -----------------------------
 FROM base AS deps-dev
 RUN /venv/bin/pip install --upgrade pip setuptools wheel \
-  && /venv/bin/pip install -r /requirements/dev.txt
+  && /venv/bin/pip install -r /requirements/dev.txt \
+  -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 # -----------------------------
 # Runtime image (prod)

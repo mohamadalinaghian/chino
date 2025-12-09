@@ -2,42 +2,47 @@
 # Production dependencies for Chino Cafe Management System
 
 # Core Django
-Django>=4.2,<5.0
-asgiref>=3.7.0
-sqlparse>=0.4.4
-psycopg2-binary>=2.9.0
+Django
+asgiref
+sqlparse
+psycopg2-binary
 
 # Django Extensions
-django-environ>=0.11.0
-django-jalali-date>=1.0.0
-django-ordered-model>=3.7.0
-django-nested-admin>=4.0.0
-django-cors-headers>=4.3.0
-django-filter>=23.0
+django-environ
+django-jalali-date
+django-ordered-model
+django-cors-headers
+django-filter
 
 # API Framework (Ninja - replacing DRF)
-django-ninja>=1.0.0
+django-ninja
 
 # Authentication & Security
-PyJWT>=2.8.0
-cryptography>=41.0.0
+PyJWT
+cryptography
 
 # Persian/Jalali Date Support
-jalali_core>=0.1.0
-jdatetime>=4.1.0
-persiantools>=4.0.0
+jalali_core
+jdatetime
+persiantools
 
 # Image Processing
-Pillow>=10.0.0
+Pillow
 
 # Utilities
-python-slugify>=8.0.0
-python-dotenv>=1.0.0
-packaging>=23.0
-setuptools>=68.0.0
+python-slugify
+python-dotenv
+packaging
+setuptools
 
 # Logging
-python-json-logger==2.0.7
+python-json-logger
 
 # WSGI Server
-gunicorn>=21.0.0
+gunicorn
+
+
+# PDF formater
+reportlab
+arabic-reshaper
+python-bidi
