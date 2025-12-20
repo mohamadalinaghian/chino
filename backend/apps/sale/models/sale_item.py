@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from decimal import Decimal
 
 from django.db import models
@@ -8,76 +6,47 @@ from django.utils.translation import gettext_lazy as _
 
 class SaleItem(models.Model):
     """
-    Pure data model for sale items.
-    All price calculations in SaleItemService.
+    An individual line item within a Sale.
+    Items can be parents (Menu items) or children (Extras).
     """
 
-    class SaleType(models.TextChoices):
-        STOCK = "STOCK", _("From Stock")
-        PHANTOM = "PHANTOM", _("Made to Order")
-
-    sale_invoice = models.ForeignKey(
-        "sale.SaleInvoice",
+    sale = models.ForeignKey(
+        "sale.Sale",
         on_delete=models.CASCADE,
         related_name="items",
-        verbose_name=_("Sale invoice"),
     )
     product = models.ForeignKey(
         "inventory.Product",
         on_delete=models.PROTECT,
-        verbose_name=_("Product"),
         related_name="sale_items",
     )
-    quantity = models.DecimalField(
-        _("Quantity"),
-        max_digits=10,
-        decimal_places=3,
+
+    # Self-referential FK for Extras
+    parent_item = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        related_name="extras",
+        on_delete=models.CASCADE,
+        help_text=_("If set, this item is an extra attached to the parent"),
     )
+
+    quantity = models.DecimalField(max_digits=10, decimal_places=3)
+
+    # Price Snapshots (History preservation)
     unit_price = models.DecimalField(
-        _("Unit price"),
-        max_digits=12,
-        decimal_places=4,
-    )
-    discount_amount = models.DecimalField(
-        _("Discount amount"),
-        max_digits=12,
-        decimal_places=4,
-        default=Decimal("0"),
+        max_digits=12, decimal_places=4, help_text=_("Price at moment of sale")
     )
     material_cost = models.DecimalField(
-        _("Material cost (COGS)"),
-        max_digits=12,
-        decimal_places=4,
-        default=Decimal("0"),
-        help_text=_("Cost of goods sold for this item"),
+        max_digits=12, decimal_places=4, default=Decimal("0")
     )
-    sale_method = models.CharField(
-        _("Sale method"),
-        max_length=16,
-        choices=SaleType.choices,
-        default=SaleType.STOCK,
-        help_text=_("Whether item was sold from stock or made to order"),
-    )
-    stock_consumed = models.BooleanField(
-        _("Stock consumed"),
-        default=True,
-        help_text=_("Whether stock has been consumed for this item"),
-    )
+
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = _("Sale item")
-        verbose_name_plural = _("Sale items")
         ordering = ("created_at",)
-        constraints = [
-            models.UniqueConstraint(
-                fields=["sale_invoice", "product"],
-                name="unique_product_per_invoice",
-            )
-        ]
         indexes = [
-            models.Index(fields=["sale_invoice", "product"]),
+            models.Index(fields=["sale"]),
         ]
 
     def __str__(self) -> str:

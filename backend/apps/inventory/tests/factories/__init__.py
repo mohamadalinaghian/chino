@@ -10,6 +10,7 @@ from .recipe_component import RecipeComponentFactory
 from .stock import StockFactory
 from .supplier import SupplierFactory
 from .supplier_product import SupplierProductFactory
+from .table_factory import TableFactory
 
 __all__ = (
     "ProductFactory",
@@ -23,4 +24,5 @@ __all__ = (
     "RecipeComponentFactory",
     "ItemProductionFactory",
     # "ProductAdjustmentReportFactory",
+    "TableFactory",
 )

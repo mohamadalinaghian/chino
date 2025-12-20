@@ -2,51 +2,48 @@ from decimal import Decimal
 from enum import Enum
 from typing import List, Optional
 
+from apps.sale.models import Sale
 from ninja import Field, Schema
 
 
 class SaleType(str, Enum):
-    """
-    Location/type of sale.
-    Explicit string values for clarity and extensibility.
-    """
-
-    DINE_IN = "DINE_IN"
-    TAKEAWAY = "TAKEAWAY"
+    DINE_IN = Sale.SaleType.DINE_IN
+    TAKEAWAY = Sale.SaleType.TAKEAWAY
 
 
 class ExtraItemInput(Schema):
-    """
-    Add-on item attached to a main sale item.
-    Pricing is calculated via extra pricing rules.
-    """
-
     product_id: int
-    quantity: Decimal  # must be > 0
+    quantity: Decimal
 
 
-class SaleItemInput(Schema):
+class SyncSaleItemInput(Schema):
     """
-    Main salable item.
-    Pricing is calculated via menu pricing rules.
+    Unified Schema for creating or updating a line item.
+    - item_id: None = Create New
+    - item_id: Int  = Update Existing Quantity
     """
 
-    product_id: int
-    quantity: int  # must be > 0
+    item_id: Optional[int] = None
+    menu_id: int
+    quantity: int
     extras: List[ExtraItemInput] = Field(default_factory=list)
 
 
+class SyncSaleRequest(Schema):
+    items: List[SyncSaleItemInput]
+
+
 class OpenSaleRequest(Schema):
-    """
-    Request schema for opening a sale.
-
-    - Sale is created in OPEN state
-    - Prices are calculated server-side
-    - Payments are NOT allowed here
-    """
-
     sale_type: SaleType
     table_id: Optional[int]
     guest_id: Optional[int]
+    guest_count: Optional[int] = None
     note: Optional[str]
-    items: List[SaleItemInput]
+    # For opening, we use the same structure, but item_id will naturally be null/ignored
+    items: List[SyncSaleItemInput]
+
+
+class OpenSaleResponse(Schema):
+    sale_id: int
+    total_amount: Decimal
+    state: str
