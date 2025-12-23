@@ -19,6 +19,20 @@ def can_open_sale(user):
         raise PermissionDenied(_("You are not allowed to open a sale"))
 
 
+def can_see_sale_details(user):
+    _require_authenticated(user)
+
+    if not user.has_perm("sale.can_see_sale_items"):
+        raise PermissionDenied(_("You are not allowed to see this sale items"))
+
+
+def can_see_sale_list(user):
+    _require_authenticated(user)
+
+    if not user.has_perm("sale.can_see_sale_list"):
+        raise PermissionDenied(_("You are not allowed to see this sale items"))
+
+
 def can_modify_sale(user, sale: Sale):
     """
     User is allowed to modify an existing OPEN sale.
