@@ -9,6 +9,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "ninja",
     "corsheaders",
+    "simple_history",
     "django_filters",
     "jalali_date",
     "apps.menu",

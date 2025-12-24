@@ -1,73 +1,121 @@
-# api/schemas/auth.py
+# api/schemas/auth_schemas.py
 """
-Ninja schemas for authentication endpoints.
-
-These schemas define the request/response structure for auth operations.
+Request and Response schemas for authentication endpoints.
+All schemas are type-safe and validated by Ninja.
 """
 
-from ninja import Field, Schema
+from typing import List, Optional
+
+from ninja import Schema
 
 
-class LoginIn(Schema):
+class LoginRequest(Schema):
     """
-    Login request schema.
+    User credentials for authentication.
 
-    Mobile number must be in Iranian format: 09XXXXXXXXX
-    """
-
-    mobile: str = Field(
-        ...,
-        example="09123456789",
-        description="Iranian mobile number in format 09XXXXXXXXX",
-    )
-    password: str = Field(..., example="strongpassword", description="User password")
-
-
-class TokenOut(Schema):
-    """
-    JWT token pair response.
-
-    Both access and refresh tokens are returned on successful login/refresh.
+    Attributes:
+        username: User's unique username
+        password: User's password (will be hashed)
     """
 
-    access: str = Field(..., description="Short-lived access token for API requests")
-    refresh: str = Field(
-        ..., description="Long-lived refresh token for getting new access tokens"
-    )
+    username: str
+    password: str
 
 
-class RefreshIn(Schema):
+class TokenPairResponse(Schema):
     """
-    Refresh token request schema.
-    """
+    JWT token pair returned after successful authentication.
 
-    refresh: str = Field(..., description="Valid refresh token")
-
-
-class UserOut(Schema):
-    """
-    User profile response schema.
-
-    Contains basic user information. Does not include sensitive data like password.
+    Attributes:
+        access: Short-lived token for API requests (30 min)
+        refresh: Long-lived token for obtaining new access tokens (7 days)
+        token_type: Always "Bearer" for HTTP Authorization header
     """
 
-    id: int = Field(..., description="User's unique ID")
-    mobile: str = Field(..., description="User's mobile number")
-    name: str = Field(..., description="User's full name")
-    is_staff: bool = Field(default=False, description="Staff status")
-    is_superuser: bool = Field(default=False, description="Superuser status")
+    access: str
+    refresh: str
+    token_type: str = "Bearer"
 
 
-class LogoutOut(Schema):
+class RefreshTokenRequest(Schema):
     """
-    Logout response schema.
+    Request to obtain a new access token using refresh token.
 
-    For stateless JWT, this is just a success confirmation.
-    Client should delete tokens locally.
+    Attributes:
+        refresh: The refresh token obtained during login
     """
 
-    success: bool = Field(default=True, description="Logout successful")
-    message: str = Field(
-        default="Tokens should be deleted on client side",
-        description="Instruction for client",
-    )
+    refresh: str
+
+
+class AccessTokenResponse(Schema):
+    """
+    New access token returned after successful refresh.
+
+    Attributes:
+        access: Fresh access token
+        token_type: Always "Bearer"
+    """
+
+    access: str
+    token_type: str = "Bearer"
+
+
+class UserInfoResponse(Schema):
+    """
+    Current authenticated user's information and permissions.
+
+    Attributes:
+        id: User's unique identifier
+        username: User's username
+        email: User's email address
+        first_name: User's first name
+        last_name: User's last name
+        is_staff: Whether user has staff privileges
+        permissions: List of permission codenames (e.g., "sale.open_sale")
+    """
+
+    id: int
+    username: str
+    email: str
+    first_name: str
+    last_name: str
+    is_staff: bool
+    permissions: List[str]
+
+
+class ErrorResponse(Schema):
+    """
+    Standard error response format for all endpoints.
+
+    Attributes:
+        detail: Human-readable error message
+        code: Optional machine-readable error code for client handling
+    """
+
+    detail: str
+    code: Optional[str] = None
+
+
+class ChangePasswordRequest(Schema):
+    """
+    Request to change user's password.
+
+    Attributes:
+        old_password: Current password for verification
+        new_password: New password to set
+    """
+
+    old_password: str
+    new_password: str
+
+
+class ChangePasswordResponse(Schema):
+    """
+    Response after successful password change.
+
+    Attributes:
+        detail: Success message
+    """
+
+    detail: str = "Password changed successfully"

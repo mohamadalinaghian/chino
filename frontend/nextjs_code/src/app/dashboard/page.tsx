@@ -1,202 +1,202 @@
-/**
- * Dashboard Page - Persian Version
- *
- * Protected page for authenticated users
- */
-
+// app/dashboard/page.tsx
 'use client';
 
-import React, { useEffect } from 'react';
-import { useUser, useIsAuthenticated, useAuthLoading } from '@/store/authStore';
-import { UserProfile } from '@/components/auth/UserProfile';
-import { LogoutButton } from '@/components/auth/LogoutButton';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { SaleApiClient, DashboardItem } from '@/libs/api/saleApi';
+import { AuthService } from '@/libs/auth/authService';
 
+/**
+ * Main dashboard displaying all active (OPEN) sales.
+ * Features real-time updates and quick navigation to sale details.
+ */
 export default function DashboardPage() {
-  const user = useUser();
-  const isAuthenticated = useIsAuthenticated();
-  const isLoading = useAuthLoading();
   const router = useRouter();
+  const [sales, setSales] = useState<DashboardItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
 
-  // Debug logs
+  /**
+   * Fetches dashboard data on mount and sets up polling.
+   */
   useEffect(() => {
-    console.log('🎯 Dashboard state:', {
-      isAuthenticated,
-      isLoading,
-      hasUser: !!user,
-      user: user?.mobile
-    });
-  }, [isAuthenticated, isLoading, user]);
+    loadDashboard();
 
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      console.log('❌ Not authenticated, redirecting to login');
-      router.push('/login');
+    // Poll for updates every 30 seconds
+    const interval = setInterval(loadDashboard, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  /**
+   * Loads active sales from API.
+   */
+  const loadDashboard = async () => {
+    try {
+      const data = await SaleApiClient.getDashboard();
+      setSales(data.active_sales);
+      setError('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load dashboard');
+    } finally {
+      setLoading(false);
     }
-  }, [isAuthenticated, isLoading, router]);
+  };
 
-  // Loading state
-  if (isLoading) {
+  /**
+   * Formats ISO datetime to readable format.
+   */
+  const formatTime = (isoString: string): string => {
+    const date = new Date(isoString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffMins < 60) return `${diffMins} min ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} hr ago`;
+    return date.toLocaleDateString();
+  };
+
+  /**
+   * Navigates to sale detail page.
+   */
+  const viewSale = (saleId: number) => {
+    router.push(`/sale/${saleId}`);
+  };
+
+  /**
+   * Navigates to new sale creation.
+   */
+  const createNewSale = () => {
+    router.push('/sale/new');
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          <p className="mt-4 text-text">در حال بارگذاری...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto" />
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
-  // Not authenticated (while redirecting)
-  if (!isAuthenticated) {
-    return null;
-  }
-
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm shadow-sm border-b border-border sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-text">داشبورد</h1>
-            <nav className="flex gap-4 items-center">
-              <a
-                href="/menu"
-                className="text-text-light hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                منوی کافه
-              </a>
-              <LogoutButton />
-            </nav>
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Active Sales</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              {sales.length} order{sales.length !== 1 ? 's' : ''} in progress
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={loadDashboard}
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+            >
+              Refresh
+            </button>
+            <button
+              onClick={createNewSale}
+              className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition shadow-lg"
+            >
+              + New Sale
+            </button>
+            <button
+              onClick={() => AuthService.logout()}
+              className="px-4 py-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition"
+            >
+              Logout
+            </button>
           </div>
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8 bg-gradient-to-br from-primary-light/20 to-primary/10 rounded-2xl p-6 border border-primary-light">
-          <h2 className="text-3xl font-bold text-text mb-2">
-            خوش آمدید! 👋
-          </h2>
-          <p className="text-text-light">
-            شماره موبایل: <span className="font-semibold ltr inline-block">{user?.mobile}</span>
-          </p>
-          {user?.is_staff && (
-            <div className="mt-2">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary text-text-inverted">
-                👨‍💼 کارمند
-              </span>
-            </div>
-          )}
+      {/* Error Message */}
+      {error && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-800">{error}</p>
+          </div>
         </div>
+      )}
 
-        {/* Dashboard Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left column - Stats & Activity */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {/* Stat 1 */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md border border-border p-6 hover:shadow-lg transition-shadow">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-primary-light rounded-lg">
-                    <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-text-light">کل سفارشات</p>
-                    <p className="text-2xl font-bold text-text">24</p>
+      {/* Sales Grid */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {sales.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="inline-block p-4 bg-gray-100 rounded-full mb-4">
+              <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No active sales</h3>
+            <p className="text-gray-600 mb-6">Create a new sale to get started</p>
+            <button
+              onClick={createNewSale}
+              className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition"
+            >
+              Create First Sale
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sales.map((sale) => (
+              <div
+                key={sale.id}
+                onClick={() => viewSale(sale.id)}
+                className="bg-white rounded-xl shadow-md hover:shadow-xl transition cursor-pointer border border-gray-200 overflow-hidden"
+              >
+                {/* Card Header */}
+                <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4 text-white">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-sm opacity-90">Table</p>
+                      <p className="text-2xl font-bold">{sale.table || 'Takeaway'}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm opacity-90">Total</p>
+                      <p className="text-xl font-bold">${parseFloat(sale.total_amount).toFixed(2)}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Stat 2 */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md border border-border p-6 hover:shadow-lg transition-shadow">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-green-100 rounded-lg">
-                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                {/* Card Body */}
+                <div className="px-6 py-4 space-y-3">
+                  <div className="flex items-center text-gray-700">
+                    <svg className="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
+                    <span className="text-sm">{sale.guest_name || 'Walk-in'}</span>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-text-light">تکمیل شده</p>
-                    <p className="text-2xl font-bold text-text">18</p>
-                  </div>
-                </div>
-              </div>
 
-              {/* Stat 3 */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md border border-border p-6 hover:shadow-lg transition-shadow">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-yellow-100 rounded-lg">
-                    <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex items-center text-gray-700">
+                    <svg className="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
+                    <span className="text-sm">{formatTime(sale.opened_at)}</span>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-text-light">در انتظار</p>
-                    <p className="text-2xl font-bold text-text">6</p>
+
+                  <div className="flex items-center text-gray-700">
+                    <svg className="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span className="text-sm">Staff: {sale.opened_by_name}</span>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Recent Activity */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md border border-border overflow-hidden">
-              <div className="px-6 py-4 border-b border-border bg-gradient-to-l from-background-dark/30">
-                <h3 className="text-lg font-bold text-text">
-                  فعالیت‌های اخیر
-                </h3>
-              </div>
-              <div className="p-6">
-                <div className="text-center py-12">
-                  <svg className="w-16 h-16 mx-auto text-text-light opacity-50 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                  <p className="text-text-light">
-                    هیچ فعالیت اخیری وجود ندارد
-                  </p>
+                {/* Card Footer */}
+                <div className="px-6 py-3 bg-gray-50 border-t border-gray-100">
+                  <p className="text-xs text-gray-500 text-center">Click to view details</p>
                 </div>
               </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md border border-border p-6">
-              <h3 className="text-lg font-bold text-text mb-4">
-                دسترسی سریع
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <a
-                  href="/menu"
-                  className="flex items-center gap-3 p-4 rounded-lg border-2 border-border hover:border-primary hover:bg-primary-light/10 transition-all group"
-                >
-                  <svg className="w-6 h-6 text-primary group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  </svg>
-                  <span className="font-medium text-text">مشاهده منو</span>
-                </a>
-
-                <button
-                  disabled
-                  className="flex items-center gap-3 p-4 rounded-lg border-2 border-border opacity-50 cursor-not-allowed"
-                >
-                  <svg className="w-6 h-6 text-text-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  <span className="font-medium text-text-light">پروفایل</span>
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
-
-          {/* Right column - User Profile */}
-          <div className="lg:col-span-1">
-            <UserProfile showLogout showBadges />
-          </div>
-        </div>
+        )}
       </main>
     </div>
   );

@@ -13,9 +13,11 @@ django-jalali-date
 django-ordered-model
 django-cors-headers
 django-filter
+django-simple-history
 
 # API Framework (Ninja - replacing DRF)
 django-ninja
+django-ratelimit
 
 # Authentication & Security
 PyJWT

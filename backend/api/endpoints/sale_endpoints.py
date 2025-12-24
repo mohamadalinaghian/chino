@@ -25,6 +25,7 @@ from apps.sale.services import CloseSaleService, ModifySaleService, OpenSaleServ
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
+from django_ratelimit.decorators import ratelimit
 from ninja import Router
 
 User = get_user_model()
@@ -32,6 +33,7 @@ router = Router(tags=["Sales"], auth=jwt_auth)
 
 
 @router.post("/open", response=OpenSaleResponse)
+@ratelimit(key="user", rate="2/m", method="POST")
 def open_sale(request, payload: OpenSaleRequest):
     """
     Creates a new Sale in OPEN state.
@@ -221,7 +223,7 @@ def get_sale_detail(request, sale_id: int):
     }
 
 
-@router.get("/dashboard", response=SaleDashboardResponse)
+@router.get("/", response=SaleDashboardResponse)
 def sale_dashboard(request):
     """
     Operational Dashboard: Lists all currently OPEN sales.

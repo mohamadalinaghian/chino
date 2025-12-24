@@ -20,4 +20,4 @@ api = NinjaAPI(
 api.add_router("/auth/", auth_endpoints.router)
 api.add_router("/menu/", menu_endpoints.router_menu_display)
 api.add_router("/menu/", menu_pdf_endpoints.router_menu_pdf)
-api.add_router("/sale", sale_endpoints.router)
+api.add_router("/sale/", sale_endpoints.router)

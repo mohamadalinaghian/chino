@@ -1,231 +1,160 @@
 # api/security/auth.py
 """
-JWT utilities, Ninja HttpBearer auth class, and AuthService.
-Single responsibility sections are separated with clear functions/classes.
-
-Design notes:
-- Stateless JWT implementation (no DB for tokens).
-- Uses RFC7519 standard claims: sub (subject), iat (issued at), exp (expiration).
-- Tokens contain minimal data (only user id).
-- AuthService provides testable business logic (login & refresh).
+JWT Authentication for Django Ninja API.
+Provides stateless authentication using access/refresh token pairs.
 """
 
-from datetime import datetime, timezone
-from http import HTTPStatus
-from typing import Any, Dict, Optional
+from datetime import datetime, timedelta
+from typing import Optional
 
 import jwt
 from django.conf import settings
-from django.contrib.auth import authenticate, get_user_model
-from django.http import HttpRequest
-from ninja.errors import HttpError
+from django.contrib.auth import get_user_model
 from ninja.security import HttpBearer
 
 User = get_user_model()
 
 
-# ---------------------------
-# JWT helper & utils
-# ---------------------------
-class JWTError(Exception):
-    """Internal exception for JWT errors."""
-
-    pass
-
-
-def _now_utc() -> datetime:
-    """Return current UTC datetime (timezone-aware)."""
-    return datetime.now(tz=timezone.utc)
-
-
-def _to_ts(dt: datetime) -> int:
-    """
-    Convert timezone-aware datetime to UNIX timestamp (int seconds).
-    Used for 'exp' and 'iat' claims.
-    """
-    return int(dt.timestamp())
-
-
-def create_access_token(user: User) -> str:
-    """
-    Create an access token. Short-lived.
-    Claims:
-      - sub: subject (user id)
-      - iat: issued at
-      - exp: expiration
-      - type: 'access'
-    """
-    now = _now_utc()
-    exp = now + settings.JWT_ACCESS_TTL
-    payload = {
-        "sub": str(user.pk),
-        "iat": _to_ts(now),
-        "exp": _to_ts(exp),
-        "type": "access",
-    }
-    token = jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
-    # PyJWT returns str (>=2.x). Keep as-is.
-    return token
-
-
-def create_refresh_token(user: User) -> str:
-    """
-    Create a refresh token. Longer lived than access token.
-    Claims are similar to access token, but 'type' == 'refresh'.
-    """
-    now = _now_utc()
-    exp = now + settings.JWT_REFRESH_TTL
-    payload = {
-        "sub": str(user.pk),
-        "iat": _to_ts(now),
-        "exp": _to_ts(exp),
-        "type": "refresh",
-    }
-    token = jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
-    return token
-
-
-def decode_token(token: str, expected_type: Optional[str] = None) -> Dict[str, Any]:
-    """
-    Decode and validate a JWT. Enforces presence of 'sub' and optionally 'type'.
-    Raises JWTError with small error codes/messages on failure.
-    """
-
-    try:
-        payload = jwt.decode(
-            token,
-            settings.JWT_SECRET,
-            algorithms=[settings.JWT_ALGORITHM],
-            options={"require": ["exp", "iat", "sub"]},  # sub is required
-        )
-
-        # Explicitly enforce sub is string (security!)
-        if not isinstance(payload.get("sub"), str):
-            raise JWTError("invalid_token", "Invalid subject (sub must be string)")
-
-        if expected_type and payload.get("type") != expected_type:
-            raise JWTError(
-                "invalid_token",
-                f"Invalid token type: expected {
-                    expected_type}",
-            )
-
-        return payload
-
-    except jwt.ExpiredSignatureError:
-        raise JWTError("token_expired")
-    except jwt.InvalidSignatureError:
-        raise JWTError("invalid_token", "Invalid signature")
-    except jwt.InvalidIssuerError:
-        raise JWTError("invalid_token", "Invalid issuer")
-    except jwt.InvalidAudienceError:
-        raise JWTError("invalid_token", "Invalid audience")
-    except jwt.ImmatureSignatureError:
-        raise JWTError("token_not_valid")
-    except jwt.InvalidTokenError as e:
-        # This includes InvalidSubjectError, missing claims, etc.
-        raise JWTError("invalid_token", "Invalid token") from e
-    except Exception as e:
-        raise JWTError("invalid_token", "Token decoding failed") from e
-
-
-def get_user_from_payload(payload: Dict[str, Any]) -> User:
-    """
-    Resolve and return the User instance referenced by payload['sub'].
-    Raises JWTError when user is missing or id invalid.
-    """
-    try:
-        uid = int(payload["sub"])
-    except Exception:
-        raise JWTError("invalid_sub")
-
-    try:
-        user = User.objects.get(pk=uid)
-    except User.DoesNotExist as ex:
-        raise JWTError("user_not_found") from ex
-
-    return user
-
-
-# ---------------------------
-# Ninja HttpBearer Auth class
-# ---------------------------
 class JWTAuth(HttpBearer):
     """
-    Ninja HttpBearer implementation that accepts access tokens.
-
-    Behavior:
-      - If token is missing/invalid/expired -> returns None (Ninja responds 401).
-      - On success: sets request.user and request.auth (both to User instance).
+    HTTP Bearer authentication handler for Django Ninja.
+    Validates JWT tokens and attaches user to request.
     """
 
-    def authenticate(self, request: HttpRequest, token: str) -> Optional[object]:
+    def authenticate(self, request, token: str) -> Optional[User]:
+        """
+        Validates JWT token and returns authenticated user.
+
+        Args:
+            request: Django HttpRequest
+            token: JWT access token from Authorization header
+
+        Returns:
+            User instance if token is valid, None otherwise
+        """
         try:
-            payload = decode_token(token, expected_type="access")
-            user = get_user_from_payload(payload)
-            request.user = user
-            request.auth = user
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+
+            # Check token type
+            if payload.get("type") != "access":
+                return None
+
+            # Check expiration
+            if datetime.utcnow().timestamp() > payload.get("exp", 0):
+                return None
+
+            # Fetch user
+            user = User.objects.get(id=payload.get("user_id"))
+
+            # Check if user is active
+            if not user.is_active:
+                return None
+
             return user
-        except JWTError:
+
+        except (jwt.InvalidTokenError, User.DoesNotExist, KeyError):
             return None
 
 
-# Singleton instance to import elsewhere
+# Singleton instance to use across endpoints
 jwt_auth = JWTAuth()
 
 
-# ---------------------------
-# AuthService (business logic)
-# ---------------------------
-class AuthService:
+class TokenService:
     """
-    Authentication business logic.
-
-    Responsibilities:
-    - Validate credentials (login)
-    - Validate refresh tokens and issue new token pairs
-
-    This class is intentionally independent of HTTP layer and returns primitives
-    so it is easy to unit test.
+    Service for generating and managing JWT tokens.
     """
+
+    # Token expiration times
+    ACCESS_TOKEN_LIFETIME = timedelta(minutes=30)
+    REFRESH_TOKEN_LIFETIME = timedelta(days=7)
 
     @staticmethod
-    def login(username: str, password: str) -> Dict[str, str]:
+    def generate_access_token(user: User) -> str:
         """
-        Authenticate using Django's authenticate().
+        Creates a short-lived access token for API requests.
+
+        Args:
+            user: Django User instance
 
         Returns:
-            {"access": <str>, "refresh": <str>}
-
-        Raises:
-            HttpError(401) on invalid credentials.
+            JWT access token string
         """
-        user = authenticate(username=username, password=password)
-        if not user:
-            # HTTP 401 Unauthorized  # 401
-            raise HttpError(int(HTTPStatus.UNAUTHORIZED), "Invalid credentials")
-
-        access = create_access_token(user)
-        refresh = create_refresh_token(user)
-        return {"access": access, "refresh": refresh}
+        now = datetime.utcnow()
+        payload = {
+            "user_id": user.pk,
+            "mobile": user.mobile,
+            "type": "access",
+            "iat": now,
+            "exp": now + TokenService.ACCESS_TOKEN_LIFETIME,
+        }
+        return jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
 
     @staticmethod
-    def refresh_tokens(refresh_token: str) -> Dict[str, str]:
+    def generate_refresh_token(user: User) -> str:
         """
-        Validate refresh token and issue a fresh pair (access + refresh).
+        Creates a long-lived refresh token for obtaining new access tokens.
 
-        Stateless implementation: can't revoke old refresh tokens here.
-        On invalid/expired token -> HttpError(401).
+        Args:
+            user: Django User instance
+
+        Returns:
+            JWT refresh token string
+        """
+        now = datetime.utcnow()
+        payload = {
+            "user_id": user.id,
+            "type": "refresh",
+            "iat": now,
+            "exp": now + TokenService.REFRESH_TOKEN_LIFETIME,
+        }
+        return jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+
+    @staticmethod
+    def generate_token_pair(user: User) -> dict:
+        """
+        Generates both access and refresh tokens.
+
+        Args:
+            user: Django User instance
+
+        Returns:
+            Dictionary with 'access' and 'refresh' tokens
+        """
+        return {
+            "access": TokenService.generate_access_token(user),
+            "refresh": TokenService.generate_refresh_token(user),
+        }
+
+    @staticmethod
+    def validate_refresh_token(token: str) -> Optional[User]:
+        """
+        Validates refresh token and returns associated user.
+
+        Args:
+            token: JWT refresh token string
+
+        Returns:
+            User instance if valid, None otherwise
         """
         try:
-            payload = decode_token(refresh_token, expected_type="refresh")
-            user = get_user_from_payload(payload)
-        except JWTError:
-            # HTTP 401 Unauthorized  # 401
-            raise HttpError(
-                int(HTTPStatus.UNAUTHORIZED), "Invalid or expired refresh token"
-            )
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
 
-        access = create_access_token(user)
-        refresh = create_refresh_token(user)
-        return {"access": access, "refresh": refresh}
+            # Check token type
+            if payload.get("type") != "refresh":
+                return None
+
+            # Check expiration
+            if datetime.utcnow().timestamp() > payload.get("exp", 0):
+                return None
+
+            # Fetch user
+            user = User.objects.get(id=payload.get("user_id"))
+
+            if not user.is_active:
+                return None
+
+            return user
+
+        except (jwt.InvalidTokenError, User.DoesNotExist, KeyError):
+            return None

@@ -9,16 +9,27 @@ from apps.menu.models import Menu
 from apps.menu.services.menu import MenuItemService
 from apps.sale.models import Sale, SaleItem
 from apps.sale.policies import can_open_sale
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import F, Sum
 from django.utils.translation import gettext_lazy as _
 
+User = get_user_model()
+
 
 class OpenSaleService:
     """
-    Domain Service for creating new Sales.
-    Responsible for initial validation and price snapshotting.
+    Domain service for creating new sales transactions.
+
+    Responsibilities:
+        - Validates business rules (table required for dine-in, etc.)
+        - Snapshots prices at time of sale
+        - Creates sale header and line items atomically
+        - Calculates and caches total amount
+
+    Thread Safety: Safe (uses transaction.atomic)
+    Database Calls: O(3) - 1 for sale, 1 for items, 1 for total update
     """
 
     # --- DTOs (Data Transfer Objects) ---
@@ -37,7 +48,7 @@ class OpenSaleService:
     @transaction.atomic
     def open_sale(
         *,
-        opened_by,
+        opened_by: User,
         sale_type: Sale.SaleType,
         items: Iterable[ItemInput],
         table: Optional[Table] = None,

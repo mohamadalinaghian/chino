@@ -1,129 +1,119 @@
-# api/endpoints/auth.py
+# api/endpoints/auth_endpoints.py
 """
-Django Ninja endpoints for authentication.
-
-Endpoints:
-- POST /auth/login   -> Login with mobile/password, returns JWT tokens
-- POST /auth/refresh -> Exchange refresh token for new token pair
-- GET  /auth/me      -> Get authenticated user profile (requires access token)
-- POST /auth/logout  -> Logout (stateless - client deletes tokens)
-
-All business logic is delegated to api/security/auth.py (AuthService).
+Authentication endpoints for JWT-based authentication.
+Handles login, token refresh, and user info retrieval.
 """
 
-from http import HTTPStatus
+from typing import Union
 
-from api.security.auth import AuthService, jwt_auth
+from api.schemas.auth_schemas import (
+    AccessTokenResponse,
+    ErrorResponse,
+    LoginRequest,
+    RefreshTokenRequest,
+    TokenPairResponse,
+    UserInfoResponse,
+)
+from api.security.auth import TokenService, jwt_auth
+from django.contrib.auth import authenticate, get_user_model
 from ninja import Router
-from ninja.errors import HttpError
 
-from ..schemas.auth_schemas import LoginIn, LogoutOut, RefreshIn, TokenOut, UserOut
+User = get_user_model()
 
-router = Router(tags=["auth"])
+# Public router (no authentication required)
+router = Router(tags=["Authentication"])
 
 
-@router.post("/login", response=TokenOut, summary="Login with mobile and password")
-def login(request, payload: LoginIn):
+@router.post("/login", response={200: TokenPairResponse, 401: ErrorResponse})
+def login(request, payload: LoginRequest) -> Union[tuple[int, dict], TokenPairResponse]:
     """
-    Authenticate user with mobile number and password.
-
-    Returns a pair of JWT tokens (access + refresh) on success.
+    Authenticates user and returns JWT token pair.
 
     Args:
-        payload: LoginIn schema with mobile and password
+        payload: Username and password credentials
 
     Returns:
-        TokenOut: Access and refresh tokens
-
-    Raises:
-        HttpError 401: Invalid credentials
-        HttpError 500: Internal server error
+        TokenPairResponse with access and refresh tokens on success
+        ErrorResponse with 401 status on failure
     """
-    try:
-        return AuthService.login(payload.mobile, payload.password)
-    except HttpError:
-        # Re-raise HttpError to let Ninja format it properly
-        raise
-    except Exception as e:
-        # Log unexpected errors and return 500
-        # In production, use proper logging
-        print(f"Login error: {e}")
-        raise HttpError(int(HTTPStatus.INTERNAL_SERVER_ERROR), "Internal server error")
+    # Authenticate user using Django's authentication backend
+    user = authenticate(request, username=payload.username, password=payload.password)
+
+    if user is None:
+        return 401, {"detail": "Invalid credentials", "code": "invalid_credentials"}
+
+    if not user.is_active:
+        return 401, {"detail": "Account is disabled", "code": "account_disabled"}
+
+    # Generate token pair
+    tokens = TokenService.generate_token_pair(user)
+
+    return TokenPairResponse(**tokens)
 
 
-@router.post("/refresh", response=TokenOut, summary="Refresh access token")
-def refresh(request, payload: RefreshIn):
+@router.post("/refresh", response={200: AccessTokenResponse, 401: ErrorResponse})
+def refresh_token(
+    request, payload: RefreshTokenRequest
+) -> Union[tuple[int, dict], AccessTokenResponse]:
     """
-    Exchange a refresh token for a new token pair.
-
-    This endpoint allows clients to get a new access token without
-    requiring the user to login again.
+    Issues new access token using valid refresh token.
 
     Args:
-        payload: RefreshIn schema with refresh token
+        payload: Refresh token
 
     Returns:
-        TokenOut: New access and refresh tokens
-
-    Raises:
-        HttpError 401: Invalid or expired refresh token
-        HttpError 500: Internal server error
+        AccessTokenResponse with new access token on success
+        ErrorResponse with 401 status on failure
     """
-    try:
-        return AuthService.refresh_tokens(payload.refresh)
-    except HttpError:
-        raise
-    except Exception as e:
-        print(f"Refresh error: {e}")
-        raise HttpError(int(HTTPStatus.INTERNAL_SERVER_ERROR), "Internal server error")
+    # Validate refresh token
+    user = TokenService.validate_refresh_token(payload.refresh)
+
+    if user is None:
+        return 401, {
+            "detail": "Invalid or expired refresh token",
+            "code": "invalid_refresh_token",
+        }
+
+    # Generate new access token
+    access_token = TokenService.generate_access_token(user)
+
+    return AccessTokenResponse(access=access_token)
 
 
-@router.get("/me", auth=jwt_auth, response=UserOut, summary="Get current user profile")
-def me(request):
+@router.get("/me", response=UserInfoResponse, auth=jwt_auth)
+def get_current_user(request) -> UserInfoResponse:
     """
-    Get the authenticated user's profile information.
-
-    Requires a valid access token in the Authorization header:
-    Authorization: Bearer <access_token>
+    Returns information about the currently authenticated user.
+    Requires valid JWT access token in Authorization header.
 
     Returns:
-        UserOut: User profile data
-
-    Raises:
-        HttpError 401: Missing or invalid access token (handled by jwt_auth)
+        UserInfoResponse with user details and permissions
     """
-    # jwt_auth sets request.auth to the User instance
     user = request.auth
 
-    if not user:
-        raise HttpError(int(HTTPStatus.UNAUTHORIZED), "Authentication required")
+    # Get user permissions as a list of strings
+    permissions = list(user.get_all_permissions())
 
-    return {
-        "id": user.id,
-        "mobile": user.mobile,
-        "name": user.name,
-        "is_staff": user.is_staff,
-        "is_superuser": user.is_superuser,
-    }
+    return UserInfoResponse(
+        id=user.id,
+        username=user.username,
+        email=user.email,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        is_staff=user.is_staff,
+        permissions=permissions,
+    )
 
 
-@router.post("/logout", response=LogoutOut, summary="Logout user")
-def logout(request):
+@router.post("/logout", auth=jwt_auth)
+def logout(request) -> dict:
     """
-    Logout endpoint for stateless JWT authentication.
+    Logout endpoint (stateless - client should discard tokens).
 
-    Since JWTs are stateless, this endpoint simply instructs the client
-    to delete their tokens. The tokens will expire naturally based on their TTL.
-
-    For enhanced security, you could implement token blacklisting:
-    1. Store token JTI (JWT ID) in Redis/database
-    2. Check blacklist on each request
-    3. Add tokens to blacklist on logout
+    Note: Since JWT is stateless, actual logout happens client-side
+    by discarding tokens. This endpoint exists for consistency.
 
     Returns:
-        LogoutOut: Success confirmation
+        Success message
     """
-    # In a stateless implementation, we just tell the client to delete tokens
-    # For token blacklisting, add logic here to invalidate the token
-
-    return {"success": True, "message": "Tokens should be deleted on client side"}
+    return {"detail": "Successfully logged out"}
