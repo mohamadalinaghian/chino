@@ -1,6 +1,6 @@
 import { IMenuCategory, IMenuItem } from "@/types/menu";
 
-const API_BASE = process.env.NEXT_DJANGO_URL!;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL!;
 const REVALIDATE = Number(process.env.NEXT_FETCH_REVALIDATE) || 86400;
 
 export async function fetchCategories(): Promise<IMenuCategory[]> {

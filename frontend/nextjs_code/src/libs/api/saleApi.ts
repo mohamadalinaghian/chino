@@ -10,9 +10,9 @@
  * - Matches Django backend schemas exactly
  */
 
-import { AuthService } from '../auth/authService';
+import { AuthService } from '@/service/authService';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://backend:8000/api';
 
 // ============================================================================
 // TYPE DEFINITIONS (Matching Backend Schemas)

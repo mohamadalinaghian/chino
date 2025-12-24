@@ -14,11 +14,11 @@ class LoginRequest(Schema):
     User credentials for authentication.
 
     Attributes:
-        username: User's unique username
+        mobile: User's unique username
         password: User's password (will be hashed)
     """
 
-    username: str
+    mobile: str
     password: str
 
 
@@ -67,19 +67,16 @@ class UserInfoResponse(Schema):
 
     Attributes:
         id: User's unique identifier
-        username: User's username
+        mobile: User's username
         email: User's email address
-        first_name: User's first name
-        last_name: User's last name
+        name: User's full name
         is_staff: Whether user has staff privileges
         permissions: List of permission codenames (e.g., "sale.open_sale")
     """
 
     id: int
-    username: str
-    email: str
-    first_name: str
-    last_name: str
+    mobile: str
+    name: str
     is_staff: bool
     permissions: List[str]
 

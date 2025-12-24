@@ -30,14 +30,14 @@ def login(request, payload: LoginRequest) -> Union[tuple[int, dict], TokenPairRe
     Authenticates user and returns JWT token pair.
 
     Args:
-        payload: Username and password credentials
+        payload: mobile and password credentials
 
     Returns:
         TokenPairResponse with access and refresh tokens on success
         ErrorResponse with 401 status on failure
     """
     # Authenticate user using Django's authentication backend
-    user = authenticate(request, username=payload.username, password=payload.password)
+    user = authenticate(request, mobile=payload.mobile, password=payload.password)
 
     if user is None:
         return 401, {"detail": "Invalid credentials", "code": "invalid_credentials"}
@@ -96,10 +96,8 @@ def get_current_user(request) -> UserInfoResponse:
 
     return UserInfoResponse(
         id=user.id,
-        username=user.username,
-        email=user.email,
-        first_name=user.first_name,
-        last_name=user.last_name,
+        mobile=user.mobile,
+        name=user.name,
         is_staff=user.is_staff,
         permissions=permissions,
     )

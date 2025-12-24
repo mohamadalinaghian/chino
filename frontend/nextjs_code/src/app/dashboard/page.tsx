@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { SaleApiClient, DashboardItem } from '@/libs/api/saleApi';
-import { AuthService } from '@/libs/auth/authService';
+import { AuthService } from '@/service/authService';
 
 /**
  * Main dashboard displaying all active (OPEN) sales.
