@@ -27,6 +27,11 @@ THOUSAND_SEPARATOR = "/"
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
+# CORS_ALLOW_HEADERS = [
+#     "authorization",
+#     "content-type",
+# ]
+
 JWT_SECRET = SECRET_KEY
 JWT_ALGORITHM = "HS256"
 JWT_ACCESS_TTL = datetime.timedelta(minutes=10)
