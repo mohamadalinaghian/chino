@@ -1,10 +1,8 @@
 import { IMenuCategory, IMenuItem } from "@/types/menu";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL!;
-const REVALIDATE = Number(process.env.NEXT_FETCH_REVALIDATE) || 86400;
+import { API_BASE_URL, REVALIDATE } from "@/libs/constants";
 
 export async function fetchCategories(): Promise<IMenuCategory[]> {
-  const res = await fetch(`${API_BASE}/menu/categories/`, {
+  const res = await fetch(`${API_BASE_URL}/menu/categories/`, {
     next: { revalidate: REVALIDATE },
   });
   if (!res.ok) throw new Error("Failed to fetch categories");
@@ -13,7 +11,7 @@ export async function fetchCategories(): Promise<IMenuCategory[]> {
 
 export async function fetchMenuItems(): Promise<IMenuItem[]> {
   try {
-    const res = await fetch(`${API_BASE}/menu/items/`, {
+    const res = await fetch(`${API_BASE_URL}/menu/items/`, {
       next: { revalidate: REVALIDATE },
     });
 
