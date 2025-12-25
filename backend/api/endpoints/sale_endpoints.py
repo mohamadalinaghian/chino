@@ -38,7 +38,7 @@ def open_sale(request, payload: OpenSaleRequest):
     """
     Creates a new Sale in OPEN state.
     """
-    can_open_sale(request.user)
+    can_open_sale(request.auth)
 
     # 1. Resolve Dependents
     guest = get_object_or_404(User, id=payload.guest_id) if payload.guest_id else None
@@ -89,7 +89,7 @@ def open_sale(request, payload: OpenSaleRequest):
     # 4. Execute Service
     try:
         sale = OpenSaleService.open_sale(
-            opened_by=request.user,
+            opened_by=request.auth,
             sale_type=Sale.SaleType(payload.sale_type),
             table=table,
             guest=guest,
@@ -114,13 +114,13 @@ def sync_sale_items(request, sale_id: int, payload: SyncSaleRequest):
 
     sale = get_object_or_404(Sale, id=sale_id)
 
-    can_modify_sale(request.user, sale)
+    can_modify_sale(request.auth, sale)
 
     try:
         # We pass the Schema directly. The Service handles the efficient
         # bulk fetching and mapping internally.
         updated_sale = ModifySaleService.sync_items(
-            sale=sale, items_payload=payload.items, performer=request.user
+            sale=sale, items_payload=payload.items, performer=request.auth
         )
     except ValidationError as e:
         return 422, {"detail": e.messages}
@@ -140,7 +140,7 @@ def get_sale_detail(request, sale_id: int):
     - Maps underlying Products back to Menu IDs for the UI.
     - Optimized to run in minimal DB queries (O(1)).
     """
-    can_see_sale_details(request.user)
+    can_see_sale_details(request.auth)
 
     # 1. Fetch Sale with all necessary relations
     #    - select_related: Follows ForeignKeys (Single object)
@@ -232,7 +232,7 @@ def sale_dashboard(request):
     - O(1) Queries: Uses select_related to fetch Table and Staff info in 1 query.
     - Lightweight: Does NOT fetch line items (products/extras).
     """
-    can_see_sale_list(request.user)
+    can_see_sale_list(request.auth)
 
     # 1. Base Query: Only Active (OPEN) sales
     #    We need Table info and the Staff member who opened it.
@@ -277,10 +277,10 @@ def close_sale_endpoint(request, sale_id: int):
     sale = get_object_or_404(Sale, id=sale_id)
 
     #  Policy Check
-    can_close_sale(request.user, sale)
+    can_close_sale(request.auth, sale)
 
     try:
-        closed_sale = CloseSaleService.close_sale(sale=sale, performer=request.user)
+        closed_sale = CloseSaleService.close_sale(sale=sale, performer=request.auth)
     except ValidationError as e:
         return 422, {"detail": e.messages}
 

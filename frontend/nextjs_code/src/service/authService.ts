@@ -12,7 +12,7 @@ export class AuthService {
   }
 
   static async getCurrentUser(): Promise<UserInfo> {
-    const res = await authenticatedFetch('/api/auth/me');
+    const res = await authenticatedFetch('/auth/me');
     return res.json();
   }
 

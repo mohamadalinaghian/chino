@@ -3,7 +3,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { SaleApiClient, SaleDetail, SaleItemDetail, SaleItemInput } from '@/libs/api/saleApi';
+import { SaleApiClient } from '@/libs/sale/saleApiClient';
+import { SaleDetail } from '@/types/saleType';
+import { SaleItemInput } from '@/types/saleType';
 
 /**
  * Sale detail page with inline editing capabilities.

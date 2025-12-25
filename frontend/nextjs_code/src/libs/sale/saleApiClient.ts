@@ -54,7 +54,7 @@ export class SaleApiClient {
 
   static async getDashboard(): Promise<DashboardResponse> {
     const res = await authenticatedFetch(
-      `${CS_API_URL}/sale/dashboard`
+      `${CS_API_URL}/sale/`
     );
 
     if (!res.ok) await handleApiError(res);

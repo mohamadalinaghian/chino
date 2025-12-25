@@ -1,5 +1,5 @@
+import { REVALIDATE, SS_API_URL } from "@/libs/constants";
 import { IMenuCategory, IMenuItem } from "@/types/menu";
-import { SS_API_URL, REVALIDATE }  "@/libs/constants";
 
 export async function fetchCategories(): Promise<IMenuCategory[]> {
   const res = await fetch(`${SS_API_URL}/menu/categories/`, {
