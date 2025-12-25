@@ -8,13 +8,13 @@ import {
   SaleItemInput,
 } from '@/types/saleType';
 
-import { API_BASE_URL } from '../constants';
+import { CS_API_URL } from '../constants';
 import { authenticatedFetch } from '../auth/authFetch';
 
 export class SaleApiClient {
   static async openSale(payload: OpenSaleRequest): Promise<SaleResponse> {
     const res = await authenticatedFetch(
-      `${API_BASE_URL}/sale/open`,
+      `${CS_API_URL}/sale/open`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -31,7 +31,7 @@ export class SaleApiClient {
     items: SaleItemInput[]
   ): Promise<SaleResponse> {
     const res = await authenticatedFetch(
-      `${API_BASE_URL}/sale/${saleId}/items`,
+      `${CS_API_URL}/sale/${saleId}/items`,
       {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -45,7 +45,7 @@ export class SaleApiClient {
 
   static async getSaleDetail(saleId: number): Promise<SaleDetail> {
     const res = await authenticatedFetch(
-      `${API_BASE_URL}/sale/${saleId}`
+      `${CS_API_URL}/sale/${saleId}`
     );
 
     if (!res.ok) await handleApiError(res);
@@ -54,7 +54,7 @@ export class SaleApiClient {
 
   static async getDashboard(): Promise<DashboardResponse> {
     const res = await authenticatedFetch(
-      `${API_BASE_URL}/sale/dashboard`
+      `${CS_API_URL}/sale/dashboard`
     );
 
     if (!res.ok) await handleApiError(res);
@@ -63,7 +63,7 @@ export class SaleApiClient {
 
   static async closeSale(saleId: number): Promise<SaleResponse> {
     const res = await authenticatedFetch(
-      `${API_BASE_URL}/sale/${saleId}/close`,
+      `${CS_API_URL}/sale/${saleId}/close`,
       { method: 'POST' }
     );
 
@@ -73,7 +73,7 @@ export class SaleApiClient {
 
   static async cancelSale(saleId: number): Promise<SaleResponse> {
     const res = await authenticatedFetch(
-      `${API_BASE_URL}/sale/${saleId}/cancel`,
+      `${CS_API_URL}/sale/${saleId}/cancel`,
       { method: 'POST' }
     );
 

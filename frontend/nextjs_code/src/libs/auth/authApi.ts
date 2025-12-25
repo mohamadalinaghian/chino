@@ -1,15 +1,15 @@
 
-import { API_BASE_URL } from '@/libs/constants';
+import { CS_API_URL } from '@/libs/constants';
 import { TokenPair, UserInfo } from '@/types/authType';
 
 export async function loginRequest(
-  username: string,
+  mobile: string,
   password: string
 ): Promise<TokenPair> {
-  const res = await fetch(`${API_BASE_URL}/auth/login`, {
+  const res = await fetch(`${CS_API_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ mobile, password }),
   });
 
   if (!res.ok) {
@@ -23,7 +23,7 @@ export async function loginRequest(
 export async function refreshTokenRequest(
   refresh: string
 ): Promise<{ access: string }> {
-  const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+  const res = await fetch(`${CS_API_URL}/auth/refresh`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refresh }),
@@ -37,7 +37,7 @@ export async function refreshTokenRequest(
 }
 
 export async function meRequest(token: string): Promise<UserInfo> {
-  const res = await fetch(`${API_BASE_URL}/auth/me`, {
+  const res = await fetch(`${CS_API_URL}/auth/me`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 

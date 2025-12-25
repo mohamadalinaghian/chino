@@ -3,7 +3,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { SaleApiClient, DashboardItem } from '@/libs/api/saleApi';
+import { SaleApiClient } from '@/libs/sale/saleApiClient';
+import { DashboardItem } from '@/types/saleType';
 import { AuthService } from '@/service/authService';
 
 /**

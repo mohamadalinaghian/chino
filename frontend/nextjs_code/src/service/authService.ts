@@ -5,8 +5,8 @@ import { loginRequest } from '@/libs/auth/authApi';
 import { TokenPair, UserInfo } from '@/types/authType';
 
 export class AuthService {
-  static async login(username: string, password: string): Promise<TokenPair> {
-    const tokens = await loginRequest(username, password);
+  static async login(mobile: string, password: string): Promise<TokenPair> {
+    const tokens = await loginRequest(mobile, password);
     tokenStorage.setTokens(tokens);
     return tokens;
   }

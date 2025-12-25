@@ -28,16 +28,14 @@ COPY requirements /requirements
 # -----------------------------
 FROM base AS deps-prod
 RUN /venv/bin/pip install --upgrade pip setuptools wheel \
-  && /venv/bin/pip install -r /requirements/prod.txt \
-  -i https://pypi.tuna.tsinghua.edu.cn/simple
+  && /venv/bin/pip install -r /requirements/prod.txt
 
 # -----------------------------
 # Install dev deps
 # -----------------------------
 FROM base AS deps-dev
 RUN /venv/bin/pip install --upgrade pip setuptools wheel \
-  && /venv/bin/pip install -r /requirements/dev.txt \
-  -i https://pypi.tuna.tsinghua.edu.cn/simple
+  && /venv/bin/pip install -r /requirements/prod.txt
 
 # -----------------------------
 # Runtime image (prod)
