@@ -1,3 +1,4 @@
+import { AuthProvider } from "@/libs/auth/AuthContext";
 import "./globals.css";
 import type { Metadata } from "next";
 
@@ -46,7 +47,9 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl">
       <body className="main-container container mx-auto">
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
