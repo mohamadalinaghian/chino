@@ -213,7 +213,7 @@ def get_sale_detail(request, sale_id: int):
         "state": sale.state,
         "sale_type": sale.sale_type,
         "table_id": sale.table.id,
-        "table_number": sale.table.number if sale.table else None,
+        "table_name": sale.table.name if sale.table else None,
         "guest_name": sale.guest.username if sale.guest else None,
         "guest_count": sale.guest_count,
         "total_amount": sale.total_amount,
@@ -247,14 +247,16 @@ def sale_dashboard(request):
     # aggregates = qs.aggregate(total_rev=Sum("total_amount"))
     # total_revenue = aggregates["total_rev"] or Decimal("0.00")
 
+    # only superuser can see total_amount
+    can_see_total = request.auth.is_superuser
     # 3. Serialization
     #    We map the ORM objects to the lightweight Schema
     dashboard_items = [
         SaleDashboardItemSchema(
             id=sale.pk,
-            table=sale.table.number if sale.table else "N/A",
+            table=sale.table.name if sale.table else None,
             guest_name=sale.guest.username if sale.guest else "Walk-in",
-            total_amount=sale.total_amount,
+            total_amount=sale.total_amount if can_see_total else None,
             opened_by_name=sale.opened_by.get_full_name() or sale.opened_by.username,
             opened_at=sale.opened_at,
         )

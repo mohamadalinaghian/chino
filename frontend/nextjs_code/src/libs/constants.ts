@@ -31,7 +31,7 @@ export const REVALIDATE = Number(process.env.NEXT_FETCH_REVALIDATE) || 86400;
  * These routes are accessible to everyone, including anonymous users
  */
 export const PUBLIC_ROUTES = [
-  // '/',
+  '/',
   '/login',
   '/menu',
   '/about',

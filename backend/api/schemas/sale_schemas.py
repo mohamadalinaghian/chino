@@ -105,7 +105,7 @@ class SaleDashboardItemSchema(Schema):
     table: Optional[str] = None  # Flattened from Table object
     guest_name: Optional[str] = None  # Flattened from User object
 
-    total_amount: Decimal
+    total_amount: Optional[Decimal]
     opened_by_name: str  # Staff member name
     opened_at: datetime  # Frontend can calc "Time Elapsed" from this
 
