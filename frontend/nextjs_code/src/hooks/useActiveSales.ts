@@ -1,67 +1,147 @@
-import { useEffect, useRef, useState } from 'react';
-import { CS_API_URL, STORAGE_KEYS } from '@/libs/constants';
+/**
+ * Custom hook for fetching and managing active sales
+ *
+ * Features:
+ * - Auto-refresh with polling
+ * - Pause polling when tab inactive (performance optimization)
+ * - Proper error handling
+ * - Loading states
+ * - Uses centralized API client
+ */
 
-type SaleDashboardItem = {
-  id: number;
-  table?: string | null;
-  guest_name?: string | null;
-  opened_by_name: string;
-  opened_at: string;
-  total_amount?: string;
-};
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { SaleApiClient } from '@/libs/sale/saleApiClient';
+import { SaleDashboardItem } from '@/types/saleType';
 
-type Response = {
-  active_sales: SaleDashboardItem[];
-  total_count: number;
-};
+/**
+ * Polling interval in milliseconds
+ */
+const POLL_INTERVAL_MS = 5000; // 5 seconds
 
-export function useActiveSales() {
+/**
+ * Hook return type
+ */
+interface UseActiveSalesReturn {
+  sales: SaleDashboardItem[];
+  totalCount: number;
+  loading: boolean;
+  error: string | null;
+  retry: () => Promise<void>;
+  refresh: () => Promise<void>;
+}
+
+/**
+ * Hook for managing active sales dashboard
+ */
+export function useActiveSales(): UseActiveSalesReturn {
   const [sales, setSales] = useState<SaleDashboardItem[]>([]);
   const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const isActiveRef = useRef(true);
 
-  const fetchSales = async () => {
+  /**
+   * Fetches sales from API
+   */
+  const fetchSales = useCallback(async () => {
     try {
-      const token = localStorage.getItem(
-        STORAGE_KEYS.ACCESS_TOKEN
-      );
+      const data = await SaleApiClient.getDashboard();
 
-      const res = await fetch(`${CS_API_URL}/sale`, {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : '',
-        },
-        cache: 'no-store',
-      });
-
-      if (!res.ok) throw new Error();
-
-      const data: Response = await res.json();
       setSales(data.active_sales);
       setTotalCount(data.total_count);
       setError(null);
-    } catch {
-      setError('دریافت اطلاعات فروش با مشکل مواجه شد');
+    } catch (err) {
+      const errorMessage = err instanceof Error
+        ? err.message
+        : 'دریافت اطلاعات فروش با مشکل مواجه شد';
+
+      setError(errorMessage);
+      console.error('Error fetching sales:', err);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
+  /**
+   * Retry handler - clears error and refetches
+   */
+  const retry = useCallback(async () => {
+    setError(null);
+    setLoading(true);
+    await fetchSales();
+  }, [fetchSales]);
+
+  /**
+   * Manual refresh - force refetch
+   */
+  const refresh = useCallback(async () => {
+    await fetchSales();
+  }, [fetchSales]);
+
+  /**
+   * Start polling
+   */
+  const startPolling = useCallback(() => {
+    if (pollingRef.current) return; // Already polling
+
+    pollingRef.current = setInterval(() => {
+      if (isActiveRef.current) {
+        fetchSales();
+      }
+    }, POLL_INTERVAL_MS);
+  }, [fetchSales]);
+
+  /**
+   * Stop polling
+   */
+  const stopPolling = useCallback(() => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  }, []);
+
+  /**
+   * Handle tab visibility change
+   * Pause polling when tab is inactive to save resources
+   */
   useEffect(() => {
-    fetchSales();
+    const handleVisibilityChange = () => {
+      isActiveRef.current = !document.hidden;
 
-    pollingRef.current = setInterval(fetchSales, 5000);
-
-    return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
+      if (!document.hidden) {
+        // Tab became active - refresh immediately
+        fetchSales();
       }
     };
-  }, []);
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchSales]);
+
+  /**
+   * Initial fetch and start polling
+   */
+  useEffect(() => {
+    fetchSales();
+    startPolling();
+
+    return () => {
+      stopPolling();
+    };
+  }, [fetchSales, startPolling, stopPolling]);
 
   return {
     sales,
     totalCount,
+    loading,
     error,
-    retry: fetchSales,
+    retry,
+    refresh,
   };
 }

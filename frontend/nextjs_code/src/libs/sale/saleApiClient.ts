@@ -7,19 +7,18 @@
 
 import { CS_API_URL } from '@/libs/constants';
 import { authenticatedFetchJSON } from '@/libs/auth/authFetch';
-import { DashboardItem } from '@/types/saleType';
+import {
+  SaleDashboardResponse,
+  SaleDetailResponse,
+  OpenSaleRequest,
+  OpenSaleResponse,
+  SyncSaleRequest,
+} from '@/types/saleType';
 
 /**
  * Base URL for sale endpoints
  */
 const SALE_BASE_URL = `${CS_API_URL}/sale`;
-
-/**
- * Dashboard response structure
- */
-interface DashboardResponse {
-  active_sales: DashboardItem[];
-}
 
 /**
  * Sale API client class
@@ -32,10 +31,10 @@ export class SaleApiClient {
    * @returns Dashboard data with active sales list
    * @throws Error if request fails or user lacks permission
    */
-  static async getDashboard(): Promise<DashboardResponse> {
+  static async getDashboard(): Promise<SaleDashboardResponse> {
     try {
-      return await authenticatedFetchJSON<DashboardResponse>(
-        `${SALE_BASE_URL}/`
+      return await authenticatedFetchJSON<SaleDashboardResponse>(
+        `${SALE_BASE_URL}`
       );
     } catch (error) {
       if (error instanceof Error) {
@@ -56,9 +55,9 @@ export class SaleApiClient {
    * @returns Sale details
    * @throws Error if sale not found or user lacks permission
    */
-  static async getSaleDetail(saleId: number): Promise<any> {
+  static async getSaleDetail(saleId: number): Promise<SaleDetailResponse> {
     try {
-      return await authenticatedFetchJSON(
+      return await authenticatedFetchJSON<SaleDetailResponse>(
         `${SALE_BASE_URL}/${saleId}`
       );
     } catch (error) {
@@ -76,16 +75,16 @@ export class SaleApiClient {
   }
 
   /**
-   * Creates a new sale
+   * Opens a new sale
    *
    * @param data - Sale creation data
-   * @returns Created sale
+   * @returns Created sale response
    * @throws Error if creation fails or user lacks permission
    */
-  static async createSale(data: any): Promise<any> {
+  static async openSale(data: OpenSaleRequest): Promise<OpenSaleResponse> {
     try {
-      return await authenticatedFetchJSON(
-        `${SALE_BASE_URL}/`,
+      return await authenticatedFetchJSON<OpenSaleResponse>(
+        `${SALE_BASE_URL}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -104,19 +103,22 @@ export class SaleApiClient {
   }
 
   /**
-   * Updates an existing sale
+   * Syncs sale items (add/update/remove)
    *
    * @param saleId - ID of sale to update
-   * @param data - Update data
-   * @returns Updated sale
-   * @throws Error if update fails or user lacks permission
+   * @param data - Sync data with items
+   * @returns Updated sale detail
+   * @throws Error if sync fails or user lacks permission
    */
-  static async updateSale(saleId: number, data: any): Promise<any> {
+  static async syncSaleItems(
+    saleId: number,
+    data: SyncSaleRequest
+  ): Promise<SaleDetailResponse> {
     try {
-      return await authenticatedFetchJSON(
-        `${SALE_BASE_URL}/${saleId}`,
+      return await authenticatedFetchJSON<SaleDetailResponse>(
+        `${SALE_BASE_URL}/${saleId}/sync`,
         {
-          method: 'PATCH',
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         }
@@ -128,7 +130,7 @@ export class SaleApiClient {
         }
         throw error;
       }
-      throw new Error('خطا در به‌روزرسانی فروش');
+      throw new Error('خطا در به‌روزرسانی آیتم‌های فروش');
     }
   }
 
