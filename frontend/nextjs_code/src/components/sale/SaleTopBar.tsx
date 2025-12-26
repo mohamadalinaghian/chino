@@ -38,15 +38,14 @@ export function SaleTopBar({ totalCount, staffName, onRefresh }: Props) {
     <div className="flex items-center justify-between gap-4">
       {/* Title and Count */}
       <div className="flex flex-col gap-1 min-w-0 flex-1">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-100 truncate">
           فروش‌های فعال
         </h1>
-
-        <div className="text-sm text-gray-500 flex items-center gap-2 flex-wrap">
+        <div className="text-sm text-gray-400 flex items-center gap-2 flex-wrap">
           <span className="font-medium">{totalCount} فروش باز</span>
           {staffName && (
             <>
-              <span className="text-gray-300">•</span>
+              <span className="text-gray-600">•</span>
               <span className="truncate">{staffName}</span>
             </>
           )}
@@ -59,14 +58,13 @@ export function SaleTopBar({ totalCount, staffName, onRefresh }: Props) {
           onClick={handleRefresh}
           disabled={refreshing}
           className="
-            flex items-center gap-2 px-4 py-2
-            bg-gray-100 hover:bg-gray-200
-            rounded-xl text-gray-700 text-sm font-medium
-            transition-colors
-            disabled:opacity-50 disabled:cursor-not-allowed
-            shrink-0
-          "
-          title="به‌روزرسانی لیست"
+          flex items-center gap-2 px-4 py-2.5
+          bg-gray-700 hover:bg-gray-600
+          rounded-xl text-gray-200 text-sm font-medium
+          transition-all
+          disabled:opacity-50 disabled:cursor-not-allowed
+          shrink-0
+        "
         >
           <span className={refreshing ? 'animate-spin' : ''}>🔄</span>
           <span className="hidden sm:inline">به‌روزرسانی</span>
@@ -74,4 +72,3 @@ export function SaleTopBar({ totalCount, staffName, onRefresh }: Props) {
       )}
     </div>
   );
-}

@@ -60,26 +60,25 @@ export function SaleCard({ sale }: Props) {
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       className="
-        cursor-pointer rounded-2xl bg-white p-4
-        shadow-sm hover:shadow-lg
-        border border-gray-100 hover:border-indigo-200
-        transition-all duration-200
-        focus:outline-none focus:ring-2 focus:ring-indigo-500
-        active:scale-98
-      "
+      cursor-pointer rounded-2xl bg-gray-800 p-4
+      shadow-lg hover:shadow-xl
+      border border-gray-700 hover:border-indigo-500
+      transition-all duration-300
+      focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900
+      active:scale-98
+    "
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
           <span className="text-2xl">{icon}</span>
-          <h3 className="text-lg font-bold text-gray-900">
+          <h3 className="text-lg font-bold text-gray-100">
             {title}
           </h3>
         </div>
-
         {/* Amount Badge */}
         <div className="text-left shrink-0 flex items-baseline gap-1">
-          <div className="text-sm font-bold text-indigo-600">
+          <div className="text-sm font-bold text-indigo-400">
             {formattedAmount}
           </div>
           <div className="text-xs text-gray-500">هزار تومان</div>
@@ -88,17 +87,17 @@ export function SaleCard({ sale }: Props) {
 
       {/* Guest Name */}
       {sale.guest_name && (
-        <div className="text-sm text-gray-700 mb-2 flex items-center gap-1">
+        <div className="text-sm text-gray-300 mb-2 flex items-center gap-1">
           <span>👤</span>
           <span className="truncate">{sale.guest_name}</span>
         </div>
       )}
 
       {/* Divider */}
-      <div className="border-t border-gray-100 my-3"></div>
+      <div className="border-t border-gray-700 my-3"></div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between text-xs text-gray-500">
+      <div className="flex items-center justify-between text-xs text-gray-400">
         <div className="truncate flex-1">
           توسط {sale.opened_by_name}
         </div>
@@ -108,4 +107,3 @@ export function SaleCard({ sale }: Props) {
       </div>
     </div>
   );
-}

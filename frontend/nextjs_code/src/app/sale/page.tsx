@@ -49,12 +49,11 @@ export default function SalePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-900 text-gray-100 fixed inset-0 overflow-y-auto">
       {/* Header - Sticky on mobile */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
+      <div className="sticky top-0 z-10 bg-gray-800 border-b border-gray-700 shadow-xl">
         <div className="max-w-7xl mx-auto p-4">
           <SaleTopBar totalCount={totalCount} onRefresh={refresh} />
-
           {/* New Sale Button - Mobile friendly */}
           <div className="mt-4">
             <NewSaleButton />
@@ -87,13 +86,13 @@ export default function SalePage() {
         {/* No Results State (after filtering) */}
         {!loading && !error && visibleSales.length === 0 && sales.length > 0 && (
           <div className="text-center py-12">
-            <div className="text-4xl mb-4">🔍</div>
-            <p className="text-gray-600 mb-4">
+            <div className="text-5xl mb-6 opacity-60">🔍</div>
+            <p className="text-gray-400 mb-6 text-lg">
               نتیجه‌ای با این فیلترها یافت نشد
             </p>
             <button
               onClick={handleClearFilters}
-              className="text-indigo-600 hover:text-indigo-700 font-medium"
+              className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
             >
               پاک کردن فیلترها
             </button>
@@ -107,4 +106,3 @@ export default function SalePage() {
       </main>
     </div>
   );
-}

@@ -5,11 +5,11 @@ interface Props {
 
 export function ErrorState({ message, onRetry }: Props) {
   return (
-    <div className="rounded-xl bg-red-50 p-4 text-sm text-red-700">
-      <p>{message}</p>
+    <div className="rounded-xl bg-red-900/20 border border-red-800 p-5 text-sm text-red-400">
+      <p className="mb-3">{message}</p>
       <button
         onClick={onRetry}
-        className="mt-2 underline"
+        className="underline hover:text-red-300 transition-colors font-medium"
       >
         تلاش مجدد
       </button>
