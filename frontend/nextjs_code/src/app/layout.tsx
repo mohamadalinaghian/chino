@@ -46,7 +46,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fa" dir="rtl">
-      <body className="main-container container mx-auto">
+      <body className="bg-gray-900 text-gray-100 min-h-screen antialiased">
         <AuthProvider>
           {children}
         </AuthProvider>

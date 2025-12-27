@@ -84,7 +84,7 @@ export class SaleApiClient {
   static async openSale(data: OpenSaleRequest): Promise<OpenSaleResponse> {
     try {
       return await authenticatedFetchJSON<OpenSaleResponse>(
-        `${SALE_BASE_URL}`,
+        `${SALE_BASE_URL}/open`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
