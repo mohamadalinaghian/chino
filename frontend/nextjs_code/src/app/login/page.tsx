@@ -103,28 +103,28 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50 px-4">
+    <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 px-4">
       <div className="w-full max-w-md">
         {/* Login Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+        <div className="bg-gray-800/90 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-gray-700">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 rounded-full mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-900/50 rounded-full mb-4 ring-4 ring-indigo-500/20">
               <span className="text-3xl">🔐</span>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="text-3xl font-bold text-gray-100 mb-2">
               ورود کارکنان
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-400">
               لطفاً با اطلاعات کاربری خود وارد شوید
             </p>
           </div>
 
           {/* Error Alert */}
           {error && (
-            <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4 flex items-start gap-3">
-              <span className="text-red-500 text-xl">⚠️</span>
-              <p className="text-red-700 text-sm flex-1">{error}</p>
+            <div className="mb-6 rounded-lg bg-red-900/30 border border-red-800/50 p-4 flex items-start gap-3">
+              <span className="text-red-400 text-xl mt-0.5">⚠️</span>
+              <p className="text-red-300 text-sm flex-1">{error}</p>
             </div>
           )}
 
@@ -134,7 +134,7 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="mobile"
-                className="block text-sm font-semibold text-gray-700 mb-2"
+                className="block text-sm font-semibold text-gray-300 mb-2"
               >
                 شماره موبایل
               </label>
@@ -144,13 +144,13 @@ export default function LoginPage() {
                 dir="ltr"
                 value={mobile}
                 onChange={(e) => handleMobileChange(e.target.value)}
-                className="w-full rounded-xl border border-gray-300 px-4 py-3 text-left focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                className="w-full rounded-xl bg-gray-700/70 border border-gray-600 px-4 py-3.5 text-left text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                 placeholder="09123456789"
                 disabled={loading}
                 autoComplete="tel"
                 inputMode="numeric"
               />
-              <p className="text-xs text-gray-500 mt-1 text-left" dir="ltr">
+              <p className="text-xs text-gray-500 mt-1.5 text-left" dir="ltr">
                 Format: 09XXXXXXXXX
               </p>
             </div>
@@ -159,7 +159,7 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-semibold text-gray-700 mb-2"
+                className="block text-sm font-semibold text-gray-300 mb-2"
               >
                 رمز عبور
               </label>
@@ -169,7 +169,7 @@ export default function LoginPage() {
                 dir="ltr"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-gray-300 px-4 py-3 text-left focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                className="w-full rounded-xl bg-gray-700/70 border border-gray-600 px-4 py-3.5 text-left text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                 placeholder="••••••••"
                 disabled={loading}
                 autoComplete="current-password"
@@ -180,11 +180,11 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-4 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-60 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-100"
             >
               {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="animate-spin">⏳</span>
+                <span className="flex items-center justify-center gap-3">
+                  <span className="animate-spin text-xl">⏳</span>
                   در حال ورود...
                 </span>
               ) : (
@@ -195,12 +195,11 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-6">
-          <p className="text-sm text-gray-600">
+        <div className="text-center mt-8">
+          <p className="text-sm text-gray-500">
             سیستم مدیریت کافه | نسخه 1.0.0
           </p>
         </div>
       </div>
     </div>
   );
-}
