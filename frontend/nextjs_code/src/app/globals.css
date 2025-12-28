@@ -6,7 +6,8 @@ html {
 
 body {
 	@apply antialiased;
-	background-color: #faf3d0;
+	/* Updated to match card colors - slate-900 dark theme */
+	background-color: #0f172a;
 }
 
 .main-container {
@@ -60,7 +61,7 @@ body {
 }
 
 .skeleton {
-	background: linear-gradient(to right, #f0f0f0 8%, #e0e0e0 18%, #f0f0f0 33%);
+	background: linear-gradient(to right, #334155 8%, #475569 18%, #334155 33%);
 	background-size: 1000px 100%;
 	animation: shimmer 1.5s infinite linear;
 }
@@ -74,8 +75,8 @@ body {
 }
 
 .skeleton {
-	@apply bg-gray-200 dark:bg-gray-700 rounded-lg;
-	background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+	@apply bg-slate-700 dark:bg-slate-800 rounded-lg;
+	background: linear-gradient(90deg, #334155 25%, #475569 50%, #334155 75%);
 	background-size: 200% 100%;
 	animation: shimmer 1.5s infinite;
 }
@@ -88,8 +89,6 @@ body {
 		background-position: -200% 0;
 	}
 }
-
-
 
 .ltr {
   direction: ltr !important;

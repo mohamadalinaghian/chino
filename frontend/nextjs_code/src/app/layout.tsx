@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     shortcut: "/favicon-16x16.png",
     apple: "/apple-touch-icon.png",
   },
-  themeColor: "#faf3d0",
+  themeColor: "#1e293b",
 };
 
 export default function RootLayout({
@@ -46,7 +46,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fa" dir="rtl">
-      <body className="bg-gray-900 text-gray-100 min-h-screen antialiased">
+      <body className="bg-slate-900 text-gray-100 min-h-screen antialiased">
         <AuthProvider>
           {children}
         </AuthProvider>

@@ -7,10 +7,8 @@ interface SidebarToggleButtonProps {
 }
 
 /**
- * Sidebar Toggle Button
- * - Floating action button for toggling sidebar
- * - Harmonized with sidebar's glassy theme
- * - Smooth hover animation
+ * Sidebar Toggle Button - MINIMAL UPDATE
+ * Fixed positioning to always be visible
  */
 export default function SidebarToggleButton({
 	isOpen,
@@ -23,14 +21,15 @@ export default function SidebarToggleButton({
 			aria-label={isOpen ? "بستن منو" : "باز کردن منو"}
 			aria-expanded={isOpen}
 			className={`
-        fixed left-4 bottom-4
-        p-3 rounded-full shadow-lg z-50
-        text-white dark:text-white
+        fixed left-4 z-40
+        ${isOpen ? "bottom-4 md:top-24" : "bottom-4 md:top-24"}
+        p-3 rounded-full shadow-lg
+        text-white
         backdrop-blur-md
         transition-all duration-300 ease-in-out
-        focus:outline-none focus:ring-2 focus:ring-white/30
+        focus:outline-none focus:ring-2 focus:ring-slate-600
         hover:scale-105
-        bg-gradient-to-br from-[#6c5ce7] to-[#a29bfe] dark:from-[#2d3436] dark:to-[#636e72]
+        bg-slate-700 hover:bg-slate-600
         ${className}
       `}
 		>
