@@ -331,7 +331,7 @@ export default function SaleDetailPage() {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-5xl mb-4 animate-spin">⏳</div>
+          <div className="text-xl mb-4 animate-spin">⏳</div>
           <p className="text-gray-400">در حال بارگذاری...</p>
         </div>
       </div>
@@ -343,8 +343,8 @@ export default function SaleDetailPage() {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-red-900/20 border border-red-800 rounded-xl p-6 text-center">
-          <div className="text-4xl mb-4">⚠️</div>
-          <h2 className="text-xl font-bold mb-2 text-red-400">خطا</h2>
+          <div className="text-xl mb-4">⚠️</div>
+          <h2 className="text-lg font-bold mb-2 text-red-400">خطا</h2>
           <p className="text-gray-300 mb-4">{error}</p>
           <button
             onClick={() => router.push('/sale')}
@@ -370,12 +370,12 @@ export default function SaleDetailPage() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.push('/sale')}
-                className="w-12 h-12 bg-gray-800 hover:bg-gray-700 rounded-xl flex items-center justify-center text-2xl transition-all"
+                className="w-12 h-12 bg-gray-800 hover:bg-gray-700 rounded-xl flex items-center justify-center text-lg transition-all"
               >
                 ←
               </button>
               <div>
-                <h1 className="text-2xl font-bold flex items-center gap-3">
+                <h1 className="text-lg font-bold flex items-center gap-3">
                   فروش #{sale.id}
                   <span className={`
                     px-4 py-1.5 rounded-full text-sm font-medium border
@@ -415,8 +415,8 @@ export default function SaleDetailPage() {
           </div>
 
           <div className="flex items-center justify-end gap-3">
-            <span className="text-lg text-gray-400">جمع کل:</span>
-            <span className="text-3xl font-bold text-indigo-400">
+            <span className="text-sm text-gray-400">جمع کل:</span>
+            <span className="text-lg font-bold text-indigo-400">
               {formatPersianMoney(calculateTotal())}
             </span>
           </div>
@@ -427,24 +427,24 @@ export default function SaleDetailPage() {
       <div className="max-w-5xl mx-auto px-4 py-6">
         {error && (
           <div className="mb-6 bg-red-900/30 border-2 border-red-800/70 rounded-2xl p-5 flex items-start gap-4">
-            <span className="text-3xl">⚠️</span>
+            <span className="text-lg">⚠️</span>
             <div className="flex-1">
               <p className="text-red-300 font-medium">{error}</p>
             </div>
-            <button onClick={() => setError(null)} className="text-gray-400 hover:text-white text-xl">✕</button>
+            <button onClick={() => setError(null)} className="text-gray-400 hover:text-white text-lg">✕</button>
           </div>
         )}
 
         {/* Items */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">آیتم‌های سفارش</h2>
+            <h2 className="text-lg font-bold">آیتم‌های سفارش</h2>
             {canEdit && (
               <button
                 onClick={() => { setShowAddMenu(true); loadMenu(); }}
                 className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 rounded-xl text-white font-bold shadow-lg flex items-center gap-3"
               >
-                <span className="text-xl">➕</span> افزودن آیتم
+                <span className="text-lg">➕</span> افزودن آیتم
               </button>
             )}
           </div>
@@ -452,7 +452,7 @@ export default function SaleDetailPage() {
           {cart.length === 0 ? (
             <div className="bg-gray-800/50 border-2 border-dashed border-gray-700 rounded-2xl p-16 text-center">
               <div className="text-6xl mb-4 opacity-50">🧾</div>
-              <p className="text-xl text-gray-500">سفارشی ثبت نشده است</p>
+              <p className="text-lg text-gray-500">سفارشی ثبت نشده است</p>
             </div>
           ) : (
             <div className="space-y-6">
@@ -465,11 +465,11 @@ export default function SaleDetailPage() {
                   <div key={`${item.item_id || 'new'}-${index}`} className="bg-gray-800 rounded-2xl p-6 border border-gray-700 shadow-xl">
                     <div className="flex justify-between items-start mb-5">
                       <div>
-                        <h3 className="text-xl font-bold">{item.name}</h3>
+                        <h3 className="text-lg font-bold">{item.name}</h3>
                         <p className="text-sm text-gray-400 mt-1">{formatPersianMoney(item.price)} × {item.quantity}</p>
                       </div>
                       {canEdit && (
-                        <button onClick={() => updateQuantity(index, 0)} className="text-red-400 hover:text-red-300 text-2xl p-2">
+                        <button onClick={() => updateQuantity(index, 0)} className="text-red-400 hover:text-red-300 text-lg p-2">
                           🗑️
                         </button>
                       )}
@@ -503,9 +503,9 @@ export default function SaleDetailPage() {
                         {canEdit && (
                           <>
                             <div className="flex items-center bg-gray-700 rounded-xl">
-                              <button onClick={() => updateQuantity(index, item.quantity - 1)} className="w-12 h-12 hover:bg-gray-600 rounded-l-xl text-xl font-bold">−</button>
-                              <span className="w-16 text-center text-xl font-bold">{item.quantity}</span>
-                              <button onClick={() => updateQuantity(index, item.quantity + 1)} className="w-12 h-12 hover:bg-gray-600 rounded-r-xl text-xl font-bold">+</button>
+                              <button onClick={() => updateQuantity(index, item.quantity - 1)} className="w-12 h-12 hover:bg-gray-600 rounded-l-xl text-lg font-bold">−</button>
+                              <span className="w-16 text-center text-lg font-bold">{item.quantity}</span>
+                              <button onClick={() => updateQuantity(index, item.quantity + 1)} className="w-12 h-12 hover:bg-gray-600 rounded-r-xl text-lg font-bold">+</button>
                             </div>
                             <button
                               onClick={() => { setSelectedItemForExtras(index); setShowExtrasModal(true); loadExtras(); }}
@@ -515,9 +515,9 @@ export default function SaleDetailPage() {
                             </button>
                           </>
                         )}
-                        {!canEdit && <span className="text-lg text-gray-400">تعداد: <strong>{item.quantity}</strong></span>}
+                        {!canEdit && <span className="text-sm text-gray-400">تعداد: <strong>{item.quantity}</strong></span>}
                       </div>
-                      <div className="text-2xl font-bold text-indigo-400">{formatPersianMoney(total)}</div>
+                      <div className="text-lg font-bold text-indigo-400">{formatPersianMoney(total)}</div>
                     </div>
                   </div>
                 );
@@ -534,14 +534,14 @@ export default function SaleDetailPage() {
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-gray-400">تغییرات ذخیره نشده</p>
-                <p className="text-3xl font-bold text-indigo-400 mt-1">{formatPersianMoney(calculateTotal())}</p>
+                <p className="text-lg font-bold text-indigo-400 mt-1">{formatPersianMoney(calculateTotal())}</p>
               </div>
               <div className="flex gap-4">
                 <button onClick={() => loadSale()} className="px-6 py-4 rounded-xl bg-gray-700 hover:bg-gray-600 text-white font-medium">انصراف</button>
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-lg shadow-xl disabled:opacity-60 flex items-center gap-3"
+                  className="px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-sm shadow-xl disabled:opacity-60 flex items-center gap-3"
                 >
                   {saving ? <>⏳ در حال ذخیره...</> : <>✓ ذخیره تغییرات</>}
                 </button>
@@ -559,10 +559,10 @@ export default function SaleDetailPage() {
               {/* Header */}
               <div className="sticky top-0 bg-gray-800 border-b border-gray-700 p-4 rounded-t-2xl">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold">➕ افزودن آیتم</h3>
+                  <h3 className="text-lg font-bold">➕ افزودن آیتم</h3>
                   <button
                     onClick={() => setShowAddMenu(false)}
-                    className="w-10 h-10 bg-red-600/20 hover:bg-red-600/30 border border-red-500 rounded-lg text-red-400 text-xl"
+                    className="w-10 h-10 bg-red-600/20 hover:bg-red-600/30 border border-red-500 rounded-lg text-red-400 text-lg"
                   >
                     ✕
                   </button>
@@ -572,7 +572,7 @@ export default function SaleDetailPage() {
               <div className="p-4">
                 {loadingMenu ? (
                   <div className="text-center py-16">
-                    <div className="text-5xl mb-4 animate-spin">⏳</div>
+                    <div className="text-xl mb-4 animate-spin">⏳</div>
                     <p className="text-gray-400">در حال بارگذاری...</p>
                   </div>
                 ) : (
@@ -585,7 +585,7 @@ export default function SaleDetailPage() {
                       >
                         <h4 className="font-semibold text-sm mb-3 line-clamp-2">{item.name}</h4>
                         <div className="text-sm text-indigo-400 font-bold">{formatPersianMoney(item.price)}</div>
-                        <div className="absolute top-2 left-2 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xl opacity-0 group-hover:opacity-100 transition-opacity">+</div>
+                        <div className="absolute top-2 left-2 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-lg opacity-0 group-hover:opacity-100 transition-opacity">+</div>
                       </button>
                     ))}
                   </div>
@@ -603,13 +603,13 @@ export default function SaleDetailPage() {
             <div className="max-w-4xl mx-auto bg-gray-900 rounded-2xl border-2 border-green-500 shadow-2xl">
               <div className="sticky top-0 bg-gray-800 border-b border-gray-700 p-4 rounded-t-2xl">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold">➕ افزودن اکسترا</h3>
+                  <h3 className="text-lg font-bold">➕ افزودن اکسترا</h3>
                   <button
                     onClick={() => {
                       setShowExtrasModal(false);
                       setSelectedItemForExtras(null);
                     }}
-                    className="w-10 h-10 bg-red-600/20 hover:bg-red-600/30 border border-red-500 rounded-lg text-red-400 text-xl"
+                    className="w-10 h-10 bg-red-600/20 hover:bg-red-600/30 border border-red-500 rounded-lg text-red-400 text-lg"
                   >
                     ✕
                   </button>
@@ -618,12 +618,12 @@ export default function SaleDetailPage() {
               <div className="p-4">
                 {loadingExtras ? (
                   <div className="text-center py-16">
-                    <div className="text-5xl mb-4 animate-spin">⏳</div>
+                    <div className="text-xl mb-4 animate-spin">⏳</div>
                     <p className="text-gray-400">در حال بارگذاری...</p>
                   </div>
                 ) : extras.length === 0 ? (
                   <div className="text-center py-16">
-                    <div className="text-5xl mb-4">📦</div>
+                    <div className="text-xl mb-4">📦</div>
                     <p className="text-gray-500">افزودنی‌ای یافت نشد</p>
                   </div>
                 ) : (
@@ -640,7 +640,7 @@ export default function SaleDetailPage() {
                       >
                         <h4 className="font-semibold text-sm mb-3 line-clamp-2">{extra.name}</h4>
                         <div className="text-sm text-green-400 font-bold">{formatPersianMoney(extra.price)}</div>
-                        <div className="absolute top-2 left-2 w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-xl opacity-0 group-hover:opacity-100 transition-opacity">+</div>
+                        <div className="absolute top-2 left-2 w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-lg opacity-0 group-hover:opacity-100 transition-opacity">+</div>
                       </button>
                     ))}
                   </div>

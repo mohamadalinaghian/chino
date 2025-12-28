@@ -207,7 +207,7 @@ export default function NewSalePage() {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-5xl mb-4 animate-spin">⏳</div>
+          <div className="text-xl mb-4 animate-spin">⏳</div>
           <p className="text-gray-400">در حال بارگذاری...</p>
         </div>
       </div>
@@ -219,8 +219,8 @@ export default function NewSalePage() {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-red-900/20 border border-red-800 rounded-xl p-6 text-center">
-          <div className="text-4xl mb-4">⚠️</div>
-          <h2 className="text-xl font-bold mb-2 text-red-400">خطا در بارگذاری</h2>
+          <div className="text-xl mb-4">⚠️</div>
+          <h2 className="text-base font-bold mb-2 text-red-400">خطا در بارگذاری</h2>
           <p className="text-gray-300 mb-4">{error || 'خطای نامشخص'}</p>
           <button
             onClick={retry}
@@ -257,11 +257,11 @@ export default function NewSalePage() {
           {/* Top Bar */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-2xl">
+              <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-lg">
                 ➕
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">فروش جدید</h1>
+                <h1 className="text-base font-bold text-white">فروش جدید</h1>
                 <p className="text-xs text-gray-400">انتخاب محصولات و ثبت سفارش</p>
               </div>
             </div>
@@ -300,7 +300,7 @@ export default function NewSalePage() {
                     hover:scale-105 hover:shadow-lg
                   `}
                 >
-                  <span className="text-lg">{cat.icon}</span>
+                  <span className="text-sm">{cat.icon}</span>
                   <span className="text-gray-200">{cat.name}</span>
                 </button>
               ))}
@@ -359,7 +359,7 @@ export default function NewSalePage() {
                         onClick={() => table.is_active && setTableId(table.id)}
                         disabled={!table.is_active}
                         className={`
-                          aspect-square rounded-xl font-bold text-lg transition-all
+                          aspect-square rounded-xl font-bold text-sm transition-all
                           ${tableId === table.id
                             ? 'bg-gradient-to-br from-green-500 to-green-600 text-white scale-110 shadow-xl'
                             : table.is_active
@@ -398,8 +398,8 @@ export default function NewSalePage() {
             {menuData.bar_items.length > 0 && (
               <section>
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 bg-indigo-600/20 rounded-xl flex items-center justify-center text-2xl">🍹</div>
-                  <h2 className="text-2xl font-bold text-indigo-400">نوشیدنی‌ها</h2>
+                  <div className="w-12 h-12 bg-indigo-600/20 rounded-xl flex items-center justify-center text-lg">🍹</div>
+                  <h2 className="text-lg font-bold text-indigo-400">نوشیدنی‌ها</h2>
                 </div>
                 {menuData.bar_items.map((group) => (
                   <div
@@ -407,7 +407,7 @@ export default function NewSalePage() {
                     id={`cat-${group.category.replace(/\s+/g, '-')}`}
                     className="mb-8 scroll-mt-52"
                   >
-                    <h3 className="text-lg font-semibold mb-4 text-gray-300">
+                    <h3 className="text-sm font-semibold mb-4 text-gray-300">
                       {group.category}
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -419,7 +419,7 @@ export default function NewSalePage() {
                         >
                           <h4 className="font-semibold text-sm mb-3 line-clamp-2">{item.name}</h4>
                           <div className="text-sm text-indigo-400 font-bold">{formatPersianMoney(item.price)}</div>
-                          <div className="absolute top-2 left-2 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xl opacity-0 group-hover:opacity-100 transition-opacity">+</div>
+                          <div className="absolute top-2 left-2 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-base opacity-0 group-hover:opacity-100 transition-opacity">+</div>
                         </button>
                       ))}
                     </div>
@@ -432,8 +432,8 @@ export default function NewSalePage() {
             {menuData.food_items.length > 0 && (
               <section>
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 bg-green-600/20 rounded-xl flex items-center justify-center text-2xl">🍽️</div>
-                  <h2 className="text-2xl font-bold text-green-400">غذاها</h2>
+                  <div className="w-12 h-12 bg-green-600/20 rounded-xl flex items-center justify-center text-lg">🍽️</div>
+                  <h2 className="text-lg font-bold text-green-400">غذاها</h2>
                 </div>
                 {menuData.food_items.map((group) => (
                   <div
@@ -441,7 +441,7 @@ export default function NewSalePage() {
                     id={`cat-${group.category.replace(/\s+/g, '-')}`}
                     className="mb-8 scroll-mt-52"
                   >
-                    <h3 className="text-lg font-semibold mb-4 text-gray-300">{group.category}</h3>
+                    <h3 className="text-sm font-semibold mb-4 text-gray-300">{group.category}</h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                       {group.items.map((item) => (
                         <button
@@ -451,7 +451,7 @@ export default function NewSalePage() {
                         >
                           <h4 className="font-semibold text-sm mb-3 line-clamp-2">{item.name}</h4>
                           <div className="text-sm text-green-400 font-bold">{formatPersianMoney(item.price)}</div>
-                          <div className="absolute top-2 left-2 w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-xl opacity-0 group-hover:opacity-100 transition-opacity">+</div>
+                          <div className="absolute top-2 left-2 w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-base opacity-0 group-hover:opacity-100 transition-opacity">+</div>
                         </button>
                       ))}
                     </div>
@@ -471,7 +471,7 @@ export default function NewSalePage() {
             <div className="fixed bottom-0 left-0 right-0 z-40 p-4 pointer-events-none">
               <button
                 onClick={() => setSubmitCardMinimized(false)}
-                className="pointer-events-auto w-full py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-bold text-lg shadow-2xl flex items-center justify-between px-6"
+                className="pointer-events-auto w-full py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-bold text-sm shadow-2xl flex items-center justify-between px-6"
               >
                 <div className="flex items-center gap-2">
                   <span>🛒</span>
@@ -488,7 +488,7 @@ export default function NewSalePage() {
             <div className="fixed inset-0 z-50 bg-gray-900/95 backdrop-blur-sm flex flex-col">
               {/* Header */}
               <div className="bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between shadow-xl">
-                <h3 className="text-xl font-bold flex items-center gap-2">
+                <h3 className="text-base font-bold flex items-center gap-2">
                   <span>🛒</span>
                   <span>سبد خرید ({cart.itemCount})</span>
                 </h3>
@@ -511,12 +511,12 @@ export default function NewSalePage() {
                       <div key={item.menu_id} className="bg-gray-800 rounded-xl p-5 border border-gray-700 shadow-lg">
                         <div className="flex justify-between items-start mb-4">
                           <div className="flex-1">
-                            <h4 className="font-bold text-lg mb-1">{item.name}</h4>
+                            <h4 className="font-bold text-sm mb-1">{item.name}</h4>
                             <div className="text-sm text-gray-400">{formatPersianMoney(item.price)}</div>
                           </div>
                           <button
                             onClick={() => cart.removeItem(item.menu_id)}
-                            className="text-red-400 hover:text-red-300 text-2xl"
+                            className="text-red-400 hover:text-red-300 text-lg"
                           >
                             🗑️
                           </button>
@@ -561,7 +561,7 @@ export default function NewSalePage() {
                             >
                               −
                             </button>
-                            <span className="w-12 text-center font-bold text-lg">{item.quantity}</span>
+                            <span className="w-12 text-center font-bold text-sm">{item.quantity}</span>
                             <button
                               onClick={() => cart.updateQuantity(item.menu_id, item.quantity + 1)}
                               className="w-10 h-10 hover:bg-gray-600 rounded-r font-bold"
@@ -577,7 +577,7 @@ export default function NewSalePage() {
                           </button>
                         </div>
 
-                        <div className="text-lg text-indigo-400 font-bold text-right mt-3 pt-3 border-t border-gray-700">
+                        <div className="text-sm text-indigo-400 font-bold text-right mt-3 pt-3 border-t border-gray-700">
                           جمع این آیتم: {formatPersianMoney(itemTotal)}
                         </div>
                       </div>
@@ -597,8 +597,8 @@ export default function NewSalePage() {
                 />
 
                 <div className="bg-gradient-to-br from-indigo-900/50 to-purple-900/30 rounded-xl p-5 border-2 border-indigo-500/50 text-center">
-                  <div className="text-lg text-gray-300 mb-1">جمع کل سفارش</div>
-                  <div className="text-3xl font-bold text-indigo-300">{formatPersianMoney(cart.totalAmount)}</div>
+                  <div className="text-sm text-gray-300 mb-1">جمع کل سفارش</div>
+                  <div className="text-lg font-bold text-indigo-300">{formatPersianMoney(cart.totalAmount)}</div>
                 </div>
 
                 {submitError && (
@@ -610,7 +610,7 @@ export default function NewSalePage() {
                 <button
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="w-full py-5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xl shadow-2xl disabled:opacity-60"
+                  className="w-full py-5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-base shadow-2xl disabled:opacity-60"
                 >
                   {submitting ? '⏳ در حال ثبت سفارش...' : '✓ ثبت فروش و ادامه'}
                 </button>
@@ -625,10 +625,10 @@ export default function NewSalePage() {
         <div className="fixed inset-0 z-50 bg-gray-900 overflow-y-auto">
           <div className="sticky top-0 bg-gray-800 border-b-2 border-gray-700 p-4 shadow-xl">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold">➕ انتخاب افزودنی</h3>
+              <h3 className="text-base font-bold">➕ انتخاب افزودنی</h3>
               <button
                 onClick={() => setShowExtrasModal(false)}
-                className="w-12 h-12 bg-red-600/20 hover:bg-red-600/30 border border-red-500 rounded-xl text-red-400 text-2xl"
+                className="w-12 h-12 bg-red-600/20 hover:bg-red-600/30 border border-red-500 rounded-xl text-red-400 text-lg"
               >
                 ✕
               </button>
@@ -638,12 +638,12 @@ export default function NewSalePage() {
           <div className="p-4">
             {loadingExtras ? (
               <div className="text-center py-16">
-                <div className="text-5xl mb-4 animate-spin">⏳</div>
+                <div className="text-xl mb-4 animate-spin">⏳</div>
                 <p className="text-gray-400">در حال بارگذاری...</p>
               </div>
             ) : extras.length === 0 ? (
               <div className="text-center py-16">
-                <div className="text-5xl mb-4">📦</div>
+                <div className="text-xl mb-4">📦</div>
                 <p className="text-gray-500">افزودنی‌ای یافت نشد</p>
               </div>
             ) : (
@@ -659,7 +659,7 @@ export default function NewSalePage() {
                   >
                     <h4 className="font-semibold text-sm mb-3 line-clamp-2">{extra.name}</h4>
                     <div className="text-sm text-green-400 font-bold">{formatPersianMoney(extra.price)}</div>
-                    <div className="absolute top-2 left-2 w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-xl opacity-0 group-hover:opacity-100 transition-opacity">+</div>
+                    <div className="absolute top-2 left-2 w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-base opacity-0 group-hover:opacity-100 transition-opacity">+</div>
                   </button>
                 ))}
               </div>

@@ -86,7 +86,7 @@ export default function SalePage() {
         {/* No Results State (after filtering) */}
         {!loading && !error && visibleSales.length === 0 && sales.length > 0 && (
           <div className="text-center py-12">
-            <div className="text-5xl mb-6 opacity-60">🔍</div>
+            <div className="text-2xl mb-6 opacity-60">🔍</div>
             <p className="text-gray-400 mb-6 text-lg">
               نتیجه‌ای با این فیلترها یافت نشد
             </p>
