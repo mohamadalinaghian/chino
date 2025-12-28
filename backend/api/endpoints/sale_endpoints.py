@@ -105,7 +105,7 @@ def open_sale(request, payload: OpenSaleRequest):
     )
 
 
-@router.put("/{sale_id}/items", response=OpenSaleResponse)
+@router.post("/{sale_id}/sync", response=OpenSaleResponse)
 def sync_sale_items(request, sale_id: int, payload: SyncSaleRequest):
     """
     Syncs the sale items. This is the only endpoint needed for
@@ -156,7 +156,7 @@ def get_sale_detail(request, sale_id: int):
     # 2. Separation of Concerns: Split Items into Parents and Children
     all_items: List[SaleItem] = list(sale.items.all())
 
-    parents: List[SaleItem] = [i for i in all_items if i.parent_item_pk is None]
+    parents: List[SaleItem] = [i for i in all_items if i.parent_item_id is None]
     children: List[SaleItem] = [i for i in all_items if i.parent_item_id is not None]
 
     # 3. Lookup Strategy: Map Products -> Menu IDs
@@ -212,7 +212,7 @@ def get_sale_detail(request, sale_id: int):
         "id": sale.pk,
         "state": sale.state,
         "sale_type": sale.sale_type,
-        "table_id": sale.table.id,
+        "table_id": sale.table.id if sale.table else None,
         "table_name": sale.table.name if sale.table else None,
         "guest_name": sale.guest.username if sale.guest else None,
         "guest_count": sale.guest_count,

@@ -1,5 +1,3 @@
-from .base import DEBUG
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -21,5 +19,5 @@ INSTALLED_APPS = [
     "apps.core_setting",
 ]
 
-if DEBUG:
-    INSTALLED_APPS += ["django_extensions"]
+# if DEBUG:
+#     INSTALLED_APPS += ["django_extensions"]

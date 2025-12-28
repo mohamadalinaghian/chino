@@ -99,9 +99,6 @@ def get_sale_menu(request):
         MenuSaleResponse: Menu items grouped by BAR and FOOD categories
     """
     # Single optimized query
-    # - Filters: Only available items shown in menu
-    # - select_related: Fetches Product and Category in one query
-    # - order_by: Maintains category ordering
     menu_items = (
         Menu.objects.filter(is_available=True, show_in_menu=True)
         .select_related("name", "category")
@@ -109,7 +106,6 @@ def get_sale_menu(request):
     )
 
     # Group items by parent_group -> category -> items
-    # Using nested defaultdict for clean grouping
     grouped = defaultdict(lambda: defaultdict(list))
 
     for item in menu_items:
@@ -137,27 +133,31 @@ def get_sale_menu(request):
 @router_menu_display.get(
     "/sale/extras",
     response=list[ProductExtraSchema],
-    summary="Get available extra products (syrups, toppings, etc.)",
+    summary="Get available extra products (RAW/PROCESSED ingredients)",
 )
 def get_extra_products(request):
     """
-    Fetches sellable products for use as extras.
-    Loaded on-demand when user clicks "Add Extra" button.
+    Fetches RAW and PROCESSED products for use as extras.
 
-    Only returns SELLABLE products that are active.
-    Uses last_purchased_price as a reference price.
+    IMPORTANT: Extras are ingredients/add-ons like:
+    - RAW: Milk, syrup, sugar, coffee beans
+    - PROCESSED: Whipped cream, chocolate sauce, etc.
+
+    NOT sellable menu items - those are already in the menu.
+
+    Loaded on-demand when user clicks "Add Extra" button.
 
     Performance:
     - Lazy-loaded: Only fetched when needed
     - Lightweight: Only id, name, price fields
-    - Filtered: Only active sellable products
+    - Filtered: Only active RAW/PROCESSED products
 
     Returns:
         list[ProductExtraSchema]: Available extra products
     """
     extras = (
         Product.objects.filter(
-            type=Product.ProductType.SELLABLE,
+            type__in=[Product.ProductType.RAW, Product.ProductType.PROCESSED],
             is_active=True,
         )
         .order_by("name")

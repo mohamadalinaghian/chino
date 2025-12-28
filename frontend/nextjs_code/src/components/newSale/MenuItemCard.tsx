@@ -1,15 +1,17 @@
 /**
- * Menu Item Card Component
+ * Menu Item Card Component (Updated with Persian Money Format)
  *
  * Displays a single menu item with:
  * - Name
- * - Price
+ * - Price in Persian format
  * - Add button
+ * - Mobile-optimized tap targets
  */
 
 'use client';
 
 import { MenuItemSale } from '@/types/newSaleTypes';
+import { formatPriceBadge } from '@/libs/tools/persianMoney';
 
 interface Props {
   item: MenuItemSale;
@@ -22,9 +24,9 @@ export function MenuItemCard({ item, onAdd }: Props) {
   };
 
   /**
-   * Format price for display
+   * Format price using Persian money formatter
    */
-  const formattedPrice = item.price.toLocaleString('fa-IR');
+  const { value, unit } = formatPriceBadge(item.price);
 
   return (
     <button
@@ -38,32 +40,35 @@ export function MenuItemCard({ item, onAdd }: Props) {
         hover:shadow-xl hover:scale-105
         active:scale-95
         text-right
+        min-h-[100px]
       "
     >
       {/* Content */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         {/* Name */}
-        <h4 className="font-semibold text-gray-100 text-sm leading-tight">
+        <h4 className="font-semibold text-gray-100 text-sm leading-tight line-clamp-2">
           {item.name}
         </h4>
 
-        {/* Price */}
-        <div className="flex items-baseline gap-1 text-indigo-400">
-          <span className="font-bold text-lg">{formattedPrice}</span>
-          <span className="text-xs text-gray-500">هزار تومان</span>
+        {/* Price - Persian Format */}
+        <div className="flex flex-col items-start gap-0.5">
+          <span className="font-bold text-lg text-indigo-400 leading-none">
+            {value}
+          </span>
+          <span className="text-xs text-gray-500">{unit}</span>
         </div>
       </div>
 
-      {/* Add Icon - Shows on hover */}
+      {/* Add Icon - Shows on hover/tap */}
       <div
         className="
           absolute top-2 left-2
-          w-7 h-7 rounded-full
+          w-8 h-8 rounded-full
           bg-indigo-600 text-white
           flex items-center justify-center
-          opacity-0 group-hover:opacity-100
+          opacity-0 group-hover:opacity-100 group-active:opacity-100
           transition-opacity
-          text-lg
+          text-xl font-bold
         "
       >
         +

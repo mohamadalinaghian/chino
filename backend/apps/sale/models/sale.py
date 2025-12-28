@@ -127,5 +127,5 @@ class Sale(models.Model):
         ]
 
     def __str__(self) -> str:
-        table_info = f" - {self.table.number}" if self.table else ""
+        table_info = f" - {self.table.name}" if self.table else ""
         return f"Sale #{self.pk} ({self.state}){table_info}"

@@ -1,5 +1,5 @@
 /**
- * Category Quick Navigation Component
+ * Category Quick Navigation Component (FIXED)
  *
  * Features:
  * - Sticky horizontal scroll bar for quick category access
@@ -8,10 +8,7 @@
  * - Mobile-optimized horizontal scroll
  * - Keyboard navigation support
  *
- * UX Benefits:
- * - Staff can quickly jump between categories
- * - No need to scroll through entire menu
- * - Visual feedback of current section
+ * BUG FIX: Removed scroll blocking that was preventing page scroll
  */
 
 'use client';
@@ -34,6 +31,7 @@ interface NavItem {
 export function CategoryQuickNav({ barCategories, foodCategories }: Props) {
   const [activeId, setActiveId] = useState<string>('');
   const navRef = useRef<HTMLDivElement>(null);
+  const isScrollingRef = useRef(false);
 
   /**
    * Build navigation items from categories
@@ -57,25 +55,35 @@ export function CategoryQuickNav({ barCategories, foodCategories }: Props) {
 
   /**
    * Scroll to category section
+   * FIX: Use requestAnimationFrame to prevent scroll lock
    */
   const scrollToCategory = (id: string) => {
     const element = document.getElementById(id);
-    if (element) {
-      const offset = 180; // Account for sticky header + nav bar
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - offset;
+    if (!element) return;
 
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth',
-      });
+    // Set flag to prevent scroll tracking during programmatic scroll
+    isScrollingRef.current = true;
 
-      setActiveId(id);
-    }
+    const offset = 200; // Account for sticky header + nav bar
+    const elementPosition = element.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+    window.scrollTo({
+      top: offsetPosition,
+      behavior: 'smooth',
+    });
+
+    setActiveId(id);
+
+    // Reset flag after scroll completes
+    setTimeout(() => {
+      isScrollingRef.current = false;
+    }, 1000);
   };
 
   /**
    * Track active section on scroll (Intersection Observer)
+   * FIX: Only update active ID during user scroll, not programmatic scroll
    */
   useEffect(() => {
     const observerOptions = {
@@ -85,6 +93,9 @@ export function CategoryQuickNav({ barCategories, foodCategories }: Props) {
     };
 
     const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      // Skip updates during programmatic scrolling
+      if (isScrollingRef.current) return;
+
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           setActiveId(entry.target.id);
@@ -106,7 +117,7 @@ export function CategoryQuickNav({ barCategories, foodCategories }: Props) {
     });
 
     return () => observer.disconnect();
-  }, [navItems]);
+  }, [navItems.length]); // Only recreate when number of items changes
 
   /**
    * Auto-scroll active item into view in nav bar
@@ -129,7 +140,7 @@ export function CategoryQuickNav({ barCategories, foodCategories }: Props) {
   if (navItems.length === 0) return null;
 
   return (
-    <div className="sticky top-[72px] z-20 bg-gray-900 border-b border-gray-700 shadow-lg">
+    <div className="sticky top-[140px] lg:top-[120px] z-20 bg-gray-900 border-b border-gray-700 shadow-lg">
       <div
         ref={navRef}
         className="

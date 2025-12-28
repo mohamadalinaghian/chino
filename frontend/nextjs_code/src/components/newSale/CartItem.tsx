@@ -1,12 +1,11 @@
 /**
- * Cart Item Component
+ * Cart Item Component (Updated with Persian Money + Mobile UX)
  *
  * Features:
- * - Item name and price
- * - Quantity controls
- * - Remove button
- * - Extras list with management
- * - Add extras button (lazy-loads extras modal)
+ * - Persian money formatting
+ * - Larger tap targets for mobile
+ * - Better visual hierarchy
+ * - Improved extras management
  */
 
 'use client';
@@ -16,6 +15,7 @@ import type { CartItem as CartItemType } from '@/types/newSaleTypes';
 import { QuantityControl } from './QuantityControl';
 import { ExtrasList } from './ExtrasList';
 import { ExtrasModal } from './ExtrasModal';
+import { formatPersianMoney, formatPersianMoneyShort } from '@/libs/tools/persianMoney';
 
 interface Props {
   item: CartItemType;
@@ -46,7 +46,7 @@ export function CartItem({
   const [showExtrasModal, setShowExtrasModal] = useState(false);
 
   /**
-   * Calculate item total (including extras)
+   * Calculate totals
    */
   const itemTotal = item.price * item.quantity;
   const extrasTotal = item.extras.reduce(
@@ -55,68 +55,85 @@ export function CartItem({
   );
   const total = itemTotal + extrasTotal;
 
+  /**
+   * Format prices using Persian formatter
+   */
+  const formattedUnitPrice = formatPersianMoneyShort(item.price);
+  const formattedTotal = formatPersianMoney(total);
+
   return (
-    <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
+    <div className="bg-gray-800 rounded-xl p-4 border border-gray-700 shadow-md">
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-gray-100 text-sm truncate">
+          <h3 className="font-semibold text-gray-100 text-base mb-1 leading-tight">
             {item.name}
           </h3>
-          <div className="text-xs text-gray-400 mt-1">
-            {item.price.toLocaleString('fa-IR')} هزار تومان
+          <div className="text-sm text-gray-400">
+            {formattedUnitPrice}
           </div>
         </div>
 
-        {/* Remove Button */}
+        {/* Remove Button - Larger tap target */}
         <button
           onClick={onRemove}
-          className="text-red-400 hover:text-red-300 text-lg transition-colors"
+          className="
+            w-10 h-10
+            flex items-center justify-center
+            text-red-400 hover:text-red-300
+            hover:bg-red-900/20
+            rounded-lg
+            transition-colors
+            text-xl
+            shrink-0
+          "
           title="حذف"
         >
           🗑️
         </button>
       </div>
 
-      {/* Quantity Control */}
+      {/* Quantity Control - Mobile optimized */}
       <div className="mb-3">
         <QuantityControl value={item.quantity} onChange={onUpdateQuantity} />
       </div>
 
       {/* Extras */}
       {item.extras.length > 0 && (
-        <ExtrasList
-          extras={item.extras}
-          menuId={item.menu_id}
-          onRemove={onRemoveExtra}
-          onUpdateQuantity={onUpdateExtraQuantity}
-        />
+        <div className="mb-3">
+          <ExtrasList
+            extras={item.extras}
+            menuId={item.menu_id}
+            onRemove={onRemoveExtra}
+            onUpdateQuantity={onUpdateExtraQuantity}
+          />
+        </div>
       )}
 
-      {/* Add Extras Button */}
+      {/* Add Extras Button - Better mobile UX */}
       <button
         onClick={() => setShowExtrasModal(true)}
         className="
-          w-full mt-3 py-2 px-3
-          bg-gray-700 hover:bg-gray-650
+          w-full py-3 px-4
+          bg-gray-700 hover:bg-gray-650 active:bg-gray-600
           border border-gray-600 hover:border-indigo-500
-          rounded-lg text-sm text-gray-300 hover:text-white
+          rounded-lg text-sm font-medium text-gray-300 hover:text-white
           transition-all
           flex items-center justify-center gap-2
+          min-h-[44px]
         "
       >
-        <span>➕</span>
+        <span className="text-lg">➕</span>
         <span>افزودن افزودنی</span>
       </button>
 
-      {/* Total */}
-      <div className="mt-3 pt-3 border-t border-gray-700 flex items-baseline justify-between">
-        <span className="text-xs text-gray-400">جمع:</span>
-        <div className="flex items-baseline gap-1">
-          <span className="font-bold text-indigo-400">
-            {total.toLocaleString('fa-IR')}
+      {/* Total - Persian Format */}
+      <div className="mt-3 pt-3 border-t border-gray-700">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-400">جمع این آیتم:</span>
+          <span className="font-bold text-indigo-400 text-base">
+            {formattedTotal}
           </span>
-          <span className="text-xs text-gray-500">هزار تومان</span>
         </div>
       </div>
 

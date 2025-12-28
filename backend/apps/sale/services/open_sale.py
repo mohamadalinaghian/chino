@@ -69,7 +69,6 @@ class OpenSaleService:
         # Create Header
         sale = Sale.objects.create(
             opened_by=opened_by,
-            last_modified_by=opened_by,  # Initial creation counts as modification
             sale_type=sale_type,
             table=table,
             guest_count=guest_count,

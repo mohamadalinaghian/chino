@@ -1,19 +1,19 @@
 /**
- * Cart Sidebar Component (Updated with Mobile Support)
+ * Cart Sidebar Component (Updated with Persian Money + Mobile UX)
  *
  * Features:
- * - Displays cart items with quantities
- * - Shows total amount
- * - Note input
- * - Submit button
- * - Mobile modal mode with close button
- * - Responsive (full-width on mobile, sidebar on desktop)
+ * - Persian money formatting
+ * - Mobile-optimized layout
+ * - Larger tap targets
+ * - Better visual hierarchy
+ * - Improved mobile modal
  */
 
 'use client';
 
 import { UseCartReturn } from '@/hooks/useCart';
 import { CartItem } from './CartItem';
+import { formatPersianMoney } from '@/libs/tools/persianMoney';
 
 interface Props {
   cart: UseCartReturn;
@@ -22,7 +22,7 @@ interface Props {
   onSubmit: () => void;
   submitting: boolean;
   submitError: string | null;
-  onClose?: () => void; // Optional close handler for mobile
+  onClose?: () => void;
 }
 
 export function CartSidebar({
@@ -35,6 +35,7 @@ export function CartSidebar({
   onClose,
 }: Props) {
   const hasItems = cart.items.length > 0;
+  const formattedTotal = formatPersianMoney(cart.totalAmount);
 
   return (
     <div
@@ -50,20 +51,32 @@ export function CartSidebar({
       "
     >
       {/* Header - Fixed */}
-      <div className="p-4 border-b border-gray-800">
+      <div className="p-4 border-b border-gray-800 bg-gray-850">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-gray-100 flex items-center gap-2">
-            <span>🛒 سبد خرید</span>
-            <span className="text-sm font-normal text-gray-400">
-              {cart.itemCount} آیتم
-            </span>
+            <span>🛒</span>
+            <span>سبد خرید</span>
+            {cart.itemCount > 0 && (
+              <span className="text-sm font-normal text-gray-400 bg-gray-700 px-2 py-0.5 rounded-full">
+                {cart.itemCount}
+              </span>
+            )}
           </h2>
 
           {/* Mobile Close Button */}
           {onClose && (
             <button
               onClick={onClose}
-              className="lg:hidden text-gray-400 hover:text-gray-200 text-2xl"
+              className="
+                lg:hidden
+                w-10 h-10
+                flex items-center justify-center
+                text-gray-400 hover:text-gray-200
+                text-2xl
+                rounded-lg
+                hover:bg-gray-700
+                transition-colors
+              "
             >
               ✕
             </button>
@@ -90,10 +103,10 @@ export function CartSidebar({
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 text-gray-500">
-            <div className="text-4xl mb-3">🛒</div>
-            <p>سبد خرید خالی است</p>
-            <p className="text-sm mt-2">آیتم‌های خود را از منو انتخاب کنید</p>
+          <div className="text-center py-16 text-gray-500">
+            <div className="text-5xl mb-4">🛒</div>
+            <p className="text-lg font-medium mb-2">سبد خرید خالی است</p>
+            <p className="text-sm">آیتم‌های خود را از منو انتخاب کنید</p>
           </div>
         )}
       </div>
@@ -114,21 +127,22 @@ export function CartSidebar({
               w-full rounded-lg
               bg-gray-700 border border-gray-600
               text-gray-100 placeholder-gray-500
-              px-3 py-2 text-sm
+              px-3 py-2.5 text-sm
               focus:outline-none focus:ring-2 focus:ring-indigo-500
               resize-none
             "
           />
         </div>
 
-        {/* Total Amount */}
-        <div className="flex items-baseline justify-between text-lg font-bold">
-          <span className="text-gray-300">جمع کل:</span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl text-indigo-400">
-              {cart.totalAmount.toLocaleString('fa-IR')}
-            </span>
-            <span className="text-sm text-gray-500">هزار تومان</span>
+        {/* Total Amount - Persian Format */}
+        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+          <div className="text-sm text-gray-400 mb-2 text-center">
+            جمع کل سفارش
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-indigo-400">
+              {formattedTotal}
+            </div>
           </div>
         </div>
 
@@ -139,7 +153,7 @@ export function CartSidebar({
           </div>
         )}
 
-        {/* Submit Button */}
+        {/* Submit Button - Mobile Optimized */}
         <button
           onClick={onSubmit}
           disabled={!hasItems || submitting}
@@ -150,9 +164,22 @@ export function CartSidebar({
             text-white font-bold text-lg
             transition-all
             disabled:cursor-not-allowed
+            shadow-lg
+            active:scale-98
+            min-h-[56px]
           "
         >
-          {submitting ? '⏳ در حال ثبت...' : '✓ ثبت فروش'}
+          {submitting ? (
+            <span className="flex items-center justify-center gap-2">
+              <span className="animate-spin">⏳</span>
+              <span>در حال ثبت...</span>
+            </span>
+          ) : (
+            <span className="flex items-center justify-center gap-2">
+              <span>✓</span>
+              <span>ثبت فروش</span>
+            </span>
+          )}
         </button>
       </div>
     </div>

@@ -1,8 +1,8 @@
 /**
- * Quantity Control Component
+ * Quantity Control Component (Mobile Optimized)
  *
  * Reusable component for incrementing/decrementing quantities
- * Used for both cart items and extras
+ * Mobile-optimized with larger tap targets (min 44px)
  */
 
 'use client';
@@ -35,52 +35,60 @@ export function QuantityControl({ value, onChange, min = 1, max = 99 }: Props) {
 
   return (
     <div className="flex items-center gap-2">
-      {/* Decrement Button */}
+      {/* Decrement Button - Mobile optimized */}
       <button
         onClick={handleDecrement}
         disabled={value <= min}
         className="
-          w-8 h-8 rounded-lg
-          bg-gray-700 hover:bg-gray-600
+          min-w-[44px] min-h-[44px]
+          rounded-lg
+          bg-gray-700 hover:bg-gray-600 active:bg-gray-650
           disabled:bg-gray-800 disabled:text-gray-600
-          text-gray-200 font-bold
-          transition-colors
+          text-gray-200 font-bold text-xl
+          transition-all
           disabled:cursor-not-allowed
+          flex items-center justify-center
+          active:scale-95
         "
       >
         −
       </button>
 
-      {/* Quantity Input */}
+      {/* Quantity Input - Mobile friendly */}
       <input
         type="number"
         value={value}
         onChange={handleInputChange}
         min={min}
         max={max}
+        inputMode="numeric"
         className="
-          w-16 text-center
-          bg-gray-700 border border-gray-600
-          rounded-lg py-1
-          text-gray-100 font-semibold
-          focus:outline-none focus:ring-2 focus:ring-indigo-500
+          w-20 h-[44px]
+          text-center
+          bg-gray-700 border-2 border-gray-600
+          rounded-lg
+          text-gray-100 font-bold text-lg
+          focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
           [appearance:textfield]
           [&::-webkit-outer-spin-button]:appearance-none
           [&::-webkit-inner-spin-button]:appearance-none
         "
       />
 
-      {/* Increment Button */}
+      {/* Increment Button - Mobile optimized */}
       <button
         onClick={handleIncrement}
         disabled={value >= max}
         className="
-          w-8 h-8 rounded-lg
-          bg-gray-700 hover:bg-gray-600
+          min-w-[44px] min-h-[44px]
+          rounded-lg
+          bg-gray-700 hover:bg-gray-600 active:bg-gray-650
           disabled:bg-gray-800 disabled:text-gray-600
-          text-gray-200 font-bold
-          transition-colors
+          text-gray-200 font-bold text-xl
+          transition-all
           disabled:cursor-not-allowed
+          flex items-center justify-center
+          active:scale-95
         "
       >
         +

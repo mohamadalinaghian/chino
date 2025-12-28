@@ -14,7 +14,7 @@ class SaleType(str, Enum):
 
 class ExtraItemInput(Schema):
     product_id: int
-    quantity: Decimal
+    quantity: int
 
 
 class SyncSaleItemInput(Schema):
@@ -58,7 +58,7 @@ class ExtraDetailSchema(Schema):
     id: int  # SaleItem PK (For deletions/updates)
     product_id: int  # Inventory Product ID (For identification)
     product_name: str  # Display Name
-    quantity: Decimal
+    quantity: int
     unit_price: Decimal
     total: Decimal
 
@@ -71,7 +71,7 @@ class SaleItemDetailSchema(Schema):
     id: int  # SaleItem PK
     menu_id: Optional[int]  # The Menu ID (Mapped back from Product)
     product_name: str
-    quantity: Decimal
+    quantity: int
     unit_price: Decimal
     total: Decimal
     extras: List[ExtraDetailSchema]  # Nested list of extras
@@ -86,7 +86,7 @@ class SaleDetailResponse(Schema):
     state: str
     sale_type: str
     table_id: Optional[int]
-    table_number: Optional[str]
+    table_name: Optional[str]
     guest_name: Optional[str]
     guest_count: Optional[int]
     total_amount: Decimal
