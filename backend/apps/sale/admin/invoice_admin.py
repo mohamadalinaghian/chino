@@ -140,9 +140,7 @@ class SaleInvoiceAdmin(admin.ModelAdmin):
         """Display link to related sale."""
         if obj.sale:
             url = f"/admin/sale/sale/{obj.sale.pk}/change/"
-            return format_html('<a href="{}"
-
->Sale #{}</a>', url, obj.sale.pk)
+            return format_html('<a href="{}">Sale #{}</a>', url, obj.sale.pk)
         return "-"
 
     sale_link.short_description = _("Sale")
