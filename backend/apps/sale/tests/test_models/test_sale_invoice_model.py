@@ -30,7 +30,7 @@ class TestSaleInvoiceModel:
 
     def test_invoice_number_unique(self, closed_sale, staff_with_perms):
         """Test invoice numbers are unique."""
-        invoice1 = SaleInvoiceFactory(invoice_number="INV-2025-000001")
+        SaleInvoiceFactory(invoice_number="INV-2025-000001")
 
         with pytest.raises(Exception):  # IntegrityError
             SaleInvoiceFactory(invoice_number="INV-2025-000001")
@@ -49,9 +49,7 @@ class TestSaleInvoiceModel:
         # Should not raise
         invoice.clean()
 
-    def test_invoice_calculation_validation_fails(
-        self, closed_sale, staff_with_perms
-    ):
+    def test_invoice_calculation_validation_fails(self, closed_sale, staff_with_perms):
         """Test invoice clean() rejects incorrect totals."""
         invoice = SaleInvoiceFactory.build(
             sale=closed_sale,
@@ -203,8 +201,9 @@ class TestSaleInvoiceModel:
 
     def test_ordering(self, closed_sale, staff_with_perms):
         """Test invoices ordered by issued_at descending."""
-        from django.utils import timezone
         import datetime
+
+        from django.utils import timezone
 
         invoice1 = SaleInvoiceFactory(
             invoice_number="INV-1",

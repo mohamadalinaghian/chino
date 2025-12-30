@@ -2,7 +2,7 @@ from apps.sale.models import Sale
 from django.db import transaction
 from django.utils import timezone
 
-from ..policies import can_close_sale
+from ...policies import can_close_sale
 
 
 class CloseSaleService:

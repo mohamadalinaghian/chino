@@ -5,12 +5,12 @@ from api.schemas.sale_schemas import SyncSaleItemInput
 from apps.inventory.models import Product
 from apps.menu.models import Menu
 from apps.sale.models import Sale
-from apps.sale.services.open_sale import OpenSaleService
+from apps.sale.services.sale.open_sale import OpenSaleService
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 
-from ..policies import can_modify_sale
+from ...policies import can_modify_sale
 
 
 class ModifySaleService:

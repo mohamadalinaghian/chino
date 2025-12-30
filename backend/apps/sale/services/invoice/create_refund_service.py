@@ -28,7 +28,7 @@ class CreateRefundService:
         refunded_by,
         amount: Decimal,
         reason: str,
-        method: SaleRefund.Method = None,
+        method: SaleRefund.Method,
     ) -> SaleRefund:
         can_refund_payment(refunded_by, payment)
 
@@ -39,12 +39,9 @@ class CreateRefundService:
             raise ValidationError(_("Refund amount must be positive"))
 
         # Check total refunds don't exceed payment
-        total_refunded = (
-            payment.refunds.filter(status=SaleRefund.Status.COMPLETED).aggregate(
-                total=models.Sum("amount")
-            )["total"]
-            or Decimal("0")
-        )
+        total_refunded = payment.refunds.filter(
+            status=SaleRefund.Status.COMPLETED
+        ).aggregate(total=models.Sum("amount"))["total"] or Decimal("0")
 
         if total_refunded + amount > payment.amount_applied:
             raise ValidationError(
