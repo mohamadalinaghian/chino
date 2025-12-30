@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -10,22 +11,22 @@ User = get_user_model()
 
 class SalePayment(models.Model):
     """
-    Represents a payment made against a SaleInvoice.
+    Represents a payment applied to an invoice.
 
-    Payments are append-only.
-    Invoice becomes immutable after first payment.
-    Tips are stored ONLY here.
+    Rules:
+    - Append-only (never edited or deleted)
+    - Tips live ONLY here
+    - Refunds reference payments
     """
 
-    class PaymentMethod(models.TextChoices):
+    class Method(models.TextChoices):
         CASH = "CASH", _("Cash")
         POS = "POS", _("POS")
         CARD_TRANSFER = "CARD_TRANSFER", _("Card to card")
 
-    class PaymentStatus(models.TextChoices):
+    class Status(models.TextChoices):
         COMPLETED = "COMPLETED", _("Completed")
         VOID = "VOID", _("Voided")
-        REFUNDED = "REFUNDED", _("Refunded")
 
     invoice = models.ForeignKey(
         "sale.SaleInvoice",
@@ -37,16 +38,16 @@ class SalePayment(models.Model):
     method = models.CharField(
         _("Payment method"),
         max_length=20,
-        choices=PaymentMethod.choices,
+        choices=Method.choices,
         db_index=True,
     )
 
-    # Financials
+    # ---- Financials ----
     amount_total = models.DecimalField(
-        _("Total received amount"),
+        _("Total received"),
         max_digits=12,
         decimal_places=4,
-        help_text=_("Total amount received from customer"),
+        help_text=_("Total money received from customer"),
     )
 
     amount_applied = models.DecimalField(
@@ -61,18 +62,18 @@ class SalePayment(models.Model):
         max_digits=12,
         decimal_places=4,
         default=Decimal("0"),
-        help_text=_("Optional tip amount"),
+        help_text=_("Optional tip (never refundable)"),
     )
 
-    # Method-specific (minimal)
+    # ---- Method-specific ----
     destination_account = models.ForeignKey(
-        "user.BankAccount",
-        models.PROTECT,
-        related_name="entries",
-        verbose_name=_("Destination card number"),
+        "finance.BankAccount",
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
-        help_text=_("Required only for card-to-card payments"),
+        related_name="received_payments",
+        verbose_name=_("Destination account"),
+        help_text=_("Required for POS and card-to-card payments"),
     )
 
     received_by = models.ForeignKey(
@@ -87,15 +88,15 @@ class SalePayment(models.Model):
     status = models.CharField(
         _("Status"),
         max_length=20,
-        choices=PaymentStatus.choices,
-        default=PaymentStatus.COMPLETED,
+        choices=Status.choices,
+        default=Status.COMPLETED,
         db_index=True,
     )
 
     class Meta:
+        ordering = ("received_at",)
         verbose_name = _("Sale payment")
         verbose_name_plural = _("Sale payments")
-        ordering = ("received_at",)
         indexes = [
             models.Index(fields=["invoice"]),
             models.Index(fields=["method"]),
@@ -107,24 +108,26 @@ class SalePayment(models.Model):
         Domain invariants:
         - amount_total = amount_applied + tip_amount
         - tip_amount >= 0
+        - destination_account rules enforced
         """
         if self.amount_applied + self.tip_amount != self.amount_total:
-            raise ValueError("amount_total must equal amount_applied + tip_amount")
-
-        if self.tip_amount < 0:
-            raise ValueError("tip_amount cannot be negative")
-        if (
-            self.method == self.PaymentMethod.CARD_TRANSFER
-            and not self.destination_account
-        ):
-            raise ValueError(
-                "destination_account is required for card transfer payments"
+            raise ValidationError(
+                _("amount_total must equal amount_applied + tip_amount")
             )
 
-        if self.method != self.PaymentMethod.CARD_TRANSFER and self.destination_account:
-            raise ValueError(
-                "destination_account must be empty unless payment method is card transfer"
+        if self.tip_amount < 0:
+            raise ValidationError(_("tip_amount cannot be negative"))
+
+        if self.method == self.Method.CASH and self.destination_account:
+            raise ValidationError(_("Cash payments must not have destination account"))
+
+        if (
+            self.method in {self.Method.POS, self.Method.CARD_TRANSFER}
+            and not self.destination_account
+        ):
+            raise ValidationError(
+                _("This payment method requires a destination account")
             )
 
     def __str__(self) -> str:
-        return f"{self.get_method_display()} - {self.amount_total}"
+        return f"{self.get_method_display()} | {self.amount_total}"
