@@ -99,11 +99,12 @@ class SaleRefund(models.Model):
 
         # Verify refund doesn't exceed payment
         if hasattr(self, "payment") and self.payment:
-            total_refunded = (
-                self.payment.refunds.filter(status=self.Status.COMPLETED)
-                .exclude(pk=self.pk)
-                .aggregate(total=models.Sum("amount"))["total"]
-                or Decimal("0")
+            total_refunded = self.payment.refunds.filter(
+                status=self.Status.COMPLETED
+            ).exclude(pk=self.pk).aggregate(total=models.Sum("amount"))[
+                "total"
+            ] or Decimal(
+                "0"
             )
 
             if total_refunded + self.amount > self.payment.amount_applied:

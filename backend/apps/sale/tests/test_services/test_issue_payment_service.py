@@ -64,9 +64,7 @@ class TestIssuePaymentService:
         unpaid_invoice.refresh_from_db()
         assert unpaid_invoice.status == SaleInvoice.InvoiceStatus.PARTIALLY_PAID
 
-    def test_invoice_status_updated_to_paid(
-        self, unpaid_invoice, staff_with_perms
-    ):
+    def test_invoice_status_updated_to_paid(self, unpaid_invoice, staff_with_perms):
         """Test invoice status updates to PAID when fully paid."""
         # Pay full amount
         IssuePaymentService.execute(

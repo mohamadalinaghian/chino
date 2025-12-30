@@ -47,6 +47,4 @@ class SalePaymentFactory(factory.django.DjangoModelFactory):
         elif isinstance(extracted, list):
             # Use provided refund configs
             for refund_config in extracted:
-                SaleRefundFactory(
-                    payment=self, invoice=self.invoice, **refund_config
-                )
+                SaleRefundFactory(payment=self, invoice=self.invoice, **refund_config)

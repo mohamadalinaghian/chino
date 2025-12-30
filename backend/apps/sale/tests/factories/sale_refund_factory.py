@@ -13,7 +13,8 @@ class SaleRefundFactory(factory.django.DjangoModelFactory):
 
     invoice = factory.SubFactory("apps.sale.tests.factories.SaleInvoiceFactory")
     payment = factory.SubFactory(
-        "apps.sale.tests.factories.SalePaymentFactory", invoice=factory.SelfAttribute("..invoice")
+        "apps.sale.tests.factories.SalePaymentFactory",
+        invoice=factory.SelfAttribute("..invoice"),
     )
     amount = Decimal("50.0000")
     method = SaleRefund.Method.CASH

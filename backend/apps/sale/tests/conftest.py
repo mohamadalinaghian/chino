@@ -15,7 +15,6 @@ from apps.sale.tests.factories import (
 from apps.user.tests.factories import AccountFactory
 from django.contrib.auth.models import Permission
 
-
 # ============================================================================
 # User Fixtures
 # ============================================================================

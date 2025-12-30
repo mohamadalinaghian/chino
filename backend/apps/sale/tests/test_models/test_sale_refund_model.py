@@ -6,7 +6,7 @@ from decimal import Decimal
 
 import pytest
 from apps.sale.models import SaleRefund
-from apps.sale.tests.factories import SaleRefundFactory, SalePaymentFactory
+from apps.sale.tests.factories import SaleRefundFactory
 from django.core.exceptions import ValidationError
 
 
@@ -75,7 +75,8 @@ class TestSaleRefundModel:
         refund2 = SaleRefundFactory(
             payment=cash_payment,
             invoice=cash_payment.invoice,
-            amount=Decimal("50.0000"),  # Total would be 110, but payment is 100
+            # Total would be 110, but payment is 100
+            amount=Decimal("50.0000"),
         )
 
         with pytest.raises(ValidationError) as exc_info:
@@ -86,7 +87,7 @@ class TestSaleRefundModel:
     def test_clean_allows_multiple_partial_refunds_within_limit(self, cash_payment):
         """Test clean() allows multiple refunds within payment amount."""
         # Create first refund
-        refund1 = SaleRefundFactory(
+        SaleRefundFactory(
             payment=cash_payment,
             invoice=cash_payment.invoice,
             amount=Decimal("40.0000"),

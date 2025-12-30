@@ -68,7 +68,7 @@ class SalePayment(models.Model):
 
     # ---- Method-specific ----
     destination_account = models.ForeignKey(
-        "finance.BankAccount",
+        "user.BankAccount",
         on_delete=models.PROTECT,
         null=True,
         blank=True,

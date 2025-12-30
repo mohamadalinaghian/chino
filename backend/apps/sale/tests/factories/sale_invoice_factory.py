@@ -12,9 +12,7 @@ class SaleInvoiceFactory(factory.django.DjangoModelFactory):
         model = SaleInvoice
 
     sale = factory.SubFactory("apps.sale.tests.factories.SaleFactory")
-    invoice_number = factory.Sequence(
-        lambda n: f"INV-{timezone.now().year}-{n:06d}"
-    )
+    invoice_number = factory.Sequence(lambda n: f"INV-{timezone.now().year}-{n:06d}")
     subtotal_amount = Decimal("100.0000")
     discount_amount = Decimal("0.0000")
     tax_amount = Decimal("9.0000")

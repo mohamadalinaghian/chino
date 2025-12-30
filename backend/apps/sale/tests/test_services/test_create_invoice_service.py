@@ -7,8 +7,8 @@ from decimal import Decimal
 import pytest
 from apps.sale.models import Sale, SaleInvoice
 from apps.sale.services.invoice.create_invoice_service import CreateInvoiceService
-from apps.sale.tests.factories import SaleFactory, SaleInvoiceFactory
-from django.core.exceptions import PermissionDenied, ValidationError
+from apps.sale.tests.factories import SaleFactory
+from django.core.exceptions import PermissionDenied
 
 
 @pytest.mark.django_db
@@ -85,9 +85,7 @@ class TestCreateInvoiceService:
         assert invoice.tax_amount == Decimal("9.0000")
         assert invoice.total_amount == Decimal("109.0000")
 
-    def test_discounts_included_in_calculation(
-        self, closed_sale, staff_with_perms
-    ):
+    def test_discounts_included_in_calculation(self, closed_sale, staff_with_perms):
         """Test discounts are included in invoice calculation."""
         from apps.sale.models import SaleDiscount
 

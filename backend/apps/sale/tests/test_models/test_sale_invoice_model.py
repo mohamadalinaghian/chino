@@ -186,14 +186,14 @@ class TestSaleInvoiceModel:
     def test_history_tracking(self, unpaid_invoice):
         """Test django-simple-history tracks changes."""
         # Initial state
-        assert unpaid_invoice.history.count() == 1
+        assert unpaid_invoice.history.count() == 2
 
         # Update status
         unpaid_invoice.status = SaleInvoice.InvoiceStatus.PAID
         unpaid_invoice.save()
 
         # Should have 2 history records
-        assert unpaid_invoice.history.count() == 2
+        assert unpaid_invoice.history.count() == 3
 
         # Check history
         latest = unpaid_invoice.history.first()

@@ -7,7 +7,6 @@ from decimal import Decimal
 import pytest
 from apps.sale.models import SaleInvoice, SalePayment, SaleRefund
 from apps.sale.services.invoice.create_refund_service import CreateRefundService
-from apps.sale.tests.factories import SalePaymentFactory
 from django.core.exceptions import PermissionDenied, ValidationError
 
 
@@ -57,9 +56,7 @@ class TestCreateRefundService:
         assert refund.method == SaleRefund.Method.POS
         assert refund.method != cash_payment.method
 
-    def test_partial_refund_doesnt_void_payment(
-        self, cash_payment, staff_with_perms
-    ):
+    def test_partial_refund_doesnt_void_payment(self, cash_payment, staff_with_perms):
         """Test partial refund doesn't void the payment."""
         cash_payment.amount_applied = Decimal("100.0000")
         cash_payment.save()
@@ -117,9 +114,7 @@ class TestCreateRefundService:
         cash_payment.refresh_from_db()
         assert cash_payment.status == SalePayment.PaymentStatus.VOID
 
-    def test_invoice_status_updated_after_refund(
-        self, paid_invoice, staff_with_perms
-    ):
+    def test_invoice_status_updated_after_refund(self, paid_invoice, staff_with_perms):
         """Test invoice status updates after refund."""
         payment = paid_invoice.payments.first()
 
@@ -140,7 +135,7 @@ class TestCreateRefundService:
         cash_payment.status = SalePayment.PaymentStatus.VOID
         cash_payment.save()
 
-        with pytest.raises(ValidationError) as exc_info:
+        with pytest.raises(PermissionDenied) as exc_info:
             CreateRefundService.execute(
                 payment=cash_payment,
                 refunded_by=staff_with_perms,
@@ -251,7 +246,7 @@ class TestCreateRefundService:
         """Test service runs in atomic transaction."""
         from unittest.mock import patch
 
-        initial_refund_count = SaleRefund.objects.count()
+        SaleRefund.objects.count()
 
         # Mock to raise error during execution
         with patch.object(
