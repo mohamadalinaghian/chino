@@ -28,7 +28,7 @@ class CreateRefundService:
         refunded_by,
         amount: Decimal,
         reason: str,
-        method: SaleRefund.Method,
+        method: SaleRefund.Method = None,
     ) -> SaleRefund:
         can_refund_payment(refunded_by, payment)
 

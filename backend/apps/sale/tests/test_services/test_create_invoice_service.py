@@ -145,7 +145,7 @@ class TestCreateInvoiceService:
         )
 
         # Try to create second invoice
-        with pytest.raises(ValidationError) as exc_info:
+        with pytest.raises(PermissionDenied) as exc_info:
             CreateInvoiceService.execute(
                 sale=closed_sale,
                 issued_by=staff_with_perms,

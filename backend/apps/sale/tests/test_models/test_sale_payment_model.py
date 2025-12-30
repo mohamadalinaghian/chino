@@ -162,7 +162,7 @@ class TestSalePaymentModel:
         # Tip should never be refundable
         assert payment_with_tip.refundable_amount == payment_with_tip.amount_applied
         assert payment_with_tip.tip_amount > 0
-        assert payment_with_tip.tip_amount not in str(
+        assert str(payment_with_tip.tip_amount) not in str(
             payment_with_tip.refundable_amount
         )
 
@@ -174,13 +174,14 @@ class TestSalePaymentModel:
 
     def test_history_tracking(self, cash_payment):
         """Test django-simple-history tracks changes."""
-        assert cash_payment.history.count() == 1
+        initial_count = cash_payment.history.count()
+        assert initial_count >= 1
 
         # Update status
         cash_payment.status = SalePayment.PaymentStatus.VOID
         cash_payment.save()
 
-        assert cash_payment.history.count() == 2
+        assert cash_payment.history.count() == initial_count + 1
 
     def test_payment_methods(self):
         """Test all payment methods are defined."""

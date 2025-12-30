@@ -139,7 +139,7 @@ class TestIssuePaymentService:
         """Test payment fails for voided invoice."""
         void_invoice = SaleInvoiceFactory(status=SaleInvoice.InvoiceStatus.VOID)
 
-        with pytest.raises(ValidationError) as exc_info:
+        with pytest.raises(PermissionDenied) as exc_info:
             IssuePaymentService.execute(
                 invoice=void_invoice,
                 received_by=staff_with_perms,

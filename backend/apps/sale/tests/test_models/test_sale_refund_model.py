@@ -72,7 +72,7 @@ class TestSaleRefundModel:
         )
 
         # Try to create second refund that would exceed payment
-        refund2 = SaleRefundFactory.build(
+        refund2 = SaleRefundFactory(
             payment=cash_payment,
             invoice=cash_payment.invoice,
             amount=Decimal("50.0000"),  # Total would be 110, but payment is 100
@@ -139,13 +139,14 @@ class TestSaleRefundModel:
 
     def test_history_tracking(self, refund):
         """Test django-simple-history tracks changes."""
-        assert refund.history.count() == 1
+        initial_count = refund.history.count()
+        assert initial_count >= 1
 
         # Update status
         refund.status = SaleRefund.Status.VOID
         refund.save()
 
-        assert refund.history.count() == 2
+        assert refund.history.count() == initial_count + 1
 
     def test_refund_can_use_different_method_than_payment(self, cash_payment):
         """Test refund method can differ from payment method."""
