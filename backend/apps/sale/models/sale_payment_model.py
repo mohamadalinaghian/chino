@@ -19,12 +19,12 @@ class SalePayment(models.Model):
     - Refunds reference payments
     """
 
-    class Method(models.TextChoices):
+    class PaymentMethod(models.TextChoices):
         CASH = "CASH", _("Cash")
         POS = "POS", _("POS")
         CARD_TRANSFER = "CARD_TRANSFER", _("Card to card")
 
-    class Status(models.TextChoices):
+    class PaymentStatus(models.TextChoices):
         COMPLETED = "COMPLETED", _("Completed")
         VOID = "VOID", _("Voided")
 
@@ -38,7 +38,7 @@ class SalePayment(models.Model):
     method = models.CharField(
         _("Payment method"),
         max_length=20,
-        choices=Method.choices,
+        choices=PaymentMethod.choices,
         db_index=True,
     )
 
@@ -88,8 +88,8 @@ class SalePayment(models.Model):
     status = models.CharField(
         _("Status"),
         max_length=20,
-        choices=Status.choices,
-        default=Status.COMPLETED,
+        choices=PaymentStatus.choices,
+        default=PaymentStatus.COMPLETED,
         db_index=True,
     )
 
@@ -118,11 +118,11 @@ class SalePayment(models.Model):
         if self.tip_amount < 0:
             raise ValidationError(_("tip_amount cannot be negative"))
 
-        if self.method == self.Method.CASH and self.destination_account:
+        if self.method == self.PaymentMethod.CASH and self.destination_account:
             raise ValidationError(_("Cash payments must not have destination account"))
 
         if (
-            self.method in {self.Method.POS, self.Method.CARD_TRANSFER}
+            self.method in {self.PaymentMethod.POS, self.PaymentMethod.CARD_TRANSFER}
             and not self.destination_account
         ):
             raise ValidationError(

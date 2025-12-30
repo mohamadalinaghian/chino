@@ -1,0 +1,69 @@
+from decimal import Decimal
+
+from apps.sale.models import SaleInvoice, SalePayment
+from apps.sale.policies import can_issue_payment
+from django.core.exceptions import ValidationError
+from django.db import models, transaction
+from django.utils.translation import gettext_lazy as _
+
+
+class IssuePaymentService:
+    """
+    Issues a payment against an invoice.
+
+    Rules:
+        - Invoice must not be VOID
+        - Payments are append-only
+        - Invoice status auto-updates
+        - Tips live ONLY here
+    """
+
+    @classmethod
+    @transaction.atomic
+    def execute(
+        cls,
+        *,
+        invoice: SaleInvoice,
+        received_by,
+        method: SalePayment.PaymentMethod,
+        amount_applied: Decimal,
+        tip_amount: Decimal = Decimal("0"),
+        destination_card=None,
+    ) -> SalePayment:
+        can_issue_payment(received_by, invoice)
+
+        if invoice.status == SaleInvoice.InvoiceStatus.VOID:
+            raise ValidationError(_("Cannot pay a void invoice"))
+
+        if amount_applied <= 0:
+            raise ValidationError(_("Payment amount must be positive"))
+
+        amount_total = amount_applied + tip_amount
+
+        payment = SalePayment.objects.create(
+            invoice=invoice,
+            method=method,
+            amount_total=amount_total,
+            amount_applied=amount_applied,
+            tip_amount=tip_amount,
+            destination_card_number=destination_card,
+            received_by=received_by,
+        )
+
+        cls._update_invoice_status(invoice)
+        return payment
+
+    @staticmethod
+    def _update_invoice_status(invoice: SaleInvoice) -> None:
+        paid_total = invoice.payments.filter(
+            status=SalePayment.PaymentStatus.COMPLETED
+        ).aggregate(total=models.Sum("amount_applied"))["total"] or Decimal("0")
+
+        if paid_total == Decimal("0"):
+            invoice.status = SaleInvoice.InvoiceStatus.UNPAID
+        elif paid_total < invoice.total_amount:
+            invoice.status = SaleInvoice.InvoiceStatus.PARTIALLY_PAID
+        else:
+            invoice.status = SaleInvoice.InvoiceStatus.PAID
+
+        invoice.save(update_fields=["status"])

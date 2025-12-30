@@ -16,7 +16,7 @@ class SaleInvoice(models.Model):
     - Stores final calculated numbers for reporting accuracy
     """
 
-    class Status(models.TextChoices):
+    class InvoiceStatus(models.TextChoices):
         UNPAID = "UNPAID", _("Unpaid")
         PARTIALLY_PAID = "PARTIALLY_PAID", _("Partially paid")
         PAID = "PAID", _("Paid")
@@ -58,6 +58,12 @@ class SaleInvoice(models.Model):
         max_digits=12,
         decimal_places=4,
         help_text=_("Final amount customer must pay"),
+    )
+    status = models.CharField(
+        _("Status"),
+        max_length=20,
+        choices=InvoiceStatus.choices,
+        default=InvoiceStatus.UNPAID,
     )
 
     # ---- Metadata ----

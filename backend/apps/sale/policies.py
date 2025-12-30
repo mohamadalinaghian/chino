@@ -1,26 +1,131 @@
 """
-Authorization policies for Sale operations.
-Each policy encapsulates permission checks and business rules.
+Authorization policies for Sale, Invoice, Payment and Refund operations.
+
+Policies are:
+- Stateless
+- Side-effect free
+- Cheap-first (state checks before permission checks)
 """
 
 from django.core.exceptions import PermissionDenied
 from django.utils.translation import gettext_lazy as _
 
-from .models import Sale
+from .models import Sale, SaleInvoice, SalePayment
+
+# ---------------------------------------------------------------------
+# Shared helpers
+# ---------------------------------------------------------------------
 
 
 def _require_authenticated(user) -> None:
-    """
-    Ensures user is authenticated before proceeding with any operation.
-
-    Args:
-        user: Django User instance
-
-    Raises:
-        PermissionDenied: If user is not authenticated
-    """
     if not user or not user.is_authenticated:
         raise PermissionDenied(_("Authentication required"))
+
+
+def _require_perm(user, perm: str) -> None:
+    if not user.has_perm(perm):
+        raise PermissionDenied(_("Missing permission: %(perm)s") % {"perm": perm})
+
+
+# ---------------------------------------------------------------------
+# Invoice policies
+# ---------------------------------------------------------------------
+
+
+def can_create_invoice(user, sale: Sale) -> None:
+    """
+    Permission to create an invoice for a sale.
+
+    Rules:
+        - Sale must be CLOSED
+        - Sale must not already have an invoice
+        - User must have sale.close_sale permission
+    """
+    _require_authenticated(user)
+
+    if sale.state != Sale.State.CLOSED:
+        raise PermissionDenied(_("Only CLOSED sales can be invoiced"))
+
+    if hasattr(sale, "invoice"):
+        raise PermissionDenied(_("Invoice already exists for this sale"))
+
+    _require_perm(user, "sale.close_sale")
+
+
+def can_view_invoice(user, invoice: SaleInvoice) -> None:
+    """
+    Permission to view invoice details.
+    """
+    _require_authenticated(user)
+    _require_perm(user, "sale.view_sale_detail")
+
+
+def can_void_invoice(user, invoice: SaleInvoice) -> None:
+    """
+    Permission to void an invoice.
+
+    Rules:
+        - Invoice must not be PAID
+        - Invoice must not be VOID
+    """
+    _require_authenticated(user)
+
+    if invoice.status == SaleInvoice.InvoiceStatus.PAID:
+        raise PermissionDenied(_("Paid invoices cannot be voided"))
+
+    if invoice.status == SaleInvoice.InvoiceStatus.VOID:
+        raise PermissionDenied(_("Invoice already voided"))
+
+    _require_perm(user, "sale.close_sale")
+
+
+# ---------------------------------------------------------------------
+# Payment policies
+# ---------------------------------------------------------------------
+
+
+def can_issue_payment(user, invoice: SaleInvoice) -> None:
+    """
+    Permission to register a payment.
+
+    Rules:
+        - Invoice must not be VOID
+    """
+    _require_authenticated(user)
+
+    if invoice.status == SaleInvoice.InvoiceStatus.VOID:
+        raise PermissionDenied(_("Cannot accept payment for a void invoice"))
+
+    _require_perm(user, "sale.close_sale")
+
+
+def can_refund_payment(user, payment: SalePayment) -> None:
+    """
+    Permission to refund a payment.
+
+    Rules:
+        - Payment must be COMPLETED
+        - Refund amount must not exceed applied amount
+    """
+    _require_authenticated(user)
+
+    if payment.status != SalePayment.PaymentStatus.COMPLETED:
+        raise PermissionDenied(_("Only completed payments can be refunded"))
+
+    _require_perm(user, "sale.close_sale")
+
+
+# ---------------------------------------------------------------------
+# Reporting policies
+# ---------------------------------------------------------------------
+
+
+def can_view_financial_reports(user) -> None:
+    """
+    Permission to view financial and payment reports.
+    """
+    _require_authenticated(user)
+    _require_perm(user, "sale.view_sale_list")
 
 
 def can_open_sale(user) -> None:
