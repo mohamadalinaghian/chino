@@ -10,7 +10,7 @@ Policies are:
 from django.core.exceptions import PermissionDenied
 from django.utils.translation import gettext_lazy as _
 
-from .models import Sale, SaleInvoice, SalePayment
+from .models import DailyReport, Sale, SaleInvoice, SalePayment
 
 # ---------------------------------------------------------------------
 # Shared helpers
@@ -250,3 +250,141 @@ def can_cancel_sale(user, sale: Sale) -> None:
     # Permission check
     if not user.has_perm("sale.cancel_sale"):
         raise PermissionDenied(_("You are not allowed to cancel sales"))
+
+
+# ---------------------------------------------------------------------
+# Daily Report policies
+# ---------------------------------------------------------------------
+
+
+def can_create_daily_report(user, report_date) -> None:
+    """
+    Permission to create a daily report.
+
+    Rules:
+        - User must have sale.add_dailyreport permission
+        - No existing report for the same date
+    """
+    _require_authenticated(user)
+
+    # Check for duplicate report
+    if DailyReport.objects.filter(report_date=report_date).exists():
+        raise PermissionDenied(
+            _("Daily report already exists for %(date)s") % {"date": report_date}
+        )
+
+    _require_perm(user, "sale.add_dailyreport")
+
+
+def can_edit_daily_report(user, report: DailyReport) -> None:
+    """
+    Permission to edit a daily report.
+
+    Rules:
+        - Report must be in DRAFT status
+        - User must have sale.change_dailyreport permission
+    """
+    _require_authenticated(user)
+
+    if report.status != DailyReport.ReportStatus.DRAFT:
+        raise PermissionDenied(
+            _("Only DRAFT reports can be edited. Current status: %(status)s")
+            % {"status": report.get_status_display()}
+        )
+
+    _require_perm(user, "sale.change_dailyreport")
+
+
+def can_submit_daily_report(user, report: DailyReport) -> None:
+    """
+    Permission to submit a daily report for approval.
+
+    Rules:
+        - Report must be in DRAFT status
+        - User must have sale.change_dailyreport permission
+    """
+    _require_authenticated(user)
+
+    if report.status != DailyReport.ReportStatus.DRAFT:
+        raise PermissionDenied(
+            _("Only DRAFT reports can be submitted. Current status: %(status)s")
+            % {"status": report.get_status_display()}
+        )
+
+    _require_perm(user, "sale.change_dailyreport")
+
+
+def can_approve_daily_report(user, report: DailyReport) -> None:
+    """
+    Permission to approve a daily report.
+
+    Rules:
+        - Report must be SUBMITTED or DISPUTED
+        - User must have sale.approve_dailyreport permission
+        - User cannot approve their own report
+    """
+    _require_authenticated(user)
+
+    if report.status not in [
+        DailyReport.ReportStatus.SUBMITTED,
+        DailyReport.ReportStatus.DISPUTED,
+    ]:
+        raise PermissionDenied(
+            _("Only SUBMITTED or DISPUTED reports can be approved. Current status: %(status)s")
+            % {"status": report.get_status_display()}
+        )
+
+    # Prevent self-approval
+    if report.created_by == user:
+        raise PermissionDenied(_("You cannot approve your own report"))
+
+    _require_perm(user, "sale.approve_dailyreport")
+
+
+def can_dispute_daily_report(user, report: DailyReport) -> None:
+    """
+    Permission to dispute a daily report.
+
+    Rules:
+        - Report must be SUBMITTED
+        - User must have sale.approve_dailyreport permission
+    """
+    _require_authenticated(user)
+
+    if report.status != DailyReport.ReportStatus.SUBMITTED:
+        raise PermissionDenied(
+            _("Only SUBMITTED reports can be disputed. Current status: %(status)s")
+            % {"status": report.get_status_display()}
+        )
+
+    _require_perm(user, "sale.approve_dailyreport")
+
+
+def can_close_daily_report(user, report: DailyReport) -> None:
+    """
+    Permission to finalize/close a daily report.
+
+    Rules:
+        - Report must be APPROVED
+        - User must have sale.approve_dailyreport permission
+    """
+    _require_authenticated(user)
+
+    if report.status != DailyReport.ReportStatus.APPROVED:
+        raise PermissionDenied(
+            _("Only APPROVED reports can be closed. Current status: %(status)s")
+            % {"status": report.get_status_display()}
+        )
+
+    _require_perm(user, "sale.approve_dailyreport")
+
+
+def can_view_daily_report(user) -> None:
+    """
+    Permission to view daily reports.
+
+    Rules:
+        - User must have sale.view_dailyreport permission
+    """
+    _require_authenticated(user)
+    _require_perm(user, "sale.view_dailyreport")
