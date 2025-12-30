@@ -88,6 +88,9 @@ class SaleInvoice(models.Model):
     )
     history = HistoricalRecords()
 
+    # History tracking
+    history = HistoricalRecords()
+
     class Meta:
         ordering = ("-issued_at",)
         verbose_name = _("Sale invoice")

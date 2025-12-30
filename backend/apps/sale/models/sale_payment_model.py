@@ -95,6 +95,9 @@ class SalePayment(models.Model):
     )
     history = HistoricalRecords()
 
+    # History tracking
+    history = HistoricalRecords()
+
     class Meta:
         ordering = ("received_at",)
         verbose_name = _("Sale payment")
