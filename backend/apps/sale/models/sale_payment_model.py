@@ -110,14 +110,26 @@ class SalePayment(models.Model):
         - tip_amount >= 0
         - destination_account rules enforced
         """
-        if self.amount_applied + self.tip_amount != self.amount_total:
+        # Check amount calculations
+        if abs(self.amount_applied + self.tip_amount - self.amount_total) > Decimal("0.01"):
             raise ValidationError(
-                _("amount_total must equal amount_applied + tip_amount")
+                _(
+                    "amount_total (%(total)s) must equal amount_applied (%(applied)s) + tip_amount (%(tip)s)"
+                )
+                % {
+                    "total": self.amount_total,
+                    "applied": self.amount_applied,
+                    "tip": self.tip_amount,
+                }
             )
 
-        if self.tip_amount < 0:
-            raise ValidationError(_("tip_amount cannot be negative"))
+        if self.amount_applied <= 0:
+            raise ValidationError(_("Applied amount must be positive"))
 
+        if self.tip_amount < 0:
+            raise ValidationError(_("Tip amount cannot be negative"))
+
+        # Validate destination account rules
         if self.method == self.PaymentMethod.CASH and self.destination_account:
             raise ValidationError(_("Cash payments must not have destination account"))
 
@@ -128,6 +140,21 @@ class SalePayment(models.Model):
             raise ValidationError(
                 _("This payment method requires a destination account")
             )
+
+    @property
+    def total_refunded(self) -> Decimal:
+        """Calculate total refunded amount"""
+        from django.db.models import Sum
+
+        return (
+            self.refunds.filter(status="COMPLETED").aggregate(total=Sum("amount"))["total"]
+            or Decimal("0")
+        )
+
+    @property
+    def refundable_amount(self) -> Decimal:
+        """Calculate remaining refundable amount (excludes tips)"""
+        return self.amount_applied - self.total_refunded
 
     def __str__(self) -> str:
         return f"{self.get_method_display()} | {self.amount_total}"

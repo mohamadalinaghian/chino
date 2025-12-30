@@ -28,7 +28,7 @@ class IssuePaymentService:
         method: SalePayment.PaymentMethod,
         amount_applied: Decimal,
         tip_amount: Decimal = Decimal("0"),
-        destination_card=None,
+        destination_account=None,
     ) -> SalePayment:
         can_issue_payment(received_by, invoice)
 
@@ -38,6 +38,9 @@ class IssuePaymentService:
         if amount_applied <= 0:
             raise ValidationError(_("Payment amount must be positive"))
 
+        if tip_amount < 0:
+            raise ValidationError(_("Tip amount cannot be negative"))
+
         amount_total = amount_applied + tip_amount
 
         payment = SalePayment.objects.create(
@@ -46,7 +49,7 @@ class IssuePaymentService:
             amount_total=amount_total,
             amount_applied=amount_applied,
             tip_amount=tip_amount,
-            destination_card_number=destination_card,
+            destination_account=destination_account,
             received_by=received_by,
         )
 
