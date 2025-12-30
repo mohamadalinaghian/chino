@@ -330,7 +330,9 @@ def can_approve_daily_report(user, report: DailyReport) -> None:
         DailyReport.ReportStatus.DISPUTED,
     ]:
         raise PermissionDenied(
-            _("Only SUBMITTED or DISPUTED reports can be approved. Current status: %(status)s")
+            _(
+                "Only SUBMITTED or DISPUTED reports can be approved. Current status: %(status)s"
+            )
             % {"status": report.get_status_display()}
         )
 

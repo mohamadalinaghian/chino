@@ -7,6 +7,8 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from simple_history.models import HistoricalRecords
 
+from .daily_report_payment_method_model import DailyReportPaymentMethod
+
 User = get_user_model()
 
 
@@ -129,16 +131,13 @@ class DailyReport(models.Model):
         help_text=_("Other operating expenses (utilities, rent, etc.)"),
     )
 
-    # ---- Variance & Notes ----
-    variance_reason = models.TextField(
-        _("Variance reason"),
-        blank=True,
-        help_text=_("Explanation for any cash discrepancies"),
-    )
+    # ---- Notes ----
 
-    notes = models.TextField(
+    notes = models.CharField(
         _("Notes"),
+        max_length=512,
         blank=True,
+        null=True,
         help_text=_("Additional notes or observations"),
     )
 
@@ -208,7 +207,11 @@ class DailyReport(models.Model):
         if self.submitted_at and self.submitted_at < self.created_at:
             raise ValidationError(_("Submitted date cannot be before created date"))
 
-        if self.approved_at and self.submitted_at and self.approved_at < self.submitted_at:
+        if (
+            self.approved_at
+            and self.submitted_at
+            and self.approved_at < self.submitted_at
+        ):
             raise ValidationError(_("Approved date cannot be before submitted date"))
 
         if self.closed_at and self.approved_at and self.closed_at < self.approved_at:
@@ -217,7 +220,10 @@ class DailyReport(models.Model):
         # Validate status transitions
         if self.pk:  # Existing record
             old_instance = DailyReport.objects.get(pk=self.pk)
-            if old_instance.status != ReportStatus.DRAFT and old_instance.status != self.status:
+            if (
+                old_instance.status != DailyReport.ReportStatus.DRAFT
+                and old_instance.status != self.status
+            ):
                 raise ValidationError(
                     _("Cannot edit report after submission. Current status: %(status)s")
                     % {"status": old_instance.get_status_display()}
@@ -255,12 +261,13 @@ class DailyReport(models.Model):
         Expected cash from payments.
         Calculated from payment_methods where method=CASH.
         """
+
         cash_methods = self.payment_methods.filter(
             payment_method=DailyReportPaymentMethod.PaymentMethodType.CASH
         )
-        return cash_methods.aggregate(
-            total=models.Sum("expected_amount")
-        )["total"] or Decimal("0.0000")
+        return cash_methods.aggregate(total=models.Sum("expected_amount"))[
+            "total"
+        ] or Decimal("0.0000")
 
     @property
     def cash_variance(self) -> Decimal:
@@ -270,9 +277,9 @@ class DailyReport(models.Model):
     @property
     def total_variance(self) -> Decimal:
         """Total variance across all payment methods."""
-        return self.payment_methods.aggregate(
-            total=models.Sum("variance")
-        )["total"] or Decimal("0.0000")
+        return self.payment_methods.aggregate(total=models.Sum("variance"))[
+            "total"
+        ] or Decimal("0.0000")
 
     @property
     def is_editable(self) -> bool:

@@ -81,9 +81,7 @@ class SubmitDailyReportService:
         for pm in report.payment_methods.all():
             if pm.actual_amount < 0:
                 errors.append(
-                    _(
-                        "Actual amount for %(method)s cannot be negative"
-                    )
+                    _("Actual amount for %(method)s cannot be negative")
                     % {"method": pm.get_payment_method_display()}
                 )
 

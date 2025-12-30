@@ -49,7 +49,9 @@ class DailyReportPaymentMethod(models.Model):
         max_digits=12,
         decimal_places=4,
         default=Decimal("0.0000"),
-        help_text=_("Amount entered by accountant (cash counted, POS report, bank confirmed)"),
+        help_text=_(
+            "Amount entered by accountant (cash counted, POS report, bank confirmed)"
+        ),
     )
 
     variance = models.DecimalField(

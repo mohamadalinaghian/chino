@@ -116,9 +116,7 @@ class CreateDailyReportService:
         return day_start, day_end
 
     @staticmethod
-    def _calculate_expected_amounts(
-        day_start: datetime, day_end: datetime
-    ) -> dict:
+    def _calculate_expected_amounts(day_start: datetime, day_end: datetime) -> dict:
         """
         Calculate expected amounts from system records for the business day.
 
@@ -150,30 +148,25 @@ class CreateDailyReportService:
         )
 
         # Calculate revenue totals
-        total_sales = (
-            invoices.aggregate(total=models.Sum("total_amount"))["total"]
-            or Decimal("0.0000")
-        )
+        total_sales = invoices.aggregate(total=models.Sum("total_amount"))[
+            "total"
+        ] or Decimal("0.0000")
 
-        total_discounts = (
-            invoices.aggregate(total=models.Sum("discount_amount"))["total"]
-            or Decimal("0.0000")
-        )
+        total_discounts = invoices.aggregate(total=models.Sum("discount_amount"))[
+            "total"
+        ] or Decimal("0.0000")
 
-        total_tax = (
-            invoices.aggregate(total=models.Sum("tax_amount"))["total"]
-            or Decimal("0.0000")
-        )
+        total_tax = invoices.aggregate(total=models.Sum("tax_amount"))[
+            "total"
+        ] or Decimal("0.0000")
 
-        total_tips = (
-            payments.aggregate(total=models.Sum("tip_amount"))["total"]
-            or Decimal("0.0000")
-        )
+        total_tips = payments.aggregate(total=models.Sum("tip_amount"))[
+            "total"
+        ] or Decimal("0.0000")
 
-        total_refunds = (
-            refunds.aggregate(total=models.Sum("amount"))["total"]
-            or Decimal("0.0000")
-        )
+        total_refunds = refunds.aggregate(total=models.Sum("amount"))[
+            "total"
+        ] or Decimal("0.0000")
 
         # Calculate payment method breakdown
         payment_methods = CreateDailyReportService._calculate_payment_method_totals(
@@ -190,9 +183,7 @@ class CreateDailyReportService:
         }
 
     @staticmethod
-    def _calculate_payment_method_totals(
-        payments, refunds
-    ) -> dict[str, Decimal]:
+    def _calculate_payment_method_totals(payments, refunds) -> dict[str, Decimal]:
         """
         Calculate expected amounts by payment method.
 
