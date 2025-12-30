@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from simple_history.models import HistoricalRecords
 
 User = get_user_model()
 
@@ -92,6 +93,7 @@ class SalePayment(models.Model):
         default=PaymentStatus.COMPLETED,
         db_index=True,
     )
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ("received_at",)
@@ -111,7 +113,9 @@ class SalePayment(models.Model):
         - destination_account rules enforced
         """
         # Check amount calculations
-        if abs(self.amount_applied + self.tip_amount - self.amount_total) > Decimal("0.01"):
+        if abs(self.amount_applied + self.tip_amount - self.amount_total) > Decimal(
+            "0.01"
+        ):
             raise ValidationError(
                 _(
                     "amount_total (%(total)s) must equal amount_applied (%(applied)s) + tip_amount (%(tip)s)"
@@ -146,10 +150,9 @@ class SalePayment(models.Model):
         """Calculate total refunded amount"""
         from django.db.models import Sum
 
-        return (
-            self.refunds.filter(status="COMPLETED").aggregate(total=Sum("amount"))["total"]
-            or Decimal("0")
-        )
+        return self.refunds.filter(status="COMPLETED").aggregate(total=Sum("amount"))[
+            "total"
+        ] or Decimal("0")
 
     @property
     def refundable_amount(self) -> Decimal:

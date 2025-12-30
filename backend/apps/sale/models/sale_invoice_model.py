@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from simple_history.models import HistoricalRecords
 
 User = get_user_model()
 
@@ -85,6 +86,7 @@ class SaleInvoice(models.Model):
         related_name="issued_invoices",
         verbose_name=_("Issued by"),
     )
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ("-issued_at",)
@@ -129,12 +131,9 @@ class SaleInvoice(models.Model):
         """Calculate total paid from completed payments"""
         from django.db.models import Sum
 
-        return (
-            self.payments.filter(status="COMPLETED").aggregate(total=Sum("amount_applied"))[
-                "total"
-            ]
-            or Decimal("0")
-        )
+        return self.payments.filter(status="COMPLETED").aggregate(
+            total=Sum("amount_applied")
+        )["total"] or Decimal("0")
 
     @property
     def balance_due(self) -> Decimal:

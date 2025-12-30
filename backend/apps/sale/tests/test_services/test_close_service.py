@@ -1,6 +1,6 @@
 import pytest
 from apps.sale.models import Sale
-from apps.sale.services.close_sale import CloseSaleService
+from apps.sale.services.sale.close_sale import CloseSaleService
 from apps.sale.tests.factories import SaleFactory, SaleItemFactory
 from apps.user.tests.factories import AccountFactory
 from django.contrib.auth.models import Permission
@@ -26,7 +26,7 @@ class TestCloseSaleService:
 
         closed_sale = CloseSaleService.close_sale(
             sale=sale,
-            closed_by=self.cashier,
+            performer=self.cashier,
         )
 
         assert closed_sale.state == Sale.State.CLOSED
@@ -42,7 +42,7 @@ class TestCloseSaleService:
         with pytest.raises(Exception):
             CloseSaleService.close_sale(
                 sale=sale,
-                closed_by=self.waiter,
+                performer=self.waiter,
             )
 
     def test_cannot_close_non_open_sale(self):
@@ -52,7 +52,7 @@ class TestCloseSaleService:
         with pytest.raises(Exception):
             CloseSaleService.close_sale(
                 sale=sale,
-                closed_by=self.cashier,
+                performer=self.cashier,
             )
 
     def test_cannot_close_empty_sale(self):
@@ -61,5 +61,5 @@ class TestCloseSaleService:
         with pytest.raises(Exception):
             CloseSaleService.close_sale(
                 sale=sale,
-                closed_by=self.cashier,
+                performer=self.cashier,
             )

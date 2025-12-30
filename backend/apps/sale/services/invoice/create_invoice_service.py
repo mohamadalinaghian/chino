@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import Optional
 
 from apps.sale.models import Sale, SaleInvoice
 from apps.sale.policies import can_create_invoice
@@ -26,7 +27,7 @@ class CreateInvoiceService:
         sale: Sale,
         issued_by,
         tax_amount: Decimal = Decimal("0"),
-        invoice_number: str = None,
+        invoice_number: Optional[str] = None,
     ) -> SaleInvoice:
         can_create_invoice(issued_by, sale)
 
@@ -76,10 +77,9 @@ class CreateInvoiceService:
         prefix = f"INV-{current_year}-"
 
         # Get last invoice number for this year
-        last_invoice = (
-            SaleInvoice.objects.filter(invoice_number__startswith=prefix)
-            .aggregate(Max("invoice_number"))["invoice_number__max"]
-        )
+        last_invoice = SaleInvoice.objects.filter(
+            invoice_number__startswith=prefix
+        ).aggregate(Max("invoice_number"))["invoice_number__max"]
 
         if last_invoice:
             # Extract sequence number and increment

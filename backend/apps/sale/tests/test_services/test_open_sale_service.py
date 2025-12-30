@@ -4,7 +4,7 @@ import pytest
 from apps.inventory.tests.factories import ProductFactory, TableFactory
 from apps.menu.tests.factories import MenuFactory
 from apps.sale.models import Sale
-from apps.sale.services.open_sale import OpenSaleService
+from apps.sale.services.sale.open_sale import OpenSaleService
 from apps.user.tests.factories import AccountFactory
 from django.contrib.auth.models import Permission
 
@@ -31,7 +31,7 @@ class TestOpenSaleService:
         items = [
             OpenSaleService.ItemInput(
                 menu=self.menu,
-                quantity=Decimal("2"),
+                quantity=2,
                 extras=[
                     OpenSaleService.ExtraInput(
                         product=self.extra_product,
