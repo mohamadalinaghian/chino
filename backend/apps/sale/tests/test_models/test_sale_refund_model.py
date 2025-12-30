@@ -32,7 +32,7 @@ class TestSaleRefundModel:
 
     def test_clean_validates_positive_amount(self, cash_payment):
         """Test clean() rejects zero or negative amounts."""
-        refund = SaleRefundFactory.build(
+        refund = SaleRefundFactory(
             payment=cash_payment,
             invoice=cash_payment.invoice,
             amount=Decimal("0.0000"),
@@ -51,7 +51,7 @@ class TestSaleRefundModel:
     def test_clean_validates_refund_doesnt_exceed_payment(self, cash_payment):
         """Test clean() prevents refunds exceeding payment amount."""
         # Create refund larger than payment
-        refund = SaleRefundFactory.build(
+        refund = SaleRefundFactory(
             payment=cash_payment,
             invoice=cash_payment.invoice,
             amount=cash_payment.amount_applied + Decimal("10.0000"),
@@ -93,7 +93,7 @@ class TestSaleRefundModel:
         )
 
         # Create second refund within limits
-        refund2 = SaleRefundFactory.build(
+        refund2 = SaleRefundFactory(
             payment=cash_payment,
             invoice=cash_payment.invoice,
             amount=Decimal("30.0000"),  # Total: 70, payment: 100 ✓
@@ -107,7 +107,7 @@ class TestSaleRefundModel:
     ):
         """Test clean() ensures refund invoice matches payment invoice."""
         # Try to create refund with mismatched invoice
-        refund = SaleRefundFactory.build(
+        refund = SaleRefundFactory(
             payment=cash_payment,
             invoice=unpaid_invoice,  # Different invoice!
         )

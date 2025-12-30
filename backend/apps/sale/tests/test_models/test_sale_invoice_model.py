@@ -51,7 +51,7 @@ class TestSaleInvoiceModel:
 
     def test_invoice_calculation_validation_fails(self, closed_sale, staff_with_perms):
         """Test invoice clean() rejects incorrect totals."""
-        invoice = SaleInvoiceFactory.build(
+        invoice = SaleInvoiceFactory(
             sale=closed_sale,
             issued_by=staff_with_perms,
             subtotal_amount=Decimal("100.0000"),
@@ -67,7 +67,7 @@ class TestSaleInvoiceModel:
 
     def test_negative_subtotal_validation(self, closed_sale, staff_with_perms):
         """Test invoice rejects negative subtotal."""
-        invoice = SaleInvoiceFactory.build(
+        invoice = SaleInvoiceFactory(
             sale=closed_sale,
             subtotal_amount=Decimal("-100.0000"),
             total_amount=Decimal("-100.0000"),
@@ -80,7 +80,7 @@ class TestSaleInvoiceModel:
 
     def test_negative_discount_validation(self, closed_sale, staff_with_perms):
         """Test invoice rejects negative discount."""
-        invoice = SaleInvoiceFactory.build(
+        invoice = SaleInvoiceFactory(
             sale=closed_sale,
             discount_amount=Decimal("-10.0000"),
         )
@@ -90,7 +90,7 @@ class TestSaleInvoiceModel:
 
     def test_negative_tax_validation(self, closed_sale, staff_with_perms):
         """Test invoice rejects negative tax."""
-        invoice = SaleInvoiceFactory.build(
+        invoice = SaleInvoiceFactory(
             sale=closed_sale,
             tax_amount=Decimal("-5.0000"),
         )

@@ -44,7 +44,7 @@ class TestSalePaymentModel:
 
     def test_clean_validates_amount_calculation(self, unpaid_invoice):
         """Test clean() validates amount_total = amount_applied + tip."""
-        payment = SalePaymentFactory.build(
+        payment = SalePaymentFactory(
             invoice=unpaid_invoice,
             amount_applied=Decimal("100.0000"),
             tip_amount=Decimal("10.0000"),
@@ -58,7 +58,7 @@ class TestSalePaymentModel:
 
     def test_clean_accepts_small_rounding_differences(self, unpaid_invoice):
         """Test clean() tolerates tiny rounding errors."""
-        payment = SalePaymentFactory.build(
+        payment = SalePaymentFactory(
             invoice=unpaid_invoice,
             amount_applied=Decimal("100.0000"),
             tip_amount=Decimal("10.0000"),
@@ -70,7 +70,7 @@ class TestSalePaymentModel:
 
     def test_clean_rejects_negative_applied_amount(self, unpaid_invoice):
         """Test clean() rejects negative applied amount."""
-        payment = SalePaymentFactory.build(
+        payment = SalePaymentFactory(
             invoice=unpaid_invoice,
             amount_applied=Decimal("-50.0000"),
             amount_total=Decimal("-50.0000"),
@@ -83,7 +83,7 @@ class TestSalePaymentModel:
 
     def test_clean_rejects_negative_tip(self, unpaid_invoice):
         """Test clean() rejects negative tip."""
-        payment = SalePaymentFactory.build(
+        payment = SalePaymentFactory(
             invoice=unpaid_invoice,
             amount_applied=Decimal("100.0000"),
             tip_amount=Decimal("-5.0000"),
@@ -97,7 +97,7 @@ class TestSalePaymentModel:
         """Test clean() rejects destination_account for cash payments."""
         # This requires BankAccount model to exist
         # Simplified test - just verify the rule exists
-        payment = SalePaymentFactory.build(
+        payment = SalePaymentFactory(
             invoice=unpaid_invoice,
             method=SalePayment.PaymentMethod.CASH,
         )

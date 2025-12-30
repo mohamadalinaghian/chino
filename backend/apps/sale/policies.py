@@ -46,8 +46,12 @@ def can_create_invoice(user, sale: Sale) -> None:
     if sale.state != Sale.State.CLOSED:
         raise PermissionDenied(_("Only CLOSED sales can be invoiced"))
 
-    if hasattr(sale, "invoice"):
-        raise PermissionDenied(_("Invoice already exists for this sale"))
+    # Check if invoice exists without triggering query if table doesn't exist
+    try:
+        if hasattr(sale, "invoice") and sale.invoice:
+            raise PermissionDenied(_("Invoice already exists for this sale"))
+    except SaleInvoice.DoesNotExist:
+        pass  # No invoice exists, which is what we want
 
     _require_perm(user, "sale.close_sale")
 
