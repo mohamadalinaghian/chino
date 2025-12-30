@@ -131,7 +131,14 @@ class DailyReport(models.Model):
         help_text=_("Other operating expenses (utilities, rent, etc.)"),
     )
 
-    # ---- Notes ----
+    # ---- Variance & Notes ----
+    variance_reason = models.CharField(
+        _("Variance reason"),
+        blank=True,
+        max_length=512,
+        null=True,
+        help_text=_("Explanation for any cash discrepancies"),
+    )
 
     notes = models.CharField(
         _("Notes"),

@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django.db.models import Count, Sum
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
@@ -24,10 +23,7 @@ class SaleItemInline(admin.TabularInline):
     def total_price(self, obj):
         """Display calculated total price."""
         if obj.pk:
-            return format_html(
-                '<strong>{}</strong>',
-                obj.quantity * obj.unit_price
-            )
+            return format_html("<strong>{}</strong>", obj.quantity * obj.unit_price)
         return "-"
 
     total_price.short_description = _("Total")
@@ -142,7 +138,7 @@ class SaleAdmin(admin.ModelAdmin):
 
     ordering = ("-opened_at",)
 
-    autocomplete_fields = ["guest", "table"]
+    # autocomplete_fields = ["guest", "table"]
 
     def state_badge(self, obj):
         """Display state with color badge."""
@@ -164,7 +160,7 @@ class SaleAdmin(admin.ModelAdmin):
         """Display number of items in sale."""
         if obj.pk:
             count = obj.items.count()
-            return format_html('<strong>{}</strong>', count)
+            return format_html("<strong>{}</strong>", count)
         return "-"
 
     items_count.short_description = _("Items")
@@ -184,7 +180,8 @@ class SaleAdmin(admin.ModelAdmin):
             html += f"<tr><td>{item.product.name}</td>"
             html += f"<td>{item.quantity}</td>"
             html += f"<td>{item.unit_price}</td>"
-            html += f"<td><strong>{item.quantity * item.unit_price}</strong></td></tr>"
+            html += f"<td><strong>{item.quantity *
+                                   item.unit_price}</strong></td></tr>"
         html += "</table>"
         return format_html(html)
 
@@ -200,10 +197,11 @@ class SaleAdmin(admin.ModelAdmin):
             return _("No discounts")
 
         total = sum(d.value for d in discounts)
-        html = f'<p><strong>Total Discount: {total}</strong></p>'
+        html = f"<p><strong>Total Discount: {total}</strong></p>"
         html += "<ul>"
         for discount in discounts:
-            html += f"<li>{discount.get_discount_type_display()}: {discount.value}"
+            html += f"<li>{discount.get_discount_type_display()
+                           }: {discount.value}"
             if discount.reason:
                 html += f" ({discount.reason})"
             html += "</li>"
