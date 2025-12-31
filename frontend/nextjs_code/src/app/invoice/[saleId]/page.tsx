@@ -24,6 +24,7 @@ import { useAuth } from '@/libs/auth/AuthContext';
 import { InvoiceApiClient } from '@/libs/invoice/invoiceApiClient';
 import { SaleApiClient } from '@/libs/sale/saleApiClient';
 import { formatPersianMoney } from '@/libs/tools/persianMoney';
+import { CS_API_URL } from '@/libs/constants';
 import {
   InitiateInvoiceResponse,
   ProcessPaymentResponse,
@@ -67,15 +68,25 @@ export default function InvoicePaymentPage() {
    */
   useEffect(() => {
     loadSaleAndInitiateInvoice();
-    loadBankAccounts();
   }, [saleId]);
 
   /**
-   * Load bank accounts for card transfer
+   * Lazy load bank accounts only when needed
+   */
+  useEffect(() => {
+    if (paymentMethod === PaymentMethod.CARD_TRANSFER || paymentMethod === PaymentMethod.POS) {
+      if (bankAccounts.length === 0) {
+        loadBankAccounts();
+      }
+    }
+  }, [paymentMethod]);
+
+  /**
+   * Load bank accounts for card transfer (lazy loaded when needed)
    */
   const loadBankAccounts = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/settings/bank-accounts`, {
+      const response = await fetch(`${CS_API_URL}/settings/bank-accounts`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
@@ -85,7 +96,7 @@ export default function InvoicePaymentPage() {
         setBankAccounts(accounts);
 
         // Also load POS account and set it as default for POS payment
-        const posResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/settings/pos-account`, {
+        const posResponse = await fetch(`${CS_API_URL}/settings/pos-account`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           },
@@ -352,9 +363,10 @@ export default function InvoicePaymentPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 py-4 space-y-3">
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        {/* Error Alert - Full Width */}
         {error && (
-          <div className="bg-red-900/30 border-2 border-red-800 rounded-2xl p-5 flex items-start gap-4">
+          <div className="bg-red-900/30 border-2 border-red-800 rounded-2xl p-5 flex items-start gap-4 mb-3">
             <span className="text-2xl">⚠️</span>
             <div className="flex-1">
               <p className="text-red-300 font-medium">{error}</p>
@@ -363,284 +375,293 @@ export default function InvoicePaymentPage() {
           </div>
         )}
 
-        {/* Payment Progress */}
-        {totalPaid > 0 && (
-          <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-sm text-gray-400">پرداخت شده</span>
-              <span className="text-sm font-bold text-green-400">{((totalPaid / totalAmount) * 100).toFixed(1)}%</span>
-            </div>
-            <div className="w-full h-4 bg-gray-700 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-500"
-                style={{ width: `${Math.min((totalPaid / totalAmount) * 100, 100)}%` }}
-              />
-            </div>
-            <div className="flex justify-between items-center mt-3 text-sm">
-              <span className="text-green-400 font-bold">{formatPersianMoney(totalPaid)}</span>
-              <span className="text-gray-400">از {formatPersianMoney(totalAmount)}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Quick Payment Buttons */}
-        {!isPaid && canPayment && (
-          <div className="bg-gradient-to-br from-purple-900/30 to-indigo-900/30 border border-purple-700 rounded-xl p-4">
-            <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
-              <span>⚡</span> پرداخت سریع
-            </h3>
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              <button
-                onClick={() => handleQuickPayment(100)}
-                className="py-3 px-4 bg-gradient-to-br from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 rounded-lg font-medium text-sm text-white shadow-lg active:scale-95 transition-all"
-              >
-                💯 پرداخت کامل
-                <div className="text-xs mt-0.5 opacity-90">{formatPersianMoney(balanceDue)}</div>
-              </button>
-              <button
-                onClick={() => handleQuickPayment(50)}
-                className="py-3 px-4 bg-gradient-to-br from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 rounded-lg font-medium text-sm text-white shadow-lg active:scale-95 transition-all"
-              >
-                50% پرداخت نصف
-                <div className="text-xs mt-0.5 opacity-90">{formatPersianMoney(balanceDue * 0.5)}</div>
-              </button>
-            </div>
-            <button
-              onClick={() => {
-                setShowPaymentForm(true);
-                // Clear amount for manual entry
-                if (!showPaymentForm) {
-                  setAmount(balanceDue.toString());
-                }
-              }}
-              className="w-full py-3 px-5 bg-gradient-to-br from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl font-medium text-white shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"
-            >
-              <span className="text-lg">💰</span> پرداخت با مبلغ دلخواه
-            </button>
-          </div>
-        )}
-
-        {/* Payment Form */}
-        {showPaymentForm && !isPaid && (
-          <div className="bg-gray-800 rounded-xl p-4 border border-indigo-500 space-y-3">
-            <h3 className="text-sm font-bold mb-2">💳 ثبت پرداخت</h3>
-
-            {/* Payment Method */}
-            <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1.5">روش پرداخت</label>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  onClick={() => setPaymentMethod(PaymentMethod.CASH)}
-                  className={`py-2 px-3 text-xs rounded-lg font-medium border transition-all ${
-                    paymentMethod === PaymentMethod.CASH
-                      ? 'bg-green-600 border-green-500 text-white'
-                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-500'
-                  }`}
-                >
-                  💵 نقد
-                </button>
-                <button
-                  onClick={() => setPaymentMethod(PaymentMethod.POS)}
-                  className={`py-2 px-3 text-xs rounded-lg font-medium border transition-all ${
-                    paymentMethod === PaymentMethod.POS
-                      ? 'bg-blue-600 border-blue-500 text-white'
-                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-500'
-                  }`}
-                >
-                  💳 کارتخوان
-                </button>
-                <button
-                  onClick={() => setPaymentMethod(PaymentMethod.CARD_TRANSFER)}
-                  className={`py-2 px-3 text-xs rounded-lg font-medium border transition-all ${
-                    paymentMethod === PaymentMethod.CARD_TRANSFER
-                      ? 'bg-purple-600 border-purple-500 text-white'
-                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-500'
-                  }`}
-                >
-                  📱 کارت‌به‌کارت
-                </button>
-              </div>
-            </div>
-
-            {/* Account Selection for Card Transfer */}
-            {paymentMethod === PaymentMethod.CARD_TRANSFER && (
-              <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1.5">حساب مقصد (فقط حساب‌های دارای بدهی)</label>
-                <select
-                  value={selectedAccountId || ''}
-                  onChange={(e) => setSelectedAccountId(Number(e.target.value))}
-                  className="w-full px-3 py-2 text-sm bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
-                  required
-                >
-                  <option value="">انتخاب حساب...</option>
-                  {bankAccounts.map((account) => (
-                    <option key={account.id} value={account.id}>
-                      {account.account_owner} - {formatPersianMoney(parseFloat(account.account_balance))} ({account.card_number.slice(-4)})
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-gray-500 mt-1">مرتب شده از بیشترین به کمترین بدهی</p>
+        {/* Grid Layout - 2 columns on desktop, 1 on mobile */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          {/* Left Column */}
+          <div className="space-y-3">
+            {/* Payment Progress */}
+            {totalPaid > 0 && (
+              <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-sm text-gray-400">پرداخت شده</span>
+                  <span className="text-sm font-bold text-green-400">{((totalPaid / totalAmount) * 100).toFixed(1)}%</span>
+                </div>
+                <div className="w-full h-4 bg-gray-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min((totalPaid / totalAmount) * 100, 100)}%` }}
+                  />
+                </div>
+                <div className="flex justify-between items-center mt-3 text-sm">
+                  <span className="text-green-400 font-bold">{formatPersianMoney(totalPaid)}</span>
+                  <span className="text-gray-400">از {formatPersianMoney(totalAmount)}</span>
+                </div>
               </div>
             )}
 
-            {/* Item Selection for Split Payments */}
-            <div className="bg-gray-750 rounded-lg p-3 border border-gray-600">
-              <div className="flex justify-between items-center mb-2">
-                <label className="block text-xs font-medium text-gray-400">
-                  🧾 انتخاب اقلام
-                </label>
-                {selectedItems.length > 0 && (
+            {/* Quick Payment Buttons */}
+            {!isPaid && canPayment && (
+              <div className="bg-gradient-to-br from-purple-900/30 to-indigo-900/30 border border-purple-700 rounded-xl p-4">
+                <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
+                  <span>⚡</span> پرداخت سریع
+                </h3>
+                <div className="grid grid-cols-2 gap-2 mb-3">
                   <button
-                    onClick={applySelectedItemsAmount}
-                    className="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-500 rounded text-xs font-medium text-white"
+                    onClick={() => handleQuickPayment(100)}
+                    className="py-3 px-4 bg-gradient-to-br from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 rounded-lg font-medium text-sm text-white shadow-lg active:scale-95 transition-all"
                   >
-                    محاسبه ({selectedItems.length})
+                    💯 پرداخت کامل
+                    <div className="text-xs mt-0.5 opacity-90">{formatPersianMoney(balanceDue)}</div>
                   </button>
-                )}
+                  <button
+                    onClick={() => handleQuickPayment(50)}
+                    className="py-3 px-4 bg-gradient-to-br from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 rounded-lg font-medium text-sm text-white shadow-lg active:scale-95 transition-all"
+                  >
+                    50% پرداخت نصف
+                    <div className="text-xs mt-0.5 opacity-90">{formatPersianMoney(balanceDue * 0.5)}</div>
+                  </button>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowPaymentForm(true);
+                    // Clear amount for manual entry
+                    if (!showPaymentForm) {
+                      setAmount(balanceDue.toString());
+                    }
+                  }}
+                  className="w-full py-3 px-5 bg-gradient-to-br from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl font-medium text-white shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"
+                >
+                  <span className="text-lg">💰</span> پرداخت با مبلغ دلخواه
+                </button>
               </div>
-              <div className="max-h-48 overflow-y-auto space-y-1.5">
-                {sale?.items.map((item) => {
-                  const itemTotal = parseFloat(item.unit_price) * item.quantity;
-                  const extrasTotal = item.extras.reduce((sum, extra) =>
-                    sum + (parseFloat(extra.unit_price) * extra.quantity), 0
-                  );
-                  const totalPrice = itemTotal + extrasTotal;
-                  const isSelected = selectedItems.includes(item.id);
+            )}
+          </div>
 
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => toggleItemSelection(item.id)}
-                      className={`p-2 rounded-md border cursor-pointer transition-all ${
-                        isSelected
-                          ? 'bg-indigo-600/20 border-indigo-500'
-                          : 'bg-gray-700 border-gray-600 hover:border-gray-500'
+          {/* Right Column */}
+          <div className="space-y-3">
+            {/* Payment Form */}
+            {showPaymentForm && !isPaid && (
+              <div className="bg-gray-800 rounded-xl p-4 border border-indigo-500 space-y-3">
+                <h3 className="text-sm font-bold mb-2">💳 ثبت پرداخت</h3>
+
+                {/* Payment Method */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-400 mb-1.5">روش پرداخت</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      onClick={() => setPaymentMethod(PaymentMethod.CASH)}
+                      className={`py-2 px-3 text-xs rounded-lg font-medium border transition-all ${
+                        paymentMethod === PaymentMethod.CASH
+                          ? 'bg-green-600 border-green-500 text-white'
+                          : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-500'
                       }`}
                     >
-                      <div className="flex items-start gap-2">
-                        <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center ${
-                          isSelected ? 'bg-indigo-600 border-indigo-500' : 'border-gray-500'
-                        }`}>
-                          {isSelected && <span className="text-white text-xs">✓</span>}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="text-xs font-medium text-white">{item.product_name}</p>
-                              <p className="text-xs text-gray-400">×{item.quantity}</p>
+                      💵 نقد
+                    </button>
+                    <button
+                      onClick={() => setPaymentMethod(PaymentMethod.POS)}
+                      className={`py-2 px-3 text-xs rounded-lg font-medium border transition-all ${
+                        paymentMethod === PaymentMethod.POS
+                          ? 'bg-blue-600 border-blue-500 text-white'
+                          : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-500'
+                      }`}
+                    >
+                      💳 کارتخوان
+                    </button>
+                    <button
+                      onClick={() => setPaymentMethod(PaymentMethod.CARD_TRANSFER)}
+                      className={`py-2 px-3 text-xs rounded-lg font-medium border transition-all ${
+                        paymentMethod === PaymentMethod.CARD_TRANSFER
+                          ? 'bg-purple-600 border-purple-500 text-white'
+                          : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-500'
+                      }`}
+                    >
+                      📱 کارت‌به‌کارت
+                    </button>
+                  </div>
+                </div>
+
+                {/* Account Selection for Card Transfer */}
+                {paymentMethod === PaymentMethod.CARD_TRANSFER && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-400 mb-1.5">حساب مقصد (فقط حساب‌های دارای بدهی)</label>
+                    <select
+                      value={selectedAccountId || ''}
+                      onChange={(e) => setSelectedAccountId(Number(e.target.value))}
+                      className="w-full px-3 py-2 text-sm bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
+                      required
+                    >
+                      <option value="">انتخاب حساب...</option>
+                      {bankAccounts.map((account) => (
+                        <option key={account.id} value={account.id}>
+                          {account.account_owner} - {formatPersianMoney(parseFloat(account.account_balance))} ({account.card_number.slice(-4)})
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">مرتب شده از بیشترین به کمترین بدهی</p>
+                  </div>
+                )}
+
+                {/* Item Selection for Split Payments */}
+                <div className="bg-gray-750 rounded-lg p-3 border border-gray-600">
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-xs font-medium text-gray-400">
+                      🧾 انتخاب اقلام
+                    </label>
+                    {selectedItems.length > 0 && (
+                      <button
+                        onClick={applySelectedItemsAmount}
+                        className="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-500 rounded text-xs font-medium text-white"
+                      >
+                        محاسبه ({selectedItems.length})
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-48 overflow-y-auto space-y-1.5">
+                    {sale?.items.map((item) => {
+                      const itemTotal = parseFloat(item.unit_price) * item.quantity;
+                      const extrasTotal = item.extras.reduce((sum, extra) =>
+                        sum + (parseFloat(extra.unit_price) * extra.quantity), 0
+                      );
+                      const totalPrice = itemTotal + extrasTotal;
+                      const isSelected = selectedItems.includes(item.id);
+
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() => toggleItemSelection(item.id)}
+                          className={`p-2 rounded-md border cursor-pointer transition-all ${
+                            isSelected
+                              ? 'bg-indigo-600/20 border-indigo-500'
+                              : 'bg-gray-700 border-gray-600 hover:border-gray-500'
+                          }`}
+                        >
+                          <div className="flex items-start gap-2">
+                            <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center ${
+                              isSelected ? 'bg-indigo-600 border-indigo-500' : 'border-gray-500'
+                            }`}>
+                              {isSelected && <span className="text-white text-xs">✓</span>}
                             </div>
-                            <p className="text-xs font-bold text-green-400">
-                              {formatPersianMoney(totalPrice)}
-                            </p>
+                            <div className="flex-1">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <p className="text-xs font-medium text-white">{item.product_name}</p>
+                                  <p className="text-xs text-gray-400">×{item.quantity}</p>
+                                </div>
+                                <p className="text-xs font-bold text-green-400">
+                                  {formatPersianMoney(totalPrice)}
+                                </p>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              {selectedItems.length > 0 && (
-                <div className="mt-2 pt-2 border-t border-gray-600 flex justify-between items-center">
-                  <span className="text-xs text-gray-400">جمع:</span>
-                  <span className="text-sm font-bold text-indigo-400">
-                    {formatPersianMoney(calculateSelectedItemsTotal())}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Amount */}
-            <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1.5">مبلغ پرداختی (تومان)</label>
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm font-bold focus:border-indigo-500 focus:outline-none"
-                placeholder="0"
-                min="0"
-                step="1000"
-              />
-            </div>
-
-            {/* Tip Amount */}
-            <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1.5">انعام (اختیاری)</label>
-              <input
-                type="number"
-                value={tipAmount}
-                onChange={(e) => setTipAmount(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm font-bold focus:border-green-500 focus:outline-none"
-                placeholder="0"
-                min="0"
-                step="1000"
-              />
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-2 pt-2">
-              <button
-                onClick={() => setShowPaymentForm(false)}
-                className="flex-1 py-2 px-4 text-sm rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium"
-              >
-                انصراف
-              </button>
-              <button
-                onClick={handleProcessPayment}
-                disabled={processing || !amount || parseFloat(amount) <= 0}
-                className="flex-1 py-2 px-4 text-sm rounded-lg bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold shadow-lg flex items-center justify-center gap-1"
-              >
-                {processing ? (
-                  <>⏳ در حال ثبت...</>
-                ) : (
-                  <>✓ ثبت</>
-                )}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Payment History */}
-        {payments.length > 0 && (
-          <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <span>📜</span> تاریخچه پرداخت‌ها
-            </h3>
-            <div className="space-y-3">
-              {payments.map((payment, index) => (
-                <div
-                  key={payment.id}
-                  className="bg-gray-750 rounded-xl p-4 border border-gray-600"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <span className="font-bold text-white">#{index + 1}</span>
-                      <span className="text-sm text-gray-400 mr-3">{payment.method}</span>
-                    </div>
-                    <span className="text-lg font-bold text-green-400">
-                      {formatPersianMoney(parseFloat(payment.amount_applied))}
-                    </span>
+                      );
+                    })}
                   </div>
-                  {parseFloat(payment.tip_amount) > 0 && (
-                    <p className="text-sm text-gray-400">
-                      انعام: {formatPersianMoney(parseFloat(payment.tip_amount))}
-                    </p>
+                  {selectedItems.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-gray-600 flex justify-between items-center">
+                      <span className="text-xs text-gray-400">جمع:</span>
+                      <span className="text-sm font-bold text-indigo-400">
+                        {formatPersianMoney(calculateSelectedItemsTotal())}
+                      </span>
+                    </div>
                   )}
-                  <p className="text-xs text-gray-500 mt-2">
-                    {new Date(payment.received_at).toLocaleString('fa-IR')}
-                  </p>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
 
-        {/* Cancel Invoice Button */}
+                {/* Amount */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-400 mb-1.5">مبلغ پرداختی (تومان)</label>
+                  <input
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm font-bold focus:border-indigo-500 focus:outline-none"
+                    placeholder="0"
+                    min="0"
+                    step="1000"
+                  />
+                </div>
+
+                {/* Tip Amount */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-400 mb-1.5">انعام (اختیاری)</label>
+                  <input
+                    type="number"
+                    value={tipAmount}
+                    onChange={(e) => setTipAmount(e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm font-bold focus:border-green-500 focus:outline-none"
+                    placeholder="0"
+                    min="0"
+                    step="1000"
+                  />
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={() => setShowPaymentForm(false)}
+                    className="flex-1 py-2 px-4 text-sm rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium"
+                  >
+                    انصراف
+                  </button>
+                  <button
+                    onClick={handleProcessPayment}
+                    disabled={processing || !amount || parseFloat(amount) <= 0}
+                    className="flex-1 py-2 px-4 text-sm rounded-lg bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold shadow-lg flex items-center justify-center gap-1"
+                  >
+                    {processing ? (
+                      <>⏳ در حال ثبت...</>
+                    ) : (
+                      <>✓ ثبت</>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Payment History */}
+            {payments.length > 0 && (
+              <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                  <span>📜</span> تاریخچه پرداخت‌ها
+                </h3>
+                <div className="space-y-3">
+                  {payments.map((payment, index) => (
+                    <div
+                      key={payment.id}
+                      className="bg-gray-750 rounded-xl p-4 border border-gray-600"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <span className="font-bold text-white">#{index + 1}</span>
+                          <span className="text-sm text-gray-400 mr-3">{payment.method}</span>
+                        </div>
+                        <span className="text-lg font-bold text-green-400">
+                          {formatPersianMoney(parseFloat(payment.amount_applied))}
+                        </span>
+                      </div>
+                      {parseFloat(payment.tip_amount) > 0 && (
+                        <p className="text-sm text-gray-400">
+                          انعام: {formatPersianMoney(parseFloat(payment.tip_amount))}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-500 mt-2">
+                        {new Date(payment.received_at).toLocaleString('fa-IR')}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Cancel Invoice Button - Full Width Below Grid */}
         {!isPaid && !isPartiallyPaid && canPayment && (
           <button
             onClick={handleCancelInvoice}
             disabled={canceling}
-            className="w-full py-4 px-6 rounded-xl bg-red-900/30 hover:bg-red-900/40 border-2 border-red-700 text-red-400 font-bold flex items-center justify-center gap-3 disabled:opacity-50"
+            className="w-full py-4 px-6 rounded-xl bg-red-900/30 hover:bg-red-900/40 border-2 border-red-700 text-red-400 font-bold flex items-center justify-center gap-3 disabled:opacity-50 mt-3"
           >
             {canceling ? (
               <>⏳ در حال لغو...</>

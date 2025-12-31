@@ -55,13 +55,11 @@ class Profile(TimeStampedModel):
         default=Decimal("0"),
         help_text=_("Total amount paid by this user"),
     )
-    account_balance = models.DecimalField(
-        verbose_name=_("Account Balance"),
-        max_digits=12,
-        decimal_places=2,
-        default=Decimal("0"),
-        help_text=_("Remaining balance (total_debt - total_payment)"),
-    )
+
+    @property
+    def account_balance(self) -> Decimal:
+        """Calculate remaining balance (total_debt - total_payment)"""
+        return self.total_debt - self.total_payment
 
     def __str__(self):
         return f"{self.user.name}: ({self.user.mobile})"
