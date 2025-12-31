@@ -93,6 +93,16 @@ class SalePayment(models.Model):
         default=PaymentStatus.COMPLETED,
         db_index=True,
     )
+
+    # Item tracking for split payments
+    sale_items = models.ManyToManyField(
+        "sale.SaleItem",
+        blank=True,
+        related_name="payments",
+        verbose_name=_("Sale items"),
+        help_text=_("Specific items this payment covers (empty means all items)"),
+    )
+
     history = HistoricalRecords()
 
     # History tracking

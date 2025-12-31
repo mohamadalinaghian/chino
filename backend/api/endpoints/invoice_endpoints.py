@@ -141,6 +141,7 @@ def process_payment(request, invoice_id: int, payload: ProcessPaymentRequest):
             amount_applied=payload.amount_applied,
             tip_amount=payload.tip_amount,
             destination_account=destination_account,
+            sale_item_ids=payload.sale_item_ids,
         )
     except PermissionDenied as e:
         raise HttpError(403, str(e))

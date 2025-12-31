@@ -17,6 +17,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/libs/auth/AuthContext';
 import { SaleApiClient } from '@/libs/sale/saleApiClient';
+import { InvoiceApiClient } from '@/libs/invoice/invoiceApiClient';
 import { MenuApiClient } from '@/libs/menu/menuApiClient';
 import { formatPersianMoney } from '@/libs/tools/persianMoney';
 import type {
@@ -284,13 +285,35 @@ export default function SaleDetailPage() {
   };
 
   /**
-   * Close sale - Redirect to invoice payment
+   * Close sale - Initiate invoice and redirect to payment
    */
   const handleClose = async () => {
     if (!canClose) return;
 
-    // Redirect to invoice payment page instead of direct close
-    router.push(`/invoice/${saleId}`);
+    try {
+      setClosing(true);
+      setError(null);
+
+      // First, initiate the invoice for this sale
+      const invoice = await InvoiceApiClient.initiateInvoice(saleId);
+
+      // If successful, redirect to the invoice payment page
+      router.push(`/invoice/${saleId}`);
+    } catch (err) {
+      // Handle errors
+      const errorMessage = err instanceof Error ? err.message : 'خطا در ایجاد فاکتور';
+
+      // Check if invoice already exists
+      if (errorMessage.includes('قبلاً') || errorMessage.includes('already')) {
+        // Invoice already exists, redirect to it anyway
+        router.push(`/invoice/${saleId}`);
+      } else {
+        // Show error to user
+        setError(errorMessage);
+      }
+    } finally {
+      setClosing(false);
+    }
   };
 
   /**

@@ -58,12 +58,14 @@ class ProcessPaymentRequest(Schema):
     - amount_applied: Amount applied to invoice balance (required, > 0)
     - tip_amount: Optional tip (default 0, cannot be negative)
     - destination_account: Required for POS and CARD_TRANSFER methods
+    - sale_item_ids: Optional list of specific items this payment covers (for split payments)
     """
 
     method: PaymentMethodEnum
     amount_applied: Decimal
     tip_amount: Decimal = Decimal("0")
     destination_account_id: Optional[int] = None
+    sale_item_ids: Optional[list[int]] = None
 
 
 class CancelInvoiceRequest(Schema):

@@ -35,6 +35,7 @@ class ProcessInvoicePaymentService:
         amount_applied: Decimal,
         tip_amount: Decimal = Decimal("0"),
         destination_account=None,
+        sale_item_ids: Optional[list[int]] = None,
     ) -> SalePayment:
         """
         Process a payment and potentially close the sale.
@@ -46,6 +47,7 @@ class ProcessInvoicePaymentService:
             amount_applied: Amount applied to invoice balance
             tip_amount: Optional tip amount (default 0)
             destination_account: Bank account for POS/CARD_TRANSFER (required for those methods)
+            sale_item_ids: Optional list of sale item IDs for split payments
 
         Returns:
             SalePayment instance
@@ -68,6 +70,7 @@ class ProcessInvoicePaymentService:
             amount_applied=amount_applied,
             tip_amount=tip_amount,
             destination_account=destination_account,
+            sale_item_ids=sale_item_ids,
         )
 
         # Refresh invoice to get updated status

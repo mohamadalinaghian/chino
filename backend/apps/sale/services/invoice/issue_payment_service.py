@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import Optional
 
 from apps.sale.models import SaleInvoice, SalePayment
 from apps.sale.policies import can_issue_payment
@@ -29,6 +30,7 @@ class IssuePaymentService:
         amount_applied: Decimal,
         tip_amount: Decimal = Decimal("0"),
         destination_account=None,
+        sale_item_ids: Optional[list[int]] = None,
     ) -> SalePayment:
         can_issue_payment(received_by, invoice)
 
@@ -41,6 +43,12 @@ class IssuePaymentService:
         if tip_amount < 0:
             raise ValidationError(_("Tip amount cannot be negative"))
 
+        # Validate sale items if provided
+        if sale_item_ids:
+            sale_items = invoice.sale.items.filter(id__in=sale_item_ids)
+            if sale_items.count() != len(sale_item_ids):
+                raise ValidationError(_("One or more sale items not found in this invoice"))
+
         amount_total = amount_applied + tip_amount
 
         payment = SalePayment.objects.create(
@@ -52,6 +60,10 @@ class IssuePaymentService:
             destination_account=destination_account,
             received_by=received_by,
         )
+
+        # Attach sale items if provided (for split payments)
+        if sale_item_ids:
+            payment.sale_items.set(sale_item_ids)
 
         cls._update_invoice_status(invoice)
         return payment

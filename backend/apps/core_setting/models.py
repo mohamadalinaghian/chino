@@ -62,6 +62,17 @@ class SiteSettings(models.Model):
         _("Thumbnail max height"), default=200, validators=[MinValueValidator(50)]
     )
 
+    # Payment settings
+    default_pos_account = models.ForeignKey(
+        "user.BankAccount",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name=_("Default POS terminal account"),
+        help_text=_("Default bank account for POS terminal payments"),
+        related_name="pos_settings",
+    )
+
     updated_at = models.DateTimeField(auto_now=True)
 
     # Property

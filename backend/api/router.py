@@ -7,6 +7,7 @@ from .endpoints import (
     menu_endpoints,
     menu_pdf_endpoints,
     sale_endpoints,
+    settings_endpoints,
     table_endpoints,
 )
 
@@ -24,4 +25,5 @@ api.add_router("/menu/", menu_endpoints.router_menu_display)
 api.add_router("/menu/", menu_pdf_endpoints.router_menu_pdf)
 api.add_router("/sale/", sale_endpoints.router)
 api.add_router("/invoice/", invoice_endpoints.router)
+api.add_router("/settings/", settings_endpoints.router)
 api.add_router("/table/", table_endpoints.router_table)
