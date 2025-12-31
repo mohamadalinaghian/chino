@@ -284,27 +284,13 @@ export default function SaleDetailPage() {
   };
 
   /**
-   * Close sale
+   * Close sale - Redirect to invoice payment
    */
   const handleClose = async () => {
     if (!canClose) return;
 
-    const confirm = window.confirm('آیا از بستن این فروش اطمینان دارید؟');
-    if (!confirm) return;
-
-    try {
-      setClosing(true);
-      setError(null);
-
-      await SaleApiClient.closeSale(saleId);
-
-      // Redirect to dashboard
-      router.push('/sale');
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'خطا در بستن فروش';
-      setError(message);
-      setClosing(false);
-    }
+    // Redirect to invoice payment page instead of direct close
+    router.push(`/invoice/${saleId}`);
   };
 
   /**
