@@ -15,18 +15,16 @@ class SaleItemInline(admin.TabularInline):
         "quantity",
         "unit_price",
         "total_price",
-        "note",
     )
     readonly_fields = ("total_price",)
     autocomplete_fields = ["product"]
 
+    @admin.display(description=_("Total"))
     def total_price(self, obj):
         """Display calculated total price."""
         if obj.pk:
             return format_html("<strong>{}</strong>", obj.quantity * obj.unit_price)
         return "-"
-
-    total_price.short_description = _("Total")
 
 
 class SaleDiscountInline(admin.TabularInline):
@@ -140,6 +138,7 @@ class SaleAdmin(admin.ModelAdmin):
 
     # autocomplete_fields = ["guest", "table"]
 
+    @admin.display()
     def state_badge(self, obj):
         """Display state with color badge."""
         colors = {
