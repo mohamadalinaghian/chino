@@ -36,17 +36,6 @@ class SaleItemInline(admin.TabularInline):
             return format_html("<strong>{}</strong>", obj.quantity * obj.unit_price)
         return "-"
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        """Filter product to only show Menu items."""
-        if db_field.name == "product":
-            from apps.menu.models import Menu
-            # Get all product IDs that are in Menu
-            menu_product_ids = Menu.objects.values_list('name_id', flat=True)
-            kwargs["queryset"] = db_field.related_model.objects.filter(
-                id__in=menu_product_ids
-            )
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
 
 class SaleDiscountInline(admin.TabularInline):
     """Inline for sale discounts."""
@@ -262,10 +251,13 @@ class SaleAdmin(admin.ModelAdmin):
         if not change and formset.model == SaleItem:
             # Creating new sale with items
             from apps.menu.models import Menu
+
             items_data = []
 
             for item_form in formset.forms:
-                if item_form.cleaned_data and not item_form.cleaned_data.get("DELETE", False):
+                if item_form.cleaned_data and not item_form.cleaned_data.get(
+                    "DELETE", False
+                ):
                     product = item_form.cleaned_data.get("product")
                     quantity = item_form.cleaned_data.get("quantity")
 
@@ -277,15 +269,18 @@ class SaleAdmin(admin.ModelAdmin):
                         except Menu.DoesNotExist:
                             messages.error(
                                 request,
-                                f"Product '{product.name}' is not in menu. Please select a menu item."
+                                f"Product '{
+                                    product.name}' is not in menu. Please select a menu item.",
                             )
                             return
 
-                        items_data.append({
-                            "product": product,
-                            "quantity": quantity,
-                            "unit_price": unit_price,
-                        })
+                        items_data.append(
+                            {
+                                "product": product,
+                                "quantity": quantity,
+                                "unit_price": unit_price,
+                            }
+                        )
 
             if not items_data:
                 messages.error(request, _("Sale must contain at least one item"))
@@ -338,12 +333,16 @@ class SaleAdmin(admin.ModelAdmin):
                 success_count += 1
             except (PermissionDenied, ValidationError) as e:
                 self.message_user(
-                    request, f"Failed to close sale {sale.id}: {str(e)}", level=messages.ERROR
+                    request,
+                    f"Failed to close sale {sale.id}: {str(e)}",
+                    level=messages.ERROR,
                 )
 
         if success_count:
             self.message_user(
-                request, f"Successfully closed {success_count} sale(s)", level=messages.SUCCESS
+                request,
+                f"Successfully closed {success_count} sale(s)",
+                level=messages.SUCCESS,
             )
 
     def has_add_permission(self, request):
