@@ -22,13 +22,14 @@ from api.schemas.invoice_schemas import (
     ProcessPaymentResponse,
 )
 from api.security.auth import jwt_auth
-from apps.sale.models import Sale, SaleInvoice
-from apps.sale.policies import (
-    can_cancel_invoice,
-    can_create_invoice,
-    can_issue_payment,
-    can_view_invoice,
+from apps.sale.models import Sale, SaleInvoice, SalePayment
+from apps.sale.policies import can_view_invoice
+from apps.sale.services import (
+    CancelInvoiceService,
+    InitiateInvoiceService,
+    ProcessInvoicePaymentService,
 )
+from apps.user.models import BankAccount
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from django_ratelimit.decorators import ratelimit
@@ -55,12 +56,31 @@ def initiate_invoice(request, sale_id: int, payload: InitiateInvoiceRequest):
     Returns:
         InitiateInvoiceResponse with invoice details
     """
-    # TODO: Implement using InitiateInvoiceService
-    # 1. Verify sale exists and is OPEN
-    # 2. Check permission
-    # 3. Call InitiateInvoiceService.execute()
-    # 4. Return response
-    pass
+    # 1. Verify sale exists
+    sale = get_object_or_404(Sale, id=sale_id)
+
+    # 2. Call service (permission check inside service)
+    try:
+        invoice = InitiateInvoiceService.execute(
+            sale=sale,
+            issued_by=request.auth,
+            tax_amount=payload.tax_amount,
+        )
+    except ValidationError as e:
+        return 422, {"detail": e.messages}
+
+    # 3. Return response
+    return InitiateInvoiceResponse(
+        invoice_id=invoice.pk,
+        invoice_number=invoice.invoice_number,
+        sale_id=sale.pk,
+        subtotal_amount=invoice.subtotal_amount,
+        discount_amount=invoice.discount_amount,
+        tax_amount=invoice.tax_amount,
+        total_amount=invoice.total_amount,
+        status=invoice.status,
+        sale_state=sale.state,
+    )
 
 
 @router.post("/invoices/{invoice_id}/process-payment", response=ProcessPaymentResponse)
@@ -85,13 +105,63 @@ def process_payment(request, invoice_id: int, payload: ProcessPaymentRequest):
     Returns:
         ProcessPaymentResponse with payment, invoice, and sale details
     """
-    # TODO: Implement using ProcessInvoicePaymentService
-    # 1. Verify invoice exists and is not VOID
-    # 2. Check permission
-    # 3. Call ProcessInvoicePaymentService.execute()
-    # 4. Build response with all payments
-    # 5. Return response
-    pass
+    # 1. Verify invoice exists with related sale and payments
+    invoice = get_object_or_404(
+        SaleInvoice.objects.select_related("sale").prefetch_related("payments"),
+        id=invoice_id,
+    )
+
+    # 2. Resolve destination account if provided
+    destination_account = None
+    if payload.destination_account_id:
+        destination_account = get_object_or_404(
+            BankAccount, id=payload.destination_account_id
+        )
+
+    # 3. Call service (permission check inside service)
+    try:
+        payment = ProcessInvoicePaymentService.execute(
+            invoice=invoice,
+            received_by=request.auth,
+            method=SalePayment.PaymentMethod(payload.method),
+            amount_applied=payload.amount_applied,
+            tip_amount=payload.tip_amount,
+            destination_account=destination_account,
+        )
+    except ValidationError as e:
+        return 422, {"detail": e.messages}
+
+    # 4. Refresh to get updated status and sale state
+    invoice.refresh_from_db()
+    sale = invoice.sale
+    sale.refresh_from_db()
+
+    # 5. Build payment list
+    payments = [
+        PaymentDetailSchema(
+            id=p.pk,
+            method=p.get_method_display(),
+            amount_applied=p.amount_applied,
+            tip_amount=p.tip_amount,
+            amount_total=p.amount_total,
+            received_at=p.received_at.isoformat(),
+        )
+        for p in invoice.payments.filter(status=SalePayment.PaymentStatus.COMPLETED)
+    ]
+
+    # 6. Return response
+    return ProcessPaymentResponse(
+        payment_id=payment.pk,
+        invoice_id=invoice.pk,
+        invoice_number=invoice.invoice_number,
+        invoice_status=invoice.status,
+        sale_id=sale.pk,
+        sale_state=sale.state,
+        total_amount=invoice.total_amount,
+        total_paid=invoice.total_paid,
+        balance_due=invoice.balance_due,
+        payments=payments,
+    )
 
 
 @router.post("/invoices/{invoice_id}/cancel", response=CancelInvoiceResponse)
@@ -108,13 +178,33 @@ def cancel_invoice(request, invoice_id: int, payload: CancelInvoiceRequest):
     Returns:
         CancelInvoiceResponse with updated invoice and sale status
     """
-    # TODO: Implement using CancelInvoiceService
-    # 1. Verify invoice exists
-    # 2. Check permission
-    # 3. Verify no completed payments
-    # 4. Call CancelInvoiceService.execute()
-    # 5. Return response
-    pass
+    # 1. Verify invoice exists with related sale
+    invoice = get_object_or_404(
+        SaleInvoice.objects.select_related("sale"), id=invoice_id
+    )
+
+    # 2. Call service (permission check inside service)
+    try:
+        invoice = CancelInvoiceService.execute(
+            invoice=invoice,
+            canceled_by=request.auth,
+            reason=payload.reason,
+        )
+    except ValidationError as e:
+        return 422, {"detail": e.messages}
+
+    # 3. Get sale state
+    sale = invoice.sale
+
+    # 4. Return response
+    return CancelInvoiceResponse(
+        invoice_id=invoice.pk,
+        invoice_number=invoice.invoice_number,
+        invoice_status=invoice.status,
+        sale_id=sale.pk,
+        sale_state=sale.state,
+        cancellation_reason=payload.reason,
+    )
 
 
 @router.get("/invoices/{invoice_id}", response=InvoiceDetailResponse)
@@ -125,10 +215,45 @@ def get_invoice_detail(request, invoice_id: int):
     Returns:
         InvoiceDetailResponse with invoice, payments, and balance info
     """
-    # TODO: Implement
-    # 1. Verify invoice exists
+    # 1. Verify invoice exists with related data
+    invoice = get_object_or_404(
+        SaleInvoice.objects.select_related("sale", "issued_by").prefetch_related(
+            "payments"
+        ),
+        id=invoice_id,
+    )
+
     # 2. Check permission
-    # 3. Prefetch payments
-    # 4. Build response
-    # 5. Return response
-    pass
+    can_view_invoice(request.auth, invoice)
+
+    # 3. Build payment list
+    payments = [
+        PaymentDetailSchema(
+            id=p.pk,
+            method=p.get_method_display(),
+            amount_applied=p.amount_applied,
+            tip_amount=p.tip_amount,
+            amount_total=p.amount_total,
+            received_at=p.received_at.isoformat(),
+        )
+        for p in invoice.payments.filter(status=SalePayment.PaymentStatus.COMPLETED)
+    ]
+
+    # 4. Return response
+    return InvoiceDetailResponse(
+        invoice_id=invoice.pk,
+        invoice_number=invoice.invoice_number,
+        sale_id=invoice.sale_id,
+        status=invoice.status,
+        subtotal_amount=invoice.subtotal_amount,
+        discount_amount=invoice.discount_amount,
+        tax_amount=invoice.tax_amount,
+        total_amount=invoice.total_amount,
+        total_paid=invoice.total_paid,
+        balance_due=invoice.balance_due,
+        is_fully_paid=invoice.is_fully_paid,
+        payments=payments,
+        issued_at=invoice.issued_at.isoformat(),
+        issued_by_name=invoice.issued_by.get_full_name()
+        or invoice.issued_by.username,
+    )

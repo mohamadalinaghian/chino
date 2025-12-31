@@ -37,14 +37,27 @@ def can_create_invoice(user, sale: Sale) -> None:
     Permission to create an invoice for a sale.
 
     Rules:
-        - Sale must be CLOSED
+        - Sale must be OPEN (new workflow) or CLOSED (legacy support)
+        - Sale must have at least one item
         - Sale must not already have an invoice
         - User must have sale.close_sale permission
+
+    Note:
+        New workflow creates invoices from OPEN sales.
+        Legacy workflow (CLOSED sales) is still supported for backward compatibility.
     """
     _require_authenticated(user)
 
-    if sale.state != Sale.State.CLOSED:
-        raise PermissionDenied(_("Only CLOSED sales can be invoiced"))
+    # Support both OPEN (new workflow) and CLOSED (legacy) sales
+    if sale.state not in [Sale.State.OPEN, Sale.State.CLOSED]:
+        raise PermissionDenied(
+            _("Only OPEN or CLOSED sales can be invoiced. Current state: %(state)s")
+            % {"state": sale.get_state_display()}
+        )
+
+    # Verify sale has items
+    if not sale.items.exists():
+        raise PermissionDenied(_("Cannot create invoice for empty sale"))
 
     # Check if invoice exists without triggering query if table doesn't exist
     try:
@@ -79,6 +92,33 @@ def can_void_invoice(user, invoice: SaleInvoice) -> None:
 
     if invoice.status == SaleInvoice.InvoiceStatus.VOID:
         raise PermissionDenied(_("Invoice already voided"))
+
+    _require_perm(user, "sale.close_sale")
+
+
+def can_cancel_invoice(user, invoice: SaleInvoice) -> None:
+    """
+    Permission to cancel/abort an invoice (rollback scenario).
+
+    Rules:
+        - Invoice must not be VOID already
+        - Invoice must not have COMPLETED payments (must refund first)
+        - User must have sale.close_sale permission
+
+    Note:
+        This is stricter than can_void_invoice - it prevents canceling
+        invoices that have received payments.
+    """
+    _require_authenticated(user)
+
+    if invoice.status == SaleInvoice.InvoiceStatus.VOID:
+        raise PermissionDenied(_("Invoice is already voided"))
+
+    # Check for completed payments - cannot cancel if money has been received
+    if invoice.payments.filter(status=SalePayment.PaymentStatus.COMPLETED).exists():
+        raise PermissionDenied(
+            _("Cannot cancel invoice with completed payments. Refund payments first.")
+        )
 
     _require_perm(user, "sale.close_sale")
 
