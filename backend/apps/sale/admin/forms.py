@@ -89,12 +89,6 @@ class SalePaymentAdminForm(forms.ModelForm):
             "destination_account",
         )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Set initial values
-        if not self.instance.pk:
-            self.fields["tip_amount"].initial = Decimal("0.0000")
-
     def clean_amount_applied(self):
         """Validate amount is positive."""
         amount = self.cleaned_data.get("amount_applied")
@@ -105,9 +99,11 @@ class SalePaymentAdminForm(forms.ModelForm):
     def clean_tip_amount(self):
         """Validate tip is non-negative."""
         tip = self.cleaned_data.get("tip_amount")
-        if tip and tip < 0:
+        if tip is None:
+            return Decimal("0.0000")
+        if tip < 0:
             raise ValidationError(_("Tip amount cannot be negative"))
-        return tip or Decimal("0.0000")
+        return tip
 
     def clean(self):
         """Validate total payment."""

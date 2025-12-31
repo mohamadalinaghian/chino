@@ -61,65 +61,98 @@ class SaleInvoiceAdmin(admin.ModelAdmin):
         "issued_by__username",
     )
 
-    readonly_fields = (
-        "sale",
-        "invoice_number",
-        "subtotal_amount",
-        "discount_amount",
-        "tax_amount",
-        "total_amount",
-        "status",
-        "issued_by",
-        "issued_at",
-        "total_paid_display",
-        "balance_due_display",
-        "is_fully_paid",
-        "payment_summary",
-    )
+    def get_readonly_fields(self, request, obj=None):
+        """Make all fields readonly except for creation."""
+        if obj:  # Editing existing invoice
+            return (
+                "sale",
+                "invoice_number",
+                "subtotal_amount",
+                "discount_amount",
+                "tax_amount",
+                "total_amount",
+                "status",
+                "issued_by",
+                "issued_at",
+                "total_paid_display",
+                "balance_due_display",
+                "is_fully_paid",
+                "payment_summary",
+            )
+        else:  # Creating new invoice
+            return (
+                "invoice_number",
+                "subtotal_amount",
+                "discount_amount",
+                "total_amount",
+                "status",
+                "issued_by",
+                "issued_at",
+                "total_paid_display",
+                "balance_due_display",
+                "is_fully_paid",
+                "payment_summary",
+            )
 
-    fieldsets = (
-        (
-            _("Invoice Information"),
-            {
-                "fields": (
-                    "invoice_number",
-                    "sale",
-                    "status",
-                )
-            },
-        ),
-        (
-            _("Financial Details"),
-            {
-                "fields": (
-                    "subtotal_amount",
-                    "discount_amount",
-                    "tax_amount",
-                    "total_amount",
-                )
-            },
-        ),
-        (
-            _("Payment Status"),
-            {
-                "fields": (
-                    "total_paid_display",
-                    "balance_due_display",
-                    "is_fully_paid",
-                    "payment_summary",
-                )
-            },
-        ),
-        (
-            _("Issuance"),
-            {
-                "fields": (
-                    "issued_by",
-                    "issued_at",
-                )
-            },
-        ),
-    )
+    def get_fieldsets(self, request, obj=None):
+        """Show different fieldsets for creation vs viewing."""
+        if obj:  # Editing/viewing existing invoice
+            return (
+                (
+                    _("Invoice Information"),
+                    {
+                        "fields": (
+                            "invoice_number",
+                            "sale",
+                            "status",
+                        )
+                    },
+                ),
+                (
+                    _("Financial Details"),
+                    {
+                        "fields": (
+                            "subtotal_amount",
+                            "discount_amount",
+                            "tax_amount",
+                            "total_amount",
+                        )
+                    },
+                ),
+                (
+                    _("Payment Status"),
+                    {
+                        "fields": (
+                            "total_paid_display",
+                            "balance_due_display",
+                            "is_fully_paid",
+                            "payment_summary",
+                        )
+                    },
+                ),
+                (
+                    _("Issuance"),
+                    {
+                        "fields": (
+                            "issued_by",
+                            "issued_at",
+                        )
+                    },
+                ),
+            )
+        else:  # Creating new invoice
+            return (
+                (
+                    _("Create Invoice"),
+                    {
+                        "fields": (
+                            "sale",
+                            "tax_amount",
+                        ),
+                        "description": _("Select a CLOSED sale and optionally enter tax amount. Other fields will be auto-filled from the sale.")
+                    },
+                ),
+            )
 
     inlines = [SalePaymentInline]
 

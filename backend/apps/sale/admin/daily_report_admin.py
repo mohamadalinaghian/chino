@@ -95,29 +95,46 @@ class DailyReportAdmin(admin.ModelAdmin):
         "notes",
     )
 
-    readonly_fields = (
-        "status",
-        "created_by",
-        "approved_by",
-        "created_at",
-        "submitted_at",
-        "approved_at",
-        "closed_at",
-        # Revenue (auto-calculated)
-        "expected_total_sales",
-        "expected_total_tips",
-        "expected_total_refunds",
-        "expected_total_discounts",
-        "expected_total_tax",
-        # Computed totals
-        "total_revenue",
-        "total_costs",
-        "net_profit",
-        "net_cash_received",
-        "cash_variance_display",
-        "total_variance_display",
-        "financial_summary",
-    )
+    def get_readonly_fields(self, request, obj=None):
+        """Make revenue fields readonly, allow editing cost fields."""
+        readonly = [
+            "status",
+            "created_by",
+            "approved_by",
+            "created_at",
+            "submitted_at",
+            "approved_at",
+            "closed_at",
+            # Revenue (auto-calculated)
+            "expected_total_sales",
+            "expected_total_tips",
+            "expected_total_refunds",
+            "expected_total_discounts",
+            "expected_total_tax",
+            # Computed totals
+            "total_revenue",
+            "total_costs",
+            "net_profit",
+            "net_cash_received",
+            "cash_variance_display",
+            "total_variance_display",
+            "financial_summary",
+        ]
+
+        # If not a DRAFT report, make everything readonly
+        if obj and obj.status != DailyReport.ReportStatus.DRAFT:
+            readonly.extend([
+                "report_date",
+                "opening_float",
+                "closing_cash_counted",
+                "cost_of_goods_sold",
+                "labor_costs",
+                "operating_expenses",
+                "variance_reason",
+                "notes",
+            ])
+
+        return readonly
 
     fieldsets = (
         (
@@ -449,6 +466,31 @@ class DailyReportAdmin(admin.ModelAdmin):
             "created_by",
             "approved_by",
         ).prefetch_related("payment_methods", "cash_denominations")
+
+    def save_model(self, request, obj, form, change):
+        """Use CreateDailyReportService for new reports."""
+        if not change:  # Creating new report
+            try:
+                report = CreateDailyReportService.execute(
+                    created_by=request.user,
+                    report_date=obj.report_date,
+                    opening_float=obj.opening_float,
+                    cost_of_goods_sold=obj.cost_of_goods_sold,
+                    labor_costs=obj.labor_costs,
+                    operating_expenses=obj.operating_expenses,
+                    notes=obj.notes or "",
+                )
+                form.instance = report
+                messages.success(request, _("Daily report created successfully"))
+            except (ValidationError, PermissionDenied) as e:
+                messages.error(request, str(e))
+                raise
+        else:
+            # Only allow editing DRAFT reports
+            if obj.status != DailyReport.ReportStatus.DRAFT:
+                messages.error(request, _("Only DRAFT reports can be edited"))
+                return
+            super().save_model(request, obj, form, change)
 
     def has_delete_permission(self, request, obj=None):
         """Prevent deleting reports through admin."""

@@ -21,7 +21,7 @@ class SaleItemInline(admin.TabularInline):
         "unit_price",
         "total_price",
     )
-    readonly_fields = ("total_price",)
+    readonly_fields = ("unit_price", "total_price")
     autocomplete_fields = ["product"]
 
     def get_queryset(self, request):
@@ -35,6 +35,17 @@ class SaleItemInline(admin.TabularInline):
         if obj.pk:
             return format_html("<strong>{}</strong>", obj.quantity * obj.unit_price)
         return "-"
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        """Filter product to only show Menu items."""
+        if db_field.name == "product":
+            from apps.menu.models import Menu
+            # Get all product IDs that are in Menu
+            menu_product_ids = Menu.objects.values_list('name_id', flat=True)
+            kwargs["queryset"] = db_field.related_model.objects.filter(
+                id__in=menu_product_ids
+            )
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class SaleDiscountInline(admin.TabularInline):
@@ -250,14 +261,26 @@ class SaleAdmin(admin.ModelAdmin):
         """Handle item creation through service layer."""
         if not change and formset.model == SaleItem:
             # Creating new sale with items
+            from apps.menu.models import Menu
             items_data = []
+
             for item_form in formset.forms:
                 if item_form.cleaned_data and not item_form.cleaned_data.get("DELETE", False):
                     product = item_form.cleaned_data.get("product")
                     quantity = item_form.cleaned_data.get("quantity")
-                    unit_price = item_form.cleaned_data.get("unit_price")
 
                     if product and quantity:
+                        # Auto-fill unit_price from Menu
+                        try:
+                            menu = Menu.objects.get(name=product)
+                            unit_price = menu.price
+                        except Menu.DoesNotExist:
+                            messages.error(
+                                request,
+                                f"Product '{product.name}' is not in menu. Please select a menu item."
+                            )
+                            return
+
                         items_data.append({
                             "product": product,
                             "quantity": quantity,
@@ -281,7 +304,7 @@ class SaleAdmin(admin.ModelAdmin):
                         state=Sale.State.OPEN,
                     )
 
-                    # Create items
+                    # Create items with price from Menu
                     for item_data in items_data:
                         SaleItem.objects.create(
                             sale=sale,
