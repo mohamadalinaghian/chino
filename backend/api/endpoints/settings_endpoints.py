@@ -6,6 +6,7 @@ Provides access to site-wide settings.
 from api.security.auth import jwt_auth
 from apps.core_setting.models import SiteSettings
 from apps.user.models import BankAccount
+from django.db.models import F
 from ninja import Router, Schema
 from ninja.errors import HttpError
 from typing import Optional, List
@@ -69,22 +70,38 @@ def get_bank_accounts(request):
 
     Returns only accounts with positive balance (account_balance > 0),
     sorted from highest to lowest balance.
+
+    Note: account_balance is a calculated property (total_debt - total_payment),
+    so we filter using the underlying fields instead of the property.
     """
-    # Get accounts with positive balance, ordered by balance descending
+    # Get all accounts and filter in Python for positive balance
+    # Filter on total_debt > total_payment to avoid querying computed property
     accounts = (
         BankAccount.objects
         .select_related('related_user__profile')
-        .filter(related_user__profile__account_balance__gt=0)
-        .order_by('-related_user__profile__account_balance')
+        .filter(related_user__profile__total_debt__gt=F('related_user__profile__total_payment'))
+        .all()
     )
+
+    # Create list with balance calculated, then sort by balance
+    accounts_with_balance = [
+        {
+            'account': account,
+            'balance': account.related_user.profile.account_balance,
+        }
+        for account in accounts
+    ]
+
+    # Sort by balance descending
+    accounts_with_balance.sort(key=lambda x: x['balance'], reverse=True)
 
     return [
         BankAccountSchema(
-            id=account.pk,
-            card_number=account.card_number,
-            bank_name=account.bank_name,
-            account_owner=account.account_owner,
-            account_balance=str(account.related_user.profile.account_balance),
+            id=item['account'].pk,
+            card_number=item['account'].card_number,
+            bank_name=item['account'].bank_name,
+            account_owner=item['account'].account_owner,
+            account_balance=str(item['balance']),
         )
-        for account in accounts
+        for item in accounts_with_balance
     ]
