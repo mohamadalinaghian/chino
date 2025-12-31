@@ -61,9 +61,13 @@ class InitiateInvoiceService:
         if not sale.items.exists():
             raise ValidationError(_("Cannot create invoice for empty sale"))
 
-        # Check if invoice already exists
+        # Check if invoice already exists - return existing if not VOID (idempotent)
         if hasattr(sale, "invoice"):
-            raise ValidationError(_("Invoice already exists for this sale"))
+            existing_invoice = sale.invoice
+            # If existing invoice is VOID, allow creating a new one
+            if existing_invoice.status != SaleInvoice.InvoiceStatus.VOID:
+                return existing_invoice
+            # If VOID, we'll create a new one below
 
         # Calculate totals
         subtotal = sale.total_amount or Decimal("0")
