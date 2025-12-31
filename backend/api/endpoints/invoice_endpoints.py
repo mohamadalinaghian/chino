@@ -30,16 +30,42 @@ from apps.sale.services import (
     ProcessInvoicePaymentService,
 )
 from apps.user.models import BankAccount
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, PermissionDenied
 from django.shortcuts import get_object_or_404
-from django_ratelimit.decorators import ratelimit
 from ninja import Router
 
 router = Router(tags=["Invoices"], auth=jwt_auth)
 
 
+def _handle_error(error: Exception) -> tuple[int, dict]:
+    """
+    Convert exceptions to user-friendly Persian error responses.
+
+    Args:
+        error: Exception to handle
+
+    Returns:
+        Tuple of (status_code, error_dict)
+    """
+    if isinstance(error, PermissionDenied):
+        return 403, {"detail": str(error)}
+
+    if isinstance(error, ValidationError):
+        if hasattr(error, 'message_dict'):
+            messages = []
+            for field, errors in error.message_dict.items():
+                messages.extend(errors)
+            return 422, {"detail": " | ".join(messages)}
+        elif hasattr(error, 'messages'):
+            return 422, {"detail": " | ".join(error.messages)}
+        else:
+            return 422, {"detail": str(error)}
+
+    # Default error
+    return 500, {"detail": "خطای داخلی سرور. لطفاً با پشتیبانی تماس بگیرید."}
+
+
 @router.post("/sales/{sale_id}/initiate-invoice", response=InitiateInvoiceResponse)
-@ratelimit(key="user", rate="5/m", method="POST")
 def initiate_invoice(request, sale_id: int, payload: InitiateInvoiceRequest):
     """
     Initiate invoice from an OPEN sale.
@@ -66,8 +92,8 @@ def initiate_invoice(request, sale_id: int, payload: InitiateInvoiceRequest):
             issued_by=request.auth,
             tax_amount=payload.tax_amount,
         )
-    except ValidationError as e:
-        return 422, {"detail": e.messages}
+    except (ValidationError, PermissionDenied) as e:
+        return _handle_error(e)
 
     # 3. Return response
     return InitiateInvoiceResponse(
@@ -84,7 +110,6 @@ def initiate_invoice(request, sale_id: int, payload: InitiateInvoiceRequest):
 
 
 @router.post("/invoices/{invoice_id}/process-payment", response=ProcessPaymentResponse)
-@ratelimit(key="user", rate="10/m", method="POST")
 def process_payment(request, invoice_id: int, payload: ProcessPaymentRequest):
     """
     Process a payment against an invoice.
@@ -128,8 +153,8 @@ def process_payment(request, invoice_id: int, payload: ProcessPaymentRequest):
             tip_amount=payload.tip_amount,
             destination_account=destination_account,
         )
-    except ValidationError as e:
-        return 422, {"detail": e.messages}
+    except (ValidationError, PermissionDenied) as e:
+        return _handle_error(e)
 
     # 4. Refresh to get updated status and sale state
     invoice.refresh_from_db()
@@ -165,7 +190,6 @@ def process_payment(request, invoice_id: int, payload: ProcessPaymentRequest):
 
 
 @router.post("/invoices/{invoice_id}/cancel", response=CancelInvoiceResponse)
-@ratelimit(key="user", rate="5/m", method="POST")
 def cancel_invoice(request, invoice_id: int, payload: CancelInvoiceRequest):
     """
     Cancel/abort an invoice (rollback scenario).
@@ -190,8 +214,8 @@ def cancel_invoice(request, invoice_id: int, payload: CancelInvoiceRequest):
             canceled_by=request.auth,
             reason=payload.reason,
         )
-    except ValidationError as e:
-        return 422, {"detail": e.messages}
+    except (ValidationError, PermissionDenied) as e:
+        return _handle_error(e)
 
     # 3. Get sale state
     sale = invoice.sale
@@ -224,7 +248,10 @@ def get_invoice_detail(request, invoice_id: int):
     )
 
     # 2. Check permission
-    can_view_invoice(request.auth, invoice)
+    try:
+        can_view_invoice(request.auth, invoice)
+    except PermissionDenied as e:
+        return 403, {"detail": str(e)}
 
     # 3. Build payment list
     payments = [
