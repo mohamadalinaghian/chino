@@ -9,6 +9,7 @@
  * ✅ Beautiful mobile-first UI
  * ✅ Real-time balance calculation
  * ✅ Payment history display
+ * ✅ Component-based architecture
  *
  * SCENARIOS:
  * 1. Full Payment: Invoice PAID → Sale auto-closes
@@ -23,18 +24,29 @@ import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/libs/auth/AuthContext';
 import { InvoiceApiClient } from '@/libs/invoice/invoiceApiClient';
 import { SaleApiClient } from '@/libs/sale/saleApiClient';
-import { formatPersianMoney } from '@/libs/tools/persianMoney';
-import { formatJalaliLong } from '@/libs/tools/jalaliDate';
 import { CS_API_URL } from '@/libs/constants';
 import {
-  InitiateInvoiceResponse,
-  ProcessPaymentResponse,
   InvoiceDetailResponse,
+  ProcessPaymentResponse,
   PaymentMethod,
   InvoiceStatus,
-  PaymentDetail,
 } from '@/types/invoiceType';
 import { SaleDetailResponse } from '@/types/saleType';
+import {
+  InvoiceHeader,
+  PaymentProgress,
+  QuickPaymentButtons,
+  PaymentForm,
+  PaymentHistory,
+} from '@/components/invoice';
+
+interface BankAccount {
+  id: number;
+  bank_name: string;
+  card_number: string;
+  account_owner: string;
+  account_balance: string;
+}
 
 export default function InvoicePaymentPage() {
   const router = useRouter();
@@ -56,7 +68,7 @@ export default function InvoicePaymentPage() {
   const [processing, setProcessing] = useState(false);
   const [canceling, setCanceling] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
-  const [bankAccounts, setBankAccounts] = useState<Array<{id: number; bank_name: string; card_number: string; account_owner: string; account_balance: string}>>([]);
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
 
   // Item selection for split payments
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
@@ -87,7 +99,7 @@ export default function InvoicePaymentPage() {
    */
   const loadBankAccounts = async () => {
     try {
-      const response = await fetch(`${CS_API_URL}/settings/bank-accounts`, {
+      const response = await fetch(`${CS_API_URL}/settings/bank-accounts/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
@@ -97,7 +109,7 @@ export default function InvoicePaymentPage() {
         setBankAccounts(accounts);
 
         // Also load POS account and set it as default for POS payment
-        const posResponse = await fetch(`${CS_API_URL}/settings/pos-account`, {
+        const posResponse = await fetch(`${CS_API_URL}/settings/pos-account/`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           },
@@ -225,7 +237,7 @@ export default function InvoicePaymentPage() {
   };
 
   /**
-   * Quick payment buttons
+   * Quick payment handlers
    */
   const handleQuickPayment = (percentage: number) => {
     if (!invoice) return;
@@ -235,8 +247,15 @@ export default function InvoicePaymentPage() {
     setShowPaymentForm(true);
   };
 
+  const handleCustomPayment = () => {
+    setShowPaymentForm(true);
+    if (!showPaymentForm && invoice) {
+      setAmount(parseFloat(invoice.balance_due || invoice.total_amount).toString());
+    }
+  };
+
   /**
-   * Toggle item selection for split payments
+   * Item selection handlers
    */
   const toggleItemSelection = (itemId: number) => {
     setSelectedItems(prev => {
@@ -248,9 +267,6 @@ export default function InvoicePaymentPage() {
     });
   };
 
-  /**
-   * Calculate total amount from selected items
-   */
   const calculateSelectedItemsTotal = (): number => {
     if (!sale || selectedItems.length === 0) return 0;
 
@@ -265,9 +281,6 @@ export default function InvoicePaymentPage() {
       }, 0);
   };
 
-  /**
-   * Apply selected items total to payment amount
-   */
   const applySelectedItemsAmount = () => {
     const total = calculateSelectedItemsTotal();
     if (total > 0) {
@@ -317,51 +330,16 @@ export default function InvoicePaymentPage() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 pb-32">
-      {/* Sticky Header */}
-      <div className="sticky top-0 z-40 bg-gradient-to-b from-gray-900 to-gray-900/95 border-b-2 border-purple-500 shadow-xl backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => router.push(`/sale/${saleId}`)}
-                className="w-10 h-10 bg-gray-800 hover:bg-gray-700 rounded-lg flex items-center justify-center text-lg transition-all"
-              >
-                ←
-              </button>
-              <div>
-                <h1 className="text-base font-bold flex items-center gap-2">
-                  💳 فاکتور #{invoice.invoice_number}
-                  <span className={`
-                    px-2 py-1 rounded-full text-xs font-medium border
-                    ${isPaid ? 'bg-green-600/20 text-green-400 border-green-500' :
-                      isPartiallyPaid ? 'bg-yellow-600/20 text-yellow-400 border-yellow-500' :
-                        'bg-red-600/20 text-red-400 border-red-500'}
-                  `}>
-                    {isPaid ? 'پرداخت شده' : isPartiallyPaid ? 'پرداخت جزئی' : 'پرداخت نشده'}
-                  </span>
-                </h1>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  فروش #{sale.id} • {sale.table_number ? `میز ${sale.table_number}` : 'بیرون‌بر'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Amount Summary */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700">
-              <p className="text-xs text-gray-400 mb-0.5">جمع کل فاکتور</p>
-              <p className="text-base font-bold text-white">{formatPersianMoney(totalAmount)}</p>
-            </div>
-            <div className={`rounded-lg p-3 border ${balanceDue > 0 ? 'bg-red-900/20 border-red-800' : 'bg-green-900/20 border-green-800'}`}>
-              <p className="text-xs text-gray-400 mb-0.5">مانده پرداخت</p>
-              <p className={`text-base font-bold ${balanceDue > 0 ? 'text-red-400' : 'text-green-400'}`}>
-                {formatPersianMoney(balanceDue)}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Header */}
+      <InvoiceHeader
+        invoiceNumber={invoice.invoice_number}
+        invoiceStatus={invoice.invoice_status}
+        saleId={saleId}
+        sale={sale}
+        totalAmount={totalAmount}
+        balanceDue={balanceDue}
+        onBack={() => router.push(`/sale/${saleId}`)}
+      />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-4">
@@ -380,280 +358,42 @@ export default function InvoicePaymentPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {/* Left Column */}
           <div className="space-y-3">
-            {/* Payment Progress */}
-            {totalPaid > 0 && (
-              <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-sm text-gray-400">پرداخت شده</span>
-                  <span className="text-sm font-bold text-green-400">{((totalPaid / totalAmount) * 100).toFixed(1)}%</span>
-                </div>
-                <div className="w-full h-4 bg-gray-700 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min((totalPaid / totalAmount) * 100, 100)}%` }}
-                  />
-                </div>
-                <div className="flex justify-between items-center mt-3 text-sm">
-                  <span className="text-green-400 font-bold">{formatPersianMoney(totalPaid)}</span>
-                  <span className="text-gray-400">از {formatPersianMoney(totalAmount)}</span>
-                </div>
-              </div>
-            )}
+            <PaymentProgress totalPaid={totalPaid} totalAmount={totalAmount} />
 
-            {/* Quick Payment Buttons */}
             {!isPaid && canPayment && (
-              <div className="bg-gradient-to-br from-purple-900/30 to-indigo-900/30 border border-purple-700 rounded-xl p-4">
-                <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
-                  <span>⚡</span> پرداخت سریع
-                </h3>
-                <div className="grid grid-cols-2 gap-2 mb-3">
-                  <button
-                    onClick={() => handleQuickPayment(100)}
-                    className="py-3 px-4 bg-gradient-to-br from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 rounded-lg font-medium text-sm text-white shadow-lg active:scale-95 transition-all"
-                  >
-                    💯 پرداخت کامل
-                    <div className="text-xs mt-0.5 opacity-90">{formatPersianMoney(balanceDue)}</div>
-                  </button>
-                  <button
-                    onClick={() => handleQuickPayment(50)}
-                    className="py-3 px-4 bg-gradient-to-br from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 rounded-lg font-medium text-sm text-white shadow-lg active:scale-95 transition-all"
-                  >
-                    50% پرداخت نصف
-                    <div className="text-xs mt-0.5 opacity-90">{formatPersianMoney(balanceDue * 0.5)}</div>
-                  </button>
-                </div>
-                <button
-                  onClick={() => {
-                    setShowPaymentForm(true);
-                    // Clear amount for manual entry
-                    if (!showPaymentForm) {
-                      setAmount(balanceDue.toString());
-                    }
-                  }}
-                  className="w-full py-3 px-5 bg-gradient-to-br from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl font-medium text-white shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"
-                >
-                  <span className="text-lg">💰</span> پرداخت با مبلغ دلخواه
-                </button>
-              </div>
+              <QuickPaymentButtons
+                balanceDue={balanceDue}
+                onFullPayment={() => handleQuickPayment(100)}
+                onHalfPayment={() => handleQuickPayment(50)}
+                onCustomPayment={handleCustomPayment}
+              />
             )}
           </div>
 
           {/* Right Column */}
           <div className="space-y-3">
-            {/* Payment Form */}
             {showPaymentForm && !isPaid && (
-              <div className="bg-gray-800 rounded-xl p-4 border border-indigo-500 space-y-3">
-                <h3 className="text-sm font-bold mb-2">💳 ثبت پرداخت</h3>
-
-                {/* Payment Method */}
-                <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1.5">روش پرداخت</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <button
-                      onClick={() => setPaymentMethod(PaymentMethod.CASH)}
-                      className={`py-2 px-3 text-xs rounded-lg font-medium border transition-all ${
-                        paymentMethod === PaymentMethod.CASH
-                          ? 'bg-green-600 border-green-500 text-white'
-                          : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-500'
-                      }`}
-                    >
-                      💵 نقد
-                    </button>
-                    <button
-                      onClick={() => setPaymentMethod(PaymentMethod.POS)}
-                      className={`py-2 px-3 text-xs rounded-lg font-medium border transition-all ${
-                        paymentMethod === PaymentMethod.POS
-                          ? 'bg-blue-600 border-blue-500 text-white'
-                          : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-500'
-                      }`}
-                    >
-                      💳 کارتخوان
-                    </button>
-                    <button
-                      onClick={() => setPaymentMethod(PaymentMethod.CARD_TRANSFER)}
-                      className={`py-2 px-3 text-xs rounded-lg font-medium border transition-all ${
-                        paymentMethod === PaymentMethod.CARD_TRANSFER
-                          ? 'bg-purple-600 border-purple-500 text-white'
-                          : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-500'
-                      }`}
-                    >
-                      📱 کارت‌به‌کارت
-                    </button>
-                  </div>
-                </div>
-
-                {/* Account Selection for Card Transfer */}
-                {paymentMethod === PaymentMethod.CARD_TRANSFER && (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-1.5">حساب مقصد (فقط حساب‌های دارای بدهی)</label>
-                    <select
-                      value={selectedAccountId || ''}
-                      onChange={(e) => setSelectedAccountId(Number(e.target.value))}
-                      className="w-full px-3 py-2 text-sm bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
-                      required
-                    >
-                      <option value="">انتخاب حساب...</option>
-                      {bankAccounts.map((account) => (
-                        <option key={account.id} value={account.id}>
-                          {account.account_owner} - {formatPersianMoney(parseFloat(account.account_balance))} ({account.card_number.slice(-4)})
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-xs text-gray-500 mt-1">مرتب شده از بیشترین به کمترین بدهی</p>
-                  </div>
-                )}
-
-                {/* Item Selection for Split Payments */}
-                <div className="bg-gray-750 rounded-lg p-3 border border-gray-600">
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="block text-xs font-medium text-gray-400">
-                      🧾 انتخاب اقلام
-                    </label>
-                    {selectedItems.length > 0 && (
-                      <button
-                        onClick={applySelectedItemsAmount}
-                        className="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-500 rounded text-xs font-medium text-white"
-                      >
-                        محاسبه ({selectedItems.length})
-                      </button>
-                    )}
-                  </div>
-                  <div className="max-h-48 overflow-y-auto space-y-1.5">
-                    {sale?.items.map((item) => {
-                      const itemTotal = parseFloat(item.unit_price) * item.quantity;
-                      const extrasTotal = item.extras.reduce((sum, extra) =>
-                        sum + (parseFloat(extra.unit_price) * extra.quantity), 0
-                      );
-                      const totalPrice = itemTotal + extrasTotal;
-                      const isSelected = selectedItems.includes(item.id);
-
-                      return (
-                        <div
-                          key={item.id}
-                          onClick={() => toggleItemSelection(item.id)}
-                          className={`p-2 rounded-md border cursor-pointer transition-all ${
-                            isSelected
-                              ? 'bg-indigo-600/20 border-indigo-500'
-                              : 'bg-gray-700 border-gray-600 hover:border-gray-500'
-                          }`}
-                        >
-                          <div className="flex items-start gap-2">
-                            <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center ${
-                              isSelected ? 'bg-indigo-600 border-indigo-500' : 'border-gray-500'
-                            }`}>
-                              {isSelected && <span className="text-white text-xs">✓</span>}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <p className="text-xs font-medium text-white">{item.product_name}</p>
-                                  <p className="text-xs text-gray-400">×{item.quantity}</p>
-                                </div>
-                                <p className="text-xs font-bold text-green-400">
-                                  {formatPersianMoney(totalPrice)}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {selectedItems.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-gray-600 flex justify-between items-center">
-                      <span className="text-xs text-gray-400">جمع:</span>
-                      <span className="text-sm font-bold text-indigo-400">
-                        {formatPersianMoney(calculateSelectedItemsTotal())}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Amount */}
-                <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1.5">مبلغ پرداختی (تومان)</label>
-                  <input
-                    type="number"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm font-bold focus:border-indigo-500 focus:outline-none"
-                    placeholder="0"
-                    min="0"
-                    step="1000"
-                  />
-                </div>
-
-                {/* Tip Amount */}
-                <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1.5">انعام (اختیاری)</label>
-                  <input
-                    type="number"
-                    value={tipAmount}
-                    onChange={(e) => setTipAmount(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm font-bold focus:border-green-500 focus:outline-none"
-                    placeholder="0"
-                    min="0"
-                    step="1000"
-                  />
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-2 pt-2">
-                  <button
-                    onClick={() => setShowPaymentForm(false)}
-                    className="flex-1 py-2 px-4 text-sm rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium"
-                  >
-                    انصراف
-                  </button>
-                  <button
-                    onClick={handleProcessPayment}
-                    disabled={processing || !amount || parseFloat(amount) <= 0}
-                    className="flex-1 py-2 px-4 text-sm rounded-lg bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold shadow-lg flex items-center justify-center gap-1"
-                  >
-                    {processing ? (
-                      <>⏳ در حال ثبت...</>
-                    ) : (
-                      <>✓ ثبت</>
-                    )}
-                  </button>
-                </div>
-              </div>
+              <PaymentForm
+                paymentMethod={paymentMethod}
+                amount={amount}
+                tipAmount={tipAmount}
+                selectedAccountId={selectedAccountId}
+                selectedItems={selectedItems}
+                bankAccounts={bankAccounts}
+                sale={sale}
+                onPaymentMethodChange={setPaymentMethod}
+                onAmountChange={setAmount}
+                onTipAmountChange={setTipAmount}
+                onAccountSelect={setSelectedAccountId}
+                onItemToggle={toggleItemSelection}
+                onCalculateItemsAmount={applySelectedItemsAmount}
+                onSubmit={handleProcessPayment}
+                onCancel={() => setShowPaymentForm(false)}
+                processing={processing}
+              />
             )}
 
-            {/* Payment History */}
-            {payments.length > 0 && (
-              <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
-                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                  <span>📜</span> تاریخچه پرداخت‌ها
-                </h3>
-                <div className="space-y-3">
-                  {payments.map((payment, index) => (
-                    <div
-                      key={payment.id}
-                      className="bg-gray-750 rounded-xl p-4 border border-gray-600"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <span className="font-bold text-white">#{index + 1}</span>
-                          <span className="text-sm text-gray-400 mr-3">{payment.method}</span>
-                        </div>
-                        <span className="text-lg font-bold text-green-400">
-                          {formatPersianMoney(parseFloat(payment.amount_applied))}
-                        </span>
-                      </div>
-                      {parseFloat(payment.tip_amount) > 0 && (
-                        <p className="text-sm text-gray-400">
-                          انعام: {formatPersianMoney(parseFloat(payment.tip_amount))}
-                        </p>
-                      )}
-                      <p className="text-xs text-gray-500 mt-2">
-                        {formatJalaliLong(payment.received_at)}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <PaymentHistory payments={payments} />
           </div>
         </div>
 
@@ -674,7 +414,7 @@ export default function InvoicePaymentPage() {
 
         {/* Success Message */}
         {isPaid && (
-          <div className="bg-green-900/30 border-2 border-green-700 rounded-2xl p-8 text-center">
+          <div className="bg-green-900/30 border-2 border-green-700 rounded-2xl p-8 text-center mt-3">
             <div className="text-6xl mb-4">✅</div>
             <h3 className="text-2xl font-bold text-green-400 mb-2">پرداخت کامل شد!</h3>
             <p className="text-gray-300 mb-6">فروش به طور خودکار بسته شد.</p>
