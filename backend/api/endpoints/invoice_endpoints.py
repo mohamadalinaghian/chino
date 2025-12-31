@@ -33,39 +33,12 @@ from apps.user.models import BankAccount
 from django.core.exceptions import ValidationError, PermissionDenied
 from django.shortcuts import get_object_or_404
 from ninja import Router
+from ninja.errors import HttpError
 
 router = Router(tags=["Invoices"], auth=jwt_auth)
 
 
-def _handle_error(error: Exception) -> tuple[int, dict]:
-    """
-    Convert exceptions to user-friendly Persian error responses.
-
-    Args:
-        error: Exception to handle
-
-    Returns:
-        Tuple of (status_code, error_dict)
-    """
-    if isinstance(error, PermissionDenied):
-        return 403, {"detail": str(error)}
-
-    if isinstance(error, ValidationError):
-        if hasattr(error, 'message_dict'):
-            messages = []
-            for field, errors in error.message_dict.items():
-                messages.extend(errors)
-            return 422, {"detail": " | ".join(messages)}
-        elif hasattr(error, 'messages'):
-            return 422, {"detail": " | ".join(error.messages)}
-        else:
-            return 422, {"detail": str(error)}
-
-    # Default error
-    return 500, {"detail": "خطای داخلی سرور. لطفاً با پشتیبانی تماس بگیرید."}
-
-
-@router.post("/sales/{sale_id}/initiate-invoice", response=InitiateInvoiceResponse)
+@router.post("/sales/{sale_id}/initiate-invoice", response={200: InitiateInvoiceResponse})
 def initiate_invoice(request, sale_id: int, payload: InitiateInvoiceRequest):
     """
     Initiate invoice from an OPEN sale.
@@ -81,6 +54,9 @@ def initiate_invoice(request, sale_id: int, payload: InitiateInvoiceRequest):
 
     Returns:
         InitiateInvoiceResponse with invoice details
+
+    Raises:
+        HttpError: 403 for permission denied, 422 for validation errors
     """
     # 1. Verify sale exists
     sale = get_object_or_404(Sale, id=sale_id)
@@ -92,8 +68,18 @@ def initiate_invoice(request, sale_id: int, payload: InitiateInvoiceRequest):
             issued_by=request.auth,
             tax_amount=payload.tax_amount,
         )
-    except (ValidationError, PermissionDenied) as e:
-        return _handle_error(e)
+    except PermissionDenied as e:
+        raise HttpError(403, str(e))
+    except ValidationError as e:
+        if hasattr(e, 'message_dict'):
+            messages = []
+            for field, errors in e.message_dict.items():
+                messages.extend(errors)
+            raise HttpError(422, " | ".join(messages))
+        elif hasattr(e, 'messages'):
+            raise HttpError(422, " | ".join(e.messages))
+        else:
+            raise HttpError(422, str(e))
 
     # 3. Return response
     return InitiateInvoiceResponse(
@@ -109,7 +95,7 @@ def initiate_invoice(request, sale_id: int, payload: InitiateInvoiceRequest):
     )
 
 
-@router.post("/invoices/{invoice_id}/process-payment", response=ProcessPaymentResponse)
+@router.post("/invoices/{invoice_id}/process-payment", response={200: ProcessPaymentResponse})
 def process_payment(request, invoice_id: int, payload: ProcessPaymentRequest):
     """
     Process a payment against an invoice.
@@ -129,6 +115,9 @@ def process_payment(request, invoice_id: int, payload: ProcessPaymentRequest):
 
     Returns:
         ProcessPaymentResponse with payment, invoice, and sale details
+
+    Raises:
+        HttpError: 403 for permission denied, 422 for validation errors
     """
     # 1. Verify invoice exists with related sale and payments
     invoice = get_object_or_404(
@@ -153,8 +142,18 @@ def process_payment(request, invoice_id: int, payload: ProcessPaymentRequest):
             tip_amount=payload.tip_amount,
             destination_account=destination_account,
         )
-    except (ValidationError, PermissionDenied) as e:
-        return _handle_error(e)
+    except PermissionDenied as e:
+        raise HttpError(403, str(e))
+    except ValidationError as e:
+        if hasattr(e, 'message_dict'):
+            messages = []
+            for field, errors in e.message_dict.items():
+                messages.extend(errors)
+            raise HttpError(422, " | ".join(messages))
+        elif hasattr(e, 'messages'):
+            raise HttpError(422, " | ".join(e.messages))
+        else:
+            raise HttpError(422, str(e))
 
     # 4. Refresh to get updated status and sale state
     invoice.refresh_from_db()
@@ -189,7 +188,7 @@ def process_payment(request, invoice_id: int, payload: ProcessPaymentRequest):
     )
 
 
-@router.post("/invoices/{invoice_id}/cancel", response=CancelInvoiceResponse)
+@router.post("/invoices/{invoice_id}/cancel", response={200: CancelInvoiceResponse})
 def cancel_invoice(request, invoice_id: int, payload: CancelInvoiceRequest):
     """
     Cancel/abort an invoice (rollback scenario).
@@ -201,6 +200,9 @@ def cancel_invoice(request, invoice_id: int, payload: CancelInvoiceRequest):
 
     Returns:
         CancelInvoiceResponse with updated invoice and sale status
+
+    Raises:
+        HttpError: 403 for permission denied, 422 for validation errors
     """
     # 1. Verify invoice exists with related sale
     invoice = get_object_or_404(
@@ -214,8 +216,18 @@ def cancel_invoice(request, invoice_id: int, payload: CancelInvoiceRequest):
             canceled_by=request.auth,
             reason=payload.reason,
         )
-    except (ValidationError, PermissionDenied) as e:
-        return _handle_error(e)
+    except PermissionDenied as e:
+        raise HttpError(403, str(e))
+    except ValidationError as e:
+        if hasattr(e, 'message_dict'):
+            messages = []
+            for field, errors in e.message_dict.items():
+                messages.extend(errors)
+            raise HttpError(422, " | ".join(messages))
+        elif hasattr(e, 'messages'):
+            raise HttpError(422, " | ".join(e.messages))
+        else:
+            raise HttpError(422, str(e))
 
     # 3. Get sale state
     sale = invoice.sale
@@ -231,13 +243,16 @@ def cancel_invoice(request, invoice_id: int, payload: CancelInvoiceRequest):
     )
 
 
-@router.get("/invoices/{invoice_id}", response=InvoiceDetailResponse)
+@router.get("/invoices/{invoice_id}", response={200: InvoiceDetailResponse})
 def get_invoice_detail(request, invoice_id: int):
     """
     Get complete invoice details including all payments.
 
     Returns:
         InvoiceDetailResponse with invoice, payments, and balance info
+
+    Raises:
+        HttpError: 403 for permission denied
     """
     # 1. Verify invoice exists with related data
     invoice = get_object_or_404(
@@ -251,7 +266,7 @@ def get_invoice_detail(request, invoice_id: int):
     try:
         can_view_invoice(request.auth, invoice)
     except PermissionDenied as e:
-        return 403, {"detail": str(e)}
+        raise HttpError(403, str(e))
 
     # 3. Build payment list
     payments = [
