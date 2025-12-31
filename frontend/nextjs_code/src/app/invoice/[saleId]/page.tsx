@@ -27,6 +27,7 @@ import { formatPersianMoney } from '@/libs/tools/persianMoney';
 import {
   InitiateInvoiceResponse,
   ProcessPaymentResponse,
+  InvoiceDetailResponse,
   PaymentMethod,
   InvoiceStatus,
   PaymentDetail,
@@ -41,7 +42,7 @@ export default function InvoicePaymentPage() {
 
   // Data states
   const [sale, setSale] = useState<SaleDetailResponse | null>(null);
-  const [invoice, setInvoice] = useState<InitiateInvoiceResponse | ProcessPaymentResponse | null>(null);
+  const [invoice, setInvoice] = useState<InvoiceDetailResponse | ProcessPaymentResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,6 +53,9 @@ export default function InvoicePaymentPage() {
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [canceling, setCanceling] = useState(false);
+
+  // Item selection for split payments
+  const [selectedItems, setSelectedItems] = useState<number[]>([]);
 
   // Permissions
   const canPayment = user?.permissions?.includes('sale.close_sale') || false;
@@ -72,12 +76,15 @@ export default function InvoicePaymentPage() {
       const saleData = await SaleApiClient.getSaleDetail(saleId);
       setSale(saleData);
 
-      // Initiate invoice
-      const invoiceData = await InvoiceApiClient.initiateInvoice(saleId);
+      // Initiate invoice (creates new or returns existing)
+      const initiateData = await InvoiceApiClient.initiateInvoice(saleId);
+
+      // Fetch full invoice details to get payment history
+      const invoiceData = await InvoiceApiClient.getInvoiceDetail(initiateData.invoice_id);
       setInvoice(invoiceData);
 
-      // Pre-fill full amount
-      setAmount(invoiceData.total_amount);
+      // Pre-fill remaining balance (or full amount if no payments)
+      setAmount(invoiceData.balance_due);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'خطا در بارگذاری اطلاعات';
       setError(message);
@@ -104,6 +111,7 @@ export default function InvoicePaymentPage() {
         amount_applied: amount,
         tip_amount: tipAmount || '0',
         destination_account_id: paymentMethod !== PaymentMethod.CASH ? 1 : null, // TODO: Add account selector
+        sale_item_ids: selectedItems.length > 0 ? selectedItems : undefined,
       });
 
       // Update invoice state
@@ -113,6 +121,7 @@ export default function InvoicePaymentPage() {
       setShowPaymentForm(false);
       setAmount('');
       setTipAmount('0');
+      setSelectedItems([]);
 
       // If fully paid, redirect to sale list
       if (paymentData.invoice_status === InvoiceStatus.PAID) {
@@ -171,6 +180,46 @@ export default function InvoicePaymentPage() {
     const quickAmount = total * (percentage / 100);
     setAmount(quickAmount.toFixed(2));
     setShowPaymentForm(true);
+  };
+
+  /**
+   * Toggle item selection for split payments
+   */
+  const toggleItemSelection = (itemId: number) => {
+    setSelectedItems(prev => {
+      if (prev.includes(itemId)) {
+        return prev.filter(id => id !== itemId);
+      } else {
+        return [...prev, itemId];
+      }
+    });
+  };
+
+  /**
+   * Calculate total amount from selected items
+   */
+  const calculateSelectedItemsTotal = (): number => {
+    if (!sale || selectedItems.length === 0) return 0;
+
+    return sale.items
+      .filter(item => selectedItems.includes(item.id))
+      .reduce((total, item) => {
+        const itemTotal = parseFloat(item.unit_price) * item.quantity;
+        const extrasTotal = item.extras.reduce((sum, extra) =>
+          sum + (parseFloat(extra.unit_price) * extra.quantity), 0
+        );
+        return total + itemTotal + extrasTotal;
+      }, 0);
+  };
+
+  /**
+   * Apply selected items total to payment amount
+   */
+  const applySelectedItemsAmount = () => {
+    const total = calculateSelectedItemsTotal();
+    if (total > 0) {
+      setAmount(total.toString());
+    }
   };
 
   // Loading state
@@ -364,6 +413,77 @@ export default function InvoicePaymentPage() {
                   📱 کارت‌به‌کارت
                 </button>
               </div>
+            </div>
+
+            {/* Item Selection for Split Payments */}
+            <div className="bg-gray-750 rounded-xl p-4 border border-gray-600">
+              <div className="flex justify-between items-center mb-3">
+                <label className="block text-sm font-medium text-gray-400">
+                  🧾 انتخاب اقلام (اختیاری - برای پرداخت جداگانه)
+                </label>
+                {selectedItems.length > 0 && (
+                  <button
+                    onClick={applySelectedItemsAmount}
+                    className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-xs font-medium text-white"
+                  >
+                    محاسبه مبلغ ({selectedItems.length} مورد)
+                  </button>
+                )}
+              </div>
+              <div className="max-h-64 overflow-y-auto space-y-2">
+                {sale?.items.map((item) => {
+                  const itemTotal = parseFloat(item.unit_price) * item.quantity;
+                  const extrasTotal = item.extras.reduce((sum, extra) =>
+                    sum + (parseFloat(extra.unit_price) * extra.quantity), 0
+                  );
+                  const totalPrice = itemTotal + extrasTotal;
+                  const isSelected = selectedItems.includes(item.id);
+
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => toggleItemSelection(item.id)}
+                      className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                        isSelected
+                          ? 'bg-indigo-600/20 border-indigo-500'
+                          : 'bg-gray-700 border-gray-600 hover:border-gray-500'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center ${
+                          isSelected ? 'bg-indigo-600 border-indigo-500' : 'border-gray-500'
+                        }`}>
+                          {isSelected && <span className="text-white text-xs">✓</span>}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium text-white">{item.product_name}</p>
+                              <p className="text-xs text-gray-400">تعداد: {item.quantity}</p>
+                              {item.extras.length > 0 && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  + {item.extras.length} افزودنی
+                                </p>
+                              )}
+                            </div>
+                            <p className="text-sm font-bold text-green-400">
+                              {formatPersianMoney(totalPrice)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {selectedItems.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-gray-600 flex justify-between items-center">
+                  <span className="text-sm text-gray-400">جمع اقلام انتخاب شده:</span>
+                  <span className="text-lg font-bold text-indigo-400">
+                    {formatPersianMoney(calculateSelectedItemsTotal())}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Amount */}
