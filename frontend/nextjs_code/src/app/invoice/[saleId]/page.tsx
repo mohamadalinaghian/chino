@@ -24,6 +24,7 @@ import { useAuth } from '@/libs/auth/AuthContext';
 import { InvoiceApiClient } from '@/libs/invoice/invoiceApiClient';
 import { SaleApiClient } from '@/libs/sale/saleApiClient';
 import { formatPersianMoney } from '@/libs/tools/persianMoney';
+import { formatJalaliLong } from '@/libs/tools/jalaliDate';
 import { CS_API_URL } from '@/libs/constants';
 import {
   InitiateInvoiceResponse,
@@ -646,7 +647,7 @@ export default function InvoicePaymentPage() {
                         </p>
                       )}
                       <p className="text-xs text-gray-500 mt-2">
-                        {new Date(payment.received_at).toLocaleString('fa-IR')}
+                        {formatJalaliLong(payment.received_at)}
                       </p>
                     </div>
                   ))}
