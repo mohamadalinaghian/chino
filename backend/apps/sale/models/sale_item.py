@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from apps.inventory.models import Product
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -19,6 +20,7 @@ class SaleItem(models.Model):
         "inventory.Product",
         on_delete=models.PROTECT,
         related_name="sale_items",
+        limit_choices_to={"type__in": (Product.ProductType.SELLABLE,)},
     )
 
     # Self-referential FK for Extras

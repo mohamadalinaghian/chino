@@ -7,6 +7,7 @@ from ..models import CashDenomination, DailyReport, DailyReportPaymentMethod
 from ..services import (
     ApproveDailyReportService,
     CloseDailyReportService,
+    CreateDailyReportService,
     DisputeDailyReportService,
     SubmitDailyReportService,
 )
@@ -40,11 +41,7 @@ class DailyReportPaymentMethodInline(admin.TabularInline):
                 color = "red"
                 text = f"{variance} (Shortage)"
 
-            return format_html(
-                '<strong style="color: {};">{}</strong>',
-                color,
-                text
-            )
+            return format_html('<strong style="color: {};">{}</strong>', color, text)
         return "-"
 
     variance_display.short_description = _("Variance")
@@ -123,16 +120,18 @@ class DailyReportAdmin(admin.ModelAdmin):
 
         # If not a DRAFT report, make everything readonly
         if obj and obj.status != DailyReport.ReportStatus.DRAFT:
-            readonly.extend([
-                "report_date",
-                "opening_float",
-                "closing_cash_counted",
-                "cost_of_goods_sold",
-                "labor_costs",
-                "operating_expenses",
-                "variance_reason",
-                "notes",
-            ])
+            readonly.extend(
+                [
+                    "report_date",
+                    "opening_float",
+                    "closing_cash_counted",
+                    "cost_of_goods_sold",
+                    "labor_costs",
+                    "operating_expenses",
+                    "variance_reason",
+                    "notes",
+                ]
+            )
 
         return readonly
 
@@ -250,8 +249,7 @@ class DailyReportAdmin(admin.ModelAdmin):
         """Display total revenue."""
         if obj.pk:
             return format_html(
-                '<strong style="color: green;">${:,.2f}</strong>',
-                obj.total_revenue
+                '<strong style="color: green;">${:,.2f}</strong>', obj.total_revenue
             )
         return "-"
 
@@ -261,8 +259,7 @@ class DailyReportAdmin(admin.ModelAdmin):
         """Display total costs."""
         if obj.pk:
             return format_html(
-                '<strong style="color: red;">${:,.2f}</strong>',
-                obj.total_costs
+                '<strong style="color: red;">${:,.2f}</strong>', obj.total_costs
             )
         return "-"
 
@@ -274,9 +271,7 @@ class DailyReportAdmin(admin.ModelAdmin):
             profit = obj.net_profit
             color = "green" if profit >= 0 else "red"
             return format_html(
-                '<strong style="color: {};">${:,.2f}</strong>',
-                color,
-                profit
+                '<strong style="color: {};">${:,.2f}</strong>', color, profit
             )
         return "-"
 
@@ -296,11 +291,7 @@ class DailyReportAdmin(admin.ModelAdmin):
                 color = "red"
                 text = f"-${abs(variance):,.2f}"
 
-            return format_html(
-                '<strong style="color: {};">{}</strong>',
-                color,
-                text
-            )
+            return format_html('<strong style="color: {};">{}</strong>', color, text)
         return "-"
 
     total_variance_display.short_description = _("Variance")
@@ -314,12 +305,12 @@ class DailyReportAdmin(admin.ModelAdmin):
             elif variance > 0:
                 return format_html(
                     '<strong style="color: blue;">+${:,.2f} (Overage)</strong>',
-                    variance
+                    variance,
                 )
             else:
                 return format_html(
                     '<strong style="color: red;">-${:,.2f} (Shortage)</strong>',
-                    abs(variance)
+                    abs(variance),
                 )
         return "-"
 
@@ -335,23 +326,33 @@ class DailyReportAdmin(admin.ModelAdmin):
 
         # Revenue section
         html += '<tr style="background-color: #e0f7fa;"><th colspan="2" style="text-align: left; padding: 8px;">REVENUE</th></tr>'
-        html += f'<tr><td style="padding: 5px;">Sales:</td><td style="text-align: right;"><strong>${obj.expected_total_sales:,.2f}</strong></td></tr>'
-        html += f'<tr><td style="padding: 5px;">Tips:</td><td style="text-align: right;">${obj.expected_total_tips:,.2f}</td></tr>'
-        html += f'<tr><td style="padding: 5px;">Refunds:</td><td style="text-align: right;">-${obj.expected_total_refunds:,.2f}</td></tr>'
-        html += f'<tr><td style="padding: 5px;"><strong>Total Revenue:</strong></td><td style="text-align: right; color: green;"><strong>${obj.total_revenue:,.2f}</strong></td></tr>'
+        html += f'<tr><td style="padding: 5px;">Sales:</td><td style="text-align: right;"><strong>${
+            obj.expected_total_sales:,.2f}</strong></td></tr>'
+        html += f'<tr><td style="padding: 5px;">Tips:</td><td style="text-align: right;">${
+            obj.expected_total_tips:,.2f}</td></tr>'
+        html += f'<tr><td style="padding: 5px;">Refunds:</td><td style="text-align: right;">-${
+            obj.expected_total_refunds:,.2f}</td></tr>'
+        html += f'<tr><td style="padding: 5px;"><strong>Total Revenue:</strong></td><td style="text-align: right; color: green;"><strong>${
+            obj.total_revenue:,.2f}</strong></td></tr>'
 
         # Costs section
         html += '<tr style="background-color: #ffebee;"><th colspan="2" style="text-align: left; padding: 8px;">COSTS</th></tr>'
-        html += f'<tr><td style="padding: 5px;">COGS:</td><td style="text-align: right;">${obj.cost_of_goods_sold:,.2f}</td></tr>'
-        html += f'<tr><td style="padding: 5px;">Labor:</td><td style="text-align: right;">${obj.labor_costs:,.2f}</td></tr>'
-        html += f'<tr><td style="padding: 5px;">Operating:</td><td style="text-align: right;">${obj.operating_expenses:,.2f}</td></tr>'
-        html += f'<tr><td style="padding: 5px;"><strong>Total Costs:</strong></td><td style="text-align: right; color: red;"><strong>${obj.total_costs:,.2f}</strong></td></tr>'
+        html += f'<tr><td style="padding: 5px;">COGS:</td><td style="text-align: right;">${
+            obj.cost_of_goods_sold:,.2f}</td></tr>'
+        html += f'<tr><td style="padding: 5px;">Labor:</td><td style="text-align: right;">${
+            obj.labor_costs:,.2f}</td></tr>'
+        html += f'<tr><td style="padding: 5px;">Operating:</td><td style="text-align: right;">${
+            obj.operating_expenses:,.2f}</td></tr>'
+        html += f'<tr><td style="padding: 5px;"><strong>Total Costs:</strong></td><td style="text-align: right; color: red;"><strong>${
+            obj.total_costs:,.2f}</strong></td></tr>'
 
         # Profit
         profit_color = "green" if obj.net_profit >= 0 else "red"
-        html += f'<tr style="background-color: #fff3e0;"><td style="padding: 8px;"><strong>NET PROFIT:</strong></td><td style="text-align: right; color: {profit_color}; font-size: 16px;"><strong>${obj.net_profit:,.2f}</strong></td></tr>'
+        html += f'<tr style="background-color: #fff3e0;"><td style="padding: 8px;"><strong>NET PROFIT:</strong></td><td style="text-align: right; color: {
+            profit_color
+        }; font-size: 16px;"><strong>${obj.net_profit:,.2f}</strong></td></tr>'
 
-        html += '</table></div>'
+        html += "</table></div>"
         return format_html(html)
 
     financial_summary.short_description = _("Financial Summary")
@@ -505,14 +506,22 @@ class DailyReportAdmin(admin.ModelAdmin):
             if obj:
                 # Add workflow hints
                 if obj.status == DailyReport.ReportStatus.DRAFT:
-                    extra_context["workflow_hint"] = "Draft - Fill in actual amounts and submit for approval"
+                    extra_context["workflow_hint"] = (
+                        "Draft - Fill in actual amounts and submit for approval"
+                    )
                 elif obj.status == DailyReport.ReportStatus.SUBMITTED:
-                    extra_context["workflow_hint"] = "Submitted - Waiting for manager approval"
+                    extra_context["workflow_hint"] = (
+                        "Submitted - Waiting for manager approval"
+                    )
                 elif obj.status == DailyReport.ReportStatus.APPROVED:
                     extra_context["workflow_hint"] = "Approved - Ready to close"
                 elif obj.status == DailyReport.ReportStatus.DISPUTED:
-                    extra_context["workflow_hint"] = "Disputed - Resolve issues and resubmit"
+                    extra_context["workflow_hint"] = (
+                        "Disputed - Resolve issues and resubmit"
+                    )
                 elif obj.status == DailyReport.ReportStatus.CLOSED:
-                    extra_context["workflow_hint"] = "Closed - Report is finalized and immutable"
+                    extra_context["workflow_hint"] = (
+                        "Closed - Report is finalized and immutable"
+                    )
 
         return super().changeform_view(request, object_id, form_url, extra_context)
