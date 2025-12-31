@@ -53,6 +53,8 @@ export default function InvoicePaymentPage() {
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [canceling, setCanceling] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
+  const [bankAccounts, setBankAccounts] = useState<Array<{id: number; bank_name: string; card_number: string; account_owner: string}>>([]);
 
   // Item selection for split payments
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
@@ -65,7 +67,40 @@ export default function InvoicePaymentPage() {
    */
   useEffect(() => {
     loadSaleAndInitiateInvoice();
+    loadBankAccounts();
   }, [saleId]);
+
+  /**
+   * Load bank accounts for card transfer
+   */
+  const loadBankAccounts = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/settings/bank-accounts`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+      });
+      if (response.ok) {
+        const accounts = await response.json();
+        setBankAccounts(accounts);
+
+        // Also load POS account and set it as default for POS payment
+        const posResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/settings/pos-account`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+        if (posResponse.ok) {
+          const posAccount = await posResponse.json();
+          if (posAccount.account_id) {
+            setSelectedAccountId(posAccount.account_id);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error loading bank accounts:', err);
+    }
+  };
 
   const loadSaleAndInitiateInvoice = async () => {
     try {
@@ -102,6 +137,12 @@ export default function InvoicePaymentPage() {
       return;
     }
 
+    // Validate account selection for card transfer
+    if (paymentMethod === PaymentMethod.CARD_TRANSFER && !selectedAccountId) {
+      setError('لطفاً حساب مقصد را انتخاب کنید');
+      return;
+    }
+
     try {
       setProcessing(true);
       setError(null);
@@ -110,7 +151,7 @@ export default function InvoicePaymentPage() {
         method: paymentMethod,
         amount_applied: amount,
         tip_amount: tipAmount || '0',
-        destination_account_id: paymentMethod !== PaymentMethod.CASH ? 1 : null, // TODO: Add account selector
+        destination_account_id: paymentMethod !== PaymentMethod.CASH ? selectedAccountId : null,
         sale_item_ids: selectedItems.length > 0 ? selectedItems : undefined,
       });
 
@@ -265,21 +306,21 @@ export default function InvoicePaymentPage() {
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 pb-32">
       {/* Sticky Header */}
-      <div className="sticky top-0 z-40 bg-gradient-to-b from-gray-900 to-gray-900/95 border-b-4 border-purple-500 shadow-2xl backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto px-4 py-5">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
+      <div className="sticky top-0 z-40 bg-gradient-to-b from-gray-900 to-gray-900/95 border-b-2 border-purple-500 shadow-xl backdrop-blur-sm">
+        <div className="max-w-4xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => router.push(`/sale/${saleId}`)}
-                className="w-12 h-12 bg-gray-800 hover:bg-gray-700 rounded-xl flex items-center justify-center text-xl transition-all"
+                className="w-10 h-10 bg-gray-800 hover:bg-gray-700 rounded-lg flex items-center justify-center text-lg transition-all"
               >
                 ←
               </button>
               <div>
-                <h1 className="text-xl font-bold flex items-center gap-3">
+                <h1 className="text-base font-bold flex items-center gap-2">
                   💳 فاکتور #{invoice.invoice_number}
                   <span className={`
-                    px-4 py-1.5 rounded-full text-sm font-medium border
+                    px-2 py-1 rounded-full text-xs font-medium border
                     ${isPaid ? 'bg-green-600/20 text-green-400 border-green-500' :
                       isPartiallyPaid ? 'bg-yellow-600/20 text-yellow-400 border-yellow-500' :
                         'bg-red-600/20 text-red-400 border-red-500'}
@@ -287,7 +328,7 @@ export default function InvoicePaymentPage() {
                     {isPaid ? 'پرداخت شده' : isPartiallyPaid ? 'پرداخت جزئی' : 'پرداخت نشده'}
                   </span>
                 </h1>
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-xs text-gray-400 mt-0.5">
                   فروش #{sale.id} • {sale.table_number ? `میز ${sale.table_number}` : 'بیرون‌بر'}
                 </p>
               </div>
@@ -295,14 +336,14 @@ export default function InvoicePaymentPage() {
           </div>
 
           {/* Amount Summary */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
-              <p className="text-xs text-gray-400 mb-1">جمع کل فاکتور</p>
-              <p className="text-lg font-bold text-white">{formatPersianMoney(totalAmount)}</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700">
+              <p className="text-xs text-gray-400 mb-0.5">جمع کل فاکتور</p>
+              <p className="text-base font-bold text-white">{formatPersianMoney(totalAmount)}</p>
             </div>
-            <div className={`rounded-xl p-4 border ${balanceDue > 0 ? 'bg-red-900/20 border-red-800' : 'bg-green-900/20 border-green-800'}`}>
-              <p className="text-xs text-gray-400 mb-1">مانده پرداخت</p>
-              <p className={`text-lg font-bold ${balanceDue > 0 ? 'text-red-400' : 'text-green-400'}`}>
+            <div className={`rounded-lg p-3 border ${balanceDue > 0 ? 'bg-red-900/20 border-red-800' : 'bg-green-900/20 border-green-800'}`}>
+              <p className="text-xs text-gray-400 mb-0.5">مانده پرداخت</p>
+              <p className={`text-base font-bold ${balanceDue > 0 ? 'text-red-400' : 'text-green-400'}`}>
                 {formatPersianMoney(balanceDue)}
               </p>
             </div>
@@ -344,31 +385,37 @@ export default function InvoicePaymentPage() {
 
         {/* Quick Payment Buttons */}
         {!isPaid && canPayment && (
-          <div className="bg-gradient-to-br from-purple-900/30 to-indigo-900/30 border-2 border-purple-700 rounded-2xl p-6">
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <div className="bg-gradient-to-br from-purple-900/30 to-indigo-900/30 border border-purple-700 rounded-xl p-4">
+            <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
               <span>⚡</span> پرداخت سریع
             </h3>
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="grid grid-cols-2 gap-2 mb-3">
               <button
                 onClick={() => handleQuickPayment(100)}
-                className="py-4 px-6 bg-gradient-to-br from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 rounded-xl font-bold text-white shadow-lg active:scale-95 transition-all"
+                className="py-3 px-4 bg-gradient-to-br from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 rounded-lg font-medium text-sm text-white shadow-lg active:scale-95 transition-all"
               >
                 💯 پرداخت کامل
-                <div className="text-xs mt-1 opacity-90">{formatPersianMoney(balanceDue)}</div>
+                <div className="text-xs mt-0.5 opacity-90">{formatPersianMoney(balanceDue)}</div>
               </button>
               <button
                 onClick={() => handleQuickPayment(50)}
-                className="py-4 px-6 bg-gradient-to-br from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 rounded-xl font-bold text-white shadow-lg active:scale-95 transition-all"
+                className="py-3 px-4 bg-gradient-to-br from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 rounded-lg font-medium text-sm text-white shadow-lg active:scale-95 transition-all"
               >
                 50% پرداخت نصف
-                <div className="text-xs mt-1 opacity-90">{formatPersianMoney(balanceDue * 0.5)}</div>
+                <div className="text-xs mt-0.5 opacity-90">{formatPersianMoney(balanceDue * 0.5)}</div>
               </button>
             </div>
             <button
-              onClick={() => setShowPaymentForm(!showPaymentForm)}
-              className="w-full py-4 px-6 bg-gradient-to-br from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl font-bold text-white shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all"
+              onClick={() => {
+                setShowPaymentForm(true);
+                // Clear amount for manual entry
+                if (!showPaymentForm) {
+                  setAmount(balanceDue.toString());
+                }
+              }}
+              className="w-full py-3 px-5 bg-gradient-to-br from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl font-medium text-white shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"
             >
-              <span className="text-xl">💰</span> پرداخت با مبلغ دلخواه
+              <span className="text-lg">💰</span> پرداخت با مبلغ دلخواه
             </button>
           </div>
         )}
@@ -414,6 +461,26 @@ export default function InvoicePaymentPage() {
                 </button>
               </div>
             </div>
+
+            {/* Account Selection for Card Transfer */}
+            {paymentMethod === PaymentMethod.CARD_TRANSFER && (
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">حساب مقصد</label>
+                <select
+                  value={selectedAccountId || ''}
+                  onChange={(e) => setSelectedAccountId(Number(e.target.value))}
+                  className="w-full px-4 py-3 bg-gray-700 border-2 border-gray-600 rounded-xl text-white focus:border-purple-500 focus:outline-none"
+                  required
+                >
+                  <option value="">انتخاب حساب مقصد...</option>
+                  {bankAccounts.map((account) => (
+                    <option key={account.id} value={account.id}>
+                      {account.bank_name} - {account.account_owner} ({account.card_number})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Item Selection for Split Payments */}
             <div className="bg-gray-750 rounded-xl p-4 border border-gray-600">

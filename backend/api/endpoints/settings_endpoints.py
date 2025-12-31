@@ -5,9 +5,10 @@ Provides access to site-wide settings.
 """
 from api.security.auth import jwt_auth
 from apps.core_setting.models import SiteSettings
+from apps.user.models import BankAccount
 from ninja import Router, Schema
 from ninja.errors import HttpError
-from typing import Optional
+from typing import Optional, List
 
 router = Router(tags=["Settings"], auth=jwt_auth)
 
@@ -19,6 +20,15 @@ class POSAccountResponse(Schema):
     card_number: Optional[str]
     bank_name: Optional[str]
     account_owner: Optional[str]
+
+
+class BankAccountSchema(Schema):
+    """Bank account schema for list response."""
+
+    id: int
+    card_number: str
+    bank_name: Optional[str]
+    account_owner: str
 
 
 @router.get("/pos-account", response={200: POSAccountResponse})
@@ -49,3 +59,23 @@ def get_pos_account(request):
             bank_name=None,
             account_owner=None,
         )
+
+
+@router.get("/bank-accounts", response={200: List[BankAccountSchema]})
+def get_bank_accounts(request):
+    """
+    Get all bank accounts for card transfer target selection.
+
+    Returns list of all bank accounts in the system.
+    """
+    accounts = BankAccount.objects.all().order_by('bank_name', 'account_owner')
+
+    return [
+        BankAccountSchema(
+            id=account.pk,
+            card_number=account.card_number,
+            bank_name=account.bank_name,
+            account_owner=account.account_owner,
+        )
+        for account in accounts
+    ]
