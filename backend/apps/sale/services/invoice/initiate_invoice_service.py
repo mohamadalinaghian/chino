@@ -51,17 +51,8 @@ class InitiateInvoiceService:
             ValidationError: If sale is not OPEN, has no items, or already has invoice
             PermissionDenied: If user lacks permission
         """
-        can_create_invoice(issued_by, sale)
-
-        # Validate sale state
-        if sale.state != Sale.State.OPEN:
-            raise ValidationError(_("Sale must be OPEN to initiate invoice"))
-
-        # Validate sale has items
-        if not sale.items.exists():
-            raise ValidationError(_("Cannot create invoice for empty sale"))
-
-        # Check if invoice already exists - return existing if not VOID (idempotent)
+        # Check if invoice already exists FIRST - return existing if not VOID (idempotent)
+        # This allows viewing existing invoices without create permission
         try:
             existing_invoice = SaleInvoice.objects.get(sale=sale)
             # If existing invoice is VOID, allow creating a new one
@@ -71,6 +62,17 @@ class InitiateInvoiceService:
         except SaleInvoice.DoesNotExist:
             # No invoice exists, continue to create a new one
             pass
+
+        # Only check create permission if we're actually creating a new invoice
+        can_create_invoice(issued_by, sale)
+
+        # Validate sale state
+        if sale.state != Sale.State.OPEN:
+            raise ValidationError(_("Sale must be OPEN to initiate invoice"))
+
+        # Validate sale has items
+        if not sale.items.exists():
+            raise ValidationError(_("Cannot create invoice for empty sale"))
 
         # Calculate totals
         subtotal = sale.total_amount or Decimal("0")
