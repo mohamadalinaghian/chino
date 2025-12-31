@@ -1,8 +1,14 @@
-from django.contrib import admin
+from decimal import Decimal
+
+from django.contrib import admin, messages
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 from ..models import SalePayment, SaleRefund
+from ..services.invoice.create_refund_service import CreateRefundService
+from ..services.invoice.issue_payment_service import IssuePaymentService
+from .forms import SalePaymentAdminForm
 
 
 class SaleRefundInline(admin.TabularInline):
@@ -29,6 +35,8 @@ class SaleRefundInline(admin.TabularInline):
 @admin.register(SalePayment)
 class SalePaymentAdmin(admin.ModelAdmin):
     """Admin for SalePayment model - payment tracking."""
+
+    form = SalePaymentAdminForm
 
     list_display = (
         "id",
@@ -189,12 +197,33 @@ class SalePaymentAdmin(admin.ModelAdmin):
             "received_by",
         ).prefetch_related("refunds")
 
+    def save_model(self, request, obj, form, change):
+        """Use IssuePaymentService for new payments."""
+        if not change:  # Creating new payment
+            try:
+                payment = IssuePaymentService.execute(
+                    invoice=obj.invoice,
+                    received_by=request.user,
+                    method=obj.method,
+                    amount_applied=obj.amount_applied,
+                    tip_amount=obj.tip_amount or Decimal("0"),
+                    destination_account=obj.destination_account,
+                )
+                form.instance = payment
+                messages.success(request, _("Payment recorded successfully"))
+            except (ValidationError, PermissionDenied) as e:
+                messages.error(request, str(e))
+                raise
+        else:
+            # Payments are immutable after creation
+            messages.error(request, _("Payments cannot be modified after creation"))
+
     def has_add_permission(self, request):
-        """Prevent adding payments through admin - use service."""
-        return False
+        """Allow recording payments through admin."""
+        return request.user.has_perm("sale.add_salepayment")
 
     def has_delete_permission(self, request, obj=None):
-        """Prevent deleting payments through admin."""
+        """Prevent deleting payments."""
         return False
 
 

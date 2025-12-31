@@ -1,8 +1,14 @@
-from django.contrib import admin
+from decimal import Decimal
+
+from django.contrib import admin, messages
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 from ..models import SaleInvoice, SalePayment
+from ..services.invoice.create_invoice_service import CreateInvoiceService
+from ..services.invoice.issue_payment_service import IssuePaymentService
+from .forms import SaleInvoiceAdminForm, SalePaymentAdminForm
 
 
 class SalePaymentInline(admin.TabularInline):
@@ -30,6 +36,8 @@ class SalePaymentInline(admin.TabularInline):
 @admin.register(SaleInvoice)
 class SaleInvoiceAdmin(admin.ModelAdmin):
     """Admin for SaleInvoice model - invoice and payment tracking."""
+
+    form = SaleInvoiceAdminForm
 
     list_display = (
         "invoice_number",
@@ -200,10 +208,29 @@ class SaleInvoiceAdmin(admin.ModelAdmin):
             "issued_by",
         ).prefetch_related("payments")
 
+    def save_model(self, request, obj, form, change):
+        """Use CreateInvoiceService for new invoices."""
+        if not change:  # Creating new invoice
+            tax_amount = form.cleaned_data.get("tax_amount", Decimal("0"))
+            try:
+                invoice = CreateInvoiceService.execute(
+                    sale=obj.sale,
+                    issued_by=request.user,
+                    tax_amount=tax_amount,
+                )
+                form.instance = invoice
+                messages.success(request, _("Invoice created successfully"))
+            except (ValidationError, PermissionDenied) as e:
+                messages.error(request, str(e))
+                raise
+        else:
+            # Invoices are immutable after creation
+            messages.error(request, _("Invoices cannot be modified after creation"))
+
     def has_add_permission(self, request):
-        """Prevent adding invoices through admin - use service."""
-        return False
+        """Allow creating invoices through admin."""
+        return request.user.has_perm("sale.add_saleinvoice")
 
     def has_delete_permission(self, request, obj=None):
-        """Prevent deleting invoices through admin."""
+        """Prevent deleting invoices."""
         return False

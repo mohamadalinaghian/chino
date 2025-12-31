@@ -1,15 +1,20 @@
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import transaction
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 from ..models import Sale, SaleDiscount, SaleItem
+from ..services.sale.close_sale import CloseSaleService
+from ..services.sale.open_sale import OpenSaleService
+from .forms import SaleAdminForm
 
 
 class SaleItemInline(admin.TabularInline):
     """Inline for sale items."""
 
     model = SaleItem
-    extra = 0
+    extra = 1
     fields = (
         "product",
         "quantity",
@@ -18,6 +23,11 @@ class SaleItemInline(admin.TabularInline):
     )
     readonly_fields = ("total_price",)
     autocomplete_fields = ["product"]
+
+    def get_queryset(self, request):
+        """Only show parent items (not extras)."""
+        qs = super().get_queryset(request)
+        return qs.filter(parent_item__isnull=True)
 
     @admin.display(description=_("Total"))
     def total_price(self, obj):
@@ -38,6 +48,8 @@ class SaleDiscountInline(admin.TabularInline):
 @admin.register(Sale)
 class SaleAdmin(admin.ModelAdmin):
     """Admin for Sale model - POS transaction management."""
+
+    form = SaleAdminForm
 
     list_display = (
         "id",
@@ -138,7 +150,9 @@ class SaleAdmin(admin.ModelAdmin):
 
     # autocomplete_fields = ["guest", "table"]
 
-    @admin.display()
+    actions = ["close_sales"]
+
+    @admin.display(description=_("State"))
     def state_badge(self, obj):
         """Display state with color badge."""
         colors = {
@@ -153,8 +167,7 @@ class SaleAdmin(admin.ModelAdmin):
             obj.get_state_display(),
         )
 
-    state_badge.short_description = _("State")
-
+    @admin.display(description=_("Items"))
     def items_count(self, obj):
         """Display number of items in sale."""
         if obj.pk:
@@ -162,8 +175,7 @@ class SaleAdmin(admin.ModelAdmin):
             return format_html("<strong>{}</strong>", count)
         return "-"
 
-    items_count.short_description = _("Items")
-
+    @admin.display(description=_("Items Details"))
     def items_summary(self, obj):
         """Display summary of all items."""
         if not obj.pk:
@@ -184,8 +196,7 @@ class SaleAdmin(admin.ModelAdmin):
         html += "</table>"
         return format_html(html)
 
-    items_summary.short_description = _("Items Details")
-
+    @admin.display(description=_("Discounts"))
     def discounts_summary(self, obj):
         """Display summary of all discounts."""
         if not obj.pk:
@@ -207,8 +218,6 @@ class SaleAdmin(admin.ModelAdmin):
         html += "</ul>"
         return format_html(html)
 
-    discounts_summary.short_description = _("Discounts")
-
     def get_queryset(self, request):
         """Optimize queryset with related data."""
         qs = super().get_queryset(request)
@@ -219,10 +228,105 @@ class SaleAdmin(admin.ModelAdmin):
             "table",
         ).prefetch_related("items", "discounts")
 
+    def save_model(self, request, obj, form, change):
+        """Use service layer for sale management."""
+        if not change:  # Creating new sale
+            # Store data for use in save_formset
+            self._pending_sale_data = {
+                "opened_by": request.user,
+                "sale_type": obj.sale_type,
+                "table": obj.table,
+                "guest_count": obj.guest_count,
+                "guest": obj.guest,
+                "note": obj.note,
+            }
+        else:  # Updating existing sale
+            if obj.state != Sale.State.OPEN:
+                messages.error(request, _("Only OPEN sales can be modified"))
+                return
+            super().save_model(request, obj, form, change)
+
+    def save_formset(self, request, form, formset, change):
+        """Handle item creation through service layer."""
+        if not change and formset.model == SaleItem:
+            # Creating new sale with items
+            items_data = []
+            for item_form in formset.forms:
+                if item_form.cleaned_data and not item_form.cleaned_data.get("DELETE", False):
+                    product = item_form.cleaned_data.get("product")
+                    quantity = item_form.cleaned_data.get("quantity")
+                    unit_price = item_form.cleaned_data.get("unit_price")
+
+                    if product and quantity:
+                        items_data.append({
+                            "product": product,
+                            "quantity": quantity,
+                            "unit_price": unit_price,
+                        })
+
+            if not items_data:
+                messages.error(request, _("Sale must contain at least one item"))
+                return
+
+            try:
+                with transaction.atomic():
+                    sale_data = self._pending_sale_data
+                    sale = Sale.objects.create(
+                        opened_by=sale_data["opened_by"],
+                        sale_type=sale_data["sale_type"],
+                        table=sale_data["table"],
+                        guest_count=sale_data["guest_count"],
+                        guest=sale_data["guest"],
+                        note=sale_data["note"],
+                        state=Sale.State.OPEN,
+                    )
+
+                    # Create items
+                    for item_data in items_data:
+                        SaleItem.objects.create(
+                            sale=sale,
+                            product=item_data["product"],
+                            quantity=item_data["quantity"],
+                            unit_price=item_data["unit_price"],
+                        )
+
+                    # Recalculate total using service
+                    OpenSaleService.recalculate_total(sale)
+                    form.instance = sale
+
+                messages.success(request, _("Sale created successfully"))
+            except (ValidationError, PermissionDenied) as e:
+                messages.error(request, str(e))
+                raise
+        else:
+            # Normal formset save
+            super().save_formset(request, form, formset, change)
+            if change and formset.model == SaleItem:
+                # Recalculate total after item changes
+                OpenSaleService.recalculate_total(form.instance)
+
+    @admin.action(description=_("Close selected sales"))
+    def close_sales(self, request, queryset):
+        """Close selected OPEN sales using service."""
+        success_count = 0
+        for sale in queryset:
+            try:
+                CloseSaleService.close_sale(sale=sale, closed_by=request.user)
+                success_count += 1
+            except (PermissionDenied, ValidationError) as e:
+                self.message_user(
+                    request, f"Failed to close sale {sale.id}: {str(e)}", level=messages.ERROR
+                )
+
+        if success_count:
+            self.message_user(
+                request, f"Successfully closed {success_count} sale(s)", level=messages.SUCCESS
+            )
+
     def has_add_permission(self, request):
-        """Prevent adding sales through admin - use POS service."""
-        return False
+        """Allow adding sales through admin with minimal requirements."""
+        return request.user.has_perm("sale.add_sale")
 
     def has_delete_permission(self, request, obj=None):
-        """Prevent deleting sales through admin."""
+        """Prevent deleting sales - use cancel action instead."""
         return False
