@@ -54,7 +54,7 @@ export default function InvoicePaymentPage() {
   const [processing, setProcessing] = useState(false);
   const [canceling, setCanceling] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
-  const [bankAccounts, setBankAccounts] = useState<Array<{id: number; bank_name: string; card_number: string; account_owner: string}>>([]);
+  const [bankAccounts, setBankAccounts] = useState<Array<{id: number; bank_name: string; card_number: string; account_owner: string; account_balance: string}>>([]);
 
   // Item selection for split payments
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
@@ -352,7 +352,7 @@ export default function InvoicePaymentPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-4xl mx-auto px-4 py-4 space-y-3">
         {error && (
           <div className="bg-red-900/30 border-2 border-red-800 rounded-2xl p-5 flex items-start gap-4">
             <span className="text-2xl">⚠️</span>
@@ -422,16 +422,16 @@ export default function InvoicePaymentPage() {
 
         {/* Payment Form */}
         {showPaymentForm && !isPaid && (
-          <div className="bg-gray-800 rounded-2xl p-6 border-2 border-indigo-500 space-y-5">
-            <h3 className="text-lg font-bold mb-4">💳 ثبت پرداخت</h3>
+          <div className="bg-gray-800 rounded-xl p-4 border border-indigo-500 space-y-3">
+            <h3 className="text-sm font-bold mb-2">💳 ثبت پرداخت</h3>
 
             {/* Payment Method */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-3">روش پرداخت</label>
-              <div className="grid grid-cols-3 gap-3">
+              <label className="block text-xs font-medium text-gray-400 mb-1.5">روش پرداخت</label>
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => setPaymentMethod(PaymentMethod.CASH)}
-                  className={`py-3 px-4 rounded-xl font-medium border-2 transition-all ${
+                  className={`py-2 px-3 text-xs rounded-lg font-medium border transition-all ${
                     paymentMethod === PaymentMethod.CASH
                       ? 'bg-green-600 border-green-500 text-white'
                       : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-500'
@@ -441,7 +441,7 @@ export default function InvoicePaymentPage() {
                 </button>
                 <button
                   onClick={() => setPaymentMethod(PaymentMethod.POS)}
-                  className={`py-3 px-4 rounded-xl font-medium border-2 transition-all ${
+                  className={`py-2 px-3 text-xs rounded-lg font-medium border transition-all ${
                     paymentMethod === PaymentMethod.POS
                       ? 'bg-blue-600 border-blue-500 text-white'
                       : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-500'
@@ -451,7 +451,7 @@ export default function InvoicePaymentPage() {
                 </button>
                 <button
                   onClick={() => setPaymentMethod(PaymentMethod.CARD_TRANSFER)}
-                  className={`py-3 px-4 rounded-xl font-medium border-2 transition-all ${
+                  className={`py-2 px-3 text-xs rounded-lg font-medium border transition-all ${
                     paymentMethod === PaymentMethod.CARD_TRANSFER
                       ? 'bg-purple-600 border-purple-500 text-white'
                       : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-500'
@@ -465,39 +465,40 @@ export default function InvoicePaymentPage() {
             {/* Account Selection for Card Transfer */}
             {paymentMethod === PaymentMethod.CARD_TRANSFER && (
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">حساب مقصد</label>
+                <label className="block text-xs font-medium text-gray-400 mb-1.5">حساب مقصد (فقط حساب‌های دارای بدهی)</label>
                 <select
                   value={selectedAccountId || ''}
                   onChange={(e) => setSelectedAccountId(Number(e.target.value))}
-                  className="w-full px-4 py-3 bg-gray-700 border-2 border-gray-600 rounded-xl text-white focus:border-purple-500 focus:outline-none"
+                  className="w-full px-3 py-2 text-sm bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
                   required
                 >
-                  <option value="">انتخاب حساب مقصد...</option>
+                  <option value="">انتخاب حساب...</option>
                   {bankAccounts.map((account) => (
                     <option key={account.id} value={account.id}>
-                      {account.bank_name} - {account.account_owner} ({account.card_number})
+                      {account.account_owner} - {formatPersianMoney(parseFloat(account.account_balance))} ({account.card_number.slice(-4)})
                     </option>
                   ))}
                 </select>
+                <p className="text-xs text-gray-500 mt-1">مرتب شده از بیشترین به کمترین بدهی</p>
               </div>
             )}
 
             {/* Item Selection for Split Payments */}
-            <div className="bg-gray-750 rounded-xl p-4 border border-gray-600">
-              <div className="flex justify-between items-center mb-3">
-                <label className="block text-sm font-medium text-gray-400">
-                  🧾 انتخاب اقلام (اختیاری - برای پرداخت جداگانه)
+            <div className="bg-gray-750 rounded-lg p-3 border border-gray-600">
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-xs font-medium text-gray-400">
+                  🧾 انتخاب اقلام
                 </label>
                 {selectedItems.length > 0 && (
                   <button
                     onClick={applySelectedItemsAmount}
-                    className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-xs font-medium text-white"
+                    className="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-500 rounded text-xs font-medium text-white"
                   >
-                    محاسبه مبلغ ({selectedItems.length} مورد)
+                    محاسبه ({selectedItems.length})
                   </button>
                 )}
               </div>
-              <div className="max-h-64 overflow-y-auto space-y-2">
+              <div className="max-h-48 overflow-y-auto space-y-1.5">
                 {sale?.items.map((item) => {
                   const itemTotal = parseFloat(item.unit_price) * item.quantity;
                   const extrasTotal = item.extras.reduce((sum, extra) =>
@@ -510,14 +511,14 @@ export default function InvoicePaymentPage() {
                     <div
                       key={item.id}
                       onClick={() => toggleItemSelection(item.id)}
-                      className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                      className={`p-2 rounded-md border cursor-pointer transition-all ${
                         isSelected
                           ? 'bg-indigo-600/20 border-indigo-500'
                           : 'bg-gray-700 border-gray-600 hover:border-gray-500'
                       }`}
                     >
-                      <div className="flex items-start gap-3">
-                        <div className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center ${
+                      <div className="flex items-start gap-2">
+                        <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center ${
                           isSelected ? 'bg-indigo-600 border-indigo-500' : 'border-gray-500'
                         }`}>
                           {isSelected && <span className="text-white text-xs">✓</span>}
@@ -525,15 +526,10 @@ export default function InvoicePaymentPage() {
                         <div className="flex-1">
                           <div className="flex justify-between items-start">
                             <div>
-                              <p className="font-medium text-white">{item.product_name}</p>
-                              <p className="text-xs text-gray-400">تعداد: {item.quantity}</p>
-                              {item.extras.length > 0 && (
-                                <p className="text-xs text-gray-500 mt-1">
-                                  + {item.extras.length} افزودنی
-                                </p>
-                              )}
+                              <p className="text-xs font-medium text-white">{item.product_name}</p>
+                              <p className="text-xs text-gray-400">×{item.quantity}</p>
                             </div>
-                            <p className="text-sm font-bold text-green-400">
+                            <p className="text-xs font-bold text-green-400">
                               {formatPersianMoney(totalPrice)}
                             </p>
                           </div>
@@ -544,9 +540,9 @@ export default function InvoicePaymentPage() {
                 })}
               </div>
               {selectedItems.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-gray-600 flex justify-between items-center">
-                  <span className="text-sm text-gray-400">جمع اقلام انتخاب شده:</span>
-                  <span className="text-lg font-bold text-indigo-400">
+                <div className="mt-2 pt-2 border-t border-gray-600 flex justify-between items-center">
+                  <span className="text-xs text-gray-400">جمع:</span>
+                  <span className="text-sm font-bold text-indigo-400">
                     {formatPersianMoney(calculateSelectedItemsTotal())}
                   </span>
                 </div>
@@ -555,12 +551,12 @@ export default function InvoicePaymentPage() {
 
             {/* Amount */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">مبلغ پرداختی (تومان)</label>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5">مبلغ پرداختی (تومان)</label>
               <input
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full px-5 py-4 bg-gray-700 border-2 border-gray-600 rounded-xl text-white text-lg font-bold focus:border-indigo-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm font-bold focus:border-indigo-500 focus:outline-none"
                 placeholder="0"
                 min="0"
                 step="1000"
@@ -569,12 +565,12 @@ export default function InvoicePaymentPage() {
 
             {/* Tip Amount */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">انعام (اختیاری)</label>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5">انعام (اختیاری)</label>
               <input
                 type="number"
                 value={tipAmount}
                 onChange={(e) => setTipAmount(e.target.value)}
-                className="w-full px-5 py-4 bg-gray-700 border-2 border-gray-600 rounded-xl text-white font-bold focus:border-green-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm font-bold focus:border-green-500 focus:outline-none"
                 placeholder="0"
                 min="0"
                 step="1000"
@@ -582,22 +578,22 @@ export default function InvoicePaymentPage() {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-2 pt-2">
               <button
                 onClick={() => setShowPaymentForm(false)}
-                className="flex-1 py-4 px-6 rounded-xl bg-gray-700 hover:bg-gray-600 text-white font-medium"
+                className="flex-1 py-2 px-4 text-sm rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium"
               >
                 انصراف
               </button>
               <button
                 onClick={handleProcessPayment}
                 disabled={processing || !amount || parseFloat(amount) <= 0}
-                className="flex-1 py-4 px-6 rounded-xl bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold shadow-lg flex items-center justify-center gap-2"
+                className="flex-1 py-2 px-4 text-sm rounded-lg bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold shadow-lg flex items-center justify-center gap-1"
               >
                 {processing ? (
                   <>⏳ در حال ثبت...</>
                 ) : (
-                  <>✓ ثبت پرداخت</>
+                  <>✓ ثبت</>
                 )}
               </button>
             </div>

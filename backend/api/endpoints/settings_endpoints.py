@@ -29,6 +29,7 @@ class BankAccountSchema(Schema):
     card_number: str
     bank_name: Optional[str]
     account_owner: str
+    account_balance: str  # Decimal as string for JSON
 
 
 @router.get("/pos-account", response={200: POSAccountResponse})
@@ -64,11 +65,18 @@ def get_pos_account(request):
 @router.get("/bank-accounts", response={200: List[BankAccountSchema]})
 def get_bank_accounts(request):
     """
-    Get all bank accounts for card transfer target selection.
+    Get bank accounts for card transfer target selection.
 
-    Returns list of all bank accounts in the system.
+    Returns only accounts with positive balance (account_balance > 0),
+    sorted from highest to lowest balance.
     """
-    accounts = BankAccount.objects.all().order_by('bank_name', 'account_owner')
+    # Get accounts with positive balance, ordered by balance descending
+    accounts = (
+        BankAccount.objects
+        .select_related('related_user__profile')
+        .filter(related_user__profile__account_balance__gt=0)
+        .order_by('-related_user__profile__account_balance')
+    )
 
     return [
         BankAccountSchema(
@@ -76,6 +84,7 @@ def get_bank_accounts(request):
             card_number=account.card_number,
             bank_name=account.bank_name,
             account_owner=account.account_owner,
+            account_balance=str(account.related_user.profile.account_balance),
         )
         for account in accounts
     ]
