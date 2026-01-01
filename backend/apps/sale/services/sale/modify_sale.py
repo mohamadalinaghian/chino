@@ -95,7 +95,7 @@ class ModifySaleService:
                 OpenSaleService.create_item_line(sale, item_dto)
 
         # 5. Finalize
-        sale.last_modified_by = performer
+        sale.modified_by = performer
         OpenSaleService.recalculate_total(sale)
 
         return sale

@@ -29,11 +29,12 @@ class SalePayment(models.Model):
         COMPLETED = "COMPLETED", _("Completed")
         VOID = "VOID", _("Voided")
 
-    invoice = models.ForeignKey(
-        "sale.SaleInvoice",
+    sale = models.ForeignKey(
+        "sale.Sale",
         on_delete=models.PROTECT,
         related_name="payments",
-        verbose_name=_("Invoice"),
+        verbose_name=_("Sale"),
+        help_text=_("Sale this payment is applied to (must be CLOSED state)"),
     )
 
     method = models.CharField(
@@ -113,7 +114,7 @@ class SalePayment(models.Model):
         verbose_name = _("Sale payment")
         verbose_name_plural = _("Sale payments")
         indexes = [
-            models.Index(fields=["invoice"]),
+            models.Index(fields=["sale"]),
             models.Index(fields=["method"]),
             models.Index(fields=["status"]),
         ]

@@ -135,12 +135,15 @@ class OpenSaleService:
     @staticmethod
     def recalculate_total(sale: Sale) -> None:
         """
-        Updates the cached total_amount using DB aggregation.
+        Updates the cached subtotal_amount using DB aggregation.
+        The Sale model's save() method will auto-calculate total_amount, gross_profit, etc.
         """
         aggregation = sale.items.aggregate(
             total=Sum(
                 F("quantity") * F("unit_price"), output_field=models.DecimalField()
             )
         )
-        sale.total_amount = aggregation["total"] or Decimal("0")
-        sale.save(update_fields=["total_amount", "updated_at"])
+        sale.subtotal_amount = aggregation["total"] or Decimal("0")
+        # Save will auto-calculate: total_amount = subtotal - discount + tax
+        # Skip validation since we're just recalculating totals
+        sale.save(skip_validation=True)

@@ -38,7 +38,7 @@ class Sale(models.Model):
         CLOSED -> CANCELED (via CancelSaleService, may require refunds)
     """
 
-    class State(models.TextChoices):
+    class SaleState(models.TextChoices):
         OPEN = "OPEN", _("Open")
         CLOSED = "CLOSED", _("Closed")
         CANCELED = "CANCELED", _("Canceled")
@@ -58,8 +58,8 @@ class Sale(models.Model):
     state = models.CharField(
         _("State"),
         max_length=16,
-        choices=State.choices,
-        default=State.OPEN,
+        choices=SaleState.choices,
+        default=SaleState.OPEN,
         db_index=True,
         help_text=_("Current lifecycle state of the sale"),
     )
@@ -329,17 +329,17 @@ class Sale(models.Model):
     @property
     def is_open(self) -> bool:
         """Check if sale can be modified"""
-        return self.state == self.State.OPEN
+        return self.state == self.SaleState.OPEN
 
     @property
     def is_closed(self) -> bool:
         """Check if sale is closed/invoiced"""
-        return self.state == self.State.CLOSED
+        return self.state == self.SaleState.CLOSED
 
     @property
     def is_canceled(self) -> bool:
         """Check if sale is canceled"""
-        return self.state == self.State.CANCELED
+        return self.state == self.SaleState.CANCELED
 
     # ==================== VALIDATION ====================
 
@@ -348,7 +348,7 @@ class Sale(models.Model):
         super().clean()
 
         # Validate state-specific requirements
-        if self.state == self.State.CLOSED:
+        if self.state == self.SaleState.CLOSED:
             if not self.invoice_number:
                 raise ValidationError(
                     _("Closed sales must have an invoice number")
@@ -358,7 +358,7 @@ class Sale(models.Model):
             if not self.closed_at:
                 raise ValidationError(_("Closed sales must have closed_at set"))
 
-        if self.state == self.State.CANCELED:
+        if self.state == self.SaleState.CANCELED:
             if not self.canceled_by:
                 raise ValidationError(_("Canceled sales must have canceled_by set"))
             if not self.canceled_at:
@@ -412,9 +412,6 @@ class Sale(models.Model):
 
     def save(self, *args, **kwargs):
         """Auto-calculate fields before save"""
-        # Skip validation if explicitly requested (for migrations, etc.)
-        skip_validation = kwargs.pop('skip_validation', False)
-
         # Calculate total amount
         self.total_amount = (
             self.subtotal_amount - self.discount_amount + self.tax_amount
@@ -431,9 +428,8 @@ class Sale(models.Model):
         else:
             self.gross_margin_percent = Decimal("0")
 
-        # Full validation (unless skipped)
-        if not skip_validation:
-            self.full_clean()
+        # Full validation
+        self.full_clean()
 
         super().save(*args, **kwargs)
 
