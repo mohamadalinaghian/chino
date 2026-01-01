@@ -5,6 +5,7 @@ from api.schemas.sale_schemas import (
     CancelSaleResponse,
     CloseSaleRequest,
     CloseSaleResponse,
+    ErrorResponse,
     ExtraDetailSchema,
     OpenSaleRequest,
     OpenSaleResponse,
@@ -113,7 +114,7 @@ def open_sale(request, payload: OpenSaleRequest):
     )
 
 
-@router.post("/{sale_id}/sync", response=OpenSaleResponse)
+@router.post("/{sale_id}/sync", response={200: OpenSaleResponse, 422: ErrorResponse})
 def sync_sale_items(request, sale_id: int, payload: SyncSaleRequest):
     """
     Syncs the sale items. This is the only endpoint needed for
@@ -336,7 +337,7 @@ def sale_dashboard(request):
     )
 
 
-@router.post("/{sale_id}/close", response=CloseSaleResponse)
+@router.post("/{sale_id}/close", response={200: CloseSaleResponse, 422: ErrorResponse})
 def close_sale_endpoint(request, sale_id: int, payload: CloseSaleRequest):
     """
     Closes the sale, generates invoice, and calculates COGS.

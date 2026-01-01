@@ -213,3 +213,12 @@ class CancelSaleResponse(Schema):
     canceled_at: datetime
     canceled_by_name: str
     cancel_reason: str
+
+
+# ==================== Error Schemas ====================
+
+
+class ErrorResponse(Schema):
+    """Generic error response for validation and business logic errors"""
+
+    detail: str
