@@ -19,7 +19,7 @@ from apps.inventory.models import Product, Table
 from apps.menu.models import Menu
 from apps.sale.models import Sale, SaleItem
 from apps.sale.policies import (
-    can_cancel_sale,
+    can_cancel_close_sale,
     can_close_sale,
     can_modify_sale,
     can_open_sale,
@@ -234,9 +234,7 @@ def get_sale_detail(request, sale_id: int):
         "table_id": sale.table.id if sale.table else None,
         "table_name": sale.table.name if sale.table else None,
         "guest_name": (
-            sale.guest.get_full_name() or sale.guest.username
-            if sale.guest
-            else None
+            sale.guest.get_full_name() or sale.guest.username if sale.guest else None
         ),
         "guest_count": sale.guest_count,
         "note": sale.note,
@@ -298,7 +296,7 @@ def sale_dashboard(request):
     # 1. Base Query: Only Active (OPEN) sales
     #    We need Table info and the Staff member who opened it.
     qs = (
-        Sale.objects.filter(state=Sale.State.OPEN)
+        Sale.objects.filter(state=Sale.SaleState.OPEN)
         .select_related("table", "guest", "opened_by")
         .order_by("-opened_at")
     )  # Newest orders first
@@ -386,7 +384,7 @@ def cancel_sale_endpoint(request, sale_id: int, payload: CancelSaleRequest):
     sale = get_object_or_404(Sale, id=sale_id)
 
     # Policy Check
-    can_cancel_sale(request.auth, sale)
+    can_cancel_close_sale(request.auth, sale)
 
     try:
         canceled_sale = CancelSaleService.cancel_open_sale(

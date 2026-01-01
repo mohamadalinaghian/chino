@@ -9,11 +9,10 @@ from apps.sale.models import (
     SalePayment,
     SaleRefund,
 )
+from apps.sale.models.sale_item import SaleItem
 from apps.sale.policies import can_create_daily_report
 from django.db import models, transaction
 from django.utils import timezone
-
-from backend.apps.sale.models.sale_item import SaleItem
 
 
 class CreateDailyReportService:

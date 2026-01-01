@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Set
 
 from apps.inventory.models import Product
 from apps.menu.models import Menu
-from apps.sale.models import Sale, SaleItem
+from apps.sale.models import Sale
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _

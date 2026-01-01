@@ -1,50 +1,13 @@
-import re
 from decimal import Decimal
 
 from apps.inventory.services.item_production import ItemProductionService
 from apps.sale.models import Sale
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Max
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from ...policies import can_close_sale
-
-
-def generate_invoice_number(sale: Sale) -> str:
-    """
-    Generate unique invoice number for a closed sale.
-
-    Format: INV-YYYYMMDD-XXXXX
-    Where XXXXX is a zero-padded sequential number for the day.
-
-    Args:
-        sale: Sale instance being closed
-
-    Returns:
-        Unique invoice number string
-    """
-    # Get today's date prefix
-    date_prefix = timezone.now().strftime("INV-%Y%m%d-")
-
-    # Find highest number for today
-    latest = Sale.objects.filter(invoice_number__startswith=date_prefix).aggregate(
-        Max("invoice_number")
-    )["invoice_number__max"]
-
-    if latest:
-        # Extract the numeric part and increment
-        match = re.search(r"-(\d+)$", latest)
-        if match:
-            next_num = int(match.group(1)) + 1
-        else:
-            next_num = 1
-    else:
-        next_num = 1
-
-    # Format with zero-padding (5 digits)
-    return f"{date_prefix}{next_num:05d}"
 
 
 class CloseSaleService:
@@ -88,7 +51,6 @@ class CloseSaleService:
         can_close_sale(performer, sale)
 
         # 2. Generate invoice number
-        sale.invoice_number = generate_invoice_number(sale)
 
         # 3. Calculate COGS (Cost of Goods Sold)
         total_cost = CloseSaleService._calculate_cogs(sale)
@@ -107,7 +69,6 @@ class CloseSaleService:
         sale.state = Sale.SaleState.CLOSED
         sale.closed_by = performer
         sale.closed_at = timezone.now()
-        sale.close_reason = close_reason
 
         # 7. Save (will auto-calculate total_amount, gross_profit, etc.)
         sale.save()

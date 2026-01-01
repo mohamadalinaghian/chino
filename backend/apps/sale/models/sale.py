@@ -209,29 +209,12 @@ class Sale(models.Model):
         help_text=_("Payment completion status (only for CLOSED sales)"),
     )
 
-    invoice_number = models.CharField(
-        _("Invoice number"),
-        max_length=50,
-        unique=True,
-        null=True,
-        blank=True,
-        db_index=True,
-        help_text=_("Unique invoice number (generated when sale is closed)"),
-    )
-
     # ---- Notes & Reasons ----
     note = models.TextField(
         _("Note"),
         blank=True,
         default="",
         help_text=_("General notes about the sale"),
-    )
-
-    close_reason = models.TextField(
-        _("Close reason"),
-        blank=True,
-        default="",
-        help_text=_("Optional reason for closing (e.g., 'normal checkout')"),
     )
 
     cancel_reason = models.TextField(
@@ -339,8 +322,6 @@ class Sale(models.Model):
 
         # Validate state-specific requirements
         if self.state == self.SaleState.CLOSED:
-            if not self.invoice_number:
-                raise ValidationError(_("Closed sales must have an invoice number"))
             if not self.closed_by:
                 raise ValidationError(_("Closed sales must have closed_by set"))
             if not self.closed_at:
@@ -403,7 +384,7 @@ class Sale(models.Model):
     def save(self, *args, **kwargs):
         """Auto-calculate fields before save"""
         # Extract skip_validation flag (for internal use by services)
-        skip_validation = kwargs.pop('skip_validation', False)
+        skip_validation = kwargs.pop("skip_validation", False)
 
         # Calculate total amount
         self.total_amount = (
@@ -428,9 +409,4 @@ class Sale(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:
-        if self.invoice_number:
-            return f"Sale #{
-                    self.pk} ({self.invoice_number}) - {self.get_state_display()}"
-
-        table_info = f" - {self.table.name}" if self.table else ""
-        return f"Sale #{self.pk} ({self.get_state_display()}){table_info}"
+        return f"Sale #{self.pk}  - {self.get_state_display()}"

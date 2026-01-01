@@ -131,7 +131,7 @@ def can_close_sale(user, sale: Sale) -> None:
         raise PermissionDenied(_("Cannot close an empty sale"))
 
 
-def can_cancel_open_sale(user, sale: Sale) -> None:
+def can_cancel_sale(user, sale: Sale) -> None:
     """
     Validates user permission to cancel an existing sale.
     Only OPEN sales can be canceled.

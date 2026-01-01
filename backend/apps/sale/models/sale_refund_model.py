@@ -73,7 +73,6 @@ class SaleRefund(models.Model):
         verbose_name = _("Sale refund")
         verbose_name_plural = _("Sale refunds")
         indexes = [
-            models.Index(fields=["invoice"]),
             models.Index(fields=["payment"]),
             models.Index(fields=["status"]),
         ]
@@ -104,16 +103,6 @@ class SaleRefund(models.Model):
                         "payment": self.payment.amount_applied,
                     }
                 )
-
-        # Verify invoice matches payment's invoice
-        if (
-            hasattr(self, "payment")
-            and hasattr(self, "invoice")
-            and self.payment
-            and self.invoice
-        ):
-            if self.payment.invoice_id != self.invoice_id:
-                raise ValidationError(_("Refund invoice must match payment invoice"))
 
     def __str__(self) -> str:
         return f"Refund {self.amount} for Payment #{self.payment_id}"
