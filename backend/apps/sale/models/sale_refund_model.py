@@ -7,6 +7,8 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from simple_history.models import HistoricalRecords
 
+from .sale_payment_model import SalePayment
+
 User = get_user_model()
 
 
@@ -20,21 +22,9 @@ class SaleRefund(models.Model):
     - Refund method may differ from payment method
     """
 
-    class Method(models.TextChoices):
-        CASH = "CASH", _("Cash")
-        POS = "POS", _("POS")
-        CARD_TRANSFER = "CARD_TRANSFER", _("Card to card")
-
     class Status(models.TextChoices):
         COMPLETED = "COMPLETED", _("Completed")
         VOID = "VOID", _("Voided")
-
-    invoice = models.ForeignKey(
-        "sale.SaleInvoice",
-        on_delete=models.PROTECT,
-        related_name="refunds",
-        verbose_name=_("Invoice"),
-    )
 
     payment = models.ForeignKey(
         "sale.SalePayment",
@@ -43,17 +33,13 @@ class SaleRefund(models.Model):
         verbose_name=_("Original payment"),
     )
 
-    amount = models.DecimalField(
+    amount = models.PositiveIntegerField(
         _("Refund amount"),
-        max_digits=12,
-        decimal_places=4,
         help_text=_("Refunded amount (excluding tip)"),
     )
 
     method = models.CharField(
-        _("Refund method"),
-        max_length=20,
-        choices=Method.choices,
+        _("Refund method"), max_length=20, choices=SalePayment.PaymentMethod.choices
     )
 
     processed_by = models.ForeignKey(

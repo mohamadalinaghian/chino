@@ -139,18 +139,6 @@ class Sale(models.Model):
         help_text=_("Staff member who canceled the sale"),
     )
 
-    # ==================== INVOICE DATA (Populated when CLOSED) ====================
-
-    invoice_number = models.CharField(
-        _("Invoice number"),
-        max_length=50,
-        unique=True,
-        null=True,
-        blank=True,
-        db_index=True,
-        help_text=_("Auto-generated when sale is closed (e.g., INV-2025-001)"),
-    )
-
     # ---- Financial Breakdown ----
     subtotal_amount = models.DecimalField(
         _("Subtotal"),

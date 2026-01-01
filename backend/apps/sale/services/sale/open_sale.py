@@ -36,7 +36,7 @@ class OpenSaleService:
     @dataclass
     class ExtraInput:
         product: Product
-        quantity: Decimal
+        quantity: int
 
     @dataclass
     class ItemInput:
@@ -74,7 +74,7 @@ class OpenSaleService:
             guest_count=guest_count,
             guest=guest,
             note=note,
-            state=Sale.State.OPEN,
+            state=Sale.SaleState.OPEN,
         )
 
         # Create Items
@@ -96,12 +96,12 @@ class OpenSaleService:
             raise ValidationError(_("Menu item has no price"))
 
         # Create Parent (Menu Item)
-        # BUG FIX: Use item.menu.name (Product) for the FK
         parent = SaleItem.objects.create(
             sale=sale,
             product=item.menu.name,
             quantity=item.quantity,
-            unit_price=Decimal(item.menu.price),
+            unit_price=item.menu.price,
+            material_cost=item.menu.material_cost,
         )
 
         # Create Children (Extras)
@@ -116,13 +116,11 @@ class OpenSaleService:
             raise ValidationError(_("Extra quantity must be positive"))
 
         # Calculate Price for Extra
-        total_cost = Decimal(
-            MenuItemService.extra_req_cost(
-                product_id=extra.product.pk,
-                quantity=extra.quantity,
-            )
+        total_price, total_cost = MenuItemService.extra_req_cost(
+            product_id=extra.product.pk,
+            quantity=Decimal(extra.quantity),
         )
-        unit_price = total_cost / extra.quantity
+        unit_price = total_price / extra.quantity
 
         return SaleItem.objects.create(
             sale=sale,
@@ -130,6 +128,7 @@ class OpenSaleService:
             product=extra.product,
             quantity=extra.quantity,
             unit_price=unit_price,
+            material_cost=total_cost,
         )
 
     @staticmethod

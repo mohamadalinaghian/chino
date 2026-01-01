@@ -4,7 +4,6 @@ from apps.inventory.services.item_production import ItemProductionService
 from apps.sale.models import Sale
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Max
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -54,27 +53,23 @@ class CloseSaleService:
         # 2. Calculate COGS (Cost of Goods Sold)
         total_cost = CloseSaleService._calculate_cogs(sale)
 
-        # 3. Generate Invoice Number
-        invoice_number = CloseSaleService._generate_invoice_number()
-
-        # 4. Apply financial data
-        sale.invoice_number = invoice_number
+        # 3. Apply financial data
         sale.discount_amount = discount_amount
         sale.tax_amount = tax_amount
         sale.total_cost = total_cost
         # Note: subtotal_amount is already set by OpenSaleService/ModifySaleService
         # Note: total_amount, gross_profit, gross_margin_percent are auto-calculated in save()
 
-        # 5. Set payment status
+        # 4. Set payment status
         sale.payment_status = Sale.PaymentStatus.UNPAID
 
-        # 6. Set state and audit fields
-        sale.state = Sale.State.CLOSED
+        # 5. Set state and audit fields
+        sale.state = Sale.SaleState.CLOSED
         sale.closed_by = performer
         sale.closed_at = timezone.now()
         sale.close_reason = close_reason
 
-        # 7. Save (will auto-calculate total_amount, gross_profit, etc.)
+        # 6. Save (will auto-calculate total_amount, gross_profit, etc.)
         sale.save()
 
         return sale
@@ -123,7 +118,8 @@ class CloseSaleService:
                 except Exception as e:
                     raise ValidationError(
                         _(
-                            f"Failed to calculate COGS for '{product.name}': {str(e)}"
+                            f"Failed to calculate COGS for '{
+                          product.name}': {str(e)}"
                         )
                     )
             else:
@@ -136,36 +132,9 @@ class CloseSaleService:
                 except Exception as e:
                     raise ValidationError(
                         _(
-                            f"Failed to reserve stock for '{product.name}': {str(e)}"
+                            f"Failed to reserve stock for '{
+                          product.name}': {str(e)}"
                         )
                     )
 
         return total_cost
-
-    @staticmethod
-    def _generate_invoice_number() -> str:
-        """
-        Generate sequential invoice number in format: INV-YYYY-NNNNNN
-
-        Returns:
-            str: Unique invoice number (e.g., "INV-2025-000001")
-        """
-        current_year = timezone.now().year
-        prefix = f"INV-{current_year}-"
-
-        # Get last invoice number for this year from Sale model
-        last_sale = Sale.objects.filter(
-            invoice_number__startswith=prefix
-        ).aggregate(Max("invoice_number"))["invoice_number__max"]
-
-        if last_sale:
-            # Extract sequence number and increment
-            try:
-                last_seq = int(last_sale.split("-")[-1])
-                next_seq = last_seq + 1
-            except (ValueError, IndexError):
-                next_seq = 1
-        else:
-            next_seq = 1
-
-        return f"{prefix}{next_seq:06d}"

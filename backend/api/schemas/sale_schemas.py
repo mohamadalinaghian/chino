@@ -13,9 +13,9 @@ class SaleType(str, Enum):
 
 
 class SaleState(str, Enum):
-    OPEN = Sale.State.OPEN
-    CLOSED = Sale.State.CLOSED
-    CANCELED = Sale.State.CANCELED
+    OPEN = Sale.SaleState.OPEN
+    CLOSED = Sale.SaleState.CLOSED
+    CANCELED = Sale.SaleState.CANCELED
 
 
 class PaymentStatus(str, Enum):
@@ -205,7 +205,9 @@ class CloseSaleResponse(Schema):
 class CancelSaleRequest(Schema):
     """Request to cancel/void a sale"""
 
-    cancel_reason: str = Field(..., min_length=1, description="Required cancellation reason")
+    cancel_reason: str = Field(
+        ..., min_length=1, description="Required cancellation reason"
+    )
 
 
 class CancelSaleResponse(Schema):

@@ -314,7 +314,8 @@ def sale_dashboard(request):
             id=sale.pk,
             state=sale.state,
             table=sale.table.name if sale.table else None,
-            guest_name=sale.guest_name or (sale.guest.username if sale.guest else "Walk-in"),
+            guest_name=sale.guest_name
+            or (sale.guest.username if sale.guest else "Walk-in"),
             total_amount=sale.total_amount if can_see_total else None,
             opened_by_name=sale.opened_by.get_full_name() or sale.opened_by.username,
             opened_at=sale.opened_at,
@@ -395,7 +396,8 @@ def cancel_sale_endpoint(request, sale_id: int, payload: CancelSaleRequest):
         state=canceled_sale.state,
         canceled_at=canceled_sale.canceled_at,
         canceled_by_name=(
-            canceled_sale.canceled_by.get_full_name() or canceled_sale.canceled_by.username
+            canceled_sale.canceled_by.get_full_name()
+            or canceled_sale.canceled_by.username
         ),
         cancel_reason=canceled_sale.cancel_reason,
     )
