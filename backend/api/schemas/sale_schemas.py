@@ -118,7 +118,6 @@ class SaleDetailResponse(Schema):
     payment_status: Optional[str] = None
     closed_at: Optional[datetime] = None
     closed_by_name: Optional[str] = None
-    close_reason: Optional[str] = None
 
     # ---- Payment Tracking (when CLOSED) ----
     total_paid: Optional[Decimal] = None
@@ -178,7 +177,6 @@ class CloseSaleRequest(Schema):
 
     tax_amount: Decimal = Decimal("0")
     discount_amount: Decimal = Decimal("0")
-    close_reason: Optional[str] = ""
 
 
 class CloseSaleResponse(Schema):

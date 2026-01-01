@@ -258,7 +258,6 @@ def get_sale_detail(request, sale_id: int):
             if sale.closed_by
             else None
         ),
-        "close_reason": sale.close_reason,
         # ---- Payment Tracking (when CLOSED) ----
         "total_paid": sale.total_paid if sale.is_closed else None,
         "balance_due": sale.balance_due if sale.is_closed else None,
@@ -355,7 +354,6 @@ def close_sale_endpoint(request, sale_id: int, payload: CloseSaleRequest):
             performer=request.auth,
             tax_amount=payload.tax_amount,
             discount_amount=payload.discount_amount,
-            close_reason=payload.close_reason or "",
         )
     except ValidationError as e:
         return 422, {"detail": str(e)}
