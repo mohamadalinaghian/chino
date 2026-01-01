@@ -115,7 +115,6 @@ class SaleDetailResponse(Schema):
     total_amount: Decimal
 
     # ---- Invoice Data (when CLOSED) ----
-    invoice_number: Optional[str] = None
     payment_status: Optional[str] = None
     closed_at: Optional[datetime] = None
     closed_by_name: Optional[str] = None
@@ -156,7 +155,6 @@ class SaleDashboardItemSchema(Schema):
     opened_at: datetime  # Frontend can calc "Time Elapsed" from this
 
     # ---- Invoice/Payment (when CLOSED) ----
-    invoice_number: Optional[str] = None
     payment_status: Optional[str] = None
     balance_due: Optional[Decimal] = None
 
@@ -187,7 +185,6 @@ class CloseSaleResponse(Schema):
     """Response after closing a sale"""
 
     sale_id: int
-    invoice_number: str
     state: str
     payment_status: str
     subtotal_amount: Decimal

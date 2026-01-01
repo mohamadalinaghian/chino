@@ -197,18 +197,18 @@ def get_sale_detail(request, sale_id: int):
         my_extras = [
             ExtraDetailSchema(
                 id=child.pk,
-                product_id=child.product_id,
+                product_id=child.product.id,
                 product_name=child.product.name,
                 quantity=child.quantity,
                 unit_price=child.unit_price,
                 total=child.quantity * child.unit_price,
             )
             for child in children
-            if child.parent_item_id == parent.pk
+            if child.parent_item.id == parent.pk
         ]
 
         # Resolve the Menu ID
-        linked_menu_id = product_to_menu_map.get(parent.product_id)
+        linked_menu_id = product_to_menu_map.get(parent.product.id)
 
         response_items.append(
             SaleItemDetailSchema(
@@ -233,7 +233,7 @@ def get_sale_detail(request, sale_id: int):
         "sale_type": sale.sale_type,
         "table_id": sale.table.id if sale.table else None,
         "table_name": sale.table.name if sale.table else None,
-        "guest_name": sale.guest_name or (sale.guest.username if sale.guest else None),
+        "guest_name": sale.guest.name or (sale.guest.username if sale.guest else None),
         "guest_count": sale.guest_count,
         "note": sale.note,
         "opened_at": sale.opened_at,
@@ -249,7 +249,6 @@ def get_sale_detail(request, sale_id: int):
         "tax_amount": sale.tax_amount,
         "total_amount": sale.total_amount,
         # ---- Invoice Data (when CLOSED) ----
-        "invoice_number": sale.invoice_number,
         "payment_status": sale.payment_status if sale.is_closed else None,
         "closed_at": sale.closed_at,
         "closed_by_name": (
@@ -314,13 +313,12 @@ def sale_dashboard(request):
             id=sale.pk,
             state=sale.state,
             table=sale.table.name if sale.table else None,
-            guest_name=sale.guest_name
+            guest_name=sale.guest.name
             or (sale.guest.username if sale.guest else "Walk-in"),
             total_amount=sale.total_amount if can_see_total else None,
             opened_by_name=sale.opened_by.get_full_name() or sale.opened_by.username,
             opened_at=sale.opened_at,
             # Invoice/payment data (when CLOSED)
-            invoice_number=sale.invoice_number,
             payment_status=sale.payment_status if sale.is_closed else None,
             balance_due=sale.balance_due if sale.is_closed else None,
         )
@@ -359,7 +357,6 @@ def close_sale_endpoint(request, sale_id: int, payload: CloseSaleRequest):
 
     return CloseSaleResponse(
         sale_id=closed_sale.pk,
-        invoice_number=closed_sale.invoice_number,
         state=closed_sale.state,
         payment_status=closed_sale.payment_status,
         subtotal_amount=closed_sale.subtotal_amount,
@@ -385,7 +382,7 @@ def cancel_sale_endpoint(request, sale_id: int, payload: CancelSaleRequest):
     can_cancel_sale(request.auth, sale)
 
     try:
-        canceled_sale = CancelSaleService.cancel_sale(
+        canceled_sale = CancelSaleService.cancel_open_sale(
             sale=sale, performer=request.auth, cancel_reason=payload.cancel_reason
         )
     except ValidationError as e:

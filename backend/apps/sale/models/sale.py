@@ -266,7 +266,6 @@ class Sale(models.Model):
             models.Index(fields=["state", "opened_at"]),
             models.Index(fields=["state", "payment_status"]),
             models.Index(fields=["table", "state"]),
-            models.Index(fields=["invoice_number"]),
             models.Index(fields=["opened_by"]),
             models.Index(fields=["closed_at"]),
         ]
