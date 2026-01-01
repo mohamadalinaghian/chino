@@ -209,6 +209,16 @@ class Sale(models.Model):
         help_text=_("Payment completion status (only for CLOSED sales)"),
     )
 
+    invoice_number = models.CharField(
+        _("Invoice number"),
+        max_length=50,
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text=_("Unique invoice number (generated when sale is closed)"),
+    )
+
     # ---- Notes & Reasons ----
     note = models.TextField(
         _("Note"),
@@ -392,6 +402,9 @@ class Sale(models.Model):
 
     def save(self, *args, **kwargs):
         """Auto-calculate fields before save"""
+        # Extract skip_validation flag (for internal use by services)
+        skip_validation = kwargs.pop('skip_validation', False)
+
         # Calculate total amount
         self.total_amount = (
             self.subtotal_amount - self.discount_amount + self.tax_amount
@@ -408,8 +421,9 @@ class Sale(models.Model):
         else:
             self.gross_margin_percent = Decimal("0")
 
-        # Full validation
-        self.full_clean()
+        # Full validation (unless explicitly skipped)
+        if not skip_validation:
+            self.full_clean()
 
         super().save(*args, **kwargs)
 

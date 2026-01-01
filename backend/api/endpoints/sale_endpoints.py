@@ -233,7 +233,11 @@ def get_sale_detail(request, sale_id: int):
         "sale_type": sale.sale_type,
         "table_id": sale.table.id if sale.table else None,
         "table_name": sale.table.name if sale.table else None,
-        "guest_name": sale.guest.name or (sale.guest.username if sale.guest else None),
+        "guest_name": (
+            sale.guest.get_full_name() or sale.guest.username
+            if sale.guest
+            else None
+        ),
         "guest_count": sale.guest_count,
         "note": sale.note,
         "opened_at": sale.opened_at,
@@ -313,8 +317,11 @@ def sale_dashboard(request):
             id=sale.pk,
             state=sale.state,
             table=sale.table.name if sale.table else None,
-            guest_name=sale.guest.name
-            or (sale.guest.username if sale.guest else "Walk-in"),
+            guest_name=(
+                sale.guest.get_full_name() or sale.guest.username
+                if sale.guest
+                else "Walk-in"
+            ),
             total_amount=sale.total_amount if can_see_total else None,
             opened_by_name=sale.opened_by.get_full_name() or sale.opened_by.username,
             opened_at=sale.opened_at,

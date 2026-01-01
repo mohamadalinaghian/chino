@@ -50,7 +50,7 @@ def can_open_sale(user) -> None:
         raise PermissionDenied(_("You are not allowed to open a sale"))
 
 
-def can_see_sales_list(user) -> None:
+def can_see_sale_list(user) -> None:
     """
     Validates user permission to view the sales dashboard/list.
 
@@ -64,6 +64,22 @@ def can_see_sales_list(user) -> None:
 
     if not user.has_perm("sale.view_sale_list"):
         raise PermissionDenied(_("You are not allowed to view the sales list"))
+
+
+def can_see_sale_details(user) -> None:
+    """
+    Validates user permission to view sale details.
+
+    Args:
+        user: Django User instance
+
+    Raises:
+        PermissionDenied: If user lacks 'sale.view_sale_detail' permission
+    """
+    _require_authenticated(user)
+
+    if not user.has_perm("sale.view_sale_detail"):
+        raise PermissionDenied(_("You are not allowed to view sale details"))
 
 
 def can_modify_sale(user, sale: Sale) -> None:
@@ -154,7 +170,7 @@ def can_cancel_close_sale(user, sale: Sale) -> None:
 
     # State check
     if sale.state != Sale.SaleState.CLOSED:
-        raise PermissionDenied(_("Only OPEN sales can be canceled"))
+        raise PermissionDenied(_("Only CLOSED sales can be canceled"))
 
     # Permission check
     if not user.has_perm("sale.cancel_sale"):
