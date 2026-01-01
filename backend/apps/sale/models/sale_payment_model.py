@@ -104,8 +104,6 @@ class SalePayment(models.Model):
         help_text=_("Specific items this payment covers (empty means all items)"),
     )
 
-    history = HistoricalRecords()
-
     # History tracking
     history = HistoricalRecords()
 

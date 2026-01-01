@@ -86,7 +86,6 @@ class SaleInvoice(models.Model):
         related_name="issued_invoices",
         verbose_name=_("Issued by"),
     )
-    history = HistoricalRecords()
 
     # History tracking
     history = HistoricalRecords()

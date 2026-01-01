@@ -49,6 +49,7 @@ class Sale(models.Model):
 
     class PaymentStatus(models.TextChoices):
         """Payment status (only relevant when state=CLOSED)"""
+
         UNPAID = "UNPAID", _("Unpaid")
         PARTIALLY_PAID = "PARTIALLY_PAID", _("Partially paid")
         PAID = "PAID", _("Paid")
@@ -80,14 +81,6 @@ class Sale(models.Model):
         null=True,
         blank=True,
         help_text=_("Table for dine-in sales"),
-    )
-
-    guest_name = models.CharField(
-        _("Guest name"),
-        max_length=100,
-        blank=True,
-        default="",
-        help_text=_("Optional customer name"),
     )
 
     guest_count = models.PositiveSmallIntegerField(
@@ -350,9 +343,7 @@ class Sale(models.Model):
         # Validate state-specific requirements
         if self.state == self.SaleState.CLOSED:
             if not self.invoice_number:
-                raise ValidationError(
-                    _("Closed sales must have an invoice number")
-                )
+                raise ValidationError(_("Closed sales must have an invoice number"))
             if not self.closed_by:
                 raise ValidationError(_("Closed sales must have closed_by set"))
             if not self.closed_at:
@@ -406,7 +397,9 @@ class Sale(models.Model):
         expected_profit = self.total_amount - self.total_cost
         if abs(self.gross_profit - expected_profit) > Decimal("0.01"):
             raise ValidationError(
-                _("Gross profit calculation mismatch: expected %(expected)s, got %(actual)s")
+                _(
+                    "Gross profit calculation mismatch: expected %(expected)s, got %(actual)s"
+                )
                 % {"expected": expected_profit, "actual": self.gross_profit}
             )
 
@@ -435,7 +428,8 @@ class Sale(models.Model):
 
     def __str__(self) -> str:
         if self.invoice_number:
-            return f"Sale #{self.pk} ({self.invoice_number}) - {self.get_state_display()}"
+            return f"Sale #{
+                    self.pk} ({self.invoice_number}) - {self.get_state_display()}"
 
         table_info = f" - {self.table.name}" if self.table else ""
         return f"Sale #{self.pk} ({self.get_state_display()}){table_info}"
