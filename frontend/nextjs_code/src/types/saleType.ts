@@ -17,7 +17,16 @@ export enum SaleType {
 export enum SaleState {
   OPEN = 'OPEN',
   CLOSED = 'CLOSED',
-  CANCELLED = 'CANCELLED',
+  CANCELED = 'CANCELED',
+}
+
+/**
+ * Payment status enum (for CLOSED sales)
+ */
+export enum PaymentStatus {
+  UNPAID = 'UNPAID',
+  PARTIALLY_PAID = 'PARTIALLY_PAID',
+  PAID = 'PAID',
 }
 
 /**
@@ -26,11 +35,16 @@ export enum SaleState {
  */
 export interface SaleDashboardItem {
   id: number;
+  state: string;
   table: string | null;
   guest_name: string | null;
   total_amount: string | null;
   opened_by_name: string;
   opened_at: string; // ISO date string
+  // Invoice/payment fields (when CLOSED)
+  invoice_number: string | null;
+  payment_status: string | null;
+  balance_due: string | null;
 }
 
 /**
@@ -113,19 +127,51 @@ export interface SaleItemDetailSchema {
 }
 
 /**
- * Complete sale detail response
+ * Complete sale detail response - Unified model with invoice and COGS data
  */
 export interface SaleDetailResponse {
+  // ---- Sale Metadata ----
   id: number;
   state: string;
   sale_type: string;
   table_id: number | null;
-  table_number: string | null;
+  table_name: string | null;
   guest_name: string | null;
   guest_count: number | null;
-  total_amount: string;
   note: string;
   opened_at: string;
+  opened_by_name: string;
+  modified_by_name: string | null;
+
+  // ---- Financial Data ----
+  subtotal_amount: string;
+  discount_amount: string;
+  tax_amount: string;
+  total_amount: string;
+
+  // ---- Invoice Data (when CLOSED) ----
+  invoice_number: string | null;
+  payment_status: string | null;
+  closed_at: string | null;
+  closed_by_name: string | null;
+  close_reason: string | null;
+
+  // ---- Payment Tracking (when CLOSED) ----
+  total_paid: string | null;
+  balance_due: string | null;
+  is_fully_paid: boolean | null;
+
+  // ---- COGS & Revenue (when CLOSED, if has permission) ----
+  total_cost: string | null;
+  gross_profit: string | null;
+  gross_margin_percent: string | null;
+
+  // ---- Cancellation (when CANCELED) ----
+  canceled_at: string | null;
+  canceled_by_name: string | null;
+  cancel_reason: string | null;
+
+  // ---- Items ----
   items: SaleItemDetailSchema[];
 }
 
@@ -133,3 +179,47 @@ export interface SaleDetailResponse {
  * Time filter options for dashboard
  */
 export type TimeFilter = 'LT_30' | '30_90' | 'GT_90';
+
+/**
+ * Request for closing a sale
+ */
+export interface CloseSaleRequest {
+  tax_amount: string;
+  discount_amount: string;
+  close_reason: string;
+}
+
+/**
+ * Response after closing a sale
+ */
+export interface CloseSaleResponse {
+  sale_id: number;
+  invoice_number: string;
+  state: string;
+  payment_status: string;
+  subtotal_amount: string;
+  discount_amount: string;
+  tax_amount: string;
+  total_amount: string;
+  total_cost: string;
+  gross_profit: string;
+  gross_margin_percent: string;
+}
+
+/**
+ * Request for canceling a sale
+ */
+export interface CancelSaleRequest {
+  cancel_reason: string;
+}
+
+/**
+ * Response after canceling a sale
+ */
+export interface CancelSaleResponse {
+  sale_id: number;
+  state: string;
+  canceled_at: string;
+  canceled_by_name: string;
+  cancel_reason: string;
+}
