@@ -3,10 +3,12 @@ from ninja import NinjaAPI
 
 from .endpoints import (
     auth_endpoints,
+    core_setting_endpoints,
     menu_endpoints,
     menu_pdf_endpoints,
     sale_endpoints,
     table_endpoints,
+    user_endpoints,
 )
 
 api = NinjaAPI(
@@ -22,4 +24,6 @@ api.add_router("/auth/", auth_endpoints.router)
 api.add_router("/menu/", menu_endpoints.router_menu_display)
 api.add_router("/menu/", menu_pdf_endpoints.router_menu_pdf)
 api.add_router("/sale/", sale_endpoints.router)
+api.add_router("/settings/", core_setting_endpoints.router)
+api.add_router("/user/", user_endpoints.router)
 api.add_router("/table/", table_endpoints.router_table)

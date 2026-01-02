@@ -284,27 +284,13 @@ export default function SaleDetailPage() {
   };
 
   /**
-   * Close sale
+   * Close sale - Redirect to payment page
    */
   const handleClose = async () => {
     if (!canClose) return;
 
-    const confirm = window.confirm('آیا از بستن این فروش اطمینان دارید؟');
-    if (!confirm) return;
-
-    try {
-      setClosing(true);
-      setError(null);
-
-      await SaleApiClient.closeSale(saleId);
-
-      // Redirect to dashboard
-      router.push('/sale');
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'خطا در بستن فروش';
-      setError(message);
-      setClosing(false);
-    }
+    // Redirect to payment page for invoice and payment processing
+    router.push(`/sale/${saleId}/payment`);
   };
 
   /**
@@ -313,12 +299,12 @@ export default function SaleDetailPage() {
   const handleCancel = async () => {
     if (!canCancel) return;
 
-    const confirm = window.confirm('آیا از لغو این فروش اطمینان دارید؟ این عملیات قابل بازگشت نیست.');
-    if (!confirm) return;
+    const reason = window.prompt('دلیل لغو فروش را وارد کنید:');
+    if (!reason) return;
 
     try {
       setError(null);
-      await SaleApiClient.cancelSale(saleId);
+      await SaleApiClient.cancelSale(saleId, { cancel_reason: reason });
       router.push('/sale');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'خطا در لغو فروش';
@@ -364,21 +350,21 @@ export default function SaleDetailPage() {
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 pb-32">
       {/* Sticky Header with Total */}
-      <div className="sticky top-0 z-40 bg-gray-900 border-b-4 border-indigo-500 shadow-2xl">
-        <div className="max-w-7xl mx-auto px-4 py-5">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
+      <div className="sticky top-0 z-40 bg-gray-900 border-b-2 border-indigo-500 shadow-2xl">
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => router.push('/sale')}
-                className="w-12 h-12 bg-gray-800 hover:bg-gray-700 rounded-xl flex items-center justify-center text-lg transition-all"
+                className="w-10 h-10 bg-gray-800 hover:bg-gray-700 rounded-lg flex items-center justify-center text-lg transition-all"
               >
                 ←
               </button>
               <div>
-                <h1 className="text-lg font-bold flex items-center gap-3">
+                <h1 className="text-base font-bold flex items-center gap-2">
                   فروش #{sale.id}
                   <span className={`
-                    px-4 py-1.5 rounded-full text-sm font-medium border
+                    px-2 py-1 rounded-full text-xs font-medium border
                     ${sale.state === 'OPEN' ? 'bg-green-600/20 text-green-400 border-green-500/50' :
                       sale.state === 'CLOSED' ? 'bg-blue-600/20 text-blue-400 border-blue-500/50' :
                         'bg-red-600/20 text-red-400 border-red-500/50'}
@@ -386,7 +372,7 @@ export default function SaleDetailPage() {
                     {sale.state === 'OPEN' ? 'باز' : sale.state === 'CLOSED' ? 'بسته شده' : 'لغو شده'}
                   </span>
                 </h1>
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-xs text-gray-400 mt-0.5">
                   {sale.table_number ? `میز ${sale.table_number}` : 'بیرون‌بر'}
                   {sale.guest_count && ` • ${sale.guest_count} مهمان`}
                   {sale.guest_name && ` • ${sale.guest_name}`}
@@ -395,28 +381,28 @@ export default function SaleDetailPage() {
             </div>
 
             {isOpen && (
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 {canCancel && (
-                  <button onClick={handleCancel} className="px-5 py-3 rounded-xl bg-red-600/20 hover:bg-red-600/30 border border-red-500/50 text-red-400 font-medium flex items-center gap-2">
-                    <span>🗑️</span> لغو فروش
+                  <button onClick={handleCancel} className="px-4 py-2 rounded-lg bg-red-600/20 hover:bg-red-600/30 border border-red-500/50 text-red-400 text-sm font-medium flex items-center gap-1">
+                    <span>🗑️</span> لغو
                   </button>
                 )}
                 {canClose && (
                   <button
                     onClick={handleClose}
                     disabled={closing || cart.length === 0}
-                    className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 disabled:opacity-60 text-white font-bold shadow-lg flex items-center gap-2"
+                    className="px-5 py-2 rounded-lg bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 disabled:opacity-60 text-white text-sm font-bold shadow-lg flex items-center gap-1"
                   >
-                    {closing ? <span className="animate-spin">⏳</span> : '✓'} بستن فروش
+                    {closing ? <span className="animate-spin">⏳</span> : '✓'} بستن
                   </button>
                 )}
               </div>
             )}
           </div>
 
-          <div className="flex items-center justify-end gap-3">
-            <span className="text-sm text-gray-400">جمع کل:</span>
-            <span className="text-lg font-bold text-indigo-400">
+          <div className="flex items-center justify-end gap-2">
+            <span className="text-xs text-gray-400">جمع کل:</span>
+            <span className="text-base font-bold text-indigo-400">
               {formatPersianMoney(calculateTotal())}
             </span>
           </div>
@@ -424,71 +410,71 @@ export default function SaleDetailPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="max-w-5xl mx-auto px-4 py-4">
         {error && (
-          <div className="mb-6 bg-red-900/30 border-2 border-red-800/70 rounded-2xl p-5 flex items-start gap-4">
+          <div className="mb-4 bg-red-900/30 border-2 border-red-800/70 rounded-xl p-4 flex items-start gap-3">
             <span className="text-lg">⚠️</span>
             <div className="flex-1">
-              <p className="text-red-300 font-medium">{error}</p>
+              <p className="text-red-300 font-medium text-sm">{error}</p>
             </div>
             <button onClick={() => setError(null)} className="text-gray-400 hover:text-white text-lg">✕</button>
           </div>
         )}
 
         {/* Items */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold">آیتم‌های سفارش</h2>
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-bold">آیتم‌های سفارش</h2>
             {canEdit && (
               <button
                 onClick={() => { setShowAddMenu(true); loadMenu(); }}
-                className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 rounded-xl text-white font-bold shadow-lg flex items-center gap-3"
+                className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 rounded-lg text-white text-sm font-bold shadow-lg flex items-center gap-2"
               >
-                <span className="text-lg">➕</span> افزودن آیتم
+                <span>➕</span> افزودن
               </button>
             )}
           </div>
 
           {cart.length === 0 ? (
-            <div className="bg-gray-800/50 border-2 border-dashed border-gray-700 rounded-2xl p-16 text-center">
-              <div className="text-6xl mb-4 opacity-50">🧾</div>
-              <p className="text-lg text-gray-500">سفارشی ثبت نشده است</p>
+            <div className="bg-gray-800/50 border-2 border-dashed border-gray-700 rounded-xl p-12 text-center">
+              <div className="text-4xl mb-3 opacity-50">🧾</div>
+              <p className="text-base text-gray-500">سفارشی ثبت نشده است</p>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-3">
               {cart.map((item, index) => {
                 const itemSubtotal = item.price * item.quantity;
                 const extrasSubtotal = item.extras.reduce((s, e) => s + e.price * e.quantity * item.quantity, 0);
                 const total = itemSubtotal + extrasSubtotal;
 
                 return (
-                  <div key={`${item.item_id || 'new'}-${index}`} className="bg-gray-800 rounded-2xl p-6 border border-gray-700 shadow-xl">
-                    <div className="flex justify-between items-start mb-5">
+                  <div key={`${item.item_id || 'new'}-${index}`} className="bg-gray-800 rounded-xl p-4 border border-gray-700 shadow-lg">
+                    <div className="flex justify-between items-start mb-3">
                       <div>
-                        <h3 className="text-lg font-bold">{item.name}</h3>
-                        <p className="text-sm text-gray-400 mt-1">{formatPersianMoney(item.price)} × {item.quantity}</p>
+                        <h3 className="text-base font-bold">{item.name}</h3>
+                        <p className="text-xs text-gray-400 mt-0.5">{formatPersianMoney(item.price)} × {item.quantity}</p>
                       </div>
                       {canEdit && (
-                        <button onClick={() => updateQuantity(index, 0)} className="text-red-400 hover:text-red-300 text-lg p-2">
+                        <button onClick={() => updateQuantity(index, 0)} className="text-red-400 hover:text-red-300 text-base p-1">
                           🗑️
                         </button>
                       )}
                     </div>
 
                     {item.extras.length > 0 && (
-                      <div className="mb-5 p-4 bg-gray-750 rounded-xl">
-                        <p className="font-semibold text-gray-300 mb-3">افزودنی‌ها:</p>
-                        <div className="space-y-3">
+                      <div className="mb-3 p-3 bg-gray-750 rounded-lg">
+                        <p className="font-semibold text-gray-300 text-sm mb-2">افزودنی‌ها:</p>
+                        <div className="space-y-2">
                           {item.extras.map(extra => (
-                            <div key={extra.product_id} className="flex justify-between items-center">
+                            <div key={extra.product_id} className="flex justify-between items-center text-sm">
                               <span>{extra.name}</span>
-                              <div className="flex items-center gap-4">
-                                <span className="text-sm text-gray-400">{formatPersianMoney(extra.price)} × {extra.quantity}</span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs text-gray-400">{formatPersianMoney(extra.price)} × {extra.quantity}</span>
                                 {canEdit && (
-                                  <div className="flex items-center gap-2 bg-gray-700 rounded-lg">
-                                    <button onClick={() => updateExtraQuantity(index, extra.product_id, extra.quantity - 1)} className="w-9 h-9 hover:bg-gray-600 rounded-l-lg">−</button>
-                                    <span className="w-10 text-center font-bold">{extra.quantity}</span>
-                                    <button onClick={() => updateExtraQuantity(index, extra.product_id, extra.quantity + 1)} className="w-9 h-9 hover:bg-gray-600 rounded-r-lg">+</button>
+                                  <div className="flex items-center bg-gray-700 rounded-lg">
+                                    <button onClick={() => updateExtraQuantity(index, extra.product_id, extra.quantity - 1)} className="w-8 h-8 hover:bg-gray-600 rounded-l-lg text-sm">−</button>
+                                    <span className="w-8 text-center font-bold text-sm">{extra.quantity}</span>
+                                    <button onClick={() => updateExtraQuantity(index, extra.product_id, extra.quantity + 1)} className="w-8 h-8 hover:bg-gray-600 rounded-r-lg text-sm">+</button>
                                   </div>
                                 )}
                               </div>
@@ -498,26 +484,26 @@ export default function SaleDetailPage() {
                       </div>
                     )}
 
-                    <div className="flex justify-between items-center pt-4 border-t border-gray-700">
-                      <div className="flex items-center gap-4">
+                    <div className="flex justify-between items-center pt-3 border-t border-gray-700">
+                      <div className="flex items-center gap-3">
                         {canEdit && (
                           <>
-                            <div className="flex items-center bg-gray-700 rounded-xl">
-                              <button onClick={() => updateQuantity(index, item.quantity - 1)} className="w-12 h-12 hover:bg-gray-600 rounded-l-xl text-lg font-bold">−</button>
-                              <span className="w-16 text-center text-lg font-bold">{item.quantity}</span>
-                              <button onClick={() => updateQuantity(index, item.quantity + 1)} className="w-12 h-12 hover:bg-gray-600 rounded-r-xl text-lg font-bold">+</button>
+                            <div className="flex items-center bg-gray-700 rounded-lg">
+                              <button onClick={() => updateQuantity(index, item.quantity - 1)} className="w-10 h-10 hover:bg-gray-600 rounded-l-lg text-base font-bold">−</button>
+                              <span className="w-12 text-center text-base font-bold">{item.quantity}</span>
+                              <button onClick={() => updateQuantity(index, item.quantity + 1)} className="w-10 h-10 hover:bg-gray-600 rounded-r-lg text-base font-bold">+</button>
                             </div>
                             <button
                               onClick={() => { setSelectedItemForExtras(index); setShowExtrasModal(true); loadExtras(); }}
-                              className="px-5 py-3 bg-green-600/20 hover:bg-green-600/30 border border-green-500/50 rounded-xl text-green-400 font-medium flex items-center gap-2"
+                              className="px-4 py-2 bg-green-600/20 hover:bg-green-600/30 border border-green-500/50 rounded-lg text-green-400 text-sm font-medium flex items-center gap-1"
                             >
                               <span>➕</span> افزودنی
                             </button>
                           </>
                         )}
-                        {!canEdit && <span className="text-sm text-gray-400">تعداد: <strong>{item.quantity}</strong></span>}
+                        {!canEdit && <span className="text-xs text-gray-400">تعداد: <strong>{item.quantity}</strong></span>}
                       </div>
-                      <div className="text-lg font-bold text-indigo-400">{formatPersianMoney(total)}</div>
+                      <div className="text-base font-bold text-indigo-400">{formatPersianMoney(total)}</div>
                     </div>
                   </div>
                 );

@@ -1,10 +1,13 @@
 /**
  * Sale card component for dashboard grid
  *
+ * Single Responsibility: Display sale summary with action buttons
+ *
  * Features:
  * - Click to view/edit sale
  * - Displays sale type (dine-in vs takeaway)
  * - Shows elapsed time
+ * - Pay Now button (permission-gated)
  * - Mobile responsive
  */
 
@@ -12,6 +15,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useRelativeTime } from '@/hooks/useRelativeTime';
+import { usePermissions, SalePermissions } from '@/hooks/usePermissions';
 import type { SaleDashboardItem } from '@/types/saleType';
 
 interface Props {
@@ -21,6 +25,12 @@ interface Props {
 export function SaleCard({ sale }: Props) {
   const router = useRouter();
   const relativeTime = useRelativeTime(sale.opened_at);
+  const { hasPermission } = usePermissions();
+
+  /**
+   * Permission checks
+   */
+  const canCloseSale = hasPermission(SalePermissions.CLOSE_SALE);
 
   /**
    * Determine if sale is dine-in or takeaway
@@ -30,6 +40,11 @@ export function SaleCard({ sale }: Props) {
   const icon = isDineIn ? '🍽️' : '🥡';
 
   /**
+   * Determine if sale is in OPEN state
+   */
+  const isOpen = sale.state === 'OPEN';
+
+  /**
    * Format total amount
    */
   const formattedAmount = sale.total_amount
@@ -37,10 +52,18 @@ export function SaleCard({ sale }: Props) {
     : '0';
 
   /**
-   * Handle card click
+   * Handle card click - navigate to detail view
    */
   const handleClick = () => {
     router.push(`/sale/${sale.id}`);
+  };
+
+  /**
+   * Handle Pay Now button click
+   */
+  const handlePayNow = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    router.push(`/sale/${sale.id}/payment`);
   };
 
   /**
@@ -105,5 +128,29 @@ export function SaleCard({ sale }: Props) {
           {relativeTime}
         </div>
       </div>
+
+      {/* Pay Now Button - Only for OPEN sales with permission */}
+      {isOpen && canCloseSale && (
+        <>
+          <div className="border-t border-gray-700 my-3"></div>
+          <button
+            onClick={handlePayNow}
+            className="
+              w-full py-2.5 px-4
+              bg-indigo-600 hover:bg-indigo-700
+              text-white font-medium text-sm
+              rounded-xl
+              transition-all duration-200
+              focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-800
+              active:scale-98
+              flex items-center justify-center gap-2
+            "
+          >
+            <span>💳</span>
+            <span>پرداخت و بستن فاکتور</span>
+          </button>
+        </>
+      )}
     </div>
   );
+}

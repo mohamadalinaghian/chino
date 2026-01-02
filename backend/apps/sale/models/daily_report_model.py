@@ -20,17 +20,27 @@ class DailyReport(models.Model):
     - Expected vs Actual amounts by payment method
     - Revenue breakdown (sales, tips, refunds, discounts, tax)
     - Cost breakdown (COGS, labor, operating expenses)
-    - Cash denominations
     - Opening/closing float
     - Approval workflow
+
+    ⚠️ MONETARY UNIT CONVENTION (VERY IMPORTANT)
+
+    All monetary values in this system are stored in *logical Toman units*.
+
+    - 1 stored unit = 1,000 IRR (i.e. 1 "system Toman")
+    - Minimum representable amount = 1 system Toman = 1,000 IRR
+    - Real-world values MUST be divided by 1,000 before storage
+    - Display values MUST be multiplied by 1,000 for user-facing output
+
+    Example:
+    - Real price: 1,000,000 IRR (1 million toman in common speech)
+    - Stored value: 1,000
+
     """
 
     class ReportStatus(models.TextChoices):
         DRAFT = "DRAFT", _("Draft")
-        SUBMITTED = "SUBMITTED", _("Submitted")
         APPROVED = "APPROVED", _("Approved")
-        DISPUTED = "DISPUTED", _("Disputed")
-        CLOSED = "CLOSED", _("Closed")
 
     # ---- Report Identification ----
     report_date = models.DateField(
@@ -49,44 +59,27 @@ class DailyReport(models.Model):
     )
 
     # ---- Opening/Closing Cash ----
-    opening_float = models.DecimalField(
+    opening_float = models.PositiveIntegerField(
         _("Opening float"),
-        max_digits=12,
-        decimal_places=4,
-        default=Decimal("0.0000"),
+        default=0,
         help_text=_("Cash in drawer at start of business day"),
     )
 
-    closing_cash_counted = models.DecimalField(
+    closing_cash_counted = models.PositiveIntegerField(
         _("Closing cash counted"),
-        max_digits=12,
-        decimal_places=4,
-        default=Decimal("0.0000"),
+        default=0,
         help_text=_("Actual cash counted at end of day"),
     )
 
     # ---- Revenue (Auto-calculated from system) ----
-    expected_total_sales = models.DecimalField(
+    expected_total_sales = models.PositiveIntegerField(
         _("Expected total sales"),
-        max_digits=12,
-        decimal_places=4,
-        default=Decimal("0.0000"),
         help_text=_("Sum of all invoice totals for the day"),
     )
 
-    expected_total_tips = models.DecimalField(
-        _("Expected total tips"),
-        max_digits=12,
-        decimal_places=4,
-        default=Decimal("0.0000"),
-        help_text=_("Sum of all tips from payments"),
-    )
-
-    expected_total_refunds = models.DecimalField(
+    expected_total_refunds = models.PositiveIntegerField(
         _("Expected total refunds"),
-        max_digits=12,
-        decimal_places=4,
-        default=Decimal("0.0000"),
+        default=0,
         help_text=_("Sum of all refunds issued"),
     )
 
@@ -94,7 +87,6 @@ class DailyReport(models.Model):
         _("Expected total discounts"),
         max_digits=12,
         decimal_places=4,
-        default=Decimal("0.0000"),
         help_text=_("Sum of all discounts applied"),
     )
 
@@ -102,43 +94,25 @@ class DailyReport(models.Model):
         _("Expected total tax"),
         max_digits=12,
         decimal_places=4,
-        default=Decimal("0.0000"),
         help_text=_("Sum of all tax collected"),
     )
 
-    # ---- Costs (Manual entry) ----
+    # ---- Cost ----
     cost_of_goods_sold = models.DecimalField(
         _("Cost of goods sold"),
         max_digits=12,
         decimal_places=4,
-        default=Decimal("0.0000"),
         help_text=_("COGS from inventory system"),
     )
 
-    labor_costs = models.DecimalField(
-        _("Labor costs"),
+    total_expences = models.DecimalField(
+        _("Total expences"),
         max_digits=12,
         decimal_places=4,
-        default=Decimal("0.0000"),
-        help_text=_("Employee wages for the day"),
+        help_text=_("Total expences in report date"),
     )
 
-    operating_expenses = models.DecimalField(
-        _("Operating expenses"),
-        max_digits=12,
-        decimal_places=4,
-        default=Decimal("0.0000"),
-        help_text=_("Other operating expenses (utilities, rent, etc.)"),
-    )
-
-    # ---- Variance & Notes ----
-    variance_reason = models.CharField(
-        _("Variance reason"),
-        blank=True,
-        max_length=512,
-        null=True,
-        help_text=_("Explanation for any cash discrepancies"),
-    )
+    # ---- Notes ----
 
     notes = models.CharField(
         _("Notes"),
@@ -174,20 +148,8 @@ class DailyReport(models.Model):
         db_index=True,
     )
 
-    submitted_at = models.DateTimeField(
-        _("Submitted at"),
-        null=True,
-        blank=True,
-    )
-
     approved_at = models.DateTimeField(
         _("Approved at"),
-        null=True,
-        blank=True,
-    )
-
-    closed_at = models.DateTimeField(
-        _("Closed at"),
         null=True,
         blank=True,
     )
@@ -204,25 +166,14 @@ class DailyReport(models.Model):
         ]
 
     def __str__(self):
-        return f"Daily Report {self.report_date} ({self.get_status_display()})"
+        return f"Daily Report {self.report_date}"
 
     def clean(self):
         """Validate report data."""
         super().clean()
 
-        # Validate dates
-        if self.submitted_at and self.submitted_at < self.created_at:
-            raise ValidationError(_("Submitted date cannot be before created date"))
-
-        if (
-            self.approved_at
-            and self.submitted_at
-            and self.approved_at < self.submitted_at
-        ):
-            raise ValidationError(_("Approved date cannot be before submitted date"))
-
-        if self.closed_at and self.approved_at and self.closed_at < self.approved_at:
-            raise ValidationError(_("Closed date cannot be before approved date"))
+        if self.approved_at and self.approved_at < self.created_at:
+            raise ValidationError(_("Approved date cannot be before created date"))
 
         # Validate status transitions
         if self.pk:  # Existing record
@@ -231,31 +182,29 @@ class DailyReport(models.Model):
                 old_instance.status != DailyReport.ReportStatus.DRAFT
                 and old_instance.status != self.status
             ):
-                raise ValidationError(
-                    _("Cannot edit report after submission. Current status: %(status)s")
-                    % {"status": old_instance.get_status_display()}
-                )
+                raise ValidationError(_("Cannot edit report after submission."))
 
     # ---- Computed Properties ----
 
     @property
     def total_revenue(self) -> Decimal:
-        """Total revenue = sales - refunds + tips."""
+        """Total revenue = sales - refunds + taxes - discounts."""
         return (
             self.expected_total_sales
             - self.expected_total_refunds
-            + self.expected_total_tips
+            + self.expected_total_tax
+            - self.expected_total_discounts
         )
-
-    @property
-    def total_costs(self) -> Decimal:
-        """Total costs = COGS + labor + operating expenses."""
-        return self.cost_of_goods_sold + self.labor_costs + self.operating_expenses
 
     @property
     def net_profit(self) -> Decimal:
         """Net profit = revenue - costs."""
-        return self.total_revenue - self.total_costs
+        return self.total_revenue - self.cost_of_goods_sold
+
+    @property
+    def actual_income(self) -> Decimal:
+        """All money income from sales - purchases."""
+        return self.total_revenue - self.total_expences
 
     @property
     def net_cash_received(self) -> Decimal:
@@ -294,15 +243,6 @@ class DailyReport(models.Model):
         return self.status == DailyReport.ReportStatus.DRAFT
 
     @property
-    def is_submitted(self) -> bool:
-        """Check if report is submitted."""
-        return self.status in [
-            DailyReport.ReportStatus.SUBMITTED,
-            DailyReport.ReportStatus.APPROVED,
-            DailyReport.ReportStatus.CLOSED,
-        ]
-
-    @property
     def is_finalized(self) -> bool:
         """Check if report is finalized (closed)."""
-        return self.status == DailyReport.ReportStatus.CLOSED
+        return self.status == DailyReport.ReportStatus.APPROVED

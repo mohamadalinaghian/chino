@@ -5,6 +5,8 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from simple_history.models import HistoricalRecords
 
+from .sale_payment_model import SalePayment
+
 
 class DailyReportPaymentMethod(models.Model):
     """
@@ -16,11 +18,6 @@ class DailyReportPaymentMethod(models.Model):
     - BANK_TRANSFER: Direct bank transfers confirmed manually
     """
 
-    class PaymentMethodType(models.TextChoices):
-        CASH = "CASH", _("Cash")
-        POS = "POS", _("POS/Card")
-        BANK_TRANSFER = "BANK_TRANSFER", _("Bank Transfer")
-
     daily_report = models.ForeignKey(
         "sale.DailyReport",
         on_delete=models.CASCADE,
@@ -31,7 +28,7 @@ class DailyReportPaymentMethod(models.Model):
     payment_method = models.CharField(
         _("Payment method"),
         max_length=20,
-        choices=PaymentMethodType.choices,
+        choices=SalePayment.PaymentMethod.choices,
         db_index=True,
     )
 
@@ -78,7 +75,7 @@ class DailyReportPaymentMethod(models.Model):
         ordering = ["payment_method"]
 
     def __str__(self):
-        return f"{self.get_payment_method_display()} - {self.daily_report.report_date}"
+        return f"{self.payment_method} - {self.daily_report.report_date}"
 
     def clean(self):
         """Validate payment method data."""

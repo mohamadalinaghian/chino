@@ -1,6 +1,11 @@
 from typing import Dict, List, Set
 
 from api.schemas.sale_schemas import (
+    CancelSaleRequest,
+    CancelSaleResponse,
+    CloseSaleRequest,
+    CloseSaleResponse,
+    ErrorResponse,
     ExtraDetailSchema,
     OpenSaleRequest,
     OpenSaleResponse,
@@ -15,13 +20,17 @@ from apps.inventory.models import Product, Table
 from apps.menu.models import Menu
 from apps.sale.models import Sale, SaleItem
 from apps.sale.policies import (
+    can_cancel_close_sale,
     can_close_sale,
     can_modify_sale,
     can_open_sale,
     can_see_sale_details,
     can_see_sale_list,
 )
-from apps.sale.services import CloseSaleService, ModifySaleService, OpenSaleService
+from apps.sale.services.sale.cancel_sale import CancelSaleService
+from apps.sale.services.sale.close_sale import CloseSaleService
+from apps.sale.services.sale.modify_sale import ModifySaleService
+from apps.sale.services.sale.open_sale import OpenSaleService
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
@@ -105,7 +114,7 @@ def open_sale(request, payload: OpenSaleRequest):
     )
 
 
-@router.post("/{sale_id}/sync", response=OpenSaleResponse)
+@router.post("/{sale_id}/sync", response={200: OpenSaleResponse, 422: ErrorResponse})
 def sync_sale_items(request, sale_id: int, payload: SyncSaleRequest):
     """
     Syncs the sale items. This is the only endpoint needed for
@@ -146,7 +155,14 @@ def get_sale_detail(request, sale_id: int):
     #    - select_related: Follows ForeignKeys (Single object)
     #    - prefetch_related: Follows Reverse Relations (Many objects)
     sale = get_object_or_404(
-        Sale.objects.select_related("table", "guest").prefetch_related(
+        Sale.objects.select_related(
+            "table",
+            "guest",
+            "opened_by",
+            "modified_by",
+            "closed_by",
+            "canceled_by",
+        ).prefetch_related(
             "items",
             "items__product",  # Fetch product details for names/prices
         ),
@@ -182,18 +198,18 @@ def get_sale_detail(request, sale_id: int):
         my_extras = [
             ExtraDetailSchema(
                 id=child.pk,
-                product_id=child.product_id,
+                product_id=child.product.id,
                 product_name=child.product.name,
                 quantity=child.quantity,
                 unit_price=child.unit_price,
                 total=child.quantity * child.unit_price,
             )
             for child in children
-            if child.parent_item_id == parent.pk
+            if child.parent_item.id == parent.pk
         ]
 
         # Resolve the Menu ID
-        linked_menu_id = product_to_menu_map.get(parent.product_id)
+        linked_menu_id = product_to_menu_map.get(parent.product.id)
 
         response_items.append(
             SaleItemDetailSchema(
@@ -207,20 +223,63 @@ def get_sale_detail(request, sale_id: int):
             )
         )
 
-    # 5. Return
-    return {
+    # 5. Check permissions for revenue data
+    can_view_revenue = request.auth.has_perm("sale.view_revenue_data")
+
+    # 6. Build response with conditional COGS data
+    response_data = {
+        # ---- Sale Metadata ----
         "id": sale.pk,
         "state": sale.state,
         "sale_type": sale.sale_type,
         "table_id": sale.table.id if sale.table else None,
         "table_name": sale.table.name if sale.table else None,
-        "guest_name": sale.guest.username if sale.guest else None,
+        "guest_name": (
+            sale.guest.get_full_name() or sale.guest.username if sale.guest else None
+        ),
         "guest_count": sale.guest_count,
-        "total_amount": sale.total_amount,
         "note": sale.note,
         "opened_at": sale.opened_at,
+        "opened_by_name": sale.opened_by.get_full_name() or sale.opened_by.username,
+        "modified_by_name": (
+            sale.modified_by.get_full_name() or sale.modified_by.username
+            if sale.modified_by
+            else None
+        ),
+        # ---- Financial Data ----
+        "subtotal_amount": sale.subtotal_amount,
+        "discount_amount": sale.discount_amount,
+        "tax_amount": sale.tax_amount,
+        "total_amount": sale.total_amount,
+        # ---- Invoice Data (when CLOSED) ----
+        "payment_status": sale.payment_status if sale.is_closed else None,
+        "closed_at": sale.closed_at,
+        "closed_by_name": (
+            sale.closed_by.get_full_name() or sale.closed_by.username
+            if sale.closed_by
+            else None
+        ),
+        # ---- Payment Tracking (when CLOSED) ----
+        "total_paid": sale.total_paid if sale.is_closed else None,
+        "balance_due": sale.balance_due if sale.is_closed else None,
+        "is_fully_paid": sale.is_fully_paid if sale.is_closed else None,
+        # ---- COGS & Revenue (only if has permission) ----
+        "total_cost": sale.total_cost if can_view_revenue else None,
+        "gross_profit": sale.gross_profit if can_view_revenue else None,
+        "gross_margin_percent": sale.gross_margin_percent if can_view_revenue else None,
+        # ---- Cancellation (when CANCELED) ----
+        "canceled_at": sale.canceled_at,
+        "canceled_by_name": (
+            sale.canceled_by.get_full_name() or sale.canceled_by.username
+            if sale.canceled_by
+            else None
+        ),
+        "cancel_reason": sale.cancel_reason,
+        # ---- Items ----
         "items": response_items,
     }
+
+    return response_data
 
 
 @router.get("/", response=SaleDashboardResponse)
@@ -237,7 +296,7 @@ def sale_dashboard(request):
     # 1. Base Query: Only Active (OPEN) sales
     #    We need Table info and the Staff member who opened it.
     qs = (
-        Sale.objects.filter(state=Sale.State.OPEN)
+        Sale.objects.filter(state=Sale.SaleState.OPEN)
         .select_related("table", "guest", "opened_by")
         .order_by("-opened_at")
     )  # Newest orders first
@@ -254,11 +313,19 @@ def sale_dashboard(request):
     dashboard_items = [
         SaleDashboardItemSchema(
             id=sale.pk,
+            state=sale.state,
             table=sale.table.name if sale.table else None,
-            guest_name=sale.guest.username if sale.guest else "Walk-in",
+            guest_name=(
+                sale.guest.get_full_name() or sale.guest.username
+                if sale.guest
+                else "Walk-in"
+            ),
             total_amount=sale.total_amount if can_see_total else None,
             opened_by_name=sale.opened_by.get_full_name() or sale.opened_by.username,
             opened_at=sale.opened_at,
+            # Invoice/payment data (when CLOSED)
+            payment_status=sale.payment_status if sale.is_closed else None,
+            balance_due=sale.balance_due if sale.is_closed else None,
         )
         for sale in qs
     ]
@@ -270,24 +337,111 @@ def sale_dashboard(request):
     )
 
 
-@router.post("/{sale_id}/close", response=OpenSaleResponse)
-def close_sale_endpoint(request, sale_id: int):
+@router.post("/{sale_id}/close", response={200: CloseSaleResponse, 422: ErrorResponse})
+def close_sale_endpoint(request, sale_id: int, payload: CloseSaleRequest):
     """
-    Closes the sale and marks it as paid.
+    Finalizes sale: generates invoice, calculates COGS, and processes payments.
+
+    Workflow:
+        1. Generate invoice number
+        2. Calculate COGS from inventory
+        3. Apply tax and discount
+        4. Close the sale
+        5. Process all payments
+        6. Update payment status (PAID/PARTIALLY_PAID/UNPAID)
+
+    Sale can be closed with full, partial, or no payment.
+    """
+    from apps.sale.services.payment.payment_service import PaymentInput
+
+    sale = get_object_or_404(Sale, id=sale_id)
+
+    try:
+        # Convert schema payments to service DTOs
+        payment_inputs = [
+            PaymentInput(
+                method=p.method.value,
+                amount_applied=p.amount_applied,
+                tip_amount=p.tip_amount,
+                destination_account_id=p.destination_account_id,
+            )
+            for p in payload.payments
+        ]
+
+        # Finalize sale and process payments in one atomic transaction
+        closed_sale, created_payments = CloseSaleService.finalize_and_pay(
+            sale=sale,
+            performer=request.auth,
+            tax_amount=payload.tax_amount,
+            discount_amount=payload.discount_amount,
+            payments=payment_inputs,
+        )
+    except ValidationError as e:
+        return 422, {"detail": str(e)}
+
+    # Build payment details for response
+    from api.schemas.sale_schemas import PaymentDetailSchema
+
+    payment_details = [
+        PaymentDetailSchema(
+            id=p.pk,
+            method=p.method,
+            amount_total=p.amount_total,
+            amount_applied=p.amount_applied,
+            tip_amount=p.tip_amount,
+            destination_account_id=p.destination_account.pk
+            if p.destination_account
+            else None,
+            received_at=p.received_at,
+        )
+        for p in created_payments
+    ]
+
+    return CloseSaleResponse(
+        sale_id=closed_sale.pk,
+        invoice_number=closed_sale.invoice_number,
+        state=closed_sale.state,
+        payment_status=closed_sale.payment_status,
+        subtotal_amount=closed_sale.subtotal_amount,
+        discount_amount=closed_sale.discount_amount,
+        tax_amount=closed_sale.tax_amount,
+        total_amount=closed_sale.total_amount,
+        total_cost=closed_sale.total_cost,
+        gross_profit=closed_sale.gross_profit,
+        gross_margin_percent=closed_sale.gross_margin_percent,
+        total_paid=closed_sale.total_paid,
+        balance_due=closed_sale.balance_due,
+        is_fully_paid=closed_sale.is_fully_paid,
+        payments=payment_details,
+    )
+
+
+@router.post("/{sale_id}/cancel", response=CancelSaleResponse)
+def cancel_sale_endpoint(request, sale_id: int, payload: CancelSaleRequest):
+    """
+    Cancels/voids an OPEN sale.
+    CLOSED sales with payments should use refund endpoints instead.
     """
 
     sale = get_object_or_404(Sale, id=sale_id)
 
-    #  Policy Check
-    can_close_sale(request.auth, sale)
+    # Policy Check
+    can_cancel_close_sale(request.auth, sale)
 
     try:
-        closed_sale = CloseSaleService.close_sale(sale=sale, performer=request.auth)
+        canceled_sale = CancelSaleService.cancel_open_sale(
+            sale=sale, performer=request.auth, cancel_reason=payload.cancel_reason
+        )
     except ValidationError as e:
-        return 422, {"detail": e.messages}
+        return 422, {"detail": str(e)}
 
-    return OpenSaleResponse(
-        sale_id=closed_sale.pk,
-        total_amount=closed_sale.total_amount,
-        state=closed_sale.state,
+    return CancelSaleResponse(
+        sale_id=canceled_sale.pk,
+        state=canceled_sale.state,
+        canceled_at=canceled_sale.canceled_at,
+        canceled_by_name=(
+            canceled_sale.canceled_by.get_full_name()
+            or canceled_sale.canceled_by.username
+        ),
+        cancel_reason=canceled_sale.cancel_reason,
     )

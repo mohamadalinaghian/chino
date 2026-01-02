@@ -13,6 +13,10 @@ import {
   OpenSaleRequest,
   OpenSaleResponse,
   SyncSaleRequest,
+  CloseSaleRequest,
+  CloseSaleResponse,
+  CancelSaleRequest,
+  CancelSaleResponse,
 } from '@/types/saleType';
 
 /**
@@ -135,18 +139,24 @@ export class SaleApiClient {
   }
 
   /**
-   * Closes a sale
+   * Closes a sale with invoice and payments
    *
    * @param saleId - ID of sale to close
-   * @returns Closed sale
+   * @param data - Close sale request with tax, discount, and payments
+   * @returns Closed sale response with invoice and payment details
    * @throws Error if closing fails or user lacks permission
    */
-  static async closeSale(saleId: number): Promise<any> {
+  static async closeSale(
+    saleId: number,
+    data: CloseSaleRequest
+  ): Promise<CloseSaleResponse> {
     try {
-      return await authenticatedFetchJSON(
+      return await authenticatedFetchJSON<CloseSaleResponse>(
         `${SALE_BASE_URL}/${saleId}/close`,
         {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
         }
       );
     } catch (error) {
@@ -167,15 +177,21 @@ export class SaleApiClient {
    * Cancels a sale
    *
    * @param saleId - ID of sale to cancel
-   * @returns Cancelled sale
+   * @param data - Cancel request with reason
+   * @returns Cancelled sale response
    * @throws Error if cancellation fails or user lacks permission
    */
-  static async cancelSale(saleId: number): Promise<any> {
+  static async cancelSale(
+    saleId: number,
+    data: CancelSaleRequest
+  ): Promise<CancelSaleResponse> {
     try {
-      return await authenticatedFetchJSON(
+      return await authenticatedFetchJSON<CancelSaleResponse>(
         `${SALE_BASE_URL}/${saleId}/cancel`,
         {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
         }
       );
     } catch (error) {

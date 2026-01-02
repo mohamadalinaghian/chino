@@ -1,6 +1,11 @@
 from .base import env
 
-DATABASES = {"default": env.db()}
+DATABASES = {
+    "default": {
+        **env.db(),
+        "DISABLE_SERVER_SIDE_CURSORS": True,
+    }
+}
 
 AUTH_PASSWORD_VALIDATORS = [
     {
