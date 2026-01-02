@@ -1,7 +1,18 @@
+/**
+ * Sale grid component
+ *
+ * Single Responsibility: Render sale cards in responsive grid layout
+ *
+ * Features:
+ * - Responsive grid (1-4 columns based on screen size)
+ * - Type-safe sale data
+ */
+
 import { SaleCard } from './SaleCard';
+import type { SaleDashboardItem } from '@/types/saleType';
 
 interface Props {
-  sales: any[];
+  sales: SaleDashboardItem[];
 }
 
 export function SaleGrid({ sales }: Props) {

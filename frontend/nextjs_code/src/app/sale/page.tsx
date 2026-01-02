@@ -1,18 +1,26 @@
 /**
  * Sale dashboard page
  *
+ * Single Responsibility: Display sale dashboard with permission-based views
+ *
  * Features:
+ * - Permission-based dashboard cards (statistics, revenue)
  * - Active sales list with real-time updates
  * - Search and time filters
  * - Loading skeleton
  * - Error handling with retry
  * - Mobile responsive
+ *
+ * Different views based on permissions:
+ * - All users: See active sales + statistics
+ * - Users with 'sale.view_revenue_data': Also see revenue metrics
  */
 
 'use client';
 
 import { useMemo, useState } from 'react';
 import { useActiveSales } from '@/hooks/useActiveSales';
+import { usePermissions, SalePermissions } from '@/hooks/usePermissions';
 import { matchesSearch, matchesTimeFilter } from '@/libs/tools/saleFilters';
 import { SaleTopBar } from '@/components/sale/SaleTopBar';
 import { NewSaleButton } from '@/components/sale/NewSaleButton';
@@ -21,13 +29,22 @@ import { SaleGrid } from '@/components/sale/SaleGrid';
 import { EmptyState } from '@/components/sale/EmptyState';
 import { ErrorState } from '@/components/sale/ErrorState';
 import { LoadingSkeleton } from '@/components/sale/LoadingSkeleton';
+import { SaleStatisticsCard } from '@/components/dashboard/SaleStatisticsCard';
+import { TodayRevenueCard } from '@/components/dashboard/TodayRevenueCard';
+import { PermissionGate } from '@/components/common/PermissionGate';
 import type { TimeFilter } from '@/types/saleType';
 
 export default function SalePage() {
   const { sales, totalCount, loading, error, retry, refresh } = useActiveSales();
+  const { hasPermission } = usePermissions();
 
   const [search, setSearch] = useState('');
   const [timeFilter, setTimeFilter] = useState<TimeFilter | undefined>();
+
+  /**
+   * Permission checks
+   */
+  const canViewRevenue = hasPermission(SalePermissions.VIEW_REVENUE_DATA);
 
   /**
    * Filter sales based on search and time filter
@@ -62,7 +79,28 @@ export default function SalePage() {
       </div>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto p-4">
+      <main className="max-w-7xl mx-auto p-4 space-y-6">
+        {/* Dashboard Cards - Permission Based */}
+        {!loading && !error && sales.length > 0 && (
+          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
+            {/* Statistics Card - Visible to all */}
+            <SaleStatisticsCard
+              sales={sales}
+              loading={loading}
+              error={error}
+            />
+
+            {/* Revenue Card - Only for users with permission */}
+            <PermissionGate permission={SalePermissions.VIEW_REVENUE_DATA}>
+              <TodayRevenueCard
+                loading={false}
+                error={undefined}
+                data={undefined}
+              />
+            </PermissionGate>
+          </div>
+        )}
+
         {/* Filters */}
         <SaleFilters
           search={search}
@@ -101,8 +139,19 @@ export default function SalePage() {
 
         {/* Sale Grid */}
         {!loading && !error && visibleSales.length > 0 && (
-          <SaleGrid sales={visibleSales} />
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-200">
+                فروش‌های فعال
+              </h2>
+              <span className="text-sm text-gray-400">
+                {visibleSales.length.toLocaleString('fa-IR')} فروش
+              </span>
+            </div>
+            <SaleGrid sales={visibleSales} />
+          </>
         )}
       </main>
     </div>
   );
+}
