@@ -13,6 +13,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { formatPersianMoney } from '@/libs/tools/persianMoney';
 import { DashboardCard } from './DashboardCard';
 import type { SaleDashboardItem } from '@/types/saleType';
 
@@ -66,11 +67,8 @@ export function SaleStatisticsCard({ sales, loading, error }: Props) {
         {/* Total Value */}
         <div className="flex items-center justify-between">
           <span className="text-sm text-gray-400">مجموع ارزش</span>
-          <div className="text-left">
-            <div className="text-xl font-bold text-green-400">
-              {stats.totalValue.toLocaleString('fa-IR')}
-            </div>
-            <div className="text-xs text-gray-500">هزار تومان</div>
+          <div className="text-xl font-bold text-green-400">
+            {formatPersianMoney(stats.totalValue)}
           </div>
         </div>
 
@@ -99,13 +97,8 @@ export function SaleStatisticsCard({ sales, loading, error }: Props) {
             <div className="border-t border-gray-700"></div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-400">میانگین ارزش</span>
-              <div className="text-left">
-                <div className="text-lg font-bold text-indigo-400">
-                  {stats.averageValue.toLocaleString('fa-IR', {
-                    maximumFractionDigits: 0,
-                  })}
-                </div>
-                <div className="text-xs text-gray-500">هزار تومان</div>
+              <div className="text-lg font-bold text-indigo-400">
+                {formatPersianMoney(Math.floor(stats.averageValue))}
               </div>
             </div>
           </>

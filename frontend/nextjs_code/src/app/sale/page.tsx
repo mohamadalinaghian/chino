@@ -80,27 +80,6 @@ export default function SalePage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto p-4 space-y-6">
-        {/* Dashboard Cards - Permission Based */}
-        {!loading && !error && sales.length > 0 && (
-          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
-            {/* Statistics Card - Visible to all */}
-            <SaleStatisticsCard
-              sales={sales}
-              loading={loading}
-              error={error}
-            />
-
-            {/* Revenue Card - Only for users with permission */}
-            <PermissionGate permission={SalePermissions.VIEW_REVENUE_DATA}>
-              <TodayRevenueCard
-                loading={false}
-                error={undefined}
-                data={undefined}
-              />
-            </PermissionGate>
-          </div>
-        )}
-
         {/* Filters */}
         <SaleFilters
           search={search}
@@ -137,7 +116,7 @@ export default function SalePage() {
           </div>
         )}
 
-        {/* Sale Grid */}
+        {/* Sale Grid - Show First */}
         {!loading && !error && visibleSales.length > 0 && (
           <>
             <div className="flex items-center justify-between mb-4">
@@ -150,6 +129,27 @@ export default function SalePage() {
             </div>
             <SaleGrid sales={visibleSales} />
           </>
+        )}
+
+        {/* Dashboard Cards - Permission Based - Show After Sales */}
+        {!loading && !error && sales.length > 0 && (
+          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
+            {/* Statistics Card - Visible to all */}
+            <SaleStatisticsCard
+              sales={sales}
+              loading={loading}
+              error={error}
+            />
+
+            {/* Revenue Card - Only for users with permission */}
+            <PermissionGate permission={SalePermissions.VIEW_REVENUE_DATA}>
+              <TodayRevenueCard
+                loading={false}
+                error={undefined}
+                data={undefined}
+              />
+            </PermissionGate>
+          </div>
         )}
       </main>
     </div>
