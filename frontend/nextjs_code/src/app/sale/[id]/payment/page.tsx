@@ -21,6 +21,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { SaleApiClient } from '@/libs/sale/saleApiClient';
 import { usePermissions, SalePermissions } from '@/hooks/usePermissions';
+import { formatPersianMoney } from '@/libs/tools/persianMoney';
 import { InvoiceSummary } from '@/components/payment/InvoiceSummary';
 import { PaymentInput } from '@/components/payment/PaymentInput';
 import type {
@@ -207,7 +208,7 @@ export default function PaymentPage() {
             <div className="flex justify-between">
               <span className="text-gray-400">مبلغ کل:</span>
               <span className="text-xl font-bold text-green-400">
-                {parseFloat(sale.total_amount).toLocaleString('fa-IR')} تومان
+                {formatPersianMoney(sale.total_amount)}
               </span>
             </div>
           </div>

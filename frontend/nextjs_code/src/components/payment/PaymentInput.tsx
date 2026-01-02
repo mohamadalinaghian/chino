@@ -15,6 +15,7 @@
 'use client';
 
 import { useState } from 'react';
+import { formatPersianMoney } from '@/libs/tools/persianMoney';
 import type { PaymentInputSchema, PaymentMethod } from '@/types/saleType';
 
 interface Props {
@@ -107,10 +108,7 @@ export function PaymentInput({ payments, onChange, totalDue }: Props) {
                       {methodInfo.label}
                     </div>
                     <div className="text-xs text-gray-400">
-                      {parseFloat(payment.amount_applied).toLocaleString(
-                        'fa-IR'
-                      )}{' '}
-                      تومان
+                      {formatPersianMoney(payment.amount_applied)}
                     </div>
                   </div>
                 </div>
@@ -131,13 +129,13 @@ export function PaymentInput({ payments, onChange, totalDue }: Props) {
         <div className="flex justify-between text-sm">
           <span className="text-gray-400">مبلغ کل:</span>
           <span className="font-bold text-gray-200">
-            {totalDue.toLocaleString('fa-IR')} تومان
+            {formatPersianMoney(totalDue)}
           </span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-gray-400">پرداخت شده:</span>
           <span className="font-bold text-green-400">
-            {totalPaid.toLocaleString('fa-IR')} تومان
+            {formatPersianMoney(totalPaid)}
           </span>
         </div>
         <div className="border-t border-gray-600 pt-2 flex justify-between">
@@ -151,7 +149,7 @@ export function PaymentInput({ payments, onChange, totalDue }: Props) {
                 : 'text-green-400'
             }`}
           >
-            {Math.abs(remaining).toLocaleString('fa-IR')} تومان
+            {formatPersianMoney(Math.abs(remaining))}
           </span>
         </div>
       </div>
@@ -217,7 +215,7 @@ export function PaymentInput({ payments, onChange, totalDue }: Props) {
                 }
                 className="mt-2 text-sm text-indigo-400 hover:text-indigo-300"
               >
-                پرداخت کل باقی‌مانده ({remaining.toLocaleString('fa-IR')} تومان)
+                پرداخت کل باقی‌مانده ({formatPersianMoney(remaining)})
               </button>
             )}
           </div>

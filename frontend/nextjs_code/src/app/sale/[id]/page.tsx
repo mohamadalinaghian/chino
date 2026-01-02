@@ -17,7 +17,6 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/libs/auth/AuthContext';
 import { SaleApiClient } from '@/libs/sale/saleApiClient';
-import { InvoiceApiClient } from '@/libs/invoice/invoiceApiClient';
 import { MenuApiClient } from '@/libs/menu/menuApiClient';
 import { formatPersianMoney } from '@/libs/tools/persianMoney';
 import type {
@@ -285,35 +284,13 @@ export default function SaleDetailPage() {
   };
 
   /**
-   * Close sale - Initiate invoice and redirect to payment
+   * Close sale - Redirect to payment page
    */
   const handleClose = async () => {
     if (!canClose) return;
 
-    try {
-      setClosing(true);
-      setError(null);
-
-      // First, initiate the invoice for this sale
-      const invoice = await InvoiceApiClient.initiateInvoice(saleId);
-
-      // If successful, redirect to the invoice payment page
-      router.push(`/invoice/${saleId}`);
-    } catch (err) {
-      // Handle errors
-      const errorMessage = err instanceof Error ? err.message : 'خطا در ایجاد فاکتور';
-
-      // Check if invoice already exists
-      if (errorMessage.includes('قبلاً') || errorMessage.includes('already')) {
-        // Invoice already exists, redirect to it anyway
-        router.push(`/invoice/${saleId}`);
-      } else {
-        // Show error to user
-        setError(errorMessage);
-      }
-    } finally {
-      setClosing(false);
-    }
+    // Redirect to payment page for invoice and payment processing
+    router.push(`/sale/${saleId}/payment`);
   };
 
   /**
@@ -322,12 +299,12 @@ export default function SaleDetailPage() {
   const handleCancel = async () => {
     if (!canCancel) return;
 
-    const confirm = window.confirm('آیا از لغو این فروش اطمینان دارید؟ این عملیات قابل بازگشت نیست.');
-    if (!confirm) return;
+    const reason = window.prompt('دلیل لغو فروش را وارد کنید:');
+    if (!reason) return;
 
     try {
       setError(null);
-      await SaleApiClient.cancelSale(saleId);
+      await SaleApiClient.cancelSale(saleId, { cancel_reason: reason });
       router.push('/sale');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'خطا در لغو فروش';

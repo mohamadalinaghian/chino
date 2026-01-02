@@ -14,6 +14,7 @@
 
 'use client';
 
+import { formatPersianMoney } from '@/libs/tools/persianMoney';
 import type { SaleDetailResponse } from '@/types/saleType';
 
 interface Props {
@@ -57,8 +58,7 @@ export function InvoiceSummary({
                   {item.product_name}
                 </div>
                 <div className="text-sm text-gray-400 mt-1">
-                  {item.quantity} × {parseFloat(item.unit_price).toLocaleString('fa-IR')}{' '}
-                  تومان
+                  {item.quantity} × {formatPersianMoney(item.unit_price)}
                 </div>
                 {/* Extras */}
                 {item.extras.length > 0 && (
@@ -68,8 +68,7 @@ export function InvoiceSummary({
                         key={extra.id}
                         className="text-xs text-gray-500 mr-4"
                       >
-                        + {extra.product_name} ({extra.quantity} ×{' '}
-                        {parseFloat(extra.unit_price).toLocaleString('fa-IR')})
+                        + {extra.product_name} ({extra.quantity} × {formatPersianMoney(extra.unit_price)})
                       </div>
                     ))}
                   </div>
@@ -77,9 +76,8 @@ export function InvoiceSummary({
               </div>
               <div className="text-left shrink-0 mr-4">
                 <div className="font-bold text-gray-200">
-                  {parseFloat(item.total).toLocaleString('fa-IR')}
+                  {formatPersianMoney(item.total)}
                 </div>
-                <div className="text-xs text-gray-500">تومان</div>
               </div>
             </div>
           ))}
@@ -92,7 +90,7 @@ export function InvoiceSummary({
         <div className="flex justify-between text-sm">
           <span className="text-gray-400">جمع کل:</span>
           <span className="font-bold text-gray-200">
-            {subtotal.toLocaleString('fa-IR')} تومان
+            {formatPersianMoney(subtotal)}
           </span>
         </div>
 
@@ -147,9 +145,8 @@ export function InvoiceSummary({
           </span>
           <div className="text-left">
             <div className="text-2xl font-bold text-green-400">
-              {finalTotal.toLocaleString('fa-IR')}
+              {formatPersianMoney(finalTotal)}
             </div>
-            <div className="text-xs text-gray-500">تومان</div>
           </div>
         </div>
       </div>
@@ -159,23 +156,23 @@ export function InvoiceSummary({
         <div className="bg-gray-800 rounded-xl p-4 text-xs space-y-1 text-gray-400">
           <div className="flex justify-between">
             <span>جمع کل:</span>
-            <span>{subtotal.toLocaleString('fa-IR')} تومان</span>
+            <span>{formatPersianMoney(subtotal)}</span>
           </div>
           {tax > 0 && (
             <div className="flex justify-between text-yellow-400">
               <span>+ مالیات:</span>
-              <span>{tax.toLocaleString('fa-IR')} تومان</span>
+              <span>{formatPersianMoney(tax)}</span>
             </div>
           )}
           {discount > 0 && (
             <div className="flex justify-between text-green-400">
               <span>- تخفیف:</span>
-              <span>{discount.toLocaleString('fa-IR')} تومان</span>
+              <span>{formatPersianMoney(discount)}</span>
             </div>
           )}
           <div className="border-t border-gray-700 pt-1 mt-1 flex justify-between font-medium text-gray-300">
             <span>مبلغ نهایی:</span>
-            <span>{finalTotal.toLocaleString('fa-IR')} تومان</span>
+            <span>{formatPersianMoney(finalTotal)}</span>
           </div>
         </div>
       )}
