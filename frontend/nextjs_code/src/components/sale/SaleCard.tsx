@@ -60,46 +60,46 @@ export function SaleCard({ sale }: Props) {
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       className="
-      cursor-pointer rounded-xl bg-gray-800 p-3
-      shadow-md hover:shadow-lg
+      cursor-pointer rounded-lg bg-gray-800 p-2
+      shadow-sm hover:shadow-md
       border border-gray-700 hover:border-indigo-500
-      transition-all duration-200
-      focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900
+      transition-all duration-150
+      focus:outline-none focus:ring-1 focus:ring-indigo-500
       active:scale-98
     "
     >
       {/* Header */}
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <div className="flex items-center gap-1.5">
-          <span className="text-xl">{icon}</span>
-          <h3 className="text-base font-bold text-gray-100">
+      <div className="flex items-start justify-between gap-1 mb-1.5">
+        <div className="flex items-center gap-1">
+          <span className="text-base">{icon}</span>
+          <h3 className="text-sm font-bold text-gray-100">
             {title}
           </h3>
         </div>
         {/* Amount Badge */}
         <div className="text-left shrink-0 flex items-baseline gap-0.5">
-          <div className="text-sm font-bold text-indigo-400">
+          <div className="text-xs font-bold text-indigo-400">
             {formattedAmount}
           </div>
-          <div className="text-xs text-gray-500">هزار تومان</div>
+          <div className="text-[10px] text-gray-500">هزار</div>
         </div>
       </div>
 
       {/* Guest Name */}
       {sale.guest_name && (
-        <div className="text-xs text-gray-300 mb-2 flex items-center gap-1">
-          <span className="text-sm">👤</span>
+        <div className="text-[10px] text-gray-300 mb-1.5 flex items-center gap-0.5">
+          <span className="text-xs">👤</span>
           <span className="truncate">{sale.guest_name}</span>
         </div>
       )}
 
       {/* Divider */}
-      <div className="border-t border-gray-700 my-2"></div>
+      <div className="border-t border-gray-700 my-1.5"></div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between text-xs text-gray-400">
+      <div className="flex items-center justify-between text-[10px] text-gray-400">
         <div className="truncate flex-1">
-          توسط {sale.opened_by_name}
+          {sale.opened_by_name}
         </div>
         <div className="shrink-0 font-medium">
           {relativeTime}
