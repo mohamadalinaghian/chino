@@ -52,6 +52,7 @@ LOGGING = {
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "console",
+            "stream": "ext://sys.stdout",
         },
         "text_file": {
             "class": "logging.handlers.RotatingFileHandler",
@@ -60,6 +61,7 @@ LOGGING = {
             "backupCount": 5,
             "formatter": "clean_text",
             "level": "ERROR",
+            "encoding": "utf-8",
         },
     },
     "loggers": {
