@@ -47,7 +47,7 @@ export default function PaymentPage() {
   const [taxAmount, setTaxAmount] = useState('0');
   const [discountAmount, setDiscountAmount] = useState('0');
   const [payments, setPayments] = useState<PaymentInputSchema[]>([]);
-  const [bankAccounts, setBankAccounts] = useState<Array<{id: number; bank_name: string; card_number: string}>>([]);
+  const [bankAccounts, setBankAccounts] = useState<Array<{ id: number; bank_name: string; card_number: string }>>([]);
 
   /**
    * Load bank accounts
@@ -56,7 +56,7 @@ export default function PaymentPage() {
     const loadBankAccounts = async () => {
       try {
         const token = localStorage.getItem('access_token');
-        const response = await fetch('http://localhost:8000/api/settings/bank-accounts/', {
+        const response = await fetch('http://localhost:8000/api/user/bank-accounts/', {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -125,8 +125,8 @@ export default function PaymentPage() {
    */
   const finalTotal = sale
     ? parseFloat(sale.total_amount) +
-      parseFloat(taxAmount || '0') -
-      parseFloat(discountAmount || '0')
+    parseFloat(taxAmount || '0') -
+    parseFloat(discountAmount || '0')
     : 0;
 
   /**
