@@ -47,6 +47,31 @@ export default function PaymentPage() {
   const [taxAmount, setTaxAmount] = useState('0');
   const [discountAmount, setDiscountAmount] = useState('0');
   const [payments, setPayments] = useState<PaymentInputSchema[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<Array<{id: number; bank_name: string; card_number: string}>>([]);
+
+  /**
+   * Load bank accounts
+   */
+  useEffect(() => {
+    const loadBankAccounts = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        const response = await fetch('http://localhost:8000/api/settings/bank-accounts/', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        if (response.ok) {
+          const accounts = await response.json();
+          setBankAccounts(accounts);
+        }
+      } catch (err) {
+        console.error('Error loading bank accounts:', err);
+      }
+    };
+
+    loadBankAccounts();
+  }, []);
 
   /**
    * Load sale details
@@ -237,6 +262,8 @@ export default function PaymentPage() {
             payments={payments}
             onChange={setPayments}
             totalDue={finalTotal}
+            saleItems={sale.items}
+            bankAccounts={bankAccounts}
           />
         </div>
 

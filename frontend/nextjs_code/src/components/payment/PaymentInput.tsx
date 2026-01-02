@@ -22,6 +22,8 @@ interface Props {
   payments: PaymentInputSchema[];
   onChange: (payments: PaymentInputSchema[]) => void;
   totalDue: number;
+  saleItems?: Array<{id: number; product_name: string; quantity: number; unit_price: string}>;
+  bankAccounts?: Array<{id: number; bank_name: string; card_number: string}>;
 }
 
 const paymentMethods: { value: PaymentMethod; label: string; icon: string }[] =
@@ -31,8 +33,9 @@ const paymentMethods: { value: PaymentMethod; label: string; icon: string }[] =
     { value: 'CARD_TRANSFER', label: 'کارت به کارت', icon: '🏦' },
   ];
 
-export function PaymentInput({ payments, onChange, totalDue }: Props) {
+export function PaymentInput({ payments, onChange, totalDue, saleItems, bankAccounts }: Props) {
   const [showAddForm, setShowAddForm] = useState(false);
+  const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
   const [newPayment, setNewPayment] = useState<PaymentInputSchema>({
     method: 'CASH',
     amount_applied: '',
@@ -45,6 +48,12 @@ export function PaymentInput({ payments, onChange, totalDue }: Props) {
    */
   const handleAddPayment = () => {
     if (!newPayment.amount_applied || parseFloat(newPayment.amount_applied) <= 0) {
+      return;
+    }
+
+    // Validate bank account for card transfer/POS
+    if ((newPayment.method === 'CARD_TRANSFER' || newPayment.method === 'POS') && !newPayment.destination_account_id) {
+      alert('لطفاً حساب مقصد را انتخاب کنید');
       return;
     }
 
@@ -88,6 +97,34 @@ export function PaymentInput({ payments, onChange, totalDue }: Props) {
    * Calculate remaining balance
    */
   const remaining = totalDue - totalPaid;
+
+  /**
+   * Calculate selected items total
+   */
+  const calculateSelectedItemsTotal = () => {
+    if (!saleItems || selectedItemIds.length === 0) return 0;
+    return saleItems
+      .filter(item => selectedItemIds.includes(item.id))
+      .reduce((sum, item) => sum + (parseFloat(item.unit_price) * item.quantity), 0);
+  };
+
+  /**
+   * Handle quick fill buttons
+   */
+  const handleQuickFill = (type: 'half' | 'items') => {
+    if (type === 'half') {
+      setNewPayment({
+        ...newPayment,
+        amount_applied: (totalDue / 2).toString(),
+      });
+    } else if (type === 'items') {
+      const itemsTotal = calculateSelectedItemsTotal();
+      setNewPayment({
+        ...newPayment,
+        amount_applied: itemsTotal.toString(),
+      });
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -205,20 +242,99 @@ export function PaymentInput({ payments, onChange, totalDue }: Props) {
                 focus:outline-none focus:ring-2 focus:ring-indigo-500
               "
             />
-            {remaining > 0 && (
+
+            {/* Quick Fill Buttons */}
+            <div className="mt-2 flex flex-wrap gap-2">
+              {remaining > 0 && (
+                <button
+                  onClick={() =>
+                    setNewPayment({
+                      ...newPayment,
+                      amount_applied: remaining.toString(),
+                    })
+                  }
+                  className="px-3 py-1.5 text-xs bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/50 text-indigo-400 rounded-lg transition-all"
+                >
+                  کل باقی‌مانده ({formatPersianMoney(remaining)})
+                </button>
+              )}
               <button
-                onClick={() =>
+                onClick={() => handleQuickFill('half')}
+                className="px-3 py-1.5 text-xs bg-green-600/20 hover:bg-green-600/30 border border-green-500/50 text-green-400 rounded-lg transition-all"
+              >
+                نصف مبلغ ({formatPersianMoney(totalDue / 2)})
+              </button>
+              {saleItems && saleItems.length > 0 && selectedItemIds.length > 0 && (
+                <button
+                  onClick={() => handleQuickFill('items')}
+                  className="px-3 py-1.5 text-xs bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/50 text-purple-400 rounded-lg transition-all"
+                >
+                  آیتم‌های انتخابی ({formatPersianMoney(calculateSelectedItemsTotal())})
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Item Selection for Split Payment */}
+          {saleItems && saleItems.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                انتخاب آیتم‌ها (اختیاری)
+              </label>
+              <div className="bg-gray-800 rounded-xl p-3 max-h-40 overflow-y-auto space-y-2">
+                {saleItems.map(item => (
+                  <label key={item.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-700 p-2 rounded-lg transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={selectedItemIds.includes(item.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedItemIds([...selectedItemIds, item.id]);
+                        } else {
+                          setSelectedItemIds(selectedItemIds.filter(id => id !== item.id));
+                        }
+                      }}
+                      className="w-4 h-4 rounded border-gray-600 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span className="flex-1 text-sm text-gray-300">{item.product_name}</span>
+                    <span className="text-xs text-gray-400">{formatPersianMoney(parseFloat(item.unit_price) * item.quantity)}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Bank Account Selection for Card Transfer */}
+          {(newPayment.method === 'CARD_TRANSFER' || newPayment.method === 'POS') && bankAccounts && bankAccounts.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                حساب مقصد <span className="text-red-400">*</span>
+              </label>
+              <select
+                value={newPayment.destination_account_id || ''}
+                onChange={(e) =>
                   setNewPayment({
                     ...newPayment,
-                    amount_applied: remaining.toString(),
+                    destination_account_id: e.target.value ? parseInt(e.target.value) : null,
                   })
                 }
-                className="mt-2 text-sm text-indigo-400 hover:text-indigo-300"
+                className="
+                  w-full px-4 py-3 rounded-xl
+                  bg-gray-800 border border-gray-600
+                  text-gray-100
+                  focus:outline-none focus:ring-2 focus:ring-indigo-500
+                "
               >
-                پرداخت کل باقی‌مانده ({formatPersianMoney(remaining)})
-              </button>
-            )}
-          </div>
+                <option value="">حساب را انتخاب کنید</option>
+                {bankAccounts.map(account => (
+                  <option key={account.id} value={account.id}>
+                    {account.bank_name} - {account.card_number}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
 
           {/* Tip Amount (Optional) */}
           <div>
