@@ -29,7 +29,6 @@ class CloseSaleService:
         performer,
         tax_amount: Decimal = Decimal("0"),
         discount_amount: Decimal = Decimal("0"),
-        close_reason: str = "",
     ) -> Sale:
         """
         Finalizes a sale and generates invoice.
@@ -39,7 +38,6 @@ class CloseSaleService:
             performer: User closing the sale
             tax_amount: Optional tax to apply
             discount_amount: Optional discount to apply
-            close_reason: Optional reason for closing
 
         Returns:
             Sale instance with state=CLOSED

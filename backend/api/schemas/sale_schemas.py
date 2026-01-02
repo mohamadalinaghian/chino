@@ -177,7 +177,6 @@ class CloseSaleRequest(Schema):
 
     tax_amount: Decimal = Decimal("0")
     discount_amount: Decimal = Decimal("0")
-    close_reason: Optional[str] = ""
 
 
 class CloseSaleResponse(Schema):

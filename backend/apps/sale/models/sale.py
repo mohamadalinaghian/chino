@@ -391,16 +391,21 @@ class Sale(models.Model):
             self.subtotal_amount - self.discount_amount + self.tax_amount
         )
 
-        # Calculate gross profit
-        self.gross_profit = self.total_amount - self.total_cost
+        # Quantize total_cost to 2 decimal places
+        self.total_cost = self.total_cost.quantize(Decimal("0.01"))
 
-        # Calculate gross margin percentage
+        # Calculate gross profit and quantize
+        self.gross_profit = (self.total_amount - self.total_cost).quantize(
+            Decimal("0.01")
+        )
+
+        # Calculate gross margin percentage and quantize
         if self.total_amount > 0:
             self.gross_margin_percent = (
-                self.gross_profit / self.total_amount
-            ) * Decimal("100")
+                (self.gross_profit / self.total_amount) * Decimal("100")
+            ).quantize(Decimal("0.01"))
         else:
-            self.gross_margin_percent = Decimal("0")
+            self.gross_margin_percent = Decimal("0.00")
 
         # Full validation (unless explicitly skipped)
         if not skip_validation:
