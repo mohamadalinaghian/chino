@@ -340,27 +340,66 @@ def sale_dashboard(request):
 @router.post("/{sale_id}/close", response={200: CloseSaleResponse, 422: ErrorResponse})
 def close_sale_endpoint(request, sale_id: int, payload: CloseSaleRequest):
     """
-    Closes the sale, generates invoice, and calculates COGS.
-    Transitions state from OPEN to CLOSED.
+    Finalizes sale: generates invoice, calculates COGS, and processes payments.
+
+    Workflow:
+        1. Generate invoice number
+        2. Calculate COGS from inventory
+        3. Apply tax and discount
+        4. Close the sale
+        5. Process all payments
+        6. Update payment status (PAID/PARTIALLY_PAID/UNPAID)
+
+    Sale can be closed with full, partial, or no payment.
     """
+    from apps.sale.services.payment.payment_service import PaymentInput
 
     sale = get_object_or_404(Sale, id=sale_id)
 
-    #  Policy Check
-    can_close_sale(request.auth, sale)
-
     try:
-        closed_sale = CloseSaleService.close_sale(
+        # Convert schema payments to service DTOs
+        payment_inputs = [
+            PaymentInput(
+                method=p.method.value,
+                amount_applied=p.amount_applied,
+                tip_amount=p.tip_amount,
+                destination_account_id=p.destination_account_id,
+            )
+            for p in payload.payments
+        ]
+
+        # Finalize sale and process payments in one atomic transaction
+        closed_sale, created_payments = CloseSaleService.finalize_and_pay(
             sale=sale,
             performer=request.auth,
             tax_amount=payload.tax_amount,
             discount_amount=payload.discount_amount,
+            payments=payment_inputs,
         )
     except ValidationError as e:
         return 422, {"detail": str(e)}
 
+    # Build payment details for response
+    from api.schemas.sale_schemas import PaymentDetailSchema
+
+    payment_details = [
+        PaymentDetailSchema(
+            id=p.pk,
+            method=p.method,
+            amount_total=p.amount_total,
+            amount_applied=p.amount_applied,
+            tip_amount=p.tip_amount,
+            destination_account_id=p.destination_account.pk
+            if p.destination_account
+            else None,
+            received_at=p.received_at,
+        )
+        for p in created_payments
+    ]
+
     return CloseSaleResponse(
         sale_id=closed_sale.pk,
+        invoice_number=closed_sale.invoice_number,
         state=closed_sale.state,
         payment_status=closed_sale.payment_status,
         subtotal_amount=closed_sale.subtotal_amount,
@@ -370,6 +409,10 @@ def close_sale_endpoint(request, sale_id: int, payload: CloseSaleRequest):
         total_cost=closed_sale.total_cost,
         gross_profit=closed_sale.gross_profit,
         gross_margin_percent=closed_sale.gross_margin_percent,
+        total_paid=closed_sale.total_paid,
+        balance_due=closed_sale.balance_due,
+        is_fully_paid=closed_sale.is_fully_paid,
+        payments=payment_details,
     )
 
 

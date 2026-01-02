@@ -172,17 +172,52 @@ class SaleDashboardResponse(Schema):
 # ==================== Close Sale Schemas ====================
 
 
-class CloseSaleRequest(Schema):
-    """Request to close/finalize a sale and generate invoice"""
+class PaymentMethodEnum(str, Enum):
+    """Payment method choices"""
 
-    tax_amount: Decimal = Decimal("0")
-    discount_amount: Decimal = Decimal("0")
+    CASH = "CASH"
+    POS = "POS"
+    CARD_TRANSFER = "CARD_TRANSFER"
+
+
+class PaymentInputSchema(Schema):
+    """Schema for a single payment input"""
+
+    method: PaymentMethodEnum
+    amount_applied: Decimal = Field(..., gt=0, description="Amount applied to invoice")
+    tip_amount: Decimal = Field(default=Decimal("0"), ge=0, description="Optional tip")
+    destination_account_id: Optional[int] = Field(
+        default=None, description="Required for POS and CARD_TRANSFER"
+    )
+
+
+class CloseSaleRequest(Schema):
+    """Request to finalize sale and process payments"""
+
+    tax_amount: Decimal = Field(default=Decimal("0"), ge=0)
+    discount_amount: Decimal = Field(default=Decimal("0"), ge=0)
+    payments: List[PaymentInputSchema] = Field(
+        default_factory=list, description="Payments to process (can be empty)"
+    )
+
+
+class PaymentDetailSchema(Schema):
+    """Payment details in response"""
+
+    id: int
+    method: str
+    amount_total: Decimal
+    amount_applied: Decimal
+    tip_amount: Decimal
+    destination_account_id: Optional[int]
+    received_at: datetime
 
 
 class CloseSaleResponse(Schema):
-    """Response after closing a sale"""
+    """Response after finalizing a sale"""
 
     sale_id: int
+    invoice_number: str
     state: str
     payment_status: str
     subtotal_amount: Decimal
@@ -192,6 +227,10 @@ class CloseSaleResponse(Schema):
     total_cost: Decimal
     gross_profit: Decimal
     gross_margin_percent: Decimal
+    total_paid: Decimal
+    balance_due: Decimal
+    is_fully_paid: bool
+    payments: List[PaymentDetailSchema]
 
 
 # ==================== Cancel Sale Schemas ====================

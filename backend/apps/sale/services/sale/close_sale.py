@@ -1,54 +1,100 @@
+import re
 from decimal import Decimal
+from typing import List
 
 from apps.inventory.services.item_production import ItemProductionService
-from apps.sale.models import Sale
+from apps.sale.models import Sale, SalePayment
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Max
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from ...policies import can_close_sale
+from ..payment.payment_service import PaymentInput, PaymentService
+
+
+def generate_invoice_number() -> str:
+    """
+    Generate unique invoice number.
+
+    Format: INV-YYYYMMDD-XXXXX
+    Where XXXXX is a zero-padded sequential number for the day.
+
+    Returns:
+        Unique invoice number string
+    """
+    # Get today's date prefix
+    date_prefix = timezone.now().strftime("INV-%Y%m%d-")
+
+    # Find highest number for today
+    latest = Sale.objects.filter(invoice_number__startswith=date_prefix).aggregate(
+        Max("invoice_number")
+    )["invoice_number__max"]
+
+    if latest:
+        # Extract the numeric part and increment
+        match = re.search(r"-(\d+)$", latest)
+        if match:
+            next_num = int(match.group(1)) + 1
+        else:
+            next_num = 1
+    else:
+        next_num = 1
+
+    # Format with zero-padding (5 digits)
+    return f"{date_prefix}{next_num:05d}"
 
 
 class CloseSaleService:
     """
-    Finalizes a sale by:
-    1. Generating invoice number
-    2. Calculating COGS from inventory
-    3. Setting payment status to UNPAID
-    4. Transitioning state to CLOSED
+    Finalizes a sale and processes payments in one atomic operation.
 
-    This makes the sale immutable and ready for payment processing.
+    Workflow:
+        1. Generate invoice number
+        2. Calculate COGS from inventory
+        3. Apply tax and discount
+        4. Set state to CLOSED
+        5. Process payments
+        6. Update payment status (PAID/PARTIALLY_PAID/UNPAID)
+
+    Business Rules:
+        - Sale can be closed with full, partial, or no payment
+        - All critical financial data calculated on backend
+        - Payment status automatically updated based on total paid
     """
 
     @staticmethod
     @transaction.atomic
-    def close_sale(
+    def finalize_and_pay(
         *,
         sale: Sale,
         performer,
         tax_amount: Decimal = Decimal("0"),
         discount_amount: Decimal = Decimal("0"),
-    ) -> Sale:
+        payments: List[PaymentInput],
+    ) -> tuple[Sale, List[SalePayment]]:
         """
-        Finalizes a sale and generates invoice.
+        Finalize sale and process payments in one atomic transaction.
 
         Args:
             sale: Sale instance (must be OPEN)
-            performer: User closing the sale
-            tax_amount: Optional tax to apply
-            discount_amount: Optional discount to apply
+            performer: User finalizing the sale
+            tax_amount: Tax to apply
+            discount_amount: Discount to apply
+            payments: List of payment inputs
 
         Returns:
-            Sale instance with state=CLOSED
+            Tuple of (Sale instance, List of SalePayment instances)
 
         Raises:
-            ValidationError: If COGS cannot be calculated or sale is invalid
+            ValidationError: If sale is invalid or payments fail validation
         """
         # 1. Policy Check
         can_close_sale(performer, sale)
 
         # 2. Generate invoice number
+        sale.invoice_number = generate_invoice_number()
 
         # 3. Calculate COGS (Cost of Goods Sold)
         total_cost = CloseSaleService._calculate_cogs(sale)
@@ -57,21 +103,28 @@ class CloseSaleService:
         sale.discount_amount = discount_amount
         sale.tax_amount = tax_amount
         sale.total_cost = total_cost
-        # Note: subtotal_amount is already set by OpenSaleService/ModifySaleService
-        # Note: total_amount, gross_profit, gross_margin_percent are auto-calculated in save()
+        # Note: subtotal_amount already set by OpenSaleService/ModifySaleService
+        # Note: total_amount, gross_profit, gross_margin_percent auto-calculated in save()
 
-        # 5. Set payment status
-        sale.payment_status = Sale.PaymentStatus.UNPAID
-
-        # 6. Set state and audit fields
+        # 5. Set state and audit fields
         sale.state = Sale.SaleState.CLOSED
         sale.closed_by = performer
         sale.closed_at = timezone.now()
 
-        # 7. Save (will auto-calculate total_amount, gross_profit, etc.)
+        # Initial payment status (will be updated after processing payments)
+        sale.payment_status = Sale.PaymentStatus.UNPAID
+
+        # 6. Save sale with calculated fields
         sale.save()
 
-        return sale
+        # 7. Process payments if provided
+        created_payments = []
+        if payments:
+            created_payments = PaymentService.process_payments(
+                sale=sale, payments=payments, performer=performer
+            )
+
+        return sale, created_payments
 
     @staticmethod
     def _calculate_cogs(sale: Sale) -> Decimal:
