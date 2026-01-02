@@ -154,7 +154,6 @@ export interface SaleDetailResponse {
   payment_status: string | null;
   closed_at: string | null;
   closed_by_name: string | null;
-  close_reason: string | null;
 
   // ---- Payment Tracking (when CLOSED) ----
   total_paid: string | null;
@@ -181,12 +180,44 @@ export interface SaleDetailResponse {
 export type TimeFilter = 'LT_30' | '30_90' | 'GT_90';
 
 /**
+ * Payment method enum
+ */
+export enum PaymentMethod {
+  CASH = 'CASH',
+  POS = 'POS',
+  CARD_TRANSFER = 'CARD_TRANSFER',
+}
+
+/**
+ * Payment input for closing sale
+ */
+export interface PaymentInputSchema {
+  method: PaymentMethod;
+  amount_applied: string;
+  tip_amount?: string;
+  destination_account_id?: number | null;
+}
+
+/**
+ * Payment detail in response
+ */
+export interface PaymentDetailSchema {
+  id: number;
+  method: string;
+  amount_total: string;
+  amount_applied: string;
+  tip_amount: string;
+  destination_account_id: number | null;
+  received_at: string;
+}
+
+/**
  * Request for closing a sale
  */
 export interface CloseSaleRequest {
   tax_amount: string;
   discount_amount: string;
-  close_reason: string;
+  payments: PaymentInputSchema[];
 }
 
 /**
@@ -204,6 +235,10 @@ export interface CloseSaleResponse {
   total_cost: string;
   gross_profit: string;
   gross_margin_percent: string;
+  total_paid: string;
+  balance_due: string;
+  is_fully_paid: boolean;
+  payments: PaymentDetailSchema[];
 }
 
 /**
