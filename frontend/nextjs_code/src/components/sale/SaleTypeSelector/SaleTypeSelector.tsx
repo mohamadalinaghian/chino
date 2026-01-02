@@ -1,7 +1,7 @@
 'use client';
 
 import { SaleType } from '@/types/sale';
-import { CATPPUCCIN_COLORS } from '@/libs/constants';
+import { THEME_COLORS } from '@/libs/constants';
 
 interface SaleTypeSelectorProps {
   selectedType: SaleType;
@@ -21,7 +21,7 @@ export function SaleTypeSelector({
     <div className="w-full">
       <label
         className="block mb-3 font-medium"
-        style={{ color: CATPPUCCIN_COLORS.subtext }}
+        style={{ color: THEME_COLORS.subtext }}
       >
         نوع سفارش
       </label>
@@ -43,12 +43,12 @@ export function SaleTypeSelector({
             style={{
               borderColor:
                 selectedType === type.value
-                  ? CATPPUCCIN_COLORS.accent
-                  : CATPPUCCIN_COLORS.border,
+                  ? THEME_COLORS.accent
+                  : THEME_COLORS.border,
               backgroundColor:
                 selectedType === type.value
-                  ? CATPPUCCIN_COLORS.surface
-                  : CATPPUCCIN_COLORS.bgPrimary,
+                  ? THEME_COLORS.surface
+                  : THEME_COLORS.bgPrimary,
             }}
           >
             <span className="text-3xl">{type.icon}</span>
@@ -57,8 +57,8 @@ export function SaleTypeSelector({
               style={{
                 color:
                   selectedType === type.value
-                    ? CATPPUCCIN_COLORS.text
-                    : CATPPUCCIN_COLORS.subtext,
+                    ? THEME_COLORS.text
+                    : THEME_COLORS.subtext,
               }}
             >
               {type.label}

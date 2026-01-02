@@ -1,6 +1,6 @@
 'use client';
 
-import { CATPPUCCIN_COLORS } from '@/libs/constants';
+import { THEME_COLORS } from '@/libs/constants';
 
 interface LoadingOverlayProps {
   message?: string;
@@ -16,12 +16,12 @@ export function LoadingOverlay({ message = 'در حال بارگذاری...' }: 
         <div
           className="animate-spin w-16 h-16 border-4 border-t-transparent rounded-full mx-auto"
           style={{
-            borderColor: `${CATPPUCCIN_COLORS.accent} transparent transparent transparent`,
+            borderColor: `${THEME_COLORS.accent} transparent transparent transparent`,
           }}
         />
         <p
           className="mt-4 text-xl font-bold"
-          style={{ color: CATPPUCCIN_COLORS.text }}
+          style={{ color: THEME_COLORS.text }}
         >
           {message}
         </p>

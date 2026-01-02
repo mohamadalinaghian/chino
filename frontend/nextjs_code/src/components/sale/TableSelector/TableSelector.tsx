@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ITable } from '@/types/sale';
 import { fetchTables } from '@/service/sale';
-import { CATPPUCCIN_COLORS } from '@/libs/constants';
+import { THEME_COLORS } from '@/libs/constants';
 
 interface TableSelectorProps {
   selectedTableId: number | null;
@@ -40,18 +40,18 @@ export function TableSelector({
       <div className="w-full">
         <label
           className="block mb-3 font-medium"
-          style={{ color: CATPPUCCIN_COLORS.subtext }}
+          style={{ color: THEME_COLORS.subtext }}
         >
           انتخاب میز
         </label>
         <div
           className="p-8 rounded-lg text-center"
-          style={{ backgroundColor: CATPPUCCIN_COLORS.bgSecondary }}
+          style={{ backgroundColor: THEME_COLORS.bgSecondary }}
         >
           <div className="animate-spin w-8 h-8 border-4 border-t-transparent rounded-full mx-auto"
-            style={{ borderColor: `${CATPPUCCIN_COLORS.accent} transparent transparent transparent` }}
+            style={{ borderColor: `${THEME_COLORS.accent} transparent transparent transparent` }}
           />
-          <p className="mt-4" style={{ color: CATPPUCCIN_COLORS.subtext }}>
+          <p className="mt-4" style={{ color: THEME_COLORS.subtext }}>
             در حال بارگذاری میزها...
           </p>
         </div>
@@ -64,29 +64,29 @@ export function TableSelector({
       <div className="w-full">
         <label
           className="block mb-3 font-medium"
-          style={{ color: CATPPUCCIN_COLORS.subtext }}
+          style={{ color: THEME_COLORS.subtext }}
         >
           انتخاب میز
         </label>
         <div
           className="p-6 rounded-lg text-center"
-          style={{ backgroundColor: CATPPUCCIN_COLORS.bgSecondary }}
+          style={{ backgroundColor: THEME_COLORS.bgSecondary }}
         >
           <div
             className="text-4xl mb-3"
-            style={{ color: CATPPUCCIN_COLORS.red }}
+            style={{ color: THEME_COLORS.red }}
           >
             ⚠️
           </div>
-          <p className="mb-4" style={{ color: CATPPUCCIN_COLORS.red }}>
+          <p className="mb-4" style={{ color: THEME_COLORS.red }}>
             {error}
           </p>
           <button
             onClick={loadTables}
             className="px-6 py-2 rounded-lg font-bold transition-all hover:opacity-90"
             style={{
-              backgroundColor: CATPPUCCIN_COLORS.accent,
-              color: CATPPUCCIN_COLORS.bgSecondary,
+              backgroundColor: THEME_COLORS.accent,
+              color: THEME_COLORS.bgSecondary,
             }}
           >
             تلاش مجدد
@@ -101,15 +101,15 @@ export function TableSelector({
       <div className="w-full">
         <label
           className="block mb-3 font-medium"
-          style={{ color: CATPPUCCIN_COLORS.subtext }}
+          style={{ color: THEME_COLORS.subtext }}
         >
           انتخاب میز
         </label>
         <div
           className="p-6 rounded-lg text-center"
-          style={{ backgroundColor: CATPPUCCIN_COLORS.bgSecondary }}
+          style={{ backgroundColor: THEME_COLORS.bgSecondary }}
         >
-          <p style={{ color: CATPPUCCIN_COLORS.subtext }}>
+          <p style={{ color: THEME_COLORS.subtext }}>
             هیچ میز فعالی موجود نیست
           </p>
         </div>
@@ -121,7 +121,7 @@ export function TableSelector({
     <div className="w-full">
       <label
         className="block mb-3 font-medium"
-        style={{ color: CATPPUCCIN_COLORS.subtext }}
+        style={{ color: THEME_COLORS.subtext }}
       >
         انتخاب میز
       </label>
@@ -138,12 +138,12 @@ export function TableSelector({
             style={{
               borderColor:
                 selectedTableId === table.id
-                  ? CATPPUCCIN_COLORS.accent
-                  : CATPPUCCIN_COLORS.border,
+                  ? THEME_COLORS.accent
+                  : THEME_COLORS.border,
               backgroundColor:
                 selectedTableId === table.id
-                  ? CATPPUCCIN_COLORS.surface
-                  : CATPPUCCIN_COLORS.bgPrimary,
+                  ? THEME_COLORS.surface
+                  : THEME_COLORS.bgPrimary,
             }}
           >
             <span className="text-2xl">🪑</span>
@@ -152,8 +152,8 @@ export function TableSelector({
               style={{
                 color:
                   selectedTableId === table.id
-                    ? CATPPUCCIN_COLORS.text
-                    : CATPPUCCIN_COLORS.subtext,
+                    ? THEME_COLORS.text
+                    : THEME_COLORS.subtext,
               }}
             >
               {table.name}
@@ -161,7 +161,7 @@ export function TableSelector({
             <span
               className="text-xs"
               style={{
-                color: CATPPUCCIN_COLORS.subtext,
+                color: THEME_COLORS.subtext,
               }}
             >
               {table.capacity} نفر

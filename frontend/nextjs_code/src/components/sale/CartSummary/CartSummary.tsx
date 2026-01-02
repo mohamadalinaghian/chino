@@ -1,7 +1,7 @@
 'use client';
 
 import { ICartItem } from '@/types/sale';
-import { CATPPUCCIN_COLORS } from '@/libs/constants';
+import { THEME_COLORS, UI_TEXT } from '@/libs/constants';
 import { formatPersianMoney, toPersianDigits } from '@/utils/persianUtils';
 
 interface CartSummaryProps {
@@ -9,6 +9,7 @@ interface CartSummaryProps {
   onRemoveItem: (itemId: string) => void;
   onUpdateQuantity: (itemId: string, quantity: number) => void;
   onProceedToPayment: () => void;
+  onSaveAsOpen: () => void;
 }
 
 export function CartSummary({
@@ -16,6 +17,7 @@ export function CartSummary({
   onRemoveItem,
   onUpdateQuantity,
   onProceedToPayment,
+  onSaveAsOpen,
 }: CartSummaryProps) {
   // Calculate totals
   const subtotal = cartItems.reduce((sum, item) => sum + item.total, 0);
@@ -28,18 +30,18 @@ export function CartSummary({
     return (
       <div
         className="w-full h-full rounded-lg p-8 flex flex-col items-center justify-center"
-        style={{ backgroundColor: CATPPUCCIN_COLORS.bgSecondary }}
+        style={{ backgroundColor: THEME_COLORS.bgSecondary }}
       >
         <div className="text-6xl mb-4">🛒</div>
         <p
           className="text-lg font-medium text-center"
-          style={{ color: CATPPUCCIN_COLORS.subtext }}
+          style={{ color: THEME_COLORS.subtext }}
         >
           سبد خرید خالی است
         </p>
         <p
           className="text-sm mt-2 text-center"
-          style={{ color: CATPPUCCIN_COLORS.subtext }}
+          style={{ color: THEME_COLORS.subtext }}
         >
           موارد مورد نظر را از منو انتخاب کنید
         </p>
@@ -50,17 +52,17 @@ export function CartSummary({
   return (
     <div
       className="w-full h-full rounded-lg p-6 flex flex-col"
-      style={{ backgroundColor: CATPPUCCIN_COLORS.bgSecondary }}
+      style={{ backgroundColor: THEME_COLORS.bgSecondary }}
     >
       {/* Header */}
-      <div className="mb-4 pb-4 border-b" style={{ borderColor: CATPPUCCIN_COLORS.border }}>
+      <div className="mb-4 pb-4 border-b" style={{ borderColor: THEME_COLORS.border }}>
         <h2
           className="text-xl font-bold"
-          style={{ color: CATPPUCCIN_COLORS.text }}
+          style={{ color: THEME_COLORS.text }}
         >
           سبد خرید
         </h2>
-        <p className="text-sm mt-1" style={{ color: CATPPUCCIN_COLORS.subtext }}>
+        <p className="text-sm mt-1" style={{ color: THEME_COLORS.subtext }}>
           {toPersianDigits(itemCount)} مورد
         </p>
       </div>
@@ -72,22 +74,22 @@ export function CartSummary({
             key={item.id}
             className="p-3 rounded-lg border"
             style={{
-              backgroundColor: CATPPUCCIN_COLORS.bgPrimary,
-              borderColor: CATPPUCCIN_COLORS.border,
+              backgroundColor: THEME_COLORS.bgPrimary,
+              borderColor: THEME_COLORS.border,
             }}
           >
             {/* Item Header */}
             <div className="flex justify-between items-start mb-2">
               <h3
                 className="font-bold text-sm flex-1"
-                style={{ color: CATPPUCCIN_COLORS.text }}
+                style={{ color: THEME_COLORS.text }}
               >
                 {item.name}
               </h3>
               <button
                 onClick={() => onRemoveItem(item.id)}
                 className="mr-2 text-lg hover:scale-110 transition-transform"
-                style={{ color: CATPPUCCIN_COLORS.red }}
+                style={{ color: THEME_COLORS.red }}
                 title="حذف"
               >
                 ✕
@@ -101,7 +103,7 @@ export function CartSummary({
                   <div
                     key={extra.id}
                     className="text-xs flex justify-between"
-                    style={{ color: CATPPUCCIN_COLORS.subtext }}
+                    style={{ color: THEME_COLORS.subtext }}
                   >
                     <span>+ {extra.name} (×{toPersianDigits(extra.quantity)})</span>
                     <span>{formatPersianMoney(extra.price * extra.quantity)}</span>
@@ -118,8 +120,8 @@ export function CartSummary({
                   onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
                   className="w-8 h-8 rounded-md flex items-center justify-center font-bold transition-all hover:scale-110"
                   style={{
-                    backgroundColor: CATPPUCCIN_COLORS.surface,
-                    color: CATPPUCCIN_COLORS.text,
+                    backgroundColor: THEME_COLORS.surface,
+                    color: THEME_COLORS.text,
                   }}
                   disabled={item.quantity <= 1}
                 >
@@ -127,7 +129,7 @@ export function CartSummary({
                 </button>
                 <span
                   className="w-8 text-center font-bold"
-                  style={{ color: CATPPUCCIN_COLORS.text }}
+                  style={{ color: THEME_COLORS.text }}
                 >
                   {toPersianDigits(item.quantity)}
                 </span>
@@ -135,8 +137,8 @@ export function CartSummary({
                   onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
                   className="w-8 h-8 rounded-md flex items-center justify-center font-bold transition-all hover:scale-110"
                   style={{
-                    backgroundColor: CATPPUCCIN_COLORS.accent,
-                    color: CATPPUCCIN_COLORS.bgSecondary,
+                    backgroundColor: THEME_COLORS.accent,
+                    color: THEME_COLORS.bgSecondary,
                   }}
                 >
                   +
@@ -146,7 +148,7 @@ export function CartSummary({
               {/* Total Price */}
               <div
                 className="text-sm font-bold"
-                style={{ color: CATPPUCCIN_COLORS.green }}
+                style={{ color: THEME_COLORS.green }}
               >
                 {formatPersianMoney(item.total)}
               </div>
@@ -158,19 +160,19 @@ export function CartSummary({
       {/* Totals */}
       <div
         className="space-y-2 pt-4 mb-4 border-t"
-        style={{ borderColor: CATPPUCCIN_COLORS.border }}
+        style={{ borderColor: THEME_COLORS.border }}
       >
         <div className="flex justify-between text-sm">
-          <span style={{ color: CATPPUCCIN_COLORS.subtext }}>جمع جزء:</span>
-          <span style={{ color: CATPPUCCIN_COLORS.text }}>
+          <span style={{ color: THEME_COLORS.subtext }}>جمع جزء:</span>
+          <span style={{ color: THEME_COLORS.text }}>
             {formatPersianMoney(subtotal)}
           </span>
         </div>
 
         {discount > 0 && (
           <div className="flex justify-between text-sm">
-            <span style={{ color: CATPPUCCIN_COLORS.subtext }}>تخفیف:</span>
-            <span style={{ color: CATPPUCCIN_COLORS.red }}>
+            <span style={{ color: THEME_COLORS.subtext }}>تخفیف:</span>
+            <span style={{ color: THEME_COLORS.red }}>
               -{formatPersianMoney(discount)}
             </span>
           </div>
@@ -178,8 +180,8 @@ export function CartSummary({
 
         {tax > 0 && (
           <div className="flex justify-between text-sm">
-            <span style={{ color: CATPPUCCIN_COLORS.subtext }}>مالیات:</span>
-            <span style={{ color: CATPPUCCIN_COLORS.text }}>
+            <span style={{ color: THEME_COLORS.subtext }}>مالیات:</span>
+            <span style={{ color: THEME_COLORS.text }}>
               {formatPersianMoney(tax)}
             </span>
           </div>
@@ -187,26 +189,39 @@ export function CartSummary({
 
         <div
           className="flex justify-between text-lg font-bold pt-2 border-t"
-          style={{ borderColor: CATPPUCCIN_COLORS.border }}
+          style={{ borderColor: THEME_COLORS.border }}
         >
-          <span style={{ color: CATPPUCCIN_COLORS.text }}>جمع کل:</span>
-          <span style={{ color: CATPPUCCIN_COLORS.green }}>
+          <span style={{ color: THEME_COLORS.text }}>جمع کل:</span>
+          <span style={{ color: THEME_COLORS.green }}>
             {formatPersianMoney(total)}
           </span>
         </div>
       </div>
 
-      {/* Proceed Button */}
-      <button
-        onClick={onProceedToPayment}
-        className="w-full py-4 rounded-lg font-bold text-lg transition-all hover:opacity-90 active:scale-95"
-        style={{
-          backgroundColor: CATPPUCCIN_COLORS.accent,
-          color: CATPPUCCIN_COLORS.bgSecondary,
-        }}
-      >
-        ادامه به پرداخت
-      </button>
+      {/* Action Buttons */}
+      <div className="space-y-2">
+        <button
+          onClick={onProceedToPayment}
+          className="w-full py-3 rounded-lg font-bold transition-all hover:opacity-90 active:scale-95"
+          style={{
+            backgroundColor: THEME_COLORS.accent,
+            color: '#fff',
+          }}
+        >
+          {UI_TEXT.BTN_IMMEDIATE_PAY}
+        </button>
+        <button
+          onClick={onSaveAsOpen}
+          className="w-full py-3 rounded-lg font-bold transition-all hover:opacity-90 active:scale-95 border-2"
+          style={{
+            backgroundColor: 'transparent',
+            borderColor: THEME_COLORS.accent,
+            color: THEME_COLORS.accent,
+          }}
+        >
+          {UI_TEXT.BTN_SAVE_OPEN_SALE}
+        </button>
+      </div>
     </div>
   );
 }

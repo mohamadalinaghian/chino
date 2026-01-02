@@ -9,7 +9,7 @@ import {
   ICartExtra,
   IMenuCategoryForSale,
 } from '@/types/sale';
-import { fetchSaleMenu, openSale } from '@/service/sale';
+import { fetchSaleMenu, openSale, saveAsOpenSale } from '@/service/sale';
 import { SaleTypeSelector } from '@/components/sale/SaleTypeSelector';
 import { TableSelector } from '@/components/sale/TableSelector';
 import { CategoryList } from '@/components/sale/CategoryList';
@@ -18,7 +18,7 @@ import { CartSummary } from '@/components/sale/CartSummary';
 import { ExtrasModal, SelectedExtra } from '@/components/sale/ExtrasModal';
 import { useToast } from '@/components/common/Toast';
 import { LoadingOverlay } from '@/components/common/LoadingOverlay';
-import { CATPPUCCIN_COLORS } from '@/libs/constants';
+import { THEME_COLORS, UI_TEXT } from '@/libs/constants';
 import { getCurrentJalaliDate } from '@/utils/persianUtils';
 
 export default function NewSalePage() {
@@ -37,9 +37,9 @@ export default function NewSalePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Navigation state
+  // Navigation state - use parent_group (BAR_ITEM or FOOD) as activeTab
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'bar' | 'food'>('food');
+  const [activeTab, setActiveTab] = useState<'BAR_ITEM' | 'FOOD'>('FOOD');
 
   // Cart state
   const [cartItems, setCartItems] = useState<ICartItem[]>([]);
@@ -59,7 +59,7 @@ export default function NewSalePage() {
 
   // Auto-select first category when tab changes
   useEffect(() => {
-    const categories = activeTab === 'bar' ? menuData?.bar_items : menuData?.food_items;
+    const categories = activeTab === 'BAR_ITEM' ? menuData?.bar_items : menuData?.food_items;
     if (categories && categories.length > 0) {
       setSelectedCategory(categories[0].category);
     }
@@ -77,7 +77,7 @@ export default function NewSalePage() {
         setSelectedCategory(data.food_items[0].category);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'خطا در بارگذاری منو');
+      setError(err instanceof Error ? err.message : UI_TEXT.ERROR_LOADING_MENU);
     } finally {
       setLoading(false);
     }
@@ -86,18 +86,18 @@ export default function NewSalePage() {
   // Get current categories based on active tab
   const currentCategories = useMemo(() => {
     if (!menuData) return [];
-    const items = activeTab === 'bar' ? menuData.bar_items : menuData.food_items;
+    const items = activeTab === 'BAR_ITEM' ? menuData.bar_items : menuData.food_items;
     return items.map((cat) => ({
       id: cat.category,
       name: cat.category,
-      icon: activeTab === 'bar' ? '🍹' : '🍽️',
+      icon: activeTab === 'BAR_ITEM' ? '🍹' : '🍽️',
     }));
   }, [menuData, activeTab]);
 
   // Get current items for selected category
   const currentItems = useMemo(() => {
     if (!menuData || !selectedCategory) return [];
-    const items = activeTab === 'bar' ? menuData.bar_items : menuData.food_items;
+    const items = activeTab === 'BAR_ITEM' ? menuData.bar_items : menuData.food_items;
     const category = items.find((cat) => cat.category === selectedCategory);
     return category?.items || [];
   }, [menuData, selectedCategory, activeTab]);
@@ -193,16 +193,16 @@ export default function NewSalePage() {
     );
   };
 
-  // Handle proceed to payment
+  // Handle proceed to payment (immediate pay)
   const handleProceedToPayment = async () => {
     // Validation
     if (saleType === SaleType.DINE_IN && !selectedTableId) {
-      showToast('لطفاً یک میز را انتخاب کنید', 'warning');
+      showToast(UI_TEXT.VALIDATION_SELECT_TABLE, 'warning');
       return;
     }
 
     if (cartItems.length === 0) {
-      showToast('سبد خرید خالی است', 'warning');
+      showToast(UI_TEXT.VALIDATION_EMPTY_CART, 'warning');
       return;
     }
 
@@ -226,7 +226,7 @@ export default function NewSalePage() {
       // Create sale
       const sale = await openSale(saleData);
 
-      showToast('فروش با موفقیت ایجاد شد', 'success');
+      showToast(UI_TEXT.SUCCESS_SALE_CREATED, 'success');
 
       // Redirect to payment page
       setTimeout(() => {
@@ -234,7 +234,56 @@ export default function NewSalePage() {
       }, 500);
     } catch (err) {
       showToast(
-        err instanceof Error ? err.message : 'خطا در ایجاد فروش',
+        err instanceof Error ? err.message : UI_TEXT.ERROR_CREATING_SALE,
+        'error'
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle save as open sale (to pay later)
+  const handleSaveAsOpen = async () => {
+    // Validation
+    if (saleType === SaleType.DINE_IN && !selectedTableId) {
+      showToast(UI_TEXT.VALIDATION_SELECT_TABLE, 'warning');
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      showToast(UI_TEXT.VALIDATION_EMPTY_CART, 'warning');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      // Prepare sale data
+      const saleData = {
+        sale_type: saleType,
+        table_id: saleType === SaleType.DINE_IN ? selectedTableId : null,
+        items: cartItems.map((cartItem) => ({
+          menu_id: cartItem.menu_id,
+          quantity: cartItem.quantity,
+          extras: cartItem.extras.map((extra) => ({
+            menu_id: extra.menu_id,
+            quantity: extra.quantity,
+          })),
+        })),
+      };
+
+      // Save as open sale
+      const sale = await saveAsOpenSale(saleData);
+
+      showToast(UI_TEXT.SUCCESS_OPEN_SALE_SAVED, 'success');
+
+      // Redirect to sales list or dashboard
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 500);
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : UI_TEXT.ERROR_CREATING_SALE,
         'error'
       );
     } finally {
@@ -245,24 +294,24 @@ export default function NewSalePage() {
   return (
     <div
       className="min-h-screen"
-      style={{ backgroundColor: CATPPUCCIN_COLORS.bgPrimary }}
+      style={{ backgroundColor: THEME_COLORS.bgPrimary }}
     >
       {/* Header */}
       <header
         className="p-4 border-b"
         style={{
-          backgroundColor: CATPPUCCIN_COLORS.bgSecondary,
-          borderColor: CATPPUCCIN_COLORS.border,
+          backgroundColor: THEME_COLORS.bgSecondary,
+          borderColor: THEME_COLORS.border,
         }}
       >
         <div className="max-w-screen-2xl mx-auto flex justify-between items-center">
           <h1
             className="text-2xl md:text-3xl font-bold"
-            style={{ color: CATPPUCCIN_COLORS.text }}
+            style={{ color: THEME_COLORS.text }}
           >
-            فروش جدید
+            {UI_TEXT.PAGE_TITLE}
           </h1>
-          <div style={{ color: CATPPUCCIN_COLORS.subtext }}>
+          <div style={{ color: THEME_COLORS.subtext }}>
             {getCurrentJalaliDate('dddd، jD jMMMM jYYYY')}
           </div>
         </div>
@@ -270,13 +319,13 @@ export default function NewSalePage() {
 
       {/* Main Content */}
       <div className="max-w-screen-2xl mx-auto p-4">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left Column - Menu Selection */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4">
             {/* Sale Type Selector */}
             <div
-              className="p-6 rounded-lg"
-              style={{ backgroundColor: CATPPUCCIN_COLORS.bgSecondary }}
+              className="p-4 rounded-lg"
+              style={{ backgroundColor: THEME_COLORS.bgSecondary }}
             >
               <SaleTypeSelector
                 selectedType={saleType}
@@ -287,8 +336,8 @@ export default function NewSalePage() {
             {/* Table Selector (only for dine-in) */}
             {saleType === SaleType.DINE_IN && (
               <div
-                className="p-6 rounded-lg"
-                style={{ backgroundColor: CATPPUCCIN_COLORS.bgSecondary }}
+                className="p-4 rounded-lg"
+                style={{ backgroundColor: THEME_COLORS.bgSecondary }}
               >
                 <TableSelector
                   selectedTableId={selectedTableId}
@@ -298,42 +347,42 @@ export default function NewSalePage() {
             )}
 
             {/* Menu Tabs */}
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               <button
-                onClick={() => setActiveTab('food')}
-                className={`flex-1 py-3 rounded-lg font-bold transition-all ${
-                  activeTab === 'food' ? 'scale-105' : ''
+                onClick={() => setActiveTab('FOOD')}
+                className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${
+                  activeTab === 'FOOD' ? 'scale-105' : ''
                 }`}
                 style={{
                   backgroundColor:
-                    activeTab === 'food'
-                      ? CATPPUCCIN_COLORS.accent
-                      : CATPPUCCIN_COLORS.surface,
+                    activeTab === 'FOOD'
+                      ? THEME_COLORS.accent
+                      : THEME_COLORS.surface,
                   color:
-                    activeTab === 'food'
-                      ? CATPPUCCIN_COLORS.bgSecondary
-                      : CATPPUCCIN_COLORS.subtext,
+                    activeTab === 'FOOD'
+                      ? '#fff'
+                      : THEME_COLORS.subtext,
                 }}
               >
-                🍽️ غذا
+                {UI_TEXT.TAB_FOOD}
               </button>
               <button
-                onClick={() => setActiveTab('bar')}
-                className={`flex-1 py-3 rounded-lg font-bold transition-all ${
-                  activeTab === 'bar' ? 'scale-105' : ''
+                onClick={() => setActiveTab('BAR_ITEM')}
+                className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${
+                  activeTab === 'BAR_ITEM' ? 'scale-105' : ''
                 }`}
                 style={{
                   backgroundColor:
-                    activeTab === 'bar'
-                      ? CATPPUCCIN_COLORS.accent
-                      : CATPPUCCIN_COLORS.surface,
+                    activeTab === 'BAR_ITEM'
+                      ? THEME_COLORS.accent
+                      : THEME_COLORS.surface,
                   color:
-                    activeTab === 'bar'
-                      ? CATPPUCCIN_COLORS.bgSecondary
-                      : CATPPUCCIN_COLORS.subtext,
+                    activeTab === 'BAR_ITEM'
+                      ? '#fff'
+                      : THEME_COLORS.subtext,
                 }}
               >
-                🍹 نوشیدنی
+                {UI_TEXT.TAB_DRINKS}
               </button>
             </div>
 
@@ -341,16 +390,16 @@ export default function NewSalePage() {
             {loading && (
               <div
                 className="p-12 rounded-lg text-center"
-                style={{ backgroundColor: CATPPUCCIN_COLORS.bgSecondary }}
+                style={{ backgroundColor: THEME_COLORS.bgSecondary }}
               >
                 <div
                   className="animate-spin w-12 h-12 border-4 border-t-transparent rounded-full mx-auto"
                   style={{
-                    borderColor: `${CATPPUCCIN_COLORS.accent} transparent transparent transparent`,
+                    borderColor: `${THEME_COLORS.accent} transparent transparent transparent`,
                   }}
                 />
-                <p className="mt-4" style={{ color: CATPPUCCIN_COLORS.subtext }}>
-                  در حال بارگذاری منو...
+                <p className="mt-4" style={{ color: THEME_COLORS.subtext }}>
+                  {UI_TEXT.MSG_LOADING_MENU}
                 </p>
               </div>
             )}
@@ -359,26 +408,26 @@ export default function NewSalePage() {
             {error && (
               <div
                 className="p-8 rounded-lg text-center"
-                style={{ backgroundColor: CATPPUCCIN_COLORS.bgSecondary }}
+                style={{ backgroundColor: THEME_COLORS.bgSecondary }}
               >
                 <div
                   className="text-4xl mb-3"
-                  style={{ color: CATPPUCCIN_COLORS.red }}
+                  style={{ color: THEME_COLORS.red }}
                 >
                   ⚠️
                 </div>
-                <p className="mb-4" style={{ color: CATPPUCCIN_COLORS.red }}>
+                <p className="mb-4" style={{ color: THEME_COLORS.red }}>
                   {error}
                 </p>
                 <button
                   onClick={loadMenu}
                   className="px-6 py-2 rounded-lg font-bold transition-all hover:opacity-90"
                   style={{
-                    backgroundColor: CATPPUCCIN_COLORS.accent,
-                    color: CATPPUCCIN_COLORS.bgSecondary,
+                    backgroundColor: THEME_COLORS.accent,
+                    color: '#fff',
                   }}
                 >
-                  تلاش مجدد
+                  {UI_TEXT.BTN_RETRY}
                 </button>
               </div>
             )}
@@ -388,8 +437,8 @@ export default function NewSalePage() {
               <>
                 {/* Category List */}
                 <div
-                  className="p-6 rounded-lg"
-                  style={{ backgroundColor: CATPPUCCIN_COLORS.bgSecondary }}
+                  className="p-4 rounded-lg"
+                  style={{ backgroundColor: THEME_COLORS.bgSecondary }}
                 >
                   <CategoryList
                     categories={currentCategories}
@@ -400,8 +449,8 @@ export default function NewSalePage() {
 
                 {/* Items Grid */}
                 <div
-                  className="p-6 rounded-lg"
-                  style={{ backgroundColor: CATPPUCCIN_COLORS.bgSecondary }}
+                  className="p-4 rounded-lg"
+                  style={{ backgroundColor: THEME_COLORS.bgSecondary }}
                 >
                   <ItemsGrid
                     items={currentItems}
@@ -422,6 +471,7 @@ export default function NewSalePage() {
                 onRemoveItem={handleRemoveItem}
                 onUpdateQuantity={handleUpdateQuantity}
                 onProceedToPayment={handleProceedToPayment}
+                onSaveAsOpen={handleSaveAsOpen}
               />
             </div>
           </div>
@@ -440,7 +490,7 @@ export default function NewSalePage() {
       />
 
       {/* Loading Overlay for Submission */}
-      {submitting && <LoadingOverlay message="در حال ایجاد فروش..." />}
+      {submitting && <LoadingOverlay message={UI_TEXT.MSG_CREATING_SALE} />}
 
       {/* Toast Notifications */}
       <ToastContainer />

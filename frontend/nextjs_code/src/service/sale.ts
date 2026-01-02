@@ -4,7 +4,7 @@
  */
 
 import { authenticatedFetchJSON } from '@/libs/auth/authFetch';
-import { CS_API_URL } from '@/libs/constants';
+import { CS_API_URL, API_ENDPOINTS, UI_TEXT } from '@/libs/constants';
 import {
   IOpenSaleRequest,
   ISaleResponse,
@@ -14,17 +14,17 @@ import {
 } from '@/types/sale';
 
 /**
- * Fetches all available tables
+ * Fetches empty (available) tables only
  */
 export async function fetchTables(): Promise<ITable[]> {
   try {
     const tables = await authenticatedFetchJSON<ITable[]>(
-      `${CS_API_URL}/table/`
+      `${CS_API_URL}${API_ENDPOINTS.TABLES_EMPTY}`
     );
-    return tables.filter((table) => table.is_active);
+    return tables;
   } catch (error) {
     console.error('Error fetching tables:', error);
-    throw new Error('خطا در دریافت لیست میزها');
+    throw new Error(UI_TEXT.ERROR_LOADING_TABLES);
   }
 }
 
@@ -35,28 +35,24 @@ export async function fetchTables(): Promise<ITable[]> {
 export async function fetchSaleMenu(): Promise<IGroupedMenuData> {
   try {
     const menu = await authenticatedFetchJSON<IGroupedMenuData>(
-      `${CS_API_URL}/menu/sale/menu`
+      `${CS_API_URL}${API_ENDPOINTS.MENU_SALE}`
     );
     return menu;
   } catch (error) {
     console.error('Error fetching sale menu:', error);
-    throw new Error('خطا در دریافت منوی فروش');
+    throw new Error(UI_TEXT.ERROR_LOADING_MENU);
   }
 }
 
 /**
  * Fetches extra items for a specific menu item
- * This is a placeholder - adjust based on your backend API
  */
 export async function fetchExtrasForItem(
   menuId: number
 ): Promise<IExtraItem[]> {
   try {
-    // TODO: Update this endpoint based on your actual backend API
-    // For now, returning empty array as extras might be part of the menu response
-    // or require a separate endpoint
     const extras = await authenticatedFetchJSON<IExtraItem[]>(
-      `${CS_API_URL}/menu/items/${menuId}/extras/`
+      `${CS_API_URL}${API_ENDPOINTS.MENU_ITEM_EXTRAS(menuId)}`
     );
     return extras;
   } catch (error) {
@@ -67,14 +63,14 @@ export async function fetchExtrasForItem(
 }
 
 /**
- * Opens a new sale
+ * Opens a new sale (immediate payment)
  */
 export async function openSale(
   saleData: IOpenSaleRequest
 ): Promise<ISaleResponse> {
   try {
     const response = await authenticatedFetchJSON<ISaleResponse>(
-      `${CS_API_URL}/sale/open`,
+      `${CS_API_URL}${API_ENDPOINTS.SALE_OPEN}`,
       {
         method: 'POST',
         headers: {
@@ -89,7 +85,35 @@ export async function openSale(
     if (error instanceof Error) {
       throw error;
     }
-    throw new Error('خطا در ایجاد فروش جدید');
+    throw new Error(UI_TEXT.ERROR_CREATING_SALE);
+  }
+}
+
+/**
+ * Saves sale as open (to pay later)
+ */
+export async function saveAsOpenSale(
+  saleData: IOpenSaleRequest
+): Promise<ISaleResponse> {
+  try {
+    // Same endpoint but we won't redirect to payment
+    const response = await authenticatedFetchJSON<ISaleResponse>(
+      `${CS_API_URL}${API_ENDPOINTS.SALE_OPEN}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(saleData),
+      }
+    );
+    return response;
+  } catch (error) {
+    console.error('Error saving open sale:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(UI_TEXT.ERROR_CREATING_SALE);
   }
 }
 
@@ -99,7 +123,7 @@ export async function openSale(
 export async function fetchSaleDetails(saleId: number): Promise<ISaleResponse> {
   try {
     const sale = await authenticatedFetchJSON<ISaleResponse>(
-      `${CS_API_URL}/sale/${saleId}`
+      `${CS_API_URL}${API_ENDPOINTS.SALE_DETAILS(saleId)}`
     );
     return sale;
   } catch (error) {
@@ -117,7 +141,7 @@ export async function syncSaleItems(
 ): Promise<ISaleResponse> {
   try {
     const response = await authenticatedFetchJSON<ISaleResponse>(
-      `${CS_API_URL}/sale/${saleId}/sync`,
+      `${CS_API_URL}${API_ENDPOINTS.SALE_SYNC(saleId)}`,
       {
         method: 'POST',
         headers: {
@@ -139,7 +163,7 @@ export async function syncSaleItems(
 export async function closeSale(saleId: number): Promise<ISaleResponse> {
   try {
     const response = await authenticatedFetchJSON<ISaleResponse>(
-      `${CS_API_URL}/sale/${saleId}/close`,
+      `${CS_API_URL}${API_ENDPOINTS.SALE_CLOSE(saleId)}`,
       {
         method: 'POST',
       }
@@ -157,7 +181,7 @@ export async function closeSale(saleId: number): Promise<ISaleResponse> {
 export async function cancelSale(saleId: number): Promise<ISaleResponse> {
   try {
     const response = await authenticatedFetchJSON<ISaleResponse>(
-      `${CS_API_URL}/sale/${saleId}/cancel`,
+      `${CS_API_URL}${API_ENDPOINTS.SALE_CANCEL(saleId)}`,
       {
         method: 'POST',
       }

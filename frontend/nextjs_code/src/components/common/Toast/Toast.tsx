@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CATPPUCCIN_COLORS } from '@/libs/constants';
+import { THEME_COLORS } from '@/libs/constants';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -32,15 +32,15 @@ export function Toast({
   const getBackgroundColor = () => {
     switch (type) {
       case 'success':
-        return CATPPUCCIN_COLORS.green;
+        return THEME_COLORS.green;
       case 'error':
-        return CATPPUCCIN_COLORS.red;
+        return THEME_COLORS.red;
       case 'warning':
-        return CATPPUCCIN_COLORS.yellow;
+        return THEME_COLORS.yellow;
       case 'info':
-        return CATPPUCCIN_COLORS.blue;
+        return THEME_COLORS.blue;
       default:
-        return CATPPUCCIN_COLORS.surface;
+        return THEME_COLORS.surface;
     }
   };
 
@@ -69,7 +69,7 @@ export function Toast({
       `}
       style={{
         backgroundColor: getBackgroundColor(),
-        color: CATPPUCCIN_COLORS.bgSecondary,
+        color: THEME_COLORS.bgSecondary,
         minWidth: '300px',
         maxWidth: '500px',
       }}

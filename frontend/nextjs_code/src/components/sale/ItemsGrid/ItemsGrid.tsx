@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { IMenuItemForSale } from '@/types/sale';
 import { ItemCard } from '../ItemCard';
-import { CATPPUCCIN_COLORS } from '@/libs/constants';
+import { THEME_COLORS } from '@/libs/constants';
 
 interface ItemsGridProps {
   items: IMenuItemForSale[];
@@ -31,12 +31,12 @@ export function ItemsGrid({
     return (
       <div
         className="w-full p-12 rounded-lg text-center"
-        style={{ backgroundColor: CATPPUCCIN_COLORS.bgSecondary }}
+        style={{ backgroundColor: THEME_COLORS.bgSecondary }}
       >
         <div className="text-6xl mb-4">🍽️</div>
         <p
           className="text-lg font-medium"
-          style={{ color: CATPPUCCIN_COLORS.subtext }}
+          style={{ color: THEME_COLORS.subtext }}
         >
           {selectedCategory
             ? 'موردی در این دسته‌بندی یافت نشد'

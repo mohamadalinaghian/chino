@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
-import { CATPPUCCIN_COLORS } from '@/libs/constants';
+import { THEME_COLORS } from '@/libs/constants';
 
 interface Category {
   id: string;
@@ -47,7 +47,7 @@ export function CategoryList({
     <div className="w-full">
       <label
         className="block mb-3 font-medium"
-        style={{ color: CATPPUCCIN_COLORS.subtext }}
+        style={{ color: THEME_COLORS.subtext }}
       >
         دسته‌بندی‌ها
       </label>
@@ -55,7 +55,7 @@ export function CategoryList({
         ref={scrollContainerRef}
         className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-rounded"
         style={{
-          scrollbarColor: `${CATPPUCCIN_COLORS.surface} ${CATPPUCCIN_COLORS.bgSecondary}`,
+          scrollbarColor: `${THEME_COLORS.surface} ${THEME_COLORS.bgSecondary}`,
         }}
       >
         {categories.map((category) => {
@@ -74,14 +74,14 @@ export function CategoryList({
               `}
               style={{
                 borderColor: isSelected
-                  ? CATPPUCCIN_COLORS.accent
-                  : CATPPUCCIN_COLORS.border,
+                  ? THEME_COLORS.accent
+                  : THEME_COLORS.border,
                 backgroundColor: isSelected
-                  ? CATPPUCCIN_COLORS.surface
-                  : CATPPUCCIN_COLORS.bgPrimary,
+                  ? THEME_COLORS.surface
+                  : THEME_COLORS.bgPrimary,
                 color: isSelected
-                  ? CATPPUCCIN_COLORS.text
-                  : CATPPUCCIN_COLORS.subtext,
+                  ? THEME_COLORS.text
+                  : THEME_COLORS.subtext,
               }}
             >
               {category.icon && <span className="text-xl">{category.icon}</span>}
