@@ -52,3 +52,34 @@ export const DEFAULT_AUTH_REDIRECT = '/dashboard';
  * Login page path
  */
 export const LOGIN_PATH = '/login';
+
+/**
+ * Catppuccin Mocha Color Palette
+ * Used for the POS and sale management UI
+ */
+export const CATPPUCCIN_COLORS = {
+  // Base colors
+  bgPrimary: '#1E1E2E',    // Base - Main background
+  bgSecondary: '#181825',  // Surface0 - Secondary background
+  surface: '#313244',      // Surface1 - Card backgrounds
+
+  // Text colors
+  text: '#CDD6F4',         // Text - Primary text
+  subtext: '#A6ADC8',      // Subtext0 - Secondary text
+
+  // Accent colors
+  accent: '#CBA6F7',       // Mauve - Primary accent
+  green: '#A6E3A1',        // Green - Success states
+  red: '#F38BA8',          // Red - Error/warning states
+  blue: '#89B4FA',         // Blue - Info states
+  yellow: '#F9E2AF',       // Yellow - Warning states
+
+  // Border
+  border: '#313244',       // Same as surface for subtle borders
+
+  // Additional colors
+  overlay: '#11111B',      // Crust - Overlays and modals
+  pink: '#F5C2E7',         // Pink - Highlights
+  peach: '#FAB387',        // Peach - Secondary accents
+  teal: '#94E2D5',         // Teal - Info accents
+} as const;
