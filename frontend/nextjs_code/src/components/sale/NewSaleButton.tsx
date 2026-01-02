@@ -8,15 +8,17 @@ export function NewSaleButton() {
     <button
       onClick={() => router.push('/sale/new')}
       className="
-        w-full rounded-xl py-3.5
+        w-full rounded-lg py-2
         bg-indigo-600 text-white
-        text-sm font-medium
+        text-xs font-medium
         hover:bg-indigo-500 active:bg-indigo-700
-        transition-all duration-200
-        shadow-md hover:shadow-lg
+        transition-all duration-150
+        shadow-sm hover:shadow-md
+        flex items-center justify-center gap-1.5
       "
     >
-      ایجاد فروش جدید
+      <span className="text-sm">➕</span>
+      <span>ایجاد فروش جدید</span>
     </button>
   );
 }

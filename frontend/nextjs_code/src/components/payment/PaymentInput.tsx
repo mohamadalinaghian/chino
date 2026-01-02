@@ -281,25 +281,56 @@ export function PaymentInput({ payments, onChange, totalDue, saleItems, bankAcco
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 انتخاب آیتم‌ها (اختیاری)
               </label>
-              <div className="bg-gray-800 rounded-xl p-3 max-h-40 overflow-y-auto space-y-2">
-                {saleItems.map(item => (
-                  <label key={item.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-700 p-2 rounded-lg transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={selectedItemIds.includes(item.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedItemIds([...selectedItemIds, item.id]);
-                        } else {
-                          setSelectedItemIds(selectedItemIds.filter(id => id !== item.id));
+              <div className="bg-gray-800 rounded-xl p-3 max-h-40 overflow-y-auto space-y-1">
+                {saleItems.map(item => {
+                  const isSelected = selectedItemIds.includes(item.id);
+                  return (
+                    <label
+                      key={item.id}
+                      className={`
+                        flex items-center gap-3 cursor-pointer p-2.5 rounded-lg transition-all
+                        ${isSelected
+                          ? 'bg-indigo-600/20 border border-indigo-500/50'
+                          : 'hover:bg-gray-700 border border-transparent'
                         }
-                      }}
-                      className="w-4 h-4 rounded border-gray-600 text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <span className="flex-1 text-sm text-gray-300">{item.product_name}</span>
-                    <span className="text-xs text-gray-400">{formatPersianMoney(parseFloat(item.unit_price) * item.quantity)}</span>
-                  </label>
-                ))}
+                      `}
+                    >
+                      <div className="relative flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedItemIds([...selectedItemIds, item.id]);
+                            } else {
+                              setSelectedItemIds(selectedItemIds.filter(id => id !== item.id));
+                            }
+                          }}
+                          className="sr-only"
+                        />
+                        <div className={`
+                          w-5 h-5 rounded border-2 flex items-center justify-center transition-all
+                          ${isSelected
+                            ? 'bg-indigo-600 border-indigo-500'
+                            : 'bg-gray-700 border-gray-600'
+                          }
+                        `}>
+                          {isSelected && (
+                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                      <span className={`flex-1 text-sm ${isSelected ? 'text-indigo-300 font-medium' : 'text-gray-300'}`}>
+                        {item.product_name}
+                      </span>
+                      <span className={`text-xs ${isSelected ? 'text-indigo-400 font-bold' : 'text-gray-400'}`}>
+                        {formatPersianMoney(parseFloat(item.unit_price) * item.quantity)}
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
           )}

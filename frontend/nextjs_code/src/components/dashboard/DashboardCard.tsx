@@ -77,19 +77,19 @@ export function DashboardCard({
   return (
     <div
       className={`
-        rounded-2xl bg-gray-800 p-6
-        shadow-lg
+        rounded-xl bg-gray-800 p-4
+        shadow-md
         border ${colors.border}
-        transition-all duration-300
+        transition-all duration-200
       `}
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
           {icon && (
-            <span className={`text-2xl ${colors.icon}`}>{icon}</span>
+            <span className={`text-lg ${colors.icon}`}>{icon}</span>
           )}
-          <h3 className="text-lg font-bold text-gray-100">{title}</h3>
+          <h3 className="text-sm font-bold text-gray-100">{title}</h3>
         </div>
         {action && (
           <button

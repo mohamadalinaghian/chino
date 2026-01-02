@@ -41,7 +41,7 @@ User = get_user_model()
 router = Router(tags=["Sales"], auth=jwt_auth)
 
 
-@router.post("/open", response=OpenSaleResponse)
+@router.post("/open", response={200: OpenSaleResponse, 422: ErrorResponse})
 @ratelimit(key="user", rate="2/m", method="POST")
 def open_sale(request, payload: OpenSaleRequest):
     """

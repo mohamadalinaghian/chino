@@ -33,10 +33,10 @@ export function SaleFilters({
   const hasActiveFilters = Boolean(search || timeFilter);
 
   return (
-    <div className="flex flex-col gap-4 my-6 bg-gray-800 rounded-2xl p-5 shadow-xl border border-gray-700">
+    <div className="flex flex-col gap-2 my-3 bg-gray-800 rounded-lg p-3 shadow-md border border-gray-700">
       {/* Search Input */}
       <div className="relative">
-        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
           🔍
         </span>
         <input
@@ -45,26 +45,26 @@ export function SaleFilters({
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="جستجو در میز، نام مهمان یا اپراتور..."
           className="
-          w-full rounded-xl bg-gray-700 border border-gray-600
-          pr-12 pl-4 py-3.5 text-sm text-gray-100
+          w-full rounded-lg bg-gray-700 border border-gray-600
+          pr-10 pl-3 py-2 text-xs text-gray-100
           placeholder-gray-400
-          focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
+          focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500
           transition-all
         "
         />
       </div>
 
       {/* Time Filter and Clear Button */}
-      <div className="flex gap-3 items-center">
+      <div className="flex gap-2 items-center">
         <select
           value={timeFilter ?? ''}
           onChange={(e) =>
             onTimeFilterChange((e.target.value as TimeFilter) || undefined)
           }
           className="
-          flex-1 rounded-xl bg-gray-700 border border-gray-600
-          px-4 py-3 text-sm text-gray-100
-          focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
+          flex-1 rounded-lg bg-gray-700 border border-gray-600
+          px-3 py-2 text-xs text-gray-100
+          focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500
           transition-all
         "
         >
@@ -78,9 +78,9 @@ export function SaleFilters({
           <button
             onClick={onClear}
             className="
-            px-4 py-3 rounded-xl
+            px-3 py-2 rounded-lg
             bg-gray-700 hover:bg-gray-600
-            text-gray-300 hover:text-white text-lg font-medium
+            text-gray-300 hover:text-white text-sm font-medium
             transition-all shrink-0
           "
           >

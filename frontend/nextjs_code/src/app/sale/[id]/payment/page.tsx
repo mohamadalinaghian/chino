@@ -22,6 +22,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { SaleApiClient } from '@/libs/sale/saleApiClient';
 import { usePermissions, SalePermissions } from '@/hooks/usePermissions';
 import { formatPersianMoney } from '@/libs/tools/persianMoney';
+import { CS_API_URL } from '@/libs/constants';
 import { InvoiceSummary } from '@/components/payment/InvoiceSummary';
 import { PaymentInput } from '@/components/payment/PaymentInput';
 import type {
@@ -56,7 +57,7 @@ export default function PaymentPage() {
     const loadBankAccounts = async () => {
       try {
         const token = localStorage.getItem('access_token');
-        const response = await fetch('http://localhost:8000/api/user/bank-accounts/', {
+        const response = await fetch(`${CS_API_URL}/user/bank-accounts/`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
