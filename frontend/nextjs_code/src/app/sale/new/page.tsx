@@ -162,6 +162,10 @@ export default function NewSalePage() {
     const validationError = validateForm();
     if (validationError) {
       setSubmitError(validationError);
+      // If table selection error, minimize card so user can switch to takeaway
+      if (validationError.includes('میز')) {
+        setSubmitCardMinimized(true);
+      }
       return;
     }
 
@@ -183,6 +187,8 @@ export default function NewSalePage() {
       const errorMessage =
         err instanceof Error ? err.message : 'ایجاد فروش با خطا مواجه شد';
       setSubmitError(errorMessage);
+      // Minimize card on error so user can see and adjust form options
+      setSubmitCardMinimized(true);
       console.error('Sale creation error:', err);
     } finally {
       setSubmitting(false);
@@ -469,17 +475,28 @@ export default function NewSalePage() {
           {/* Minimized floating button */}
           {submitCardMinimized && (
             <div className="fixed bottom-0 left-0 right-0 z-40 p-4 pointer-events-none">
-              <button
-                onClick={() => setSubmitCardMinimized(false)}
-                className="pointer-events-auto w-full py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-bold text-sm shadow-2xl flex items-center justify-between px-6"
-              >
-                <div className="flex items-center gap-2">
-                  <span>🛒</span>
-                  <span>{cart.itemCount} آیتم</span>
-                </div>
-                <span>{formatPersianMoney(cart.totalAmount)}</span>
-                <span>▲</span>
-              </button>
+              <div className="pointer-events-auto space-y-2">
+                {submitError && (
+                  <div className="bg-red-900/90 border border-red-700 rounded-xl p-3 text-center">
+                    <p className="text-red-300 text-sm font-medium">{submitError}</p>
+                  </div>
+                )}
+                <button
+                  onClick={() => setSubmitCardMinimized(false)}
+                  className={`w-full py-4 rounded-xl ${
+                    submitError
+                      ? 'bg-gradient-to-r from-red-600 to-red-500'
+                      : 'bg-gradient-to-r from-indigo-600 to-indigo-500'
+                  } text-white font-bold text-sm shadow-2xl flex items-center justify-between px-6`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span>{submitError ? '⚠️' : '🛒'}</span>
+                    <span>{cart.itemCount} آیتم</span>
+                  </div>
+                  <span>{formatPersianMoney(cart.totalAmount)}</span>
+                  <span>▲</span>
+                </button>
+              </div>
             </div>
           )}
 
