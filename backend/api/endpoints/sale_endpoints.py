@@ -137,7 +137,7 @@ def sync_sale_items(request, sale_id: int, payload: SyncSaleRequest):
         return 422, {"detail": e.messages}
 
     return OpenSaleResponse(
-        sale_id=updated_sale.pk,
+        id=updated_sale.pk,
         total_amount=updated_sale.total_amount,
         state=updated_sale.state,
     )
