@@ -63,7 +63,7 @@ export interface IMenuCategory {
  * Top-level grouping by parent_group (BAR_ITEM or FOOD)
  */
 export interface IMenuGroup {
-  parent_group: string;
+  parent_group: 'BAR' | 'FOOD';
   categories: IMenuCategory[];
 }
 

@@ -34,9 +34,9 @@ export default function NewSalePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Navigation state - use parent_group (BAR_ITEM or FOOD) as activeTab
+  // Navigation state - use parent_group (BAR or FOOD) as activeTab
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'BAR_ITEM' | 'FOOD'>('FOOD');
+  const [activeTab, setActiveTab] = useState<'BAR' | 'FOOD'>('FOOD');
 
   // Cart state
   const [cartItems, setCartItems] = useState<ICartItem[]>([]);
@@ -351,9 +351,8 @@ export default function NewSalePage() {
             <div className="flex gap-2">
               <button
                 onClick={() => setActiveTab('FOOD')}
-                className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${
-                  activeTab === 'FOOD' ? 'scale-105' : ''
-                }`}
+                className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${activeTab === 'FOOD' ? 'scale-105' : ''
+                  }`}
                 style={{
                   backgroundColor:
                     activeTab === 'FOOD'
@@ -368,17 +367,16 @@ export default function NewSalePage() {
                 {UI_TEXT.TAB_FOOD}
               </button>
               <button
-                onClick={() => setActiveTab('BAR_ITEM')}
-                className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${
-                  activeTab === 'BAR_ITEM' ? 'scale-105' : ''
-                }`}
+                onClick={() => setActiveTab('BAR')}
+                className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${activeTab === 'BAR' ? 'scale-105' : ''
+                  }`}
                 style={{
                   backgroundColor:
-                    activeTab === 'BAR_ITEM'
+                    activeTab === 'BAR'
                       ? THEME_COLORS.accent
                       : THEME_COLORS.surface,
                   color:
-                    activeTab === 'BAR_ITEM'
+                    activeTab === 'BAR'
                       ? '#fff'
                       : THEME_COLORS.subtext,
                 }}
