@@ -48,13 +48,16 @@ export default function NewSalePage() {
   const [selectedItemForExtras, setSelectedItemForExtras] =
     useState<IMenuItemForSale | null>(null);
 
+  // Editing cart item extras
+  const [editingCartItem, setEditingCartItem] = useState<ICartItem | null>(null);
+
   // Submission state
   const [submitting, setSubmitting] = useState(false);
   const [printOrder, setPrintOrder] = useState(true);
 
-  // NEW: Cart ref + floating button logic
+  // Cart ref + floating button
   const cartSummaryRef = useRef<HTMLDivElement>(null);
-  const showFloatingButton = cartItems.length > 0; // Show when cart has items (mobile only)
+  const showFloatingButton = cartItems.length > 0;
 
   const scrollToCart = () => {
     cartSummaryRef.current?.scrollIntoView({
@@ -63,12 +66,10 @@ export default function NewSalePage() {
     });
   };
 
-  // Load menu on mount
   useEffect(() => {
     loadMenu();
   }, []);
 
-  // Auto-select first category when tab changes
   useEffect(() => {
     if (!menuData) return;
     const group = menuData.find((g) => g.parent_group === activeTab);
@@ -83,7 +84,6 @@ export default function NewSalePage() {
       setError(null);
       const data = await fetchSaleMenu();
       setMenuData(data);
-      // Auto-select first category from FOOD group
       const foodGroup = data.find((g) => g.parent_group === 'FOOD');
       if (foodGroup && foodGroup.categories.length > 0) {
         setSelectedCategory(foodGroup.categories[0].title);
@@ -95,7 +95,6 @@ export default function NewSalePage() {
     }
   };
 
-  // Get current categories based on active tab
   const currentCategories = useMemo(() => {
     if (!menuData) return [];
     const group = menuData.find((g) => g.parent_group === activeTab);
@@ -107,7 +106,6 @@ export default function NewSalePage() {
     }));
   }, [menuData, activeTab]);
 
-  // Get current items for selected category
   const currentItems = useMemo(() => {
     if (!menuData || !selectedCategory) return [];
     const group = menuData.find((g) => g.parent_group === activeTab);
@@ -116,7 +114,6 @@ export default function NewSalePage() {
     return category?.items || [];
   }, [menuData, selectedCategory, activeTab]);
 
-  // Handle sale type change
   const handleSaleTypeChange = (type: SaleType) => {
     setSaleType(type);
     if (type === SaleType.TAKEAWAY) {
@@ -124,19 +121,15 @@ export default function NewSalePage() {
     }
   };
 
-  // Handle add item to cart (without extras)
   const handleAddToCart = (item: IMenuItemForSale) => {
-    // Show selection animation
     setAnimatingItemId(item.id);
-    setTimeout(() => setAnimatingItemId(null), 500); // Updated to match new animation
+    setTimeout(() => setAnimatingItemId(null), 500);
 
     setCartItems((prev) => {
-      // Find if item without extras already exists
       const existingItemIndex = prev.findIndex(
         (cartItem) => cartItem.menu_id === item.id && cartItem.extras.length === 0
       );
       if (existingItemIndex !== -1) {
-        // Item exists, increment quantity
         const updated = [...prev];
         const existingItem = updated[existingItemIndex];
         updated[existingItemIndex] = {
@@ -146,7 +139,6 @@ export default function NewSalePage() {
         };
         return updated;
       } else {
-        // Item doesn't exist, create new cart entry
         const cartItemId = `${Date.now()}-${Math.random()}`;
         const newCartItem: ICartItem = {
           id: cartItemId,
@@ -162,53 +154,88 @@ export default function NewSalePage() {
     });
   };
 
-  // Handle request extras
+  // Always allow requesting extras for any item
   const handleRequestExtras = (item: IMenuItemForSale) => {
     setSelectedItemForExtras(item);
+    setEditingCartItem(null);
     setExtrasModalOpen(true);
   };
 
-  // Handle confirm extras and add to cart
+  const handleEditCartItemExtras = (cartItem: ICartItem) => {
+    const menuItem: IMenuItemForSale = {
+      id: cartItem.menu_id,
+      name: cartItem.name,
+      price: cartItem.unit_price,
+    };
+    setSelectedItemForExtras(menuItem);
+    setEditingCartItem(cartItem);
+    setExtrasModalOpen(true);
+  };
+
   const handleConfirmExtras = (
     item: IMenuItemForSale,
     selectedExtras: SelectedExtra[],
     quantity: number
   ) => {
-    // Show selection animation
     setAnimatingItemId(item.id);
     setTimeout(() => setAnimatingItemId(null), 500);
 
-    const cartItemId = `${Date.now()}-${Math.random()}`;
-    const cartExtras: ICartExtra[] = selectedExtras.map((se) => ({
-      id: `${cartItemId}-extra-${se.extra.id}`,
-      product_id: se.extra.id,
-      name: se.extra.name,
-      price: se.extra.price,
-      quantity: se.quantity,
-    }));
-    const extrasTotal = cartExtras.reduce(
-      (sum, extra) => sum + extra.price * extra.quantity,
-      0
-    );
-    const newCartItem: ICartItem = {
-      id: cartItemId,
-      menu_id: item.id,
-      name: item.name,
-      quantity,
-      unit_price: item.price,
-      extras: cartExtras,
-      total: (item.price + extrasTotal) * quantity,
-    };
-    setCartItems((prev) => [...prev, newCartItem]);
+    if (editingCartItem) {
+      // Editing existing item
+      const updatedExtras: ICartExtra[] = selectedExtras.map((se, idx) => ({
+        id: editingCartItem.extras[idx]?.id || `${editingCartItem.id}-extra-${se.extra.id}`,
+        product_id: se.extra.id,
+        name: se.extra.name,
+        price: se.extra.price,
+        quantity: se.quantity,
+      }));
+
+      const extrasTotal = updatedExtras.reduce((sum, e) => sum + e.price * e.quantity, 0);
+
+      setCartItems((prev) =>
+        prev.map((ci) =>
+          ci.id === editingCartItem.id
+            ? {
+              ...ci,
+              quantity,
+              extras: updatedExtras,
+              total: (item.price + extrasTotal) * quantity,
+            }
+            : ci
+        )
+      );
+      setEditingCartItem(null);
+    } else {
+      // Adding new item with extras
+      const cartItemId = `${Date.now()}-${Math.random()}`;
+      const cartExtras: ICartExtra[] = selectedExtras.map((se) => ({
+        id: `${cartItemId}-extra-${se.extra.id}`,
+        product_id: se.extra.id,
+        name: se.extra.name,
+        price: se.extra.price,
+        quantity: se.quantity,
+      }));
+      const extrasTotal = cartExtras.reduce((sum, extra) => sum + extra.price * extra.quantity, 0);
+      const newCartItem: ICartItem = {
+        id: cartItemId,
+        menu_id: item.id,
+        name: item.name,
+        quantity,
+        unit_price: item.price,
+        extras: cartExtras,
+        total: (item.price + extrasTotal) * quantity,
+      };
+      setCartItems((prev) => [...prev, newCartItem]);
+    }
+
     setExtrasModalOpen(false);
+    setSelectedItemForExtras(null);
   };
 
-  // Handle remove item from cart
   const handleRemoveItem = (itemId: string) => {
     setCartItems((prev) => prev.filter((item) => item.id !== itemId));
   };
 
-  // Handle update quantity
   const handleUpdateQuantity = (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
     setCartItems((prev) =>
@@ -227,9 +254,7 @@ export default function NewSalePage() {
     );
   };
 
-  // Handle proceed to payment (immediate pay)
   const handleProceedToPayment = async () => {
-    // Validation
     if (saleType === SaleType.DINE_IN && !selectedTableId) {
       showToast(UI_TEXT.VALIDATION_SELECT_TABLE, 'warning');
       return;
@@ -240,7 +265,6 @@ export default function NewSalePage() {
     }
     try {
       setSubmitting(true);
-      // Prepare sale data
       const saleData = {
         sale_type: saleType,
         table_id: saleType === SaleType.DINE_IN ? selectedTableId : null,
@@ -254,10 +278,8 @@ export default function NewSalePage() {
           })),
         })),
       };
-      // Create sale
       const sale = await openSale(saleData);
       showToast(UI_TEXT.SUCCESS_SALE_CREATED, 'success');
-      // Redirect to payment page
       setTimeout(() => {
         router.push(`/sale/${sale.id}/payment`);
       }, 500);
@@ -271,9 +293,7 @@ export default function NewSalePage() {
     }
   };
 
-  // Handle save as open sale (to pay later)
   const handleSaveAsOpen = async () => {
-    // Validation
     if (saleType === SaleType.DINE_IN && !selectedTableId) {
       showToast(UI_TEXT.VALIDATION_SELECT_TABLE, 'warning');
       return;
@@ -284,7 +304,6 @@ export default function NewSalePage() {
     }
     try {
       setSubmitting(true);
-      // Prepare sale data
       const saleData = {
         sale_type: saleType,
         table_id: saleType === SaleType.DINE_IN ? selectedTableId : null,
@@ -298,10 +317,8 @@ export default function NewSalePage() {
           })),
         })),
       };
-      // Save as open sale
       const sale = await saveAsOpenSale(saleData);
       showToast(UI_TEXT.SUCCESS_OPEN_SALE_SAVED, 'success');
-      // Redirect to sales list or dashboard
       setTimeout(() => {
         router.push('/dashboard');
       }, 500);
@@ -346,7 +363,6 @@ export default function NewSalePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
           {/* Left Column - Menu Selection */}
           <div className="lg:col-span-2 space-y-2">
-            {/* Sale Type Selector */}
             <div
               className="p-2 rounded-lg"
               style={{ backgroundColor: THEME_COLORS.bgSecondary }}
@@ -357,7 +373,6 @@ export default function NewSalePage() {
               />
             </div>
 
-            {/* Table Selector (only for dine-in) */}
             {saleType === SaleType.DINE_IN && (
               <div
                 className="p-2 rounded-lg"
@@ -370,13 +385,11 @@ export default function NewSalePage() {
               </div>
             )}
 
-            {/* Menu Tabs */}
             <div className="flex gap-2">
               <button
                 onClick={() => setActiveTab('FOOD')}
-                className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${
-                  activeTab === 'FOOD' ? 'scale-105' : ''
-                }`}
+                className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${activeTab === 'FOOD' ? 'scale-105' : ''
+                  }`}
                 style={{
                   backgroundColor:
                     activeTab === 'FOOD'
@@ -392,9 +405,8 @@ export default function NewSalePage() {
               </button>
               <button
                 onClick={() => setActiveTab('BAR')}
-                className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${
-                  activeTab === 'BAR' ? 'scale-105' : ''
-                }`}
+                className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${activeTab === 'BAR' ? 'scale-105' : ''
+                  }`}
                 style={{
                   backgroundColor:
                     activeTab === 'BAR'
@@ -410,7 +422,6 @@ export default function NewSalePage() {
               </button>
             </div>
 
-            {/* Loading State */}
             {loading && (
               <div
                 className="p-6 rounded-lg text-center"
@@ -428,7 +439,6 @@ export default function NewSalePage() {
               </div>
             )}
 
-            {/* Error State */}
             {error && (
               <div
                 className="p-4 rounded-lg text-center"
@@ -456,10 +466,8 @@ export default function NewSalePage() {
               </div>
             )}
 
-            {/* Menu Content */}
             {!loading && !error && menuData && (
               <>
-                {/* Category List */}
                 <div
                   className="p-2 rounded-lg"
                   style={{ backgroundColor: THEME_COLORS.bgSecondary }}
@@ -471,7 +479,6 @@ export default function NewSalePage() {
                   />
                 </div>
 
-                {/* Items Grid */}
                 <div
                   className="p-2 rounded-lg"
                   style={{ backgroundColor: THEME_COLORS.bgSecondary }}
@@ -496,6 +503,7 @@ export default function NewSalePage() {
                 cartItems={cartItems}
                 onRemoveItem={handleRemoveItem}
                 onUpdateQuantity={handleUpdateQuantity}
+                onEditExtras={handleEditCartItemExtras}
                 onProceedToPayment={handleProceedToPayment}
                 onSaveAsOpen={handleSaveAsOpen}
                 printOrder={printOrder}
@@ -506,7 +514,6 @@ export default function NewSalePage() {
         </div>
       </div>
 
-      {/* NEW: Floating Action Button - Mobile Only, Stays Visible When Cart Has Items */}
       {showFloatingButton && (
         <button
           onClick={scrollToCart}
@@ -529,14 +536,13 @@ export default function NewSalePage() {
         onClose={() => {
           setExtrasModalOpen(false);
           setSelectedItemForExtras(null);
+          setEditingCartItem(null);
         }}
         onConfirm={handleConfirmExtras}
       />
 
-      {/* Loading Overlay for Submission */}
       {submitting && <LoadingOverlay message={UI_TEXT.MSG_CREATING_SALE} />}
 
-      {/* Toast Notifications */}
       <ToastContainer />
     </div>
   );

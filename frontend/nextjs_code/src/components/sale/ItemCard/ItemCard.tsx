@@ -30,17 +30,18 @@ export function ItemCard({
     }
   };
 
+  // Only show extras button if the callback exists (meaning item supports extras)
+  const hasExtras = !!onRequestExtras;
+
   return (
     <div
       onClick={handleCardClick}
       className={`
         w-full group relative overflow-hidden rounded-xl border transition-all duration-300
-        hover:scale-[1.025] hover:shadow-xl cursor-pointer
-        will-change-transform
-        ${
-          isAnimating
-            ? 'animate-item-select animate-inner-glow animate-ripple-success ring-2 ring-blue-500/50 shadow-2xl shadow-blue-500/25 scale-[1.02]'
-            : 'hover:shadow-lg shadow-md'
+        hover:scale-[1.025] hover:shadow-xl cursor-pointer will-change-transform
+        ${isAnimating
+          ? 'animate-item-select animate-inner-glow animate-ripple-success ring-2 ring-blue-500/50 shadow-2xl shadow-blue-500/25 scale-[1.02]'
+          : 'hover:shadow-lg shadow-md'
         }
       `}
       style={{
@@ -52,27 +53,16 @@ export function ItemCard({
       }}
     >
       {/* Icon Section */}
-      <div
-        className="relative h-24 overflow-hidden rounded-t-xl"
-        style={{ backgroundColor: THEME_COLORS.surface }}
-      >
-        <div
-          className="w-full h-full flex items-center justify-center text-4xl transition-transform duration-300 group-hover:scale-110"
-          style={{ color: THEME_COLORS.subtext }}
-        >
+      <div className="relative h-24 overflow-hidden rounded-t-xl" style={{ backgroundColor: THEME_COLORS.surface }}>
+        <div className="w-full h-full flex items-center justify-center text-4xl transition-transform duration-300 group-hover:scale-110"
+          style={{ color: THEME_COLORS.subtext }}>
           {getItemIcon(item.name, categoryName)}
         </div>
 
-        {/* Gradient Overlay */}
-        <div
-          className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent
-                     opacity-0 group-hover:opacity-100 transition-all duration-300"
-        />
-
-        {/* Add Icon on Hover */}
+        {/* Gradient + Hover Add Icon */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300" />
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-          <div
-            className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-bold shadow-2xl backdrop-blur-sm border scale-0 group-hover:scale-100 transition-all duration-300"
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-bold shadow-2xl backdrop-blur-sm border scale-0 group-hover:scale-100 transition-all duration-300"
             style={{
               backgroundColor: 'rgba(59, 130, 246, 0.9)',
               color: '#fff',
@@ -83,7 +73,7 @@ export function ItemCard({
           </div>
         </div>
 
-        {/* Success Checkmark (during animation) */}
+        {/* Success Checkmark during animation */}
         {isAnimating && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-2xl animate-ping">
@@ -93,41 +83,33 @@ export function ItemCard({
         )}
       </div>
 
-      {/* Content Section */}
+      {/* Content */}
       <div className="p-3 space-y-1.5 relative z-10">
-        {/* Item Name */}
-        <h3
-          className="text-sm font-bold text-right line-clamp-1 leading-tight"
-          style={{ color: THEME_COLORS.text }}
-        >
+        <h3 className="text-sm font-bold text-right line-clamp-1 leading-tight" style={{ color: THEME_COLORS.text }}>
           {item.name}
         </h3>
-
-        {/* Price */}
-        <div
-          className="text-base font-extrabold text-right tracking-tight drop-shadow-sm"
-          style={{ color: THEME_COLORS.green }}
-        >
+        <div className="text-base font-extrabold text-right tracking-tight drop-shadow-sm" style={{ color: THEME_COLORS.green }}>
           {formatPersianMoney(item.price)}
         </div>
       </div>
 
-      {/* Extras Button */}
-      {onRequestExtras && (
+      {/* NEW: Clear Extras Badge - Only if item supports extras */}
+      {hasExtras && (
         <button
           onClick={handleExtrasClick}
-          className="absolute top-3 left-3 w-10 h-10 rounded-2xl flex items-center justify-center shadow-xl
-                     transition-all duration-200 hover:scale-110 active:scale-95 hover:shadow-2xl
-                     backdrop-blur-sm border z-20 group/extras"
+          className="absolute top-3 left-3 px-3 py-1.5 rounded-full text-xs font-bold shadow-lg
+                     transition-all duration-200 hover:scale-110 active:scale-95
+                     backdrop-blur-sm border z-20 flex items-center gap-1"
           style={{
-            backgroundColor: THEME_COLORS.purple,
+            backgroundColor: 'rgba(168, 85, 247, 0.85)', // Purple but slightly transparent
             color: '#fff',
-            borderColor: 'rgba(255, 255, 255, 0.2)',
-            boxShadow: '0 4px 20px rgba(168, 85, 247, 0.4)',
+            borderColor: 'rgba(255, 255, 255, 0.3)',
+            boxShadow: '0 4px 15px rgba(168, 85, 247, 0.4)',
           }}
-          title={UI_TEXT.LABEL_EXTRAS}
+          title="انتخاب افزودنی‌ها"
         >
-          <span className="text-base font-bold group-hover/extras:scale-110">+</span>
+          <span className="text-lg">+</span>
+          <span>اضافات</span>
         </button>
       )}
     </div>

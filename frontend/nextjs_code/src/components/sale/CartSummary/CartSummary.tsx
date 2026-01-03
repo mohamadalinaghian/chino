@@ -8,6 +8,7 @@ interface CartSummaryProps {
   cartItems: ICartItem[];
   onRemoveItem: (itemId: string) => void;
   onUpdateQuantity: (itemId: string, quantity: number) => void;
+  onEditExtras?: (item: ICartItem) => void;
   onProceedToPayment: () => void;
   onSaveAsOpen: () => void;
   printOrder: boolean;
@@ -20,6 +21,7 @@ export const CartSummary = forwardRef<HTMLDivElement, CartSummaryProps>(function
     cartItems,
     onRemoveItem,
     onUpdateQuantity,
+    onEditExtras,
     onProceedToPayment,
     onSaveAsOpen,
     printOrder,
@@ -106,6 +108,13 @@ export const CartSummary = forwardRef<HTMLDivElement, CartSummaryProps>(function
               </div>
             )}
 
+            <button
+              onClick={() => onEditExtras?.(item)}
+              className="text-xs font-medium underline hover:no-underline transition-all"
+              style={{ color: THEME_COLORS.accent }}
+            >
+              ویرایش اضافات
+            </button>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <button
