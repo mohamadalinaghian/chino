@@ -382,7 +382,7 @@ export default function NewSalePage() {
       triggerPrintReceipt(sale.id);
 
       setTimeout(() => {
-        router.push('/dashboard');
+        router.push('/sale/dashboard');
       }, 500);
     } catch (err) {
       showToast(
