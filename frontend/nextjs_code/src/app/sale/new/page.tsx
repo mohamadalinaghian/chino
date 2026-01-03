@@ -1,6 +1,5 @@
 'use client';
-
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   SaleType,
@@ -14,7 +13,7 @@ import { SaleTypeSelector } from '@/components/sale/SaleTypeSelector';
 import { TableSelector } from '@/components/sale/TableSelector';
 import { CategoryList } from '@/components/sale/CategoryList';
 import { ItemsGrid } from '@/components/sale/ItemsGrid';
-import { CartSummary } from '@/components/sale/CartSummary';
+import { CartSummary } from '@/components/sale/CartSummary/CartSummary';
 import { ExtrasModal, SelectedExtra } from '@/components/sale/ExtrasModal';
 import { useToast } from '@/components/common/Toast';
 import { LoadingOverlay } from '@/components/common/LoadingOverlay';
@@ -34,14 +33,14 @@ export default function NewSalePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Navigation state - use parent_group (BAR or FOOD) as activeTab
+  // Navigation state
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'BAR' | 'FOOD'>('FOOD');
 
   // Cart state
   const [cartItems, setCartItems] = useState<ICartItem[]>([]);
 
-  // Animation state for item selection feedback
+  // Animation state
   const [animatingItemId, setAnimatingItemId] = useState<number | null>(null);
 
   // Extras modal state
@@ -51,9 +50,18 @@ export default function NewSalePage() {
 
   // Submission state
   const [submitting, setSubmitting] = useState(false);
+  const [printOrder, setPrintOrder] = useState(true);
 
-  // Print option
-  const [printOrder, setPrintOrder] = useState(true); // Default: print orders
+  // NEW: Cart ref + floating button logic
+  const cartSummaryRef = useRef<HTMLDivElement>(null);
+  const showFloatingButton = cartItems.length > 0; // Show when cart has items (mobile only)
+
+  const scrollToCart = () => {
+    cartSummaryRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  };
 
   // Load menu on mount
   useEffect(() => {
@@ -75,7 +83,6 @@ export default function NewSalePage() {
       setError(null);
       const data = await fetchSaleMenu();
       setMenuData(data);
-
       // Auto-select first category from FOOD group
       const foodGroup = data.find((g) => g.parent_group === 'FOOD');
       if (foodGroup && foodGroup.categories.length > 0) {
@@ -121,14 +128,13 @@ export default function NewSalePage() {
   const handleAddToCart = (item: IMenuItemForSale) => {
     // Show selection animation
     setAnimatingItemId(item.id);
-    setTimeout(() => setAnimatingItemId(null), 500);
+    setTimeout(() => setAnimatingItemId(null), 500); // Updated to match new animation
 
     setCartItems((prev) => {
       // Find if item without extras already exists
       const existingItemIndex = prev.findIndex(
         (cartItem) => cartItem.menu_id === item.id && cartItem.extras.length === 0
       );
-
       if (existingItemIndex !== -1) {
         // Item exists, increment quantity
         const updated = [...prev];
@@ -163,7 +169,6 @@ export default function NewSalePage() {
   };
 
   // Handle confirm extras and add to cart
-  // Items with extras are ALWAYS added as separate cart entries
   const handleConfirmExtras = (
     item: IMenuItemForSale,
     selectedExtras: SelectedExtra[],
@@ -171,10 +176,9 @@ export default function NewSalePage() {
   ) => {
     // Show selection animation
     setAnimatingItemId(item.id);
-    setTimeout(() => setAnimatingItemId(null), 600);
+    setTimeout(() => setAnimatingItemId(null), 500);
 
     const cartItemId = `${Date.now()}-${Math.random()}`;
-
     const cartExtras: ICartExtra[] = selectedExtras.map((se) => ({
       id: `${cartItemId}-extra-${se.extra.id}`,
       product_id: se.extra.id,
@@ -182,12 +186,10 @@ export default function NewSalePage() {
       price: se.extra.price,
       quantity: se.quantity,
     }));
-
     const extrasTotal = cartExtras.reduce(
       (sum, extra) => sum + extra.price * extra.quantity,
       0
     );
-
     const newCartItem: ICartItem = {
       id: cartItemId,
       menu_id: item.id,
@@ -197,7 +199,6 @@ export default function NewSalePage() {
       extras: cartExtras,
       total: (item.price + extrasTotal) * quantity,
     };
-
     setCartItems((prev) => [...prev, newCartItem]);
     setExtrasModalOpen(false);
   };
@@ -210,16 +211,13 @@ export default function NewSalePage() {
   // Handle update quantity
   const handleUpdateQuantity = (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
-
     setCartItems((prev) =>
       prev.map((item) => {
         if (item.id !== itemId) return item;
-
         const extrasTotal = item.extras.reduce(
           (sum, extra) => sum + extra.price * extra.quantity,
           0
         );
-
         return {
           ...item,
           quantity: newQuantity,
@@ -236,15 +234,12 @@ export default function NewSalePage() {
       showToast(UI_TEXT.VALIDATION_SELECT_TABLE, 'warning');
       return;
     }
-
     if (cartItems.length === 0) {
       showToast(UI_TEXT.VALIDATION_EMPTY_CART, 'warning');
       return;
     }
-
     try {
       setSubmitting(true);
-
       // Prepare sale data
       const saleData = {
         sale_type: saleType,
@@ -259,12 +254,9 @@ export default function NewSalePage() {
           })),
         })),
       };
-
       // Create sale
       const sale = await openSale(saleData);
-
       showToast(UI_TEXT.SUCCESS_SALE_CREATED, 'success');
-
       // Redirect to payment page
       setTimeout(() => {
         router.push(`/sale/${sale.id}/payment`);
@@ -286,15 +278,12 @@ export default function NewSalePage() {
       showToast(UI_TEXT.VALIDATION_SELECT_TABLE, 'warning');
       return;
     }
-
     if (cartItems.length === 0) {
       showToast(UI_TEXT.VALIDATION_EMPTY_CART, 'warning');
       return;
     }
-
     try {
       setSubmitting(true);
-
       // Prepare sale data
       const saleData = {
         sale_type: saleType,
@@ -309,12 +298,9 @@ export default function NewSalePage() {
           })),
         })),
       };
-
       // Save as open sale
       const sale = await saveAsOpenSale(saleData);
-
       showToast(UI_TEXT.SUCCESS_OPEN_SALE_SAVED, 'success');
-
       // Redirect to sales list or dashboard
       setTimeout(() => {
         router.push('/dashboard');
@@ -331,7 +317,7 @@ export default function NewSalePage() {
 
   return (
     <div
-      className="min-h-screen"
+      className="min-h-screen relative"
       style={{ backgroundColor: THEME_COLORS.bgPrimary }}
     >
       {/* Header */}
@@ -388,8 +374,9 @@ export default function NewSalePage() {
             <div className="flex gap-2">
               <button
                 onClick={() => setActiveTab('FOOD')}
-                className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${activeTab === 'FOOD' ? 'scale-105' : ''
-                  }`}
+                className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${
+                  activeTab === 'FOOD' ? 'scale-105' : ''
+                }`}
                 style={{
                   backgroundColor:
                     activeTab === 'FOOD'
@@ -405,8 +392,9 @@ export default function NewSalePage() {
               </button>
               <button
                 onClick={() => setActiveTab('BAR')}
-                className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${activeTab === 'BAR' ? 'scale-105' : ''
-                  }`}
+                className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${
+                  activeTab === 'BAR' ? 'scale-105' : ''
+                }`}
                 style={{
                   backgroundColor:
                     activeTab === 'BAR'
@@ -504,6 +492,7 @@ export default function NewSalePage() {
           <div className="lg:col-span-1">
             <div className="sticky top-4">
               <CartSummary
+                ref={cartSummaryRef}
                 cartItems={cartItems}
                 onRemoveItem={handleRemoveItem}
                 onUpdateQuantity={handleUpdateQuantity}
@@ -516,6 +505,22 @@ export default function NewSalePage() {
           </div>
         </div>
       </div>
+
+      {/* NEW: Floating Action Button - Mobile Only, Stays Visible When Cart Has Items */}
+      {showFloatingButton && (
+        <button
+          onClick={scrollToCart}
+          className="fixed bottom-6 right-6 z-50 block lg:hidden w-16 h-16 rounded-full shadow-2xl flex items-center justify-center text-3xl font-bold hover:scale-110 active:scale-95 transition-all duration-300 animate-pulse"
+          style={{
+            backgroundColor: THEME_COLORS.accent,
+            color: '#fff',
+            boxShadow: '0 10px 30px rgba(59, 130, 246, 0.5)',
+          }}
+          title="نمایش سبد خرید"
+        >
+          🛒
+        </button>
+      )}
 
       {/* Extras Modal */}
       <ExtrasModal
