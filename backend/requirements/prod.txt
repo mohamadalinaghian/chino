@@ -48,3 +48,4 @@ gunicorn
 reportlab
 arabic-reshaper
 python-bidi
+python-escpos==3.0

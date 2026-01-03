@@ -44,6 +44,7 @@ class SyncSaleItemInput(Schema):
 
 class SyncSaleRequest(Schema):
     items: List[SyncSaleItemInput]
+    print_order: bool = True  # Print to thermal printer (default: True)
 
 
 class OpenSaleRequest(Schema):
@@ -54,6 +55,7 @@ class OpenSaleRequest(Schema):
     note: Optional[str]
     # For opening, we use the same structure, but item_id will naturally be null/ignored
     items: List[SyncSaleItemInput]
+    print_order: bool = True  # Print to thermal printer (default: True)
 
 
 class OpenSaleResponse(Schema):

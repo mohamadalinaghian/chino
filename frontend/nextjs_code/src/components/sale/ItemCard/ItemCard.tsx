@@ -14,23 +14,21 @@ interface ItemCardProps {
 }
 
 export function ItemCard({ item, categoryName, onAddToCart, onRequestExtras, isAnimating }: ItemCardProps) {
-  const handleQuickAdd = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleCardClick = () => {
     onAddToCart(item);
   };
 
-  const handleAddWithExtras = (e: React.MouseEvent) => {
+  const handleExtrasClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onRequestExtras) {
       onRequestExtras(item);
-    } else {
-      onAddToCart(item);
     }
   };
 
   return (
     <div
-      className={`w-full group relative overflow-hidden rounded-md border transition-all duration-200 hover:scale-[1.02] ${
+      onClick={handleCardClick}
+      className={`w-full group relative overflow-hidden rounded-md border transition-all duration-200 hover:scale-[1.02] cursor-pointer ${
         isAnimating ? 'animate-pulse ring-4 ring-green-500 scale-105' : ''
       }`}
       style={{
@@ -54,6 +52,19 @@ export function ItemCard({ item, categoryName, onAddToCart, onRequestExtras, isA
         <div
           className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200"
         />
+
+        {/* Add Icon on Hover */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div
+            className="w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg"
+            style={{
+              backgroundColor: THEME_COLORS.accent,
+              color: '#fff',
+            }}
+          >
+            +
+          </div>
+        </div>
       </div>
 
       {/* Content Section */}
@@ -75,35 +86,20 @@ export function ItemCard({ item, categoryName, onAddToCart, onRequestExtras, isA
         </div>
       </div>
 
-      {/* Dual Button Overlay on Hover */}
-      <div
-        className="absolute inset-0 flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-2"
-        style={{ backgroundColor: 'rgba(0, 0, 0, 0.85)' }}
-      >
+      {/* Extras Button - Always Visible in Top Left */}
+      {onRequestExtras && (
         <button
-          onClick={handleQuickAdd}
-          className="w-full px-3 py-1.5 rounded-md font-bold text-sm transition-all hover:scale-105 active:scale-95"
+          onClick={handleExtrasClick}
+          className="absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-95 z-10"
           style={{
-            backgroundColor: THEME_COLORS.accent,
+            backgroundColor: THEME_COLORS.purple,
             color: '#fff',
           }}
+          title={UI_TEXT.LABEL_EXTRAS}
         >
-          {UI_TEXT.BTN_ADD}
+          <span className="text-sm font-bold">+</span>
         </button>
-        {onRequestExtras && (
-          <button
-            onClick={handleAddWithExtras}
-            className="w-full px-3 py-1.5 rounded-md font-bold text-sm border transition-all hover:scale-105 active:scale-95"
-            style={{
-              borderColor: THEME_COLORS.accent,
-              color: THEME_COLORS.accent,
-              backgroundColor: 'transparent',
-            }}
-          >
-            + {UI_TEXT.LABEL_EXTRAS}
-          </button>
-        )}
-      </div>
+      )}
     </div>
   );
 }

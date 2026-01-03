@@ -105,6 +105,7 @@ def open_sale(request, payload: OpenSaleRequest):
             guest_count=payload.guest_count,
             note=payload.note or "",
             items=service_items,
+            print_order=payload.print_order,
         )
     except ValidationError as e:
         return 422, {"detail": e.messages}

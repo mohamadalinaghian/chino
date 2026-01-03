@@ -249,6 +249,7 @@ export default function NewSalePage() {
       const saleData = {
         sale_type: saleType,
         table_id: saleType === SaleType.DINE_IN ? selectedTableId : null,
+        print_order: printOrder,
         items: cartItems.map((cartItem) => ({
           menu_id: cartItem.menu_id,
           quantity: cartItem.quantity,
@@ -298,6 +299,7 @@ export default function NewSalePage() {
       const saleData = {
         sale_type: saleType,
         table_id: saleType === SaleType.DINE_IN ? selectedTableId : null,
+        print_order: printOrder,
         items: cartItems.map((cartItem) => ({
           menu_id: cartItem.menu_id,
           quantity: cartItem.quantity,
