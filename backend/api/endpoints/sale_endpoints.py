@@ -21,7 +21,6 @@ from apps.menu.models import Menu
 from apps.sale.models import Sale, SaleItem
 from apps.sale.policies import (
     can_cancel_close_sale,
-    can_close_sale,
     can_modify_sale,
     can_open_sale,
     can_see_sale_details,
@@ -52,6 +51,9 @@ def open_sale(request, payload: OpenSaleRequest):
     # 1. Resolve Dependents
     guest = get_object_or_404(User, id=payload.guest_id) if payload.guest_id else None
     table = get_object_or_404(Table, id=payload.table_id) if payload.table_id else None
+
+    if payload.guest_id and payload.guest_id == request.auth.id:
+        return 422, {"detail": "Guest cannot be the sale creator"}
 
     # 2. OPTIMIZED PRE-FETCHING
     # Collect all Menu IDs
@@ -111,7 +113,7 @@ def open_sale(request, payload: OpenSaleRequest):
         return 422, {"detail": e.messages}
 
     return OpenSaleResponse(
-        sale_id=sale.pk, total_amount=sale.total_amount, state=sale.state
+        id=sale.pk, total_amount=sale.total_amount, state=sale.state
     )
 
 
@@ -390,9 +392,9 @@ def close_sale_endpoint(request, sale_id: int, payload: CloseSaleRequest):
             amount_total=p.amount_total,
             amount_applied=p.amount_applied,
             tip_amount=p.tip_amount,
-            destination_account_id=p.destination_account.pk
-            if p.destination_account
-            else None,
+            destination_account_id=(
+                p.destination_account.pk if p.destination_account else None
+            ),
             received_at=p.received_at,
         )
         for p in created_payments

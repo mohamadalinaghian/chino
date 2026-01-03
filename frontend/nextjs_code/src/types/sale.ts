@@ -127,9 +127,10 @@ export interface IOpenSaleRequest {
   sale_type: SaleType;
   table_id?: number | null;
   guest_id?: number | null;
-  guest_count?: number;
+  guest_count?: number | null;
   items: ISaleItemInput[];
-  note?: string;
+  note?: string | null;
+  print_order: boolean;
 }
 
 /**

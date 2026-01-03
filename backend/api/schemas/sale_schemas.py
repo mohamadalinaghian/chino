@@ -59,7 +59,7 @@ class OpenSaleRequest(Schema):
 
 
 class OpenSaleResponse(Schema):
-    sale_id: int
+    id: int
     total_amount: Decimal
     state: str
 
