@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from ninja import Schema
 
@@ -39,7 +39,7 @@ class MenuItemDisplay(Schema):
 # ============================================================================
 
 
-class MenuItemSaleSchema(Schema):
+class MenuItemOut(Schema):
     """
     Lightweight schema for menu items in the new sale page.
     Contains only essential fields for order creation.
@@ -51,25 +51,24 @@ class MenuItemSaleSchema(Schema):
     price: int  # Current price for display
 
 
-class MenuCategoryGroupSchema(Schema):
+class MenuCategoryOut(Schema):
     """
     Groups menu items by category for the new sale page.
     Provides organized structure for category-based UI rendering.
     """
 
-    category: str  # Category title
-    parent_group: str  # Parent group (BAR_ITEM or FOOD)
-    items: list[MenuItemSaleSchema]  # Items in this category
+    id: int
+    title: str
+    items: List[MenuItemOut]
 
 
-class MenuSaleResponse(Schema):
+class MenuGroupOut(Schema):
     """
-    Complete response for new sale page menu.
-    Groups all available menu items by their parent group (BAR/FOOD).
+    Top-level grouping by parent_group (BAR / FOOD).
     """
 
-    bar_items: list[MenuCategoryGroupSchema]  # All bar category groups
-    food_items: list[MenuCategoryGroupSchema]  # All food category groups
+    parent_group: str
+    categories: List[MenuCategoryOut]
 
 
 class ProductExtraSchema(Schema):

@@ -1,16 +1,16 @@
 # backend/api/endpoints/menu_endpoints.py
-from collections import defaultdict
+
+from typing import List
 
 from apps.inventory.models import Product
 from apps.menu.models import Menu, MenuCategory
+from apps.menu.services.get_sale_menu_grouped import get_sale_menu_grouped
 from ninja import Router
 
 from ..schemas.menu_schemas import (
     MenuCategoryDisplay,
-    MenuCategoryGroupSchema,
+    MenuGroupOut,
     MenuItemDisplay,
-    MenuItemSaleSchema,
-    MenuSaleResponse,
     ProductExtraSchema,
 )
 
@@ -82,52 +82,19 @@ def items_display(request):
 
 @router_menu_display.get(
     "/sale/menu",
-    response=MenuSaleResponse,
+    response=List[MenuGroupOut],
     summary="Get menu items grouped by category for new sale page",
 )
 def get_sale_menu(request):
     """
-    Fetches all available menu items grouped by category and parent group.
-    Optimized endpoint for the new sale page with minimal data transfer.
+    Sale page optimized endpoint.
 
-    Performance Optimizations:
-    - Single DB query with select_related for Product names
-    - In-memory grouping using defaultdict
-    - Only fetches essential fields (id, name, price)
-
-    Returns:
-        MenuSaleResponse: Menu items grouped by BAR and FOOD categories
+    - Grouped by parent_group
+    - Categories ordered
+    - Items ordered
+    - Read-only, stateless
     """
-    # Single optimized query
-    menu_items = (
-        Menu.objects.filter(is_available=True, show_in_menu=True)
-        .select_related("name", "category")
-        .order_by("category__order", "order")
-    )
-
-    # Group items by parent_group -> category -> items
-    grouped = defaultdict(lambda: defaultdict(list))
-
-    for item in menu_items:
-        parent_group = item.category.parent_group  # BAR or FOOD
-        category_title = item.category.title
-
-        grouped[parent_group][category_title].append(
-            MenuItemSaleSchema(id=item.id, name=item.name.name, price=item.price or 0)
-        )
-
-    # Build response structure
-    bar_categories = [
-        MenuCategoryGroupSchema(category=cat, parent_group="BAR_ITEM", items=items)
-        for cat, items in grouped["BAR_ITEM"].items()
-    ]
-
-    food_categories = [
-        MenuCategoryGroupSchema(category=cat, parent_group="FOOD", items=items)
-        for cat, items in grouped["FOOD"].items()
-    ]
-
-    return MenuSaleResponse(bar_items=bar_categories, food_items=food_categories)
+    return get_sale_menu_grouped()
 
 
 @router_menu_display.get(
