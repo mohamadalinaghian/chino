@@ -45,7 +45,7 @@ export function TableSelector({
           انتخاب میز
         </label>
         <div
-          className="p-8 rounded-lg text-center"
+          className="p-4 rounded-lg text-center"
           style={{ backgroundColor: THEME_COLORS.bgSecondary }}
         >
           <div className="animate-spin w-8 h-8 border-4 border-t-transparent rounded-full mx-auto"
@@ -69,7 +69,7 @@ export function TableSelector({
           انتخاب میز
         </label>
         <div
-          className="p-6 rounded-lg text-center"
+          className="p-3 rounded-lg text-center"
           style={{ backgroundColor: THEME_COLORS.bgSecondary }}
         >
           <div
@@ -106,7 +106,7 @@ export function TableSelector({
           انتخاب میز
         </label>
         <div
-          className="p-6 rounded-lg text-center"
+          className="p-3 rounded-lg text-center"
           style={{ backgroundColor: THEME_COLORS.bgSecondary }}
         >
           <p style={{ color: THEME_COLORS.subtext }}>
@@ -125,7 +125,7 @@ export function TableSelector({
       >
         انتخاب میز
       </label>
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
         {tables.map((table) => (
           <button
             key={table.id}

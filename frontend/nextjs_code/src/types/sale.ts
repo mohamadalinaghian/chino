@@ -44,6 +44,7 @@ export interface ITable {
  */
 export interface IMenuCategoryForSale {
   category: string;
+  parent_group: string; // BAR_ITEM or FOOD
   items: IMenuItemForSale[];
 }
 

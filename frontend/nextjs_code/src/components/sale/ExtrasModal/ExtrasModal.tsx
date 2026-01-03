@@ -112,7 +112,7 @@ export function ExtrasModal({ item, isOpen, onClose, onConfirm }: ExtrasModalPro
       >
         {/* Header */}
         <div
-          className="p-6 border-b flex justify-between items-start"
+          className="p-3 border-b flex justify-between items-start"
           style={{ borderColor: THEME_COLORS.border }}
         >
           <div className="flex-1">
@@ -156,7 +156,7 @@ export function ExtrasModal({ item, isOpen, onClose, onConfirm }: ExtrasModalPro
 
           {error && (
             <div
-              className="p-6 rounded-lg text-center"
+              className="p-3 rounded-lg text-center"
               style={{ backgroundColor: THEME_COLORS.bgPrimary }}
             >
               <p className="mb-4" style={{ color: THEME_COLORS.red }}>
@@ -177,7 +177,7 @@ export function ExtrasModal({ item, isOpen, onClose, onConfirm }: ExtrasModalPro
 
           {!loading && !error && extras.length === 0 && (
             <div
-              className="p-6 rounded-lg text-center"
+              className="p-3 rounded-lg text-center"
               style={{ backgroundColor: THEME_COLORS.bgPrimary }}
             >
               <p style={{ color: THEME_COLORS.subtext }}>
@@ -274,7 +274,7 @@ export function ExtrasModal({ item, isOpen, onClose, onConfirm }: ExtrasModalPro
 
         {/* Footer */}
         <div
-          className="p-6 border-t space-y-4"
+          className="p-3 border-t space-y-4"
           style={{ borderColor: THEME_COLORS.border }}
         >
           {/* Main Item Quantity */}
@@ -285,7 +285,7 @@ export function ExtrasModal({ item, isOpen, onClose, onConfirm }: ExtrasModalPro
             >
               تعداد:
             </span>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 className="w-10 h-10 rounded-md flex items-center justify-center font-bold text-xl transition-all hover:scale-110"
@@ -317,7 +317,7 @@ export function ExtrasModal({ item, isOpen, onClose, onConfirm }: ExtrasModalPro
 
           {/* Total */}
           <div
-            className="flex justify-between items-center py-3 border-t"
+            className="flex justify-between items-center py-1.5 border-t"
             style={{ borderColor: THEME_COLORS.border }}
           >
             <span
@@ -337,7 +337,7 @@ export function ExtrasModal({ item, isOpen, onClose, onConfirm }: ExtrasModalPro
           {/* Confirm Button */}
           <button
             onClick={handleConfirm}
-            className="w-full py-4 rounded-lg font-bold text-lg transition-all hover:opacity-90 active:scale-95"
+            className="w-full py-2 rounded-lg font-bold text-lg transition-all hover:opacity-90 active:scale-95"
             style={{
               backgroundColor: THEME_COLORS.accent,
               color: THEME_COLORS.bgSecondary,

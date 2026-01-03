@@ -90,7 +90,7 @@ export default function NewSalePage() {
     return items.map((cat) => ({
       id: cat.category,
       name: cat.category,
-      icon: activeTab === 'BAR_ITEM' ? '🍹' : '🍽️',
+      parentGroup: cat.parent_group,
     }));
   }, [menuData, activeTab]);
 
@@ -298,7 +298,7 @@ export default function NewSalePage() {
     >
       {/* Header */}
       <header
-        className="p-4 border-b"
+        className="p-2 border-b"
         style={{
           backgroundColor: THEME_COLORS.bgSecondary,
           borderColor: THEME_COLORS.border,
@@ -319,12 +319,12 @@ export default function NewSalePage() {
 
       {/* Main Content */}
       <div className="max-w-screen-2xl mx-auto p-4">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
           {/* Left Column - Menu Selection */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-2">
             {/* Sale Type Selector */}
             <div
-              className="p-4 rounded-lg"
+              className="p-2 rounded-lg"
               style={{ backgroundColor: THEME_COLORS.bgSecondary }}
             >
               <SaleTypeSelector
@@ -336,7 +336,7 @@ export default function NewSalePage() {
             {/* Table Selector (only for dine-in) */}
             {saleType === SaleType.DINE_IN && (
               <div
-                className="p-4 rounded-lg"
+                className="p-2 rounded-lg"
                 style={{ backgroundColor: THEME_COLORS.bgSecondary }}
               >
                 <TableSelector
@@ -389,7 +389,7 @@ export default function NewSalePage() {
             {/* Loading State */}
             {loading && (
               <div
-                className="p-12 rounded-lg text-center"
+                className="p-6 rounded-lg text-center"
                 style={{ backgroundColor: THEME_COLORS.bgSecondary }}
               >
                 <div
@@ -407,7 +407,7 @@ export default function NewSalePage() {
             {/* Error State */}
             {error && (
               <div
-                className="p-8 rounded-lg text-center"
+                className="p-4 rounded-lg text-center"
                 style={{ backgroundColor: THEME_COLORS.bgSecondary }}
               >
                 <div
@@ -437,7 +437,7 @@ export default function NewSalePage() {
               <>
                 {/* Category List */}
                 <div
-                  className="p-4 rounded-lg"
+                  className="p-2 rounded-lg"
                   style={{ backgroundColor: THEME_COLORS.bgSecondary }}
                 >
                   <CategoryList
@@ -449,7 +449,7 @@ export default function NewSalePage() {
 
                 {/* Items Grid */}
                 <div
-                  className="p-4 rounded-lg"
+                  className="p-2 rounded-lg"
                   style={{ backgroundColor: THEME_COLORS.bgSecondary }}
                 >
                   <ItemsGrid

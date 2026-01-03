@@ -202,7 +202,7 @@ export function CartSummary({
       <div className="space-y-2">
         <button
           onClick={onProceedToPayment}
-          className="w-full py-3 rounded-lg font-bold transition-all hover:opacity-90 active:scale-95"
+          className="w-full py-1.5 rounded-lg font-bold transition-all hover:opacity-90 active:scale-95"
           style={{
             backgroundColor: THEME_COLORS.accent,
             color: '#fff',
@@ -212,7 +212,7 @@ export function CartSummary({
         </button>
         <button
           onClick={onSaveAsOpen}
-          className="w-full py-3 rounded-lg font-bold transition-all hover:opacity-90 active:scale-95 border-2"
+          className="w-full py-1.5 rounded-lg font-bold transition-all hover:opacity-90 active:scale-95 border-2"
           style={{
             backgroundColor: 'transparent',
             borderColor: THEME_COLORS.accent,

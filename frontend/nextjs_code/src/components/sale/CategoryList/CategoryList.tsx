@@ -1,12 +1,13 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
-import { THEME_COLORS } from '@/libs/constants';
+import { THEME_COLORS, UI_TEXT } from '@/libs/constants';
+import { getCategoryIcon } from '@/utils/iconUtils';
 
 interface Category {
   id: string;
   name: string;
-  icon?: string;
+  parentGroup?: string;
 }
 
 interface CategoryListProps {
@@ -46,20 +47,21 @@ export function CategoryList({
   return (
     <div className="w-full">
       <label
-        className="block mb-3 font-medium"
+        className="block mb-2 font-medium text-sm"
         style={{ color: THEME_COLORS.subtext }}
       >
-        دسته‌بندی‌ها
+        {UI_TEXT.LABEL_CATEGORIES}
       </label>
       <div
         ref={scrollContainerRef}
-        className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-rounded"
+        className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-rounded"
         style={{
           scrollbarColor: `${THEME_COLORS.surface} ${THEME_COLORS.bgSecondary}`,
         }}
       >
         {categories.map((category) => {
           const isSelected = selectedCategory === category.id;
+          const icon = getCategoryIcon(category.name, category.parentGroup);
 
           return (
             <button
@@ -67,10 +69,10 @@ export function CategoryList({
               ref={isSelected ? selectedRef : null}
               onClick={() => onCategorySelect(category.id)}
               className={`
-                flex-shrink-0 px-6 py-3 rounded-lg border-2
-                transition-all duration-300
-                hover:scale-105 active:scale-95
-                flex items-center gap-2
+                flex-shrink-0 px-3 py-1.5 rounded-md border
+                transition-all duration-200
+                hover:scale-[1.02] active:scale-95
+                flex items-center gap-1.5
               `}
               style={{
                 borderColor: isSelected
@@ -84,8 +86,8 @@ export function CategoryList({
                   : THEME_COLORS.subtext,
               }}
             >
-              {category.icon && <span className="text-xl">{category.icon}</span>}
-              <span className="font-bold whitespace-nowrap">
+              <span className="text-base">{icon}</span>
+              <span className="font-bold text-sm whitespace-nowrap">
                 {category.name}
               </span>
             </button>

@@ -25,7 +25,7 @@ export function SaleTypeSelector({
       >
         نوع سفارش
       </label>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-2">
         {saleTypes.map((type) => (
           <button
             key={type.value}

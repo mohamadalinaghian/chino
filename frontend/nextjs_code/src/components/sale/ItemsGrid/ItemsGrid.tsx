@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { IMenuItemForSale } from '@/types/sale';
 import { ItemCard } from '../ItemCard';
-import { THEME_COLORS } from '@/libs/constants';
+import { THEME_COLORS, UI_TEXT } from '@/libs/constants';
 
 interface ItemsGridProps {
   items: IMenuItemForSale[];
@@ -30,17 +30,17 @@ export function ItemsGrid({
   if (displayedItems.length === 0) {
     return (
       <div
-        className="w-full p-12 rounded-lg text-center"
+        className="w-full p-8 rounded-md text-center"
         style={{ backgroundColor: THEME_COLORS.bgSecondary }}
       >
-        <div className="text-6xl mb-4">🍽️</div>
+        <div className="text-4xl mb-3">🍽️</div>
         <p
-          className="text-lg font-medium"
+          className="text-base font-medium"
           style={{ color: THEME_COLORS.subtext }}
         >
           {selectedCategory
-            ? 'موردی در این دسته‌بندی یافت نشد'
-            : 'لطفاً یک دسته‌بندی را انتخاب کنید'}
+            ? UI_TEXT.MSG_NO_CATEGORY_ITEMS
+            : UI_TEXT.MSG_SELECT_CATEGORY}
         </p>
       </div>
     );
@@ -48,11 +48,12 @@ export function ItemsGrid({
 
   return (
     <div className="w-full">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
         {displayedItems.map((item) => (
           <ItemCard
             key={item.id}
             item={item}
+            categoryName={selectedCategory || undefined}
             onAddToCart={onAddToCart}
             onRequestExtras={onRequestExtras}
           />
