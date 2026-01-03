@@ -20,7 +20,7 @@ from apps.inventory.models import Product, Table
 from apps.menu.models import Menu
 from apps.sale.models import Sale, SaleItem
 from apps.sale.policies import (
-    can_cancel_close_sale,
+    can_cancel_sale,
     can_modify_sale,
     can_open_sale,
     can_see_sale_details,
@@ -428,7 +428,7 @@ def cancel_sale_endpoint(request, sale_id: int, payload: CancelSaleRequest):
     sale = get_object_or_404(Sale, id=sale_id)
 
     # Policy Check
-    can_cancel_close_sale(request.auth, sale)
+    can_cancel_sale(request.auth, sale)
 
     try:
         canceled_sale = CancelSaleService.cancel_open_sale(

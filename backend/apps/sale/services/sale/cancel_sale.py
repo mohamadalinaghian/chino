@@ -4,7 +4,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from ...policies import can_cancel_close_sale
+from ...policies import can_cancel_sale
 
 
 class CancelSaleService:
@@ -42,7 +42,7 @@ class CancelSaleService:
             raise ValidationError(_("Cancellation reason is required"))
 
         # 2. Policy Check (checks state and permission)
-        can_cancel_close_sale(performer, sale)
+        can_cancel_sale(performer, sale)
 
         # 3. Set cancellation data
         sale.state = Sale.SaleState.CANCELED
@@ -78,7 +78,7 @@ class CancelSaleService:
             raise ValidationError(_("Cancellation reason is required"))
 
         # 2. Policy Check (checks state and permission)
-        can_cancel_close_sale(performer, sale)
+        can_cancel_sale(performer, sale)
 
         # 3. Set cancellation data
         sale.state = Sale.SaleState.CANCELED
