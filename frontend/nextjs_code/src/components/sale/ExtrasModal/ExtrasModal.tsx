@@ -18,10 +18,15 @@ export interface SelectedExtra {
   quantity: number;
 }
 
+interface ExtraSelection {
+  extra: IExtraItem;
+  quantity: number;
+}
+
 export function ExtrasModal({ item, isOpen, onClose, onConfirm }: ExtrasModalProps) {
   const [extras, setExtras] = useState<IExtraItem[]>([]);
-  const [selectedExtras, setSelectedExtras] = useState<Map<number, number>>(new Map());
-  const [quantity, setQuantity] = useState(1);
+  const [selections, setSelections] = useState<Record<number, ExtraSelection>>({});
+  const [mainQuantity, setMainQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,13 +34,16 @@ export function ExtrasModal({ item, isOpen, onClose, onConfirm }: ExtrasModalPro
     if (isOpen && item) {
       loadExtras();
     } else {
-      // Reset state when modal closes
-      setExtras([]);
-      setSelectedExtras(new Map());
-      setQuantity(1);
-      setError(null);
+      resetState();
     }
   }, [isOpen, item]);
+
+  const resetState = () => {
+    setExtras([]);
+    setSelections({});
+    setMainQuantity(1);
+    setError(null);
+  };
 
   const loadExtras = async () => {
     if (!item) return;
@@ -52,31 +60,42 @@ export function ExtrasModal({ item, isOpen, onClose, onConfirm }: ExtrasModalPro
     }
   };
 
-  const handleExtraQuantityChange = (extraId: number, change: number) => {
-    setSelectedExtras((prev) => {
-      const newMap = new Map(prev);
-      const currentQty = newMap.get(extraId) || 0;
-      const newQty = Math.max(0, currentQty + change);
-
-      if (newQty === 0) {
-        newMap.delete(extraId);
+  const toggleExtra = (extra: IExtraItem) => {
+    setSelections((prev) => {
+      const newSelections = { ...prev };
+      if (newSelections[extra.id]) {
+        delete newSelections[extra.id];
       } else {
-        newMap.set(extraId, newQty);
+        newSelections[extra.id] = { extra, quantity: 1 };
       }
-
-      return newMap;
+      return newSelections;
     });
+  };
+
+  const setExtraQuantity = (extraId: number, quantity: number) => {
+    if (quantity < 1) return;
+    setSelections((prev) => ({
+      ...prev,
+      [extraId]: { ...prev[extraId], quantity },
+    }));
+  };
+
+  const quickSetQuantity = (extraId: number, quantity: number) => {
+    const extra = extras.find((e) => e.id === extraId);
+    if (!extra) return;
+
+    setSelections((prev) => ({
+      ...prev,
+      [extraId]: { extra, quantity },
+    }));
   };
 
   const calculateTotal = () => {
     if (!item) return 0;
 
-    const itemPrice = item.price * quantity;
-    const extrasPrice = Array.from(selectedExtras.entries()).reduce(
-      (sum, [extraId, qty]) => {
-        const extra = extras.find((e) => e.id === extraId);
-        return sum + (extra ? extra.price * qty * quantity : 0);
-      },
+    const itemPrice = item.price * mainQuantity;
+    const extrasPrice = Object.values(selections).reduce(
+      (sum, { extra, quantity }) => sum + extra.price * quantity * mainQuantity,
       0
     );
 
@@ -86,88 +105,124 @@ export function ExtrasModal({ item, isOpen, onClose, onConfirm }: ExtrasModalPro
   const handleConfirm = () => {
     if (!item) return;
 
-    const selected: SelectedExtra[] = Array.from(selectedExtras.entries())
-      .map(([extraId, qty]) => {
-        const extra = extras.find((e) => e.id === extraId);
-        return extra ? { extra, quantity: qty } : null;
-      })
-      .filter((e): e is SelectedExtra => e !== null);
-
-    onConfirm(item, selected, quantity);
+    const selectedExtras: SelectedExtra[] = Object.values(selections);
+    onConfirm(item, selectedExtras, mainQuantity);
     onClose();
   };
 
   if (!isOpen || !item) return null;
 
+  const selectedCount = Object.keys(selections).length;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.9)' }}
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl max-h-[90vh] rounded-lg overflow-hidden flex flex-col"
-        style={{ backgroundColor: THEME_COLORS.bgSecondary }}
+        className="w-full max-w-3xl max-h-[90vh] rounded-xl overflow-hidden flex flex-col shadow-2xl"
+        style={{ backgroundColor: THEME_COLORS.bgPrimary }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div
-          className="p-3 border-b flex justify-between items-start"
-          style={{ borderColor: THEME_COLORS.border }}
+          className="p-4 border-b"
+          style={{
+            borderColor: THEME_COLORS.border,
+            background: `linear-gradient(135deg, ${THEME_COLORS.bgSecondary} 0%, ${THEME_COLORS.surface} 100%)`,
+          }}
         >
-          <div className="flex-1">
-            <h2
-              className="text-2xl font-bold mb-2"
-              style={{ color: THEME_COLORS.text }}
+          <div className="flex justify-between items-start mb-3">
+            <div className="flex-1">
+              <h2
+                className="text-2xl font-bold mb-1"
+                style={{ color: THEME_COLORS.text }}
+              >
+                {item.name}
+              </h2>
+              <p className="text-lg" style={{ color: THEME_COLORS.green }}>
+                {formatPersianMoney(item.price)}
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-2xl w-10 h-10 rounded-lg flex items-center justify-center hover:scale-110 transition-transform"
+              style={{
+                color: THEME_COLORS.red,
+                backgroundColor: THEME_COLORS.bgPrimary,
+              }}
             >
-              {item.name}
-            </h2>
-            <p
-              className="text-sm"
-              style={{ color: THEME_COLORS.green }}
-            >
-              {formatPersianMoney(item.price)}
-            </p>
+              ✕
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="text-2xl hover:scale-110 transition-transform"
-            style={{ color: THEME_COLORS.red }}
+
+          {/* Main Item Quantity Selector */}
+          <div
+            className="p-3 rounded-lg flex justify-between items-center"
+            style={{ backgroundColor: THEME_COLORS.bgPrimary }}
           >
-            ✕
-          </button>
+            <span className="font-bold" style={{ color: THEME_COLORS.text }}>
+              تعداد سفارش:
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setMainQuantity(Math.max(1, mainQuantity - 1))}
+                className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xl transition-all hover:scale-110 active:scale-95"
+                style={{
+                  backgroundColor: THEME_COLORS.surface,
+                  color: THEME_COLORS.text,
+                }}
+                disabled={mainQuantity === 1}
+              >
+                −
+              </button>
+              <span
+                className="w-14 text-center font-bold text-xl"
+                style={{ color: THEME_COLORS.accent }}
+              >
+                {toPersianDigits(mainQuantity)}
+              </span>
+              <button
+                onClick={() => setMainQuantity(mainQuantity + 1)}
+                className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xl transition-all hover:scale-110 active:scale-95"
+                style={{
+                  backgroundColor: THEME_COLORS.accent,
+                  color: '#fff',
+                }}
+              >
+                +
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4">
           {loading && (
-            <div className="text-center py-12">
+            <div className="flex flex-col items-center justify-center py-20">
               <div
-                className="animate-spin w-12 h-12 border-4 border-t-transparent rounded-full mx-auto"
-                style={{
-                  borderColor: `${THEME_COLORS.accent} transparent transparent transparent`,
-                }}
+                className="w-16 h-16 border-4 border-t-transparent rounded-full animate-spin mb-4"
+                style={{ borderColor: `${THEME_COLORS.accent} transparent transparent transparent` }}
               />
-              <p className="mt-4" style={{ color: THEME_COLORS.subtext }}>
-                در حال بارگذاری افزودنی‌ها...
-              </p>
+              <p style={{ color: THEME_COLORS.subtext }}>در حال بارگذاری افزودنی‌ها...</p>
             </div>
           )}
 
           {error && (
             <div
-              className="p-3 rounded-lg text-center"
-              style={{ backgroundColor: THEME_COLORS.bgPrimary }}
+              className="p-4 rounded-lg text-center"
+              style={{ backgroundColor: THEME_COLORS.bgSecondary }}
             >
-              <p className="mb-4" style={{ color: THEME_COLORS.red }}>
+              <p className="mb-4 text-lg" style={{ color: THEME_COLORS.red }}>
                 {error}
               </p>
               <button
                 onClick={loadExtras}
-                className="px-6 py-2 rounded-lg font-bold"
+                className="px-8 py-3 rounded-lg font-bold transition-all hover:opacity-90"
                 style={{
                   backgroundColor: THEME_COLORS.accent,
-                  color: THEME_COLORS.bgSecondary,
+                  color: '#fff',
                 }}
               >
                 تلاش مجدد
@@ -177,10 +232,11 @@ export function ExtrasModal({ item, isOpen, onClose, onConfirm }: ExtrasModalPro
 
           {!loading && !error && extras.length === 0 && (
             <div
-              className="p-3 rounded-lg text-center"
-              style={{ backgroundColor: THEME_COLORS.bgPrimary }}
+              className="p-8 rounded-lg text-center"
+              style={{ backgroundColor: THEME_COLORS.bgSecondary }}
             >
-              <p style={{ color: THEME_COLORS.subtext }}>
+              <div className="text-6xl mb-4">🍯</div>
+              <p className="text-lg" style={{ color: THEME_COLORS.subtext }}>
                 افزودنی موجود نیست
               </p>
             </div>
@@ -188,83 +244,173 @@ export function ExtrasModal({ item, isOpen, onClose, onConfirm }: ExtrasModalPro
 
           {!loading && !error && extras.length > 0 && (
             <div className="space-y-3">
-              <h3
-                className="font-bold mb-4"
-                style={{ color: THEME_COLORS.text }}
-              >
-                افزودنی‌های موجود:
-              </h3>
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-bold text-lg" style={{ color: THEME_COLORS.text }}>
+                  افزودنی‌های موجود
+                </h3>
+                {selectedCount > 0 && (
+                  <span
+                    className="px-3 py-1 rounded-full text-sm font-bold"
+                    style={{
+                      backgroundColor: THEME_COLORS.accent,
+                      color: '#fff',
+                    }}
+                  >
+                    {toPersianDigits(selectedCount)} مورد انتخاب شده
+                  </span>
+                )}
+              </div>
+
               {extras.map((extra) => {
-                const qty = selectedExtras.get(extra.id) || 0;
-                const isSelected = qty > 0;
+                const isSelected = !!selections[extra.id];
+                const quantity = selections[extra.id]?.quantity || 1;
 
                 return (
                   <div
                     key={extra.id}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      isSelected ? 'border-accent' : ''
+                    className={`rounded-lg border-2 transition-all ${
+                      isSelected ? 'ring-2 ring-offset-1' : ''
                     }`}
                     style={{
-                      backgroundColor: THEME_COLORS.bgPrimary,
-                      borderColor: isSelected
-                        ? THEME_COLORS.accent
-                        : THEME_COLORS.border,
+                      backgroundColor: isSelected ? THEME_COLORS.surface : THEME_COLORS.bgSecondary,
+                      borderColor: isSelected ? THEME_COLORS.accent : THEME_COLORS.border,
+                      ringColor: isSelected ? THEME_COLORS.accent : 'transparent',
+                      ringOffsetColor: THEME_COLORS.bgPrimary,
                     }}
                   >
-                    <div className="flex justify-between items-center">
-                      <div className="flex-1">
-                        <h4
-                          className="font-bold"
-                          style={{ color: THEME_COLORS.text }}
-                        >
-                          {extra.name}
-                        </h4>
-                        {extra.description && (
-                          <p
-                            className="text-sm mt-1"
-                            style={{ color: THEME_COLORS.subtext }}
-                          >
-                            {extra.description}
-                          </p>
-                        )}
-                        <p
-                          className="text-sm mt-2"
-                          style={{ color: THEME_COLORS.green }}
-                        >
-                          {formatPersianMoney(extra.price)}
-                        </p>
-                      </div>
+                    {/* Extra Header - Toggle */}
+                    <div
+                      className="p-4 cursor-pointer"
+                      onClick={() => toggleExtra(extra)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 ml-3">
+                          <div className="flex items-center gap-2 mb-1">
+                            {/* Custom Checkbox */}
+                            <div
+                              className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${
+                                isSelected ? 'scale-110' : ''
+                              }`}
+                              style={{
+                                borderColor: isSelected ? THEME_COLORS.accent : THEME_COLORS.border,
+                                backgroundColor: isSelected ? THEME_COLORS.accent : 'transparent',
+                              }}
+                            >
+                              {isSelected && (
+                                <span className="text-white text-sm font-bold">✓</span>
+                              )}
+                            </div>
 
-                      <div className="flex items-center gap-2 mr-4">
-                        <button
-                          onClick={() => handleExtraQuantityChange(extra.id, -1)}
-                          className="w-8 h-8 rounded-md flex items-center justify-center font-bold transition-all hover:scale-110"
-                          style={{
-                            backgroundColor: THEME_COLORS.surface,
-                            color: THEME_COLORS.text,
-                          }}
-                          disabled={qty === 0}
-                        >
-                          −
-                        </button>
-                        <span
-                          className="w-8 text-center font-bold"
-                          style={{ color: THEME_COLORS.text }}
-                        >
-                          {toPersianDigits(qty)}
-                        </span>
-                        <button
-                          onClick={() => handleExtraQuantityChange(extra.id, 1)}
-                          className="w-8 h-8 rounded-md flex items-center justify-center font-bold transition-all hover:scale-110"
-                          style={{
-                            backgroundColor: THEME_COLORS.accent,
-                            color: THEME_COLORS.bgSecondary,
-                          }}
-                        >
-                          +
-                        </button>
+                            <h4
+                              className="font-bold text-base"
+                              style={{ color: THEME_COLORS.text }}
+                            >
+                              {extra.name}
+                            </h4>
+                          </div>
+
+                          {extra.description && (
+                            <p
+                              className="text-sm mr-8"
+                              style={{ color: THEME_COLORS.subtext }}
+                            >
+                              {extra.description}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex flex-col items-end gap-1">
+                          <p
+                            className="font-bold text-base"
+                            style={{ color: THEME_COLORS.green }}
+                          >
+                            {formatPersianMoney(extra.price)}
+                          </p>
+                          {isSelected && quantity > 1 && (
+                            <p
+                              className="text-xs"
+                              style={{ color: THEME_COLORS.subtext }}
+                            >
+                              جمع: {formatPersianMoney(extra.price * quantity)}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
+
+                    {/* Quantity Selector - Only shown when selected */}
+                    {isSelected && (
+                      <div
+                        className="px-4 pb-4 pt-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div
+                          className="p-3 rounded-lg"
+                          style={{ backgroundColor: THEME_COLORS.bgPrimary }}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span
+                              className="text-sm font-bold"
+                              style={{ color: THEME_COLORS.text }}
+                            >
+                              تعداد:
+                            </span>
+
+                            {/* Quick quantity buttons */}
+                            <div className="flex items-center gap-1.5">
+                              {[1, 2, 3].map((q) => (
+                                <button
+                                  key={q}
+                                  onClick={() => quickSetQuantity(extra.id, q)}
+                                  className={`w-10 h-10 rounded-lg font-bold text-sm transition-all hover:scale-105 ${
+                                    quantity === q ? 'ring-2' : ''
+                                  }`}
+                                  style={{
+                                    backgroundColor:
+                                      quantity === q ? THEME_COLORS.accent : THEME_COLORS.surface,
+                                    color: quantity === q ? '#fff' : THEME_COLORS.text,
+                                    ringColor: THEME_COLORS.accent,
+                                  }}
+                                >
+                                  {toPersianDigits(q)}
+                                </button>
+                              ))}
+
+                              <div className="w-px h-8 mx-1" style={{ backgroundColor: THEME_COLORS.border }} />
+
+                              {/* Custom quantity controls */}
+                              <button
+                                onClick={() => setExtraQuantity(extra.id, quantity - 1)}
+                                className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg transition-all hover:scale-105"
+                                style={{
+                                  backgroundColor: THEME_COLORS.surface,
+                                  color: THEME_COLORS.text,
+                                }}
+                                disabled={quantity === 1}
+                              >
+                                −
+                              </button>
+                              <span
+                                className="w-10 text-center font-bold"
+                                style={{ color: THEME_COLORS.accent }}
+                              >
+                                {toPersianDigits(quantity)}
+                              </span>
+                              <button
+                                onClick={() => setExtraQuantity(extra.id, quantity + 1)}
+                                className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg transition-all hover:scale-105"
+                                style={{
+                                  backgroundColor: THEME_COLORS.accent,
+                                  color: '#fff',
+                                }}
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -274,77 +420,70 @@ export function ExtrasModal({ item, isOpen, onClose, onConfirm }: ExtrasModalPro
 
         {/* Footer */}
         <div
-          className="p-3 border-t space-y-4"
-          style={{ borderColor: THEME_COLORS.border }}
+          className="p-4 border-t space-y-3"
+          style={{
+            borderColor: THEME_COLORS.border,
+            backgroundColor: THEME_COLORS.bgSecondary,
+          }}
         >
-          {/* Main Item Quantity */}
-          <div className="flex justify-between items-center">
-            <span
-              className="font-bold"
-              style={{ color: THEME_COLORS.text }}
+          {/* Selected Extras Summary */}
+          {selectedCount > 0 && (
+            <div
+              className="p-3 rounded-lg space-y-1.5"
+              style={{ backgroundColor: THEME_COLORS.bgPrimary }}
             >
-              تعداد:
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="w-10 h-10 rounded-md flex items-center justify-center font-bold text-xl transition-all hover:scale-110"
-                style={{
-                  backgroundColor: THEME_COLORS.surface,
-                  color: THEME_COLORS.text,
-                }}
-              >
-                −
-              </button>
-              <span
-                className="w-12 text-center font-bold text-xl"
-                style={{ color: THEME_COLORS.text }}
-              >
-                {toPersianDigits(quantity)}
-              </span>
-              <button
-                onClick={() => setQuantity(quantity + 1)}
-                className="w-10 h-10 rounded-md flex items-center justify-center font-bold text-xl transition-all hover:scale-110"
-                style={{
-                  backgroundColor: THEME_COLORS.accent,
-                  color: THEME_COLORS.bgSecondary,
-                }}
-              >
-                +
-              </button>
+              <p className="text-xs font-bold mb-2" style={{ color: THEME_COLORS.subtext }}>
+                افزودنی‌های انتخاب شده:
+              </p>
+              {Object.values(selections).map(({ extra, quantity }) => (
+                <div key={extra.id} className="flex justify-between text-sm">
+                  <span style={{ color: THEME_COLORS.text }}>
+                    {extra.name} {quantity > 1 && `(×${toPersianDigits(quantity)})`}
+                  </span>
+                  <span style={{ color: THEME_COLORS.green }}>
+                    {formatPersianMoney(extra.price * quantity)}
+                  </span>
+                </div>
+              ))}
             </div>
-          </div>
+          )}
 
           {/* Total */}
           <div
-            className="flex justify-between items-center py-1.5 border-t"
-            style={{ borderColor: THEME_COLORS.border }}
+            className="flex justify-between items-center py-2 px-3 rounded-lg"
+            style={{ backgroundColor: THEME_COLORS.surface }}
           >
-            <span
-              className="font-bold text-lg"
-              style={{ color: THEME_COLORS.text }}
-            >
+            <span className="font-bold text-lg" style={{ color: THEME_COLORS.text }}>
               جمع کل:
             </span>
-            <span
-              className="font-bold text-2xl"
-              style={{ color: THEME_COLORS.green }}
-            >
+            <span className="font-bold text-2xl" style={{ color: THEME_COLORS.green }}>
               {formatPersianMoney(calculateTotal())}
             </span>
           </div>
 
-          {/* Confirm Button */}
-          <button
-            onClick={handleConfirm}
-            className="w-full py-2 rounded-lg font-bold text-lg transition-all hover:opacity-90 active:scale-95"
-            style={{
-              backgroundColor: THEME_COLORS.accent,
-              color: THEME_COLORS.bgSecondary,
-            }}
-          >
-            افزودن به سبد خرید
-          </button>
+          {/* Action Buttons */}
+          <div className="flex gap-2">
+            <button
+              onClick={onClose}
+              className="flex-1 py-3 rounded-lg font-bold transition-all hover:opacity-80 active:scale-95"
+              style={{
+                backgroundColor: THEME_COLORS.surface,
+                color: THEME_COLORS.text,
+              }}
+            >
+              انصراف
+            </button>
+            <button
+              onClick={handleConfirm}
+              className="flex-[2] py-3 rounded-lg font-bold text-lg transition-all hover:opacity-90 active:scale-95 shadow-lg"
+              style={{
+                backgroundColor: THEME_COLORS.accent,
+                color: '#fff',
+              }}
+            >
+              افزودن به سبد ({toPersianDigits(mainQuantity)})
+            </button>
+          </div>
         </div>
       </div>
     </div>

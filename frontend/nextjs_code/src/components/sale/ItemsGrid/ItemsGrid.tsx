@@ -10,6 +10,7 @@ interface ItemsGridProps {
   selectedCategory: string | null;
   onAddToCart: (item: IMenuItemForSale) => void;
   onRequestExtras?: (item: IMenuItemForSale) => void;
+  animatingItemId?: number | null;
 }
 
 export function ItemsGrid({
@@ -17,6 +18,7 @@ export function ItemsGrid({
   selectedCategory,
   onAddToCart,
   onRequestExtras,
+  animatingItemId,
 }: ItemsGridProps) {
   // Memoize filtered items to avoid recalculation on every render
   const displayedItems = useMemo(() => {
@@ -56,6 +58,7 @@ export function ItemsGrid({
             categoryName={selectedCategory || undefined}
             onAddToCart={onAddToCart}
             onRequestExtras={onRequestExtras}
+            isAnimating={animatingItemId === item.id}
           />
         ))}
       </div>

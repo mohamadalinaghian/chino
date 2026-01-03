@@ -10,9 +10,10 @@ interface ItemCardProps {
   categoryName?: string;
   onAddToCart: (item: IMenuItemForSale) => void;
   onRequestExtras?: (item: IMenuItemForSale) => void;
+  isAnimating?: boolean;
 }
 
-export function ItemCard({ item, categoryName, onAddToCart, onRequestExtras }: ItemCardProps) {
+export function ItemCard({ item, categoryName, onAddToCart, onRequestExtras, isAnimating }: ItemCardProps) {
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
     onAddToCart(item);
@@ -29,9 +30,11 @@ export function ItemCard({ item, categoryName, onAddToCart, onRequestExtras }: I
 
   return (
     <div
-      className="w-full group relative overflow-hidden rounded-md border transition-all duration-200 hover:scale-[1.02]"
+      className={`w-full group relative overflow-hidden rounded-md border transition-all duration-200 hover:scale-[1.02] ${
+        isAnimating ? 'animate-pulse ring-4 ring-green-500 scale-105' : ''
+      }`}
       style={{
-        borderColor: THEME_COLORS.border,
+        borderColor: isAnimating ? THEME_COLORS.green : THEME_COLORS.border,
         backgroundColor: THEME_COLORS.bgPrimary,
       }}
     >

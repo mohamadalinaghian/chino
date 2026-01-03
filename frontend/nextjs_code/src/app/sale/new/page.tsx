@@ -41,6 +41,9 @@ export default function NewSalePage() {
   // Cart state
   const [cartItems, setCartItems] = useState<ICartItem[]>([]);
 
+  // Animation state for item selection feedback
+  const [animatingItemId, setAnimatingItemId] = useState<number | null>(null);
+
   // Extras modal state
   const [extrasModalOpen, setExtrasModalOpen] = useState(false);
   const [selectedItemForExtras, setSelectedItemForExtras] =
@@ -113,18 +116,41 @@ export default function NewSalePage() {
 
   // Handle add item to cart (without extras)
   const handleAddToCart = (item: IMenuItemForSale) => {
-    const cartItemId = `${Date.now()}-${Math.random()}`;
-    const newCartItem: ICartItem = {
-      id: cartItemId,
-      menu_id: item.id,
-      name: item.name,
-      quantity: 1,
-      unit_price: item.price,
-      extras: [],
-      total: item.price,
-    };
+    // Show selection animation
+    setAnimatingItemId(item.id);
+    setTimeout(() => setAnimatingItemId(null), 600);
 
-    setCartItems((prev) => [...prev, newCartItem]);
+    setCartItems((prev) => {
+      // Find if item without extras already exists
+      const existingItemIndex = prev.findIndex(
+        (cartItem) => cartItem.menu_id === item.id && cartItem.extras.length === 0
+      );
+
+      if (existingItemIndex !== -1) {
+        // Item exists, increment quantity
+        const updated = [...prev];
+        const existingItem = updated[existingItemIndex];
+        updated[existingItemIndex] = {
+          ...existingItem,
+          quantity: existingItem.quantity + 1,
+          total: existingItem.unit_price * (existingItem.quantity + 1),
+        };
+        return updated;
+      } else {
+        // Item doesn't exist, create new cart entry
+        const cartItemId = `${Date.now()}-${Math.random()}`;
+        const newCartItem: ICartItem = {
+          id: cartItemId,
+          menu_id: item.id,
+          name: item.name,
+          quantity: 1,
+          unit_price: item.price,
+          extras: [],
+          total: item.price,
+        };
+        return [...prev, newCartItem];
+      }
+    });
   };
 
   // Handle request extras
@@ -134,11 +160,16 @@ export default function NewSalePage() {
   };
 
   // Handle confirm extras and add to cart
+  // Items with extras are ALWAYS added as separate cart entries
   const handleConfirmExtras = (
     item: IMenuItemForSale,
     selectedExtras: SelectedExtra[],
     quantity: number
   ) => {
+    // Show selection animation
+    setAnimatingItemId(item.id);
+    setTimeout(() => setAnimatingItemId(null), 600);
+
     const cartItemId = `${Date.now()}-${Math.random()}`;
 
     const cartExtras: ICartExtra[] = selectedExtras.map((se) => ({
@@ -165,6 +196,7 @@ export default function NewSalePage() {
     };
 
     setCartItems((prev) => [...prev, newCartItem]);
+    setExtrasModalOpen(false);
   };
 
   // Handle remove item from cart
@@ -456,6 +488,7 @@ export default function NewSalePage() {
                     selectedCategory={selectedCategory}
                     onAddToCart={handleAddToCart}
                     onRequestExtras={handleRequestExtras}
+                    animatingItemId={animatingItemId}
                   />
                 </div>
               </>
