@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import {
   SaleType,
   IMenuItemForSale,
@@ -8,7 +8,7 @@ import {
   ICartExtra,
   IMenuGroup,
 } from '@/types/sale';
-import { fetchSaleMenu, openSale, saveAsOpenSale } from '@/service/sale';
+import { fetchSaleMenu, fetchSaleDetails, syncSaleItems } from '@/service/sale';
 import { SaleTypeSelector } from '@/components/sale/SaleTypeSelector';
 import { TableSelector } from '@/components/sale/TableSelector';
 import { CategoryList } from '@/components/sale/CategoryList';
@@ -19,10 +19,11 @@ import { useToast } from '@/components/common/Toast';
 import { LoadingOverlay } from '@/components/common/LoadingOverlay';
 import { THEME_COLORS, UI_TEXT } from '@/libs/constants';
 import { getCurrentJalaliDate } from '@/utils/persianUtils';
-import { printReceipt, PrintSaleData, PrintSaleItem } from '@/utils/printUtils';
 
-export default function NewSalePage() {
+export default function EditSalePage() {
   const router = useRouter();
+  const params = useParams();
+  const saleId = parseInt(params.id as string);
   const { showToast, ToastContainer } = useToast();
 
   // Sale configuration
@@ -76,8 +77,9 @@ export default function NewSalePage() {
   };
 
   useEffect(() => {
+    loadSaleData();
     loadMenu();
-  }, []);
+  }, [saleId]);
 
   useEffect(() => {
     if (!menuData) return;
@@ -86,6 +88,51 @@ export default function NewSalePage() {
       setSelectedCategory(group.categories[0].title);
     }
   }, [activeTab, menuData]);
+
+  const loadSaleData = async () => {
+    try {
+      const sale = await fetchSaleDetails(saleId);
+
+      // Set sale type and table
+      setSaleType(sale.sale_type);
+      setSelectedTableId(sale.table?.id || null);
+      setSelectedGuestId(null); // Will be populated if backend provides guest info
+      setGuestCount(null);
+
+      // Convert sale items to cart items
+      const convertedItems: ICartItem[] = sale.items
+        .filter((item) => !item.parent_item) // Only get parent items
+        .map((item) => {
+          const itemExtras = sale.items
+            .filter((extra) => extra.parent_item === item.id)
+            .map((extra) => ({
+              id: `extra-${extra.id}`,
+              product_id: extra.id, // Assuming the extra item id maps to product_id
+              name: extra.product_name,
+              price: extra.unit_price,
+              quantity: extra.quantity,
+            }));
+
+          return {
+            id: `item-${item.id}`,
+            menu_id: item.id,
+            name: item.product_name,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            extras: itemExtras,
+            total: item.total_price,
+          };
+        });
+
+      setCartItems(convertedItems);
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : 'خطا در بارگذاری فروش',
+        'error'
+      );
+      setError('خطا در بارگذاری اطلاعات فروش');
+    }
+  };
 
   const loadMenu = async () => {
     try {
@@ -163,7 +210,6 @@ export default function NewSalePage() {
     });
   };
 
-  // Always allow requesting extras for any item
   const handleRequestExtras = (item: IMenuItemForSale) => {
     setSelectedItemForExtras(item);
     setEditingCartItem(null);
@@ -190,7 +236,6 @@ export default function NewSalePage() {
     setTimeout(() => setAnimatingItemId(null), 500);
 
     if (editingCartItem) {
-      // Editing existing item
       const updatedExtras: ICartExtra[] = selectedExtras.map((se, idx) => ({
         id: editingCartItem.extras[idx]?.id || `${editingCartItem.id}-extra-${se.extra.id}`,
         product_id: se.extra.id,
@@ -215,7 +260,6 @@ export default function NewSalePage() {
       );
       setEditingCartItem(null);
     } else {
-      // Adding new item with extras
       const cartItemId = `${Date.now()}-${Math.random()}`;
       const cartExtras: ICartExtra[] = selectedExtras.map((se) => ({
         id: `${cartItemId}-extra-${se.extra.id}`,
@@ -263,134 +307,41 @@ export default function NewSalePage() {
     );
   };
 
-  // Helper to trigger print after sale creation
-  const triggerPrintReceipt = (saleId?: number, invoiceNumber?: string) => {
-    if (!printOrder) return;
-
-    const printItems: PrintSaleItem[] = cartItems.map((item) => ({
-      name: item.name,
-      quantity: item.quantity,
-      unit_price: item.unit_price,
-      total: item.total,
-      extras: item.extras.map((extra) => ({
-        name: extra.name,
-        quantity: extra.quantity,
-        unit_price: extra.price,
-        total: extra.price * extra.quantity,
-      })),
-    }));
-
-    const subtotal = cartItems.reduce((sum, item) => sum + item.total, 0);
-
-    const printData: PrintSaleData = {
-      sale_id: saleId,
-      invoice_number: invoiceNumber,
-      sale_type: saleType,
-      table_name: selectedTableId ? `میز ${selectedTableId}` : undefined,
-      items: printItems,
-      subtotal,
-      total: subtotal,
-      timestamp: new Date(),
-    };
-
-    // Trigger print after a short delay to allow success toast to show
-    setTimeout(() => {
-      try {
-        printReceipt(printData);
-      } catch (error) {
-        console.error('Print error:', error);
-        // Don't show error to user - printing is non-critical
-      }
-    }, 300);
-  };
-
-  const handleProceedToPayment = async () => {
-    if (saleType === SaleType.DINE_IN && !selectedTableId) {
-      showToast(UI_TEXT.VALIDATION_SELECT_TABLE, 'warning');
-      return;
-    }
+  const handleSaveChanges = async () => {
     if (cartItems.length === 0) {
-      showToast(UI_TEXT.VALIDATION_EMPTY_CART, 'warning');
+      showToast('سبد خرید نمی‌تواند خالی باشد', 'warning');
       return;
     }
+
     try {
       setSubmitting(true);
-      const saleData = {
-        sale_type: saleType,
-        table_id: saleType === SaleType.DINE_IN ? selectedTableId : null,
-        guest_id: selectedGuestId,
-        guest_count: guestCount,
-        note: null,
-        items: cartItems.map((cartItem) => ({
-          menu_id: cartItem.menu_id,
-          quantity: cartItem.quantity,
-          extras: cartItem.extras.map((extra) => ({
-            product_id: extra.product_id,
-            quantity: extra.quantity,
-          })),
+      const items = cartItems.map((cartItem) => ({
+        menu_id: cartItem.menu_id,
+        quantity: cartItem.quantity,
+        extras: cartItem.extras.map((extra) => ({
+          product_id: extra.product_id,
+          quantity: extra.quantity,
         })),
-      };
-      const sale = await openSale(saleData);
-      showToast(UI_TEXT.SUCCESS_SALE_CREATED, 'success');
+      }));
 
-      // Trigger automatic print if enabled
-      triggerPrintReceipt(sale.id);
-
-      setTimeout(() => {
-        router.push(`/sale/${sale.id}/payment`);
-      }, 500);
-    } catch (err) {
-      showToast(
-        err instanceof Error ? err.message : UI_TEXT.ERROR_CREATING_SALE,
-        'error'
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleSaveAsOpen = async () => {
-    if (saleType === SaleType.DINE_IN && !selectedTableId) {
-      showToast(UI_TEXT.VALIDATION_SELECT_TABLE, 'warning');
-      return;
-    }
-    if (cartItems.length === 0) {
-      showToast(UI_TEXT.VALIDATION_EMPTY_CART, 'warning');
-      return;
-    }
-    try {
-      setSubmitting(true);
-      const saleData = {
-        sale_type: saleType,
-        table_id: saleType === SaleType.DINE_IN ? selectedTableId : null,
-        guest_id: selectedGuestId,
-        guest_count: guestCount,
-        note: null,
-        items: cartItems.map((cartItem) => ({
-          menu_id: cartItem.menu_id,
-          quantity: cartItem.quantity,
-          extras: cartItem.extras.map((extra) => ({
-            product_id: extra.product_id,
-            quantity: extra.quantity,
-          })),
-        })),
-      };
-      const sale = await saveAsOpenSale(saleData);
-      showToast(UI_TEXT.SUCCESS_OPEN_SALE_SAVED, 'success');
-
-      // Trigger automatic print if enabled
-      triggerPrintReceipt(sale.id);
-
+      await syncSaleItems(saleId, items);
+      showToast('تغییرات با موفقیت ذخیره شد', 'success');
       setTimeout(() => {
         router.push('/sale/dashboard');
       }, 500);
     } catch (err) {
       showToast(
-        err instanceof Error ? err.message : UI_TEXT.ERROR_CREATING_SALE,
+        err instanceof Error ? err.message : 'خطا در ذخیره تغییرات',
         'error'
       );
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (confirm('آیا از لغو تغییرات اطمینان دارید؟')) {
+      router.push('/sale/dashboard');
     }
   };
 
@@ -410,7 +361,7 @@ export default function NewSalePage() {
         <div className="max-w-screen-2xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => router.push('/sale/dashboard')}
+              onClick={handleCancel}
               className="px-4 py-2 rounded-lg font-bold transition-all hover:opacity-90 border-2"
               style={{
                 backgroundColor: 'transparent',
@@ -424,7 +375,7 @@ export default function NewSalePage() {
               className="text-2xl md:text-3xl font-bold"
               style={{ color: THEME_COLORS.text }}
             >
-              {UI_TEXT.PAGE_TITLE}
+              ویرایش فروش #{saleId}
             </h1>
           </div>
           <div style={{ color: THEME_COLORS.subtext }}>
@@ -579,8 +530,8 @@ export default function NewSalePage() {
                 onRemoveItem={handleRemoveItem}
                 onUpdateQuantity={handleUpdateQuantity}
                 onEditExtras={handleEditCartItemExtras}
-                onProceedToPayment={handleProceedToPayment}
-                onSaveAsOpen={handleSaveAsOpen}
+                onProceedToPayment={handleSaveChanges}
+                onSaveAsOpen={handleCancel}
                 printOrder={printOrder}
                 onPrintOrderChange={setPrintOrder}
                 guests={guests}
@@ -589,6 +540,9 @@ export default function NewSalePage() {
                 guestCount={guestCount}
                 onGuestCountChange={setGuestCount}
                 onQuickAddGuest={() => setQuickAddGuestModalOpen(true)}
+                // Override button labels for edit mode
+                proceedButtonLabel="💾 ذخیره تغییرات"
+                saveAsOpenButtonLabel="✕ لغو"
               />
             </div>
           </div>
@@ -622,7 +576,7 @@ export default function NewSalePage() {
         onConfirm={handleConfirmExtras}
       />
 
-      {submitting && <LoadingOverlay message={UI_TEXT.MSG_CREATING_SALE} />}
+      {submitting && <LoadingOverlay message="در حال ذخیره تغییرات..." />}
 
       <ToastContainer />
     </div>

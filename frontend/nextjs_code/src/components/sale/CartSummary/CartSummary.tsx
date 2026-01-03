@@ -26,6 +26,9 @@ interface CartSummaryProps {
   guestCount: number | null;
   onGuestCountChange: (count: number | null) => void;
   onQuickAddGuest: () => void;
+  // Optional custom button labels
+  proceedButtonLabel?: string;
+  saveAsOpenButtonLabel?: string;
 }
 
 // ← CHANGE: Use forwardRef to expose a ref to the parent
@@ -45,6 +48,8 @@ export const CartSummary = forwardRef<HTMLDivElement, CartSummaryProps>(function
     guestCount,
     onGuestCountChange,
     onQuickAddGuest,
+    proceedButtonLabel,
+    saveAsOpenButtonLabel,
   },
   ref // ← This ref will point to the main container
 ) {
@@ -311,7 +316,7 @@ export const CartSummary = forwardRef<HTMLDivElement, CartSummaryProps>(function
             color: '#fff',
           }}
         >
-          {UI_TEXT.BTN_IMMEDIATE_PAY}
+          {proceedButtonLabel || UI_TEXT.BTN_IMMEDIATE_PAY}
         </button>
         <button
           onClick={onSaveAsOpen}
@@ -322,7 +327,7 @@ export const CartSummary = forwardRef<HTMLDivElement, CartSummaryProps>(function
             color: THEME_COLORS.accent,
           }}
         >
-          {UI_TEXT.BTN_SAVE_OPEN_SALE}
+          {saveAsOpenButtonLabel || UI_TEXT.BTN_SAVE_OPEN_SALE}
         </button>
       </div>
     </div>
