@@ -19,6 +19,7 @@ import { useToast } from '@/components/common/Toast';
 import { LoadingOverlay } from '@/components/common/LoadingOverlay';
 import { THEME_COLORS, UI_TEXT } from '@/libs/constants';
 import { getCurrentJalaliDate } from '@/utils/persianUtils';
+import { printReceipt, PrintSaleData, PrintSaleItem } from '@/utils/printUtils';
 
 export default function NewSalePage() {
   const router = useRouter();
@@ -53,6 +54,9 @@ export default function NewSalePage() {
 
   // Submission state
   const [submitting, setSubmitting] = useState(false);
+
+  // Print order toggle (default: true - print automatically)
+  const [printOrder, setPrintOrder] = useState(true);
 
   // Cart ref + floating button
   const cartSummaryRef = useRef<HTMLDivElement>(null);
@@ -253,6 +257,47 @@ export default function NewSalePage() {
     );
   };
 
+  // Helper to trigger print after sale creation
+  const triggerPrintReceipt = (saleId?: number, invoiceNumber?: string) => {
+    if (!printOrder) return;
+
+    const printItems: PrintSaleItem[] = cartItems.map((item) => ({
+      name: item.name,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      total: item.total,
+      extras: item.extras.map((extra) => ({
+        name: extra.name,
+        quantity: extra.quantity,
+        unit_price: extra.price,
+        total: extra.price * extra.quantity,
+      })),
+    }));
+
+    const subtotal = cartItems.reduce((sum, item) => sum + item.total, 0);
+
+    const printData: PrintSaleData = {
+      sale_id: saleId,
+      invoice_number: invoiceNumber,
+      sale_type: saleType,
+      table_name: selectedTableId ? `میز ${selectedTableId}` : undefined,
+      items: printItems,
+      subtotal,
+      total: subtotal,
+      timestamp: new Date(),
+    };
+
+    // Trigger print after a short delay to allow success toast to show
+    setTimeout(() => {
+      try {
+        printReceipt(printData);
+      } catch (error) {
+        console.error('Print error:', error);
+        // Don't show error to user - printing is non-critical
+      }
+    }, 300);
+  };
+
   const handleProceedToPayment = async () => {
     if (saleType === SaleType.DINE_IN && !selectedTableId) {
       showToast(UI_TEXT.VALIDATION_SELECT_TABLE, 'warning');
@@ -281,6 +326,10 @@ export default function NewSalePage() {
       };
       const sale = await openSale(saleData);
       showToast(UI_TEXT.SUCCESS_SALE_CREATED, 'success');
+
+      // Trigger automatic print if enabled
+      triggerPrintReceipt(sale.id);
+
       setTimeout(() => {
         router.push(`/sale/${sale.id}/payment`);
       }, 500);
@@ -322,6 +371,10 @@ export default function NewSalePage() {
       };
       const sale = await saveAsOpenSale(saleData);
       showToast(UI_TEXT.SUCCESS_OPEN_SALE_SAVED, 'success');
+
+      // Trigger automatic print if enabled
+      triggerPrintReceipt(sale.id);
+
       setTimeout(() => {
         router.push('/dashboard');
       }, 500);
