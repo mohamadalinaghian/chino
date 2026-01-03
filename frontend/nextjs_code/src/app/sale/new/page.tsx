@@ -121,7 +121,7 @@ export default function NewSalePage() {
   const handleAddToCart = (item: IMenuItemForSale) => {
     // Show selection animation
     setAnimatingItemId(item.id);
-    setTimeout(() => setAnimatingItemId(null), 600);
+    setTimeout(() => setAnimatingItemId(null), 500);
 
     setCartItems((prev) => {
       // Find if item without extras already exists
