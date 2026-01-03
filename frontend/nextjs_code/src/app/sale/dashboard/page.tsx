@@ -15,6 +15,7 @@ export default function SaleDashboardPage() {
 
   const [sales, setSales] = useState<IDashboardSaleItem[]>([]);
   const [permissions, setPermissions] = useState<string[]>([]);
+  const [isSuperuser, setIsSuperuser] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -42,6 +43,7 @@ export default function SaleDashboardPage() {
 
       setSales(dashboardData.active_sales);
       setPermissions(userInfo.permissions);
+      setIsSuperuser(userInfo.is_staff); // Use is_staff as superuser indicator
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا در بارگذاری داشبورد');
     } finally {
@@ -63,11 +65,19 @@ export default function SaleDashboardPage() {
   };
 
   const handleCancelSale = async (saleId: number) => {
+    // Prompt for cancellation reason
+    const reason = prompt('لطفا دلیل لغو فروش را وارد کنید:');
+
+    if (!reason || !reason.trim()) {
+      showToast('دلیل لغو الزامی است', 'warning');
+      return;
+    }
+
     if (!confirm('آیا از لغو این فروش اطمینان دارید؟')) return;
 
     try {
       setActionLoading((prev) => ({ ...prev, [saleId]: true }));
-      await cancelSale(saleId);
+      await cancelSale(saleId, reason.trim());
       showToast('فروش لغو شد', 'success');
       // Reload data after canceling
       await loadData();
@@ -81,9 +91,8 @@ export default function SaleDashboardPage() {
   // Permission checks
   const hasPermission = (perm: string) => permissions.includes(perm);
   const canCancelSale = hasPermission('sale.cancel_sale');
-  const canViewTotal = permissions.length > 0; // Only show if we have any permissions (authenticated)
 
-  // Filter sales
+  // Filter and sort sales
   const filteredSales = useMemo(() => {
     let filtered = sales;
 
@@ -103,14 +112,17 @@ export default function SaleDashboardPage() {
       filtered = filtered.filter((sale) => jalaliMoment(sale.opened_at).isSameOrAfter(lastHour));
     }
 
-    return filtered;
+    // Sort by oldest first (ascending order)
+    return filtered.sort((a, b) =>
+      new Date(a.opened_at).getTime() - new Date(b.opened_at).getTime()
+    );
   }, [sales, filterUser, filterTime]);
 
-  // Calculate stats
+  // Calculate stats - only if superuser
   const totalRevenue = useMemo(() => {
-    if (!canViewTotal) return null;
+    if (!isSuperuser) return null;
     return filteredSales.reduce((sum, sale) => sum + (sale.total_amount || 0), 0);
-  }, [filteredSales, canViewTotal]);
+  }, [filteredSales, isSuperuser]);
 
   return (
     <div
@@ -137,6 +149,16 @@ export default function SaleDashboardPage() {
               <span style={{ color: THEME_COLORS.subtext }} className="text-sm">
                 {getCurrentJalaliDate('dddd، jD jMMMM jYYYY')}
               </span>
+              <button
+                onClick={() => router.push('/sale/new')}
+                className="px-4 py-2 rounded-lg font-bold transition-all hover:opacity-90"
+                style={{
+                  backgroundColor: THEME_COLORS.green,
+                  color: '#fff',
+                }}
+              >
+                + فروش جدید
+              </button>
               <button
                 onClick={handleRefresh}
                 disabled={refreshing || loading}
@@ -223,8 +245,8 @@ export default function SaleDashboardPage() {
 
         {!loading && !error && (
           <>
-            {/* Stats Card - Only show if user has permissions */}
-            {canViewTotal && totalRevenue !== null && (
+            {/* Stats Card - Only show if user is superuser */}
+            {isSuperuser && totalRevenue !== null && (
               <div
                 className="p-6 rounded-lg mb-4 shadow-md"
                 style={{ backgroundColor: THEME_COLORS.bgSecondary }}
@@ -324,7 +346,7 @@ export default function SaleDashboardPage() {
                           شماره: {toPersianDigits(sale.id)}
                         </div>
                       </div>
-                      {canViewTotal && sale.total_amount !== null && (
+                      {isSuperuser && sale.total_amount !== null && (
                         <div
                           className="text-xl font-bold"
                           style={{ color: THEME_COLORS.green }}
@@ -336,12 +358,14 @@ export default function SaleDashboardPage() {
 
                     {/* Sale Details */}
                     <div className="space-y-2 mb-4">
-                      <div className="flex justify-between text-sm">
-                        <span style={{ color: THEME_COLORS.subtext }}>مهمان:</span>
-                        <span style={{ color: THEME_COLORS.text }}>
-                          {sale.guest_name || '—'}
-                        </span>
-                      </div>
+                      {sale.guest_name && (
+                        <div className="flex justify-between text-sm">
+                          <span style={{ color: THEME_COLORS.subtext }}>مهمان:</span>
+                          <span style={{ color: THEME_COLORS.text }}>
+                            {sale.guest_name}
+                          </span>
+                        </div>
+                      )}
                       <div className="flex justify-between text-sm">
                         <span style={{ color: THEME_COLORS.subtext }}>کاربر:</span>
                         <span style={{ color: THEME_COLORS.text }}>

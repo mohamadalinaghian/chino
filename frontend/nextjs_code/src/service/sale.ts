@@ -178,12 +178,16 @@ export async function closeSale(saleId: number): Promise<ISaleResponse> {
 /**
  * Cancels a sale
  */
-export async function cancelSale(saleId: number): Promise<ISaleResponse> {
+export async function cancelSale(saleId: number, reason: string): Promise<ISaleResponse> {
   try {
     const response = await authenticatedFetchJSON<ISaleResponse>(
       `${CS_API_URL}${API_ENDPOINTS.SALE_CANCEL(saleId)}`,
       {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ cancel_reason: reason }),
       }
     );
     return response;
