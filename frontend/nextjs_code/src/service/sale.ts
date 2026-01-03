@@ -45,18 +45,17 @@ export async function fetchSaleMenu(): Promise<IMenuGroup[]> {
 }
 
 /**
- * Fetches extra items for a specific menu item
+ * Fetches all available extra items (RAW/PROCESSED products)
+ * Extras are global, not per-item
  */
-export async function fetchExtrasForItem(
-  menuId: number
-): Promise<IExtraItem[]> {
+export async function fetchExtras(): Promise<IExtraItem[]> {
   try {
     const extras = await authenticatedFetchJSON<IExtraItem[]>(
-      `${CS_API_URL}${API_ENDPOINTS.MENU_ITEM_EXTRAS(menuId)}`
+      `${CS_API_URL}${API_ENDPOINTS.MENU_EXTRAS}`
     );
     return extras;
   } catch (error) {
-    console.error(`Error fetching extras for item ${menuId}:`, error);
+    console.error('Error fetching extras:', error);
     // Return empty array if extras endpoint doesn't exist or fails
     return [];
   }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { IMenuItemForSale, IExtraItem } from '@/types/sale';
-import { fetchExtrasForItem } from '@/service/sale';
+import { fetchExtras } from '@/service/sale';
 import { THEME_COLORS } from '@/libs/constants';
 import { formatPersianMoney, toPersianDigits } from '@/utils/persianUtils';
 
@@ -46,12 +46,10 @@ export function ExtrasModal({ item, isOpen, onClose, onConfirm }: ExtrasModalPro
   };
 
   const loadExtras = async () => {
-    if (!item) return;
-
     try {
       setLoading(true);
       setError(null);
-      const data = await fetchExtrasForItem(item.id);
+      const data = await fetchExtras();
       setExtras(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا در بارگذاری افزودنی‌ها');

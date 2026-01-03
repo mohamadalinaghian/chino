@@ -10,6 +10,8 @@ interface CartSummaryProps {
   onUpdateQuantity: (itemId: string, quantity: number) => void;
   onProceedToPayment: () => void;
   onSaveAsOpen: () => void;
+  printOrder: boolean;
+  onPrintOrderChange: (value: boolean) => void;
 }
 
 export function CartSummary({
@@ -18,6 +20,8 @@ export function CartSummary({
   onUpdateQuantity,
   onProceedToPayment,
   onSaveAsOpen,
+  printOrder,
+  onPrintOrderChange,
 }: CartSummaryProps) {
   // Calculate totals
   const subtotal = cartItems.reduce((sum, item) => sum + item.total, 0);
@@ -196,6 +200,48 @@ export function CartSummary({
             {formatPersianMoney(total)}
           </span>
         </div>
+      </div>
+
+      {/* Print Option */}
+      <div
+        className="mb-3 p-3 rounded-lg border"
+        style={{
+          backgroundColor: THEME_COLORS.bgPrimary,
+          borderColor: THEME_COLORS.border,
+        }}
+      >
+        <label className="flex items-center justify-between cursor-pointer">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🖨️</span>
+            <div>
+              <span className="font-bold text-sm block" style={{ color: THEME_COLORS.text }}>
+                چاپ سفارش
+              </span>
+              <span className="text-xs" style={{ color: THEME_COLORS.subtext }}>
+                {printOrder ? 'سفارش چاپ می‌شود' : 'ایجاد بدون چاپ (Silent)'}
+              </span>
+            </div>
+          </div>
+
+          {/* Toggle Switch */}
+          <button
+            type="button"
+            onClick={() => onPrintOrderChange(!printOrder)}
+            className={`relative w-12 h-6 rounded-full transition-all ${
+              printOrder ? 'ring-2' : ''
+            }`}
+            style={{
+              backgroundColor: printOrder ? THEME_COLORS.green : THEME_COLORS.surface,
+              ringColor: printOrder ? THEME_COLORS.green : 'transparent',
+            }}
+          >
+            <span
+              className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all ${
+                printOrder ? 'left-0.5' : 'right-0.5'
+              }`}
+            />
+          </button>
+        </label>
       </div>
 
       {/* Action Buttons */}

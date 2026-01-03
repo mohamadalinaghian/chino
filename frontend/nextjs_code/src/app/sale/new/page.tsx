@@ -52,6 +52,9 @@ export default function NewSalePage() {
   // Submission state
   const [submitting, setSubmitting] = useState(false);
 
+  // Print option
+  const [printOrder, setPrintOrder] = useState(true); // Default: print orders
+
   // Load menu on mount
   useEffect(() => {
     loadMenu();
@@ -174,7 +177,7 @@ export default function NewSalePage() {
 
     const cartExtras: ICartExtra[] = selectedExtras.map((se) => ({
       id: `${cartItemId}-extra-${se.extra.id}`,
-      menu_id: se.extra.id,
+      product_id: se.extra.id,
       name: se.extra.name,
       price: se.extra.price,
       quantity: se.quantity,
@@ -250,7 +253,7 @@ export default function NewSalePage() {
           menu_id: cartItem.menu_id,
           quantity: cartItem.quantity,
           extras: cartItem.extras.map((extra) => ({
-            menu_id: extra.menu_id,
+            product_id: extra.product_id,
             quantity: extra.quantity,
           })),
         })),
@@ -299,7 +302,7 @@ export default function NewSalePage() {
           menu_id: cartItem.menu_id,
           quantity: cartItem.quantity,
           extras: cartItem.extras.map((extra) => ({
-            menu_id: extra.menu_id,
+            product_id: extra.product_id,
             quantity: extra.quantity,
           })),
         })),
@@ -504,6 +507,8 @@ export default function NewSalePage() {
                 onUpdateQuantity={handleUpdateQuantity}
                 onProceedToPayment={handleProceedToPayment}
                 onSaveAsOpen={handleSaveAsOpen}
+                printOrder={printOrder}
+                onPrintOrderChange={setPrintOrder}
               />
             </div>
           </div>

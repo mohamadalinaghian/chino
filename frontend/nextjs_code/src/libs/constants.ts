@@ -95,7 +95,7 @@ export const API_ENDPOINTS = {
   MENU_CATEGORIES: '/menu/categories/',
   MENU_ITEMS: '/menu/items/',
   MENU_SALE: '/menu/sale/menu',
-  MENU_ITEM_EXTRAS: (itemId: number) => `/menu/items/${itemId}/extras/`,
+  MENU_EXTRAS: '/menu/sale/extras',
 
   // Sale endpoints
   SALE_OPEN: '/sale/open',

@@ -60,7 +60,7 @@ export interface IMenuCategory {
 
 /**
  * Menu group (matches MenuGroupOut from backend)
- * Top-level grouping by parent_group (BAR_ITEM or FOOD)
+ * Top-level grouping by parent_group (BAR or FOOD)
  */
 export interface IMenuGroup {
   parent_group: 'BAR' | 'FOOD';
@@ -103,7 +103,7 @@ export interface ICartItem {
  */
 export interface ICartExtra {
   id: string; // Temporary ID
-  menu_id: number;
+  product_id: number; // Product ID for extras (not menu_id)
   name: string;
   price: number;
   quantity: number;
@@ -143,10 +143,10 @@ export interface ISaleItemInput {
 }
 
 /**
- * Extra item input for API
+ * Extra item input for API (matches backend ExtraItemInput)
  */
 export interface IExtraItemInput {
-  menu_id: number;
+  product_id: number; // Backend expects product_id, not menu_id
   quantity: number;
 }
 
