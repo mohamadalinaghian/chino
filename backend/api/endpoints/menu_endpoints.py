@@ -118,12 +118,12 @@ def get_sale_menu(request):
 
     # Build response structure
     bar_categories = [
-        MenuCategoryGroupSchema(category=cat, items=items)
-        for cat, items in grouped["BAR"].items()
+        MenuCategoryGroupSchema(category=cat, parent_group="BAR_ITEM", items=items)
+        for cat, items in grouped["BAR_ITEM"].items()
     ]
 
     food_categories = [
-        MenuCategoryGroupSchema(category=cat, items=items)
+        MenuCategoryGroupSchema(category=cat, parent_group="FOOD", items=items)
         for cat, items in grouped["FOOD"].items()
     ]
 

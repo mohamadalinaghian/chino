@@ -58,6 +58,7 @@ class MenuCategoryGroupSchema(Schema):
     """
 
     category: str  # Category title
+    parent_group: str  # Parent group (BAR_ITEM or FOOD)
     items: list[MenuItemSaleSchema]  # Items in this category
 
 

@@ -54,36 +54,37 @@ export const DEFAULT_AUTH_REDIRECT = '/dashboard';
 export const LOGIN_PATH = '/login';
 
 /**
- * Tokyo Night Color Palette
- * Used for the POS and sale management UI
+ * Modern Dark Theme (GitHub Dark inspired)
+ * Professional dark theme for POS and sale management UI
  */
 export const THEME_COLORS = {
   // Base colors
-  bgPrimary: '#1a1b26',    // Main background
-  bgSecondary: '#16161e',  // Secondary background
-  surface: '#24283b',      // Card backgrounds
+  bgPrimary: '#0d1117',      // Main background - deep dark
+  bgSecondary: '#161b22',    // Secondary background - slightly lighter
+  surface: '#21262d',        // Card backgrounds - elevated surface
 
   // Text colors
-  text: '#c0caf5',         // Primary text
-  subtext: '#9aa5ce',      // Secondary text
-  textDark: '#565f89',     // Darker text
+  text: '#e6edf3',           // Primary text - bright white
+  subtext: '#8b949e',        // Secondary text - muted gray
+  textDark: '#6e7681',       // Darker text - subtle
 
   // Accent colors
-  accent: '#7aa2f7',       // Blue - Primary accent
-  accentDark: '#3d59a1',   // Dark blue
-  green: '#9ece6a',        // Green - Success states
-  red: '#f7768e',          // Red - Error/warning states
-  orange: '#ff9e64',       // Orange - Warning states
-  yellow: '#e0af68',       // Yellow
-  purple: '#bb9af7',       // Purple - Highlights
-  cyan: '#7dcfff',         // Cyan - Info states
-  magenta: '#c678dd',      // Magenta
+  accent: '#58a6ff',         // Blue - Primary accent (GitHub blue)
+  accentDark: '#1f6feb',     // Dark blue - hover state
+  green: '#3fb950',          // Green - Success states
+  red: '#f85149',            // Red - Error/warning states
+  orange: '#d29922',         // Orange - Warning states
+  yellow: '#f0ce4e',         // Yellow - highlights
+  purple: '#a371f7',         // Purple - special highlights
+  cyan: '#76e3ea',           // Cyan - Info states
+  magenta: '#bc8cff',        // Magenta - decorative
 
   // Border
-  border: '#414868',       // Border color
+  border: '#30363d',         // Border color - subtle
 
   // Additional colors
-  overlay: '#16161e',      // Overlays and modals
+  overlay: '#0d1117e6',      // Overlays and modals - semi-transparent
+  hover: '#30363d',          // Hover state background
 } as const;
 
 /**

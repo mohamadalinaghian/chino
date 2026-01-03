@@ -71,7 +71,18 @@ async function fetchWithToken(
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  return fetch(url, { ...options, headers });
+  // Ensure Content-Type is set for POST/PUT/PATCH requests with body
+  if (options.body && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  try {
+    return await fetch(url, { ...options, headers });
+  } catch (error) {
+    // Network errors
+    console.error('Network error:', error);
+    throw new Error('خطا در برقراری ارتباط با سرور');
+  }
 }
 
 /**
