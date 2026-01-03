@@ -106,10 +106,19 @@ export function useDashboard() {
     );
   }, [sales, filters]);
 
+  // TODO: better permissions controlling for this
   // Calculate stats - only if superuser
   const totalRevenue = useMemo(() => {
     if (!isSuperuser) return null;
-    return filteredSales.reduce((sum, sale) => sum + (sale.total_amount || 0), 0);
+
+    return filteredSales.reduce((sum, sale) => {
+      const amount =
+        sale.total_amount !== null && sale.total_amount !== undefined
+          ? Number(sale.total_amount)
+          : 0;
+
+      return sum + (Number.isFinite(amount) ? amount : 0);
+    }, 0);
   }, [filteredSales, isSuperuser]);
 
   return {
