@@ -14,7 +14,7 @@ router_table = Router(tags=["Tables"], auth=jwt_auth)
 
 
 @router_table.get(
-    "/empty",
+    "/empty/",
     response=list[TableSchema],
     summary="Get only empty tables (no open sales)",
 )
