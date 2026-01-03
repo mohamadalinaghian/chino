@@ -43,7 +43,7 @@ export default function SaleDashboardPage() {
 
       setSales(dashboardData.active_sales);
       setPermissions(userInfo.permissions);
-      setIsSuperuser(userInfo.is_staff); // Use is_staff as superuser indicator
+      setIsSuperuser(userInfo.is_superuser || false); // Use is_superuser for total_amount visibility
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا در بارگذاری داشبورد');
     } finally {

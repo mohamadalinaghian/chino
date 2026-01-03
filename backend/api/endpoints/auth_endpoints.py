@@ -99,6 +99,7 @@ def get_current_user(request) -> UserInfoResponse:
         mobile=user.mobile,
         name=user.name,
         is_staff=user.is_staff,
+        is_superuser=user.is_superuser,
         permissions=permissions,
     )
 

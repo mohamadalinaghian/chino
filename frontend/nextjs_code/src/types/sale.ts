@@ -230,5 +230,6 @@ export interface IUserPermissions {
   mobile: string;
   name: string;
   is_staff: boolean;
+  is_superuser?: boolean; // Added for dashboard total_amount check
   permissions: string[];
 }

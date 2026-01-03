@@ -71,6 +71,7 @@ class UserInfoResponse(Schema):
         email: User's email address
         name: User's full name
         is_staff: Whether user has staff privileges
+        is_superuser: Whether user is a superuser
         permissions: List of permission codenames (e.g., "sale.open_sale")
     """
 
@@ -78,6 +79,7 @@ class UserInfoResponse(Schema):
     mobile: str
     name: str
     is_staff: bool
+    is_superuser: bool
     permissions: List[str]
 
 

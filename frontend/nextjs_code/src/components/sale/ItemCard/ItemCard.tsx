@@ -88,7 +88,13 @@ export function ItemCard({
         <h3 className="text-sm font-bold text-right line-clamp-1 leading-tight" style={{ color: THEME_COLORS.text }}>
           {item.name}
         </h3>
-        <div className="text-base font-extrabold text-right tracking-tight drop-shadow-sm" style={{ color: THEME_COLORS.green }}>
+        <div
+          className="text-base font-extrabold text-right tracking-tight drop-shadow-sm"
+          style={{
+            color: THEME_COLORS.green,
+            fontFamily: 'Tahoma, Arial, sans-serif', // Explicit font for consistent number rendering
+          }}
+        >
           {formatPersianMoney(item.price)}
         </div>
       </div>
