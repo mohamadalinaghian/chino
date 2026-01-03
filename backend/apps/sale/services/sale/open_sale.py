@@ -85,7 +85,7 @@ class OpenSaleService:
         OpenSaleService.recalculate_total(sale)
 
         # Print to thermal printer if requested
-        if print_order:
+        # if print_order:
 
         return sale
 
