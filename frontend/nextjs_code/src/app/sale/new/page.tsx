@@ -13,7 +13,7 @@ import { SaleTypeSelector } from '@/components/sale/SaleTypeSelector';
 import { TableSelector } from '@/components/sale/TableSelector';
 import { CategoryList } from '@/components/sale/CategoryList';
 import { ItemsGrid } from '@/components/sale/ItemsGrid';
-import { CartSummary } from '@/components/sale/CartSummary/CartSummary';
+import { CartSummary, IGuest } from '@/components/sale/CartSummary/CartSummary';
 import { ExtrasModal, SelectedExtra } from '@/components/sale/ExtrasModal';
 import { useToast } from '@/components/common/Toast';
 import { LoadingOverlay } from '@/components/common/LoadingOverlay';
@@ -57,6 +57,12 @@ export default function NewSalePage() {
 
   // Print order toggle (default: true - print automatically)
   const [printOrder, setPrintOrder] = useState(true);
+
+  // Guest information
+  const [guests, setGuests] = useState<IGuest[]>([]);
+  const [selectedGuestId, setSelectedGuestId] = useState<number | null>(null);
+  const [guestCount, setGuestCount] = useState<number | null>(null);
+  const [quickAddGuestModalOpen, setQuickAddGuestModalOpen] = useState(false);
 
   // Cart ref + floating button
   const cartSummaryRef = useRef<HTMLDivElement>(null);
@@ -312,8 +318,8 @@ export default function NewSalePage() {
       const saleData = {
         sale_type: saleType,
         table_id: saleType === SaleType.DINE_IN ? selectedTableId : null,
-        guest_id: null,
-        guest_count: null,
+        guest_id: selectedGuestId,
+        guest_count: guestCount,
         note: null,
         items: cartItems.map((cartItem) => ({
           menu_id: cartItem.menu_id,
@@ -357,8 +363,8 @@ export default function NewSalePage() {
       const saleData = {
         sale_type: saleType,
         table_id: saleType === SaleType.DINE_IN ? selectedTableId : null,
-        guest_id: null,
-        guest_count: null,
+        guest_id: selectedGuestId,
+        guest_count: guestCount,
         note: null,
         items: cartItems.map((cartItem) => ({
           menu_id: cartItem.menu_id,
@@ -564,6 +570,12 @@ export default function NewSalePage() {
                 onSaveAsOpen={handleSaveAsOpen}
                 printOrder={printOrder}
                 onPrintOrderChange={setPrintOrder}
+                guests={guests}
+                selectedGuestId={selectedGuestId}
+                onGuestChange={setSelectedGuestId}
+                guestCount={guestCount}
+                onGuestCountChange={setGuestCount}
+                onQuickAddGuest={() => setQuickAddGuestModalOpen(true)}
               />
             </div>
           </div>
