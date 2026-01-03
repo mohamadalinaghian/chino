@@ -40,24 +40,39 @@ export interface ITable {
 }
 
 /**
- * Menu category for sale
- */
-export interface IMenuCategoryForSale {
-  category: string;
-  parent_group: string; // BAR_ITEM or FOOD
-  items: IMenuItemForSale[];
-}
-
-/**
- * Menu item for sale
+ * Menu item for sale (matches MenuItemOut from backend)
+ * Minimal schema for performance - extras loaded on-demand
  */
 export interface IMenuItemForSale {
   id: number;
   name: string;
   price: number;
-  description?: string | null;
-  thumbnail?: string | null;
-  has_extras?: boolean;
+}
+
+/**
+ * Menu category (matches MenuCategoryOut from backend)
+ */
+export interface IMenuCategory {
+  id: number;
+  title: string;
+  items: IMenuItemForSale[];
+}
+
+/**
+ * Menu group (matches MenuGroupOut from backend)
+ * Top-level grouping by parent_group (BAR_ITEM or FOOD)
+ */
+export interface IMenuGroup {
+  parent_group: string;
+  categories: IMenuCategory[];
+}
+
+/**
+ * Legacy interface - kept for compatibility during migration
+ * @deprecated Use IMenuCategory instead
+ */
+export interface IMenuCategoryForSale extends IMenuCategory {
+  parent_group?: string;
 }
 
 /**
@@ -166,7 +181,9 @@ export interface ISaleItemResponse {
 }
 
 /**
- * Grouped menu data
+ * Grouped menu data - DEPRECATED
+ * Backend now returns List[IMenuGroup] instead
+ * @deprecated Use IMenuGroup[] directly
  */
 export interface IGroupedMenuData {
   bar_items: IMenuCategoryForSale[];

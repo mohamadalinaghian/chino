@@ -7,7 +7,7 @@ import {
   IMenuItemForSale,
   ICartItem,
   ICartExtra,
-  IMenuCategoryForSale,
+  IMenuGroup,
 } from '@/types/sale';
 import { fetchSaleMenu, openSale, saveAsOpenSale } from '@/service/sale';
 import { SaleTypeSelector } from '@/components/sale/SaleTypeSelector';
@@ -30,10 +30,7 @@ export default function NewSalePage() {
   const [selectedTableId, setSelectedTableId] = useState<number | null>(null);
 
   // Menu data
-  const [menuData, setMenuData] = useState<{
-    bar_items: IMenuCategoryForSale[];
-    food_items: IMenuCategoryForSale[];
-  } | null>(null);
+  const [menuData, setMenuData] = useState<IMenuGroup[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,9 +56,10 @@ export default function NewSalePage() {
 
   // Auto-select first category when tab changes
   useEffect(() => {
-    const categories = activeTab === 'BAR_ITEM' ? menuData?.bar_items : menuData?.food_items;
-    if (categories && categories.length > 0) {
-      setSelectedCategory(categories[0].category);
+    if (!menuData) return;
+    const group = menuData.find((g) => g.parent_group === activeTab);
+    if (group && group.categories.length > 0) {
+      setSelectedCategory(group.categories[0].title);
     }
   }, [activeTab, menuData]);
 
@@ -72,9 +70,10 @@ export default function NewSalePage() {
       const data = await fetchSaleMenu();
       setMenuData(data);
 
-      // Auto-select first category
-      if (data.food_items.length > 0) {
-        setSelectedCategory(data.food_items[0].category);
+      // Auto-select first category from FOOD group
+      const foodGroup = data.find((g) => g.parent_group === 'FOOD');
+      if (foodGroup && foodGroup.categories.length > 0) {
+        setSelectedCategory(foodGroup.categories[0].title);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : UI_TEXT.ERROR_LOADING_MENU);
@@ -86,19 +85,21 @@ export default function NewSalePage() {
   // Get current categories based on active tab
   const currentCategories = useMemo(() => {
     if (!menuData) return [];
-    const items = activeTab === 'BAR_ITEM' ? menuData.bar_items : menuData.food_items;
-    return items.map((cat) => ({
-      id: cat.category,
-      name: cat.category,
-      parentGroup: cat.parent_group,
+    const group = menuData.find((g) => g.parent_group === activeTab);
+    if (!group) return [];
+    return group.categories.map((cat) => ({
+      id: cat.title,
+      name: cat.title,
+      parentGroup: activeTab,
     }));
   }, [menuData, activeTab]);
 
   // Get current items for selected category
   const currentItems = useMemo(() => {
     if (!menuData || !selectedCategory) return [];
-    const items = activeTab === 'BAR_ITEM' ? menuData.bar_items : menuData.food_items;
-    const category = items.find((cat) => cat.category === selectedCategory);
+    const group = menuData.find((g) => g.parent_group === activeTab);
+    if (!group) return [];
+    const category = group.categories.find((cat) => cat.title === selectedCategory);
     return category?.items || [];
   }, [menuData, selectedCategory, activeTab]);
 

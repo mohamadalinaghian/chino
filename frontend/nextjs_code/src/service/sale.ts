@@ -9,7 +9,7 @@ import {
   IOpenSaleRequest,
   ISaleResponse,
   ITable,
-  IGroupedMenuData,
+  IMenuGroup,
   IExtraItem,
 } from '@/types/sale';
 
@@ -29,12 +29,12 @@ export async function fetchTables(): Promise<ITable[]> {
 }
 
 /**
- * Fetches menu items grouped by category for sale
- * Returns bar_items and food_items
+ * Fetches menu items grouped by parent_group -> category -> items
+ * Returns array of menu groups (BAR_ITEM and FOOD)
  */
-export async function fetchSaleMenu(): Promise<IGroupedMenuData> {
+export async function fetchSaleMenu(): Promise<IMenuGroup[]> {
   try {
-    const menu = await authenticatedFetchJSON<IGroupedMenuData>(
+    const menu = await authenticatedFetchJSON<IMenuGroup[]>(
       `${CS_API_URL}${API_ENDPOINTS.MENU_SALE}`
     );
     return menu;
