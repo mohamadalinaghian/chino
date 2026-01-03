@@ -98,6 +98,7 @@ export const API_ENDPOINTS = {
   MENU_EXTRAS: '/menu/sale/extras',
 
   // Sale endpoints
+  SALE_DASHBOARD: '/sale/',
   SALE_OPEN: '/sale/open',
   SALE_DETAILS: (saleId: number) => `/sale/${saleId}`,
   SALE_SYNC: (saleId: number) => `/sale/${saleId}/sync`,

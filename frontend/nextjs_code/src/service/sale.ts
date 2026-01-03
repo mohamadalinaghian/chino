@@ -11,6 +11,7 @@ import {
   ITable,
   IMenuGroup,
   IExtraItem,
+  IDashboardResponse,
 } from '@/types/sale';
 
 /**
@@ -189,5 +190,20 @@ export async function cancelSale(saleId: number): Promise<ISaleResponse> {
   } catch (error) {
     console.error(`Error canceling sale ${saleId}:`, error);
     throw new Error('خطا در لغو فروش');
+  }
+}
+
+/**
+ * Fetches dashboard data (list of open sales)
+ */
+export async function fetchDashboard(): Promise<IDashboardResponse> {
+  try {
+    const response = await authenticatedFetchJSON<IDashboardResponse>(
+      `${CS_API_URL}${API_ENDPOINTS.SALE_DASHBOARD}`
+    );
+    return response;
+  } catch (error) {
+    console.error('Error fetching dashboard:', error);
+    throw new Error('خطا در دریافت داشبورد');
   }
 }

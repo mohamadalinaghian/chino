@@ -198,3 +198,37 @@ export interface IApiError {
   details?: Record<string, string[]>;
   code?: string;
 }
+
+/**
+ * Dashboard sale item (lightweight summary)
+ */
+export interface IDashboardSaleItem {
+  id: number;
+  state: string;
+  table: string | null;
+  guest_name: string | null;
+  total_amount: number | null;
+  opened_by_name: string;
+  opened_at: string;
+  payment_status: string | null;
+  balance_due: number | null;
+}
+
+/**
+ * Dashboard response
+ */
+export interface IDashboardResponse {
+  active_sales: IDashboardSaleItem[];
+  total_count: number;
+}
+
+/**
+ * User permissions response
+ */
+export interface IUserPermissions {
+  id: number;
+  mobile: string;
+  name: string;
+  is_staff: boolean;
+  permissions: string[];
+}
