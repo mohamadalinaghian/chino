@@ -130,7 +130,6 @@ export interface IOpenSaleRequest {
   guest_count?: number | null;
   items: ISaleItemInput[];
   note?: string | null;
-  print_order: boolean;
 }
 
 /**

@@ -55,7 +55,6 @@ class OpenSaleService:
         guest_count: Optional[int] = None,
         guest=None,
         note: str = "",
-        print_order: bool = True,
     ) -> Sale:
         can_open_sale(opened_by)
 
@@ -87,8 +86,6 @@ class OpenSaleService:
 
         # Print to thermal printer if requested
         if print_order:
-            from apps.sale.services.printer import print_sale_order
-            print_sale_order(sale)
 
         return sale
 

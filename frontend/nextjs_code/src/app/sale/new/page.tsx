@@ -53,7 +53,6 @@ export default function NewSalePage() {
 
   // Submission state
   const [submitting, setSubmitting] = useState(false);
-  const [printOrder, setPrintOrder] = useState(true);
 
   // Cart ref + floating button
   const cartSummaryRef = useRef<HTMLDivElement>(null);
@@ -268,7 +267,9 @@ export default function NewSalePage() {
       const saleData = {
         sale_type: saleType,
         table_id: saleType === SaleType.DINE_IN ? selectedTableId : null,
-        print_order: printOrder,
+        guest_id: null,
+        guest_count: null,
+        note: null,
         items: cartItems.map((cartItem) => ({
           menu_id: cartItem.menu_id,
           quantity: cartItem.quantity,
@@ -307,7 +308,9 @@ export default function NewSalePage() {
       const saleData = {
         sale_type: saleType,
         table_id: saleType === SaleType.DINE_IN ? selectedTableId : null,
-        print_order: printOrder,
+        guest_id: null,
+        guest_count: null,
+        note: null,
         items: cartItems.map((cartItem) => ({
           menu_id: cartItem.menu_id,
           quantity: cartItem.quantity,
