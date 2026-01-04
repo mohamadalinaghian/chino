@@ -713,3 +713,54 @@ export function printEditReceipt(data: PrintEditData): void {
     }, 250);
   };
 }
+
+// =====================================================================
+// PRINT QUEUE FUNCTIONS (Option B: Mobile-to-PC Print Queue System)
+// =====================================================================
+
+/**
+ * Queue a standard receipt for printing
+ *
+ * Instead of triggering browser print, this adds the receipt to a queue
+ * that the cafe PC will monitor and auto-print from.
+ *
+ * @param data - Receipt data
+ * @param saleId - Optional sale ID for tracking
+ */
+export async function queueReceipt(data: PrintSaleData, saleId?: number): Promise<void> {
+  try {
+    // Dynamically import to avoid circular dependencies
+    const { addPrintJob } = await import('@/service/printQueue');
+
+    await addPrintJob({
+      sale_id: saleId,
+      print_type: 'STANDARD',
+      print_data: data,
+    });
+  } catch (error) {
+    console.error('Error queueing receipt:', error);
+    throw error;
+  }
+}
+
+/**
+ * Queue an edit diff receipt for printing
+ *
+ * @param data - Edit diff receipt data
+ * @param saleId - Optional sale ID for tracking
+ */
+export async function queueEditReceipt(data: PrintEditData, saleId?: number): Promise<void> {
+  try {
+    // Dynamically import to avoid circular dependencies
+    const { addPrintJob } = await import('@/service/printQueue');
+
+    await addPrintJob({
+      sale_id: saleId,
+      print_type: 'EDIT_DIFF',
+      print_data: data,
+    });
+  } catch (error) {
+    console.error('Error queueing edit receipt:', error);
+    throw error;
+  }
+}

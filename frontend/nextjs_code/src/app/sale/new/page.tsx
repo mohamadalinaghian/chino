@@ -31,7 +31,7 @@ import { useToast } from '@/components/common/Toast';
 import { LoadingOverlay } from '@/components/common/LoadingOverlay';
 import { THEME_COLORS, UI_TEXT } from '@/libs/constants';
 import { getCurrentJalaliDate } from '@/utils/persianUtils';
-import { printReceipt, PrintSaleData, PrintSaleItem } from '@/utils/printUtils';
+import { printReceipt, PrintSaleData, PrintSaleItem, queueReceipt } from '@/utils/printUtils';
 
 export default function NewSalePage() {
   const router = useRouter();
@@ -66,9 +66,6 @@ export default function NewSalePage() {
 
   // Submission state
   const [submitting, setSubmitting] = useState(false);
-
-  // Print order toggle (default: true - print automatically)
-  const [printOrder, setPrintOrder] = useState(true);
 
   // Guest information
   const [selectedGuestId, setSelectedGuestId] = useState<number | null>(null);
@@ -275,10 +272,8 @@ export default function NewSalePage() {
     );
   };
 
-  // Helper to trigger print after sale creation
-  const triggerPrintReceipt = (saleId?: number, invoiceNumber?: string) => {
-    if (!printOrder) return;
-
+  // Helper to queue print job after sale creation
+  const triggerPrintReceipt = async (saleId?: number, invoiceNumber?: string) => {
     const printItems: PrintSaleItem[] = cartItems.map((item) => ({
       name: item.name,
       quantity: item.quantity,
@@ -305,15 +300,13 @@ export default function NewSalePage() {
       timestamp: new Date(),
     };
 
-    // Trigger print after a short delay to allow success toast to show
-    setTimeout(() => {
-      try {
-        printReceipt(printData);
-      } catch (error) {
-        console.error('Print error:', error);
-        // Don't show error to user - printing is non-critical
-      }
-    }, 300);
+    // Queue print job instead of direct print
+    try {
+      await queueReceipt(printData, saleId);
+    } catch (error) {
+      console.error('Print queue error:', error);
+      // Don't show error to user - printing is non-critical
+    }
   };
 
   const handleGuestCreated = (guest: IGuest) => {
@@ -349,9 +342,6 @@ export default function NewSalePage() {
       };
       const sale = await openSale(saleData);
       showToast(UI_TEXT.SUCCESS_SALE_CREATED, 'success');
-
-      // Trigger automatic print if enabled
-      triggerPrintReceipt(sale.id);
 
       setTimeout(() => {
         router.push(`/sale/${sale.id}/payment`);
@@ -395,9 +385,6 @@ export default function NewSalePage() {
       const sale = await saveAsOpenSale(saleData);
       showToast(UI_TEXT.SUCCESS_OPEN_SALE_SAVED, 'success');
 
-      // Trigger automatic print if enabled
-      triggerPrintReceipt(sale.id);
-
       setTimeout(() => {
         router.push('/sale/dashboard');
       }, 500);
@@ -408,6 +395,61 @@ export default function NewSalePage() {
       );
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleSaveAndPrintAll = async () => {
+    if (saleType === SaleType.DINE_IN && !selectedTableId) {
+      showToast(UI_TEXT.VALIDATION_SELECT_TABLE, 'warning');
+      return;
+    }
+    if (cartItems.length === 0) {
+      showToast(UI_TEXT.VALIDATION_EMPTY_CART, 'warning');
+      return;
+    }
+    try {
+      setSubmitting(true);
+      const saleData = {
+        sale_type: saleType,
+        table_id: saleType === SaleType.DINE_IN ? selectedTableId : null,
+        guest_id: selectedGuestId,
+        guest_count: guestCount,
+        note: null,
+        items: cartItems.map((cartItem) => ({
+          menu_id: cartItem.menu_id,
+          quantity: cartItem.quantity,
+          extras: cartItem.extras.map((extra) => ({
+            product_id: extra.product_id,
+            quantity: extra.quantity,
+          })),
+        })),
+      };
+      const sale = await openSale(saleData);
+      showToast(UI_TEXT.SUCCESS_SALE_CREATED, 'success');
+
+      // Trigger print
+      triggerPrintReceipt(sale.id);
+
+      setTimeout(() => {
+        router.push(`/sale/${sale.id}/payment`);
+      }, 500);
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : UI_TEXT.ERROR_CREATING_SALE,
+        'error'
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (cartItems.length > 0) {
+      if (confirm('آیا از لغو و بازگشت اطمینان دارید؟ تغییرات ذخیره نخواهد شد.')) {
+        router.push('/sale/dashboard');
+      }
+    } else {
+      router.push('/sale/dashboard');
     }
   };
 
@@ -637,10 +679,11 @@ export default function NewSalePage() {
                 onRemoveItem={handleRemoveItem}
                 onUpdateQuantity={handleUpdateQuantity}
                 onEditExtras={handleEditCartItemExtras}
-                onProceedToPayment={handleProceedToPayment}
-                onSaveAsOpen={handleSaveAsOpen}
-                printOrder={printOrder}
-                onPrintOrderChange={setPrintOrder}
+                onSaveSilent={handleProceedToPayment}
+                onSaveAndPrintAll={handleSaveAndPrintAll}
+                onCancel={handleCancel}
+                isEditMode={false}
+                isSubmitting={submitting}
               />
             </div>
           </div>

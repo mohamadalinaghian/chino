@@ -9,13 +9,15 @@ interface CartSummaryProps {
   onRemoveItem: (itemId: string) => void;
   onUpdateQuantity: (itemId: string, quantity: number) => void;
   onEditExtras?: (item: ICartItem) => void;
-  onProceedToPayment: () => void;
-  onSaveAsOpen: () => void;
-  printOrder: boolean;
-  onPrintOrderChange: (value: boolean) => void;
-  // Optional custom button labels
-  proceedButtonLabel?: string;
-  saveAsOpenButtonLabel?: string;
+
+  // New button structure
+  onSaveSilent: () => void; // Save without print
+  onSaveAndPrintAll: () => void; // Save and print everything
+  onSaveAndPrintChanges?: () => void; // Save and print only changes (edit mode only)
+  onCancel: () => void; // Cancel button
+
+  isEditMode?: boolean; // To show/hide print changes button
+  isSubmitting?: boolean; // Loading state
 }
 
 // ← CHANGE: Use forwardRef to expose a ref to the parent
@@ -25,12 +27,12 @@ export const CartSummary = forwardRef<HTMLDivElement, CartSummaryProps>(function
     onRemoveItem,
     onUpdateQuantity,
     onEditExtras,
-    onProceedToPayment,
-    onSaveAsOpen,
-    printOrder,
-    onPrintOrderChange,
-    proceedButtonLabel,
-    saveAsOpenButtonLabel,
+    onSaveSilent,
+    onSaveAndPrintAll,
+    onSaveAndPrintChanges,
+    onCancel,
+    isEditMode = false,
+    isSubmitting = false,
   },
   ref // ← This ref will point to the main container
 ) {
@@ -178,63 +180,65 @@ export const CartSummary = forwardRef<HTMLDivElement, CartSummaryProps>(function
         </div>
       </div>
 
-      <div
-        className="mb-3 p-3 rounded-lg border"
-        style={{
-          backgroundColor: THEME_COLORS.bgPrimary,
-          borderColor: THEME_COLORS.border,
-        }}
-      >
-        <label className="flex items-center justify-between cursor-pointer">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">🖨️</span>
-            <div>
-              <span className="font-bold text-sm block" style={{ color: THEME_COLORS.text }}>
-                چاپ سفارش
-              </span>
-              <span className="text-xs" style={{ color: THEME_COLORS.subtext }}>
-                {printOrder ? 'سفارش چاپ می‌شود' : 'ایجاد بدون چاپ (Silent)'}
-              </span>
-            </div>
-          </div>
+      {/* Action Buttons */}
+      <div className="space-y-2">
+        {/* Save Silent Button */}
+        <button
+          onClick={onSaveSilent}
+          disabled={isSubmitting}
+          className="w-full py-3 rounded-lg font-bold transition-all hover:opacity-90 active:scale-95"
+          style={{
+            backgroundColor: isSubmitting ? THEME_COLORS.surface : THEME_COLORS.accent,
+            color: '#fff',
+            opacity: isSubmitting ? 0.6 : 1,
+          }}
+        >
+          {isSubmitting ? 'در حال ذخیره...' : '💾 ذخیره'}
+        </button>
+
+        {/* Save and Print Changes (Edit Mode Only) */}
+        {isEditMode && onSaveAndPrintChanges && (
           <button
-            type="button"
-            onClick={() => onPrintOrderChange(!printOrder)}
-            className={`relative w-12 h-6 rounded-full transition-all ${printOrder ? 'ring-2' : ''}`}
+            onClick={onSaveAndPrintChanges}
+            disabled={isSubmitting}
+            className="w-full py-3 rounded-lg font-bold transition-all hover:opacity-90 active:scale-95"
             style={{
-              backgroundColor: printOrder ? THEME_COLORS.green : THEME_COLORS.surface,
-              ringColor: printOrder ? THEME_COLORS.green : 'transparent',
+              backgroundColor: isSubmitting ? THEME_COLORS.surface : THEME_COLORS.accent,
+              color: '#fff',
+              opacity: isSubmitting ? 0.6 : 1,
             }}
           >
-            <span
-              className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all ${printOrder ? 'left-0.5' : 'right-0.5'
-                }`}
-            />
+            {isSubmitting ? 'در حال ذخیره و چاپ...' : '🖨️ ذخیره و چاپ تغییرات'}
           </button>
-        </label>
-      </div>
+        )}
 
-      <div className="space-y-2">
+        {/* Save and Print All */}
         <button
-          onClick={onProceedToPayment}
-          className="w-full py-1.5 rounded-lg font-bold transition-all hover:opacity-90 active:scale-95"
+          onClick={onSaveAndPrintAll}
+          disabled={isSubmitting}
+          className="w-full py-3 rounded-lg font-bold transition-all hover:opacity-90 active:scale-95"
           style={{
-            backgroundColor: THEME_COLORS.accent,
+            backgroundColor: isSubmitting ? THEME_COLORS.surface : THEME_COLORS.green,
             color: '#fff',
+            opacity: isSubmitting ? 0.6 : 1,
           }}
         >
-          {proceedButtonLabel || UI_TEXT.BTN_IMMEDIATE_PAY}
+          {isSubmitting ? 'در حال ذخیره و چاپ...' : '🖨️ ذخیره و چاپ همه'}
         </button>
+
+        {/* Cancel Button */}
         <button
-          onClick={onSaveAsOpen}
-          className="w-full py-1.5 rounded-lg font-bold transition-all hover:opacity-90 active:scale-95 border-2"
+          onClick={onCancel}
+          disabled={isSubmitting}
+          className="w-full py-3 rounded-lg font-bold transition-all hover:opacity-90 active:scale-95 border-2"
           style={{
             backgroundColor: 'transparent',
-            borderColor: THEME_COLORS.accent,
-            color: THEME_COLORS.accent,
+            borderColor: THEME_COLORS.red,
+            color: THEME_COLORS.red,
+            opacity: isSubmitting ? 0.6 : 1,
           }}
         >
-          {saveAsOpenButtonLabel || UI_TEXT.BTN_SAVE_OPEN_SALE}
+          ✕ لغو
         </button>
       </div>
     </div>

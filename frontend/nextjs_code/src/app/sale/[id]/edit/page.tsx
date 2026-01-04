@@ -32,7 +32,7 @@ import { useToast } from '@/components/common/Toast';
 import { LoadingOverlay } from '@/components/common/LoadingOverlay';
 import { THEME_COLORS, UI_TEXT } from '@/libs/constants';
 import { getCurrentJalaliDate } from '@/utils/persianUtils';
-import { printEditReceipt, PrintEditItem, PrintEditData } from '@/utils/printUtils';
+import { printEditReceipt, PrintEditItem, PrintEditData, printReceipt, PrintSaleData, queueReceipt, queueEditReceipt } from '@/utils/printUtils';
 
 export default function EditSalePage() {
   const router = useRouter();
@@ -69,9 +69,6 @@ export default function EditSalePage() {
 
   // Submission state
   const [submitting, setSubmitting] = useState(false);
-
-  // Print order toggle (default: true - print automatically)
-  const [printOrder, setPrintOrder] = useState(true);
 
   // Guest information
   const [selectedGuestId, setSelectedGuestId] = useState<number | null>(null);
@@ -321,10 +318,84 @@ export default function EditSalePage() {
         newTableName,
       };
 
-      // Trigger print after a short delay
+      // Queue print job instead of direct print
+      await queueEditReceipt(printData, saleId);
+
+      // Navigate back after print is triggered
       setTimeout(() => {
-        printEditReceipt(printData);
-      }, 300);
+        router.push('/sale/dashboard');
+      }, 1000);
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : 'خطا در ذخیره تغییرات',
+        'error'
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSaveAndPrintAll = async () => {
+    if (cartItems.length === 0) {
+      showToast('سبد خرید نمی‌تواند خالی باشد', 'warning');
+      return;
+    }
+
+    if (saleType === SaleType.DINE_IN && !selectedTableId) {
+      showToast('لطفاً یک میز انتخاب کنید', 'warning');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      // First, save the changes
+      const items = cartItems.map((cartItem) => ({
+        menu_id: cartItem.menu_id,
+        quantity: cartItem.quantity,
+        extras: cartItem.extras.map((extra) => ({
+          product_id: extra.product_id,
+          quantity: extra.quantity,
+        })),
+      }));
+
+      await syncSaleItems(saleId, items, {
+        sale_type: saleType,
+        table_id: saleType === SaleType.DINE_IN ? selectedTableId : null,
+        guest_id: selectedGuestId,
+        guest_count: guestCount,
+      });
+
+      showToast('تغییرات ذخیره شد، در حال چاپ...', 'success');
+
+      // Then, print ALL items (not just changes)
+      const tableName = selectedTableId ? `میز ${selectedTableId}` : undefined;
+      const subtotal = cartItems.reduce((sum, item) => sum + item.total, 0);
+
+      const printData: PrintSaleData = {
+        sale_id: saleId,
+        sale_type: saleType,
+        table_name: tableName,
+        guest_count: guestCount,
+        items: cartItems.map((item) => ({
+          name: item.name,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total: item.total,
+          extras: item.extras.map((e) => ({
+            name: e.name,
+            quantity: e.quantity,
+            unit_price: e.price,
+            total: e.price * e.quantity,
+          })),
+        })),
+        subtotal,
+        total: subtotal,
+        timestamp: new Date(),
+      };
+
+      // Queue print job instead of direct print
+      await queueReceipt(printData, saleId);
 
       // Navigate back after print is triggered
       setTimeout(() => {
@@ -665,17 +736,6 @@ export default function EditSalePage() {
                       </div>
                     </div>
                   )}
-                  {originalSale.guest_count && (
-                    <div
-                      className="p-2 rounded"
-                      style={{ backgroundColor: THEME_COLORS.bgPrimary }}
-                    >
-                      <div style={{ color: THEME_COLORS.subtext, fontSize: '11px' }}>تعداد نفرات:</div>
-                      <div style={{ color: THEME_COLORS.text, fontWeight: 'bold' }}>
-                        {originalSale.guest_count} نفر
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -840,30 +900,13 @@ export default function EditSalePage() {
                 onRemoveItem={handleRemoveItem}
                 onUpdateQuantity={handleUpdateQuantity}
                 onEditExtras={handleEditCartItemExtras}
-                onProceedToPayment={handleSaveChanges}
-                onSaveAsOpen={handleCancel}
-                printOrder={printOrder}
-                onPrintOrderChange={setPrintOrder}
-                // Override button labels for edit mode
-                proceedButtonLabel="💾 ذخیره تغییرات"
-                saveAsOpenButtonLabel="✕ لغو"
+                onSaveSilent={handleSaveChanges}
+                onSaveAndPrintAll={handleSaveAndPrintAll}
+                onSaveAndPrintChanges={handlePrintAndSave}
+                onCancel={handleCancel}
+                isEditMode={true}
+                isSubmitting={submitting}
               />
-
-              {/* Print and Save Button */}
-              {originalSale && cartItems.length > 0 && (
-                <button
-                  onClick={handlePrintAndSave}
-                  disabled={submitting}
-                  className="w-full mt-2 px-4 py-3 rounded-lg font-bold transition-all hover:opacity-90"
-                  style={{
-                    backgroundColor: submitting ? THEME_COLORS.surface : THEME_COLORS.accent,
-                    color: '#fff',
-                    opacity: submitting ? 0.6 : 1,
-                  }}
-                >
-                  {submitting ? 'در حال ذخیره و چاپ...' : '🖨️ ذخیره و چاپ تغییرات'}
-                </button>
-              )}
             </div>
           </div>
         </div>
