@@ -54,10 +54,7 @@ export function CategoryList({
       </label>
       <div
         ref={scrollContainerRef}
-        className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-rounded"
-        style={{
-          scrollbarColor: `${THEME_COLORS.surface} ${THEME_COLORS.bgSecondary}`,
-        }}
+        className="flex flex-wrap gap-2 pb-1"
       >
         {categories.map((category) => {
           const isSelected = selectedCategory === category.id;

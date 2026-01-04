@@ -138,7 +138,13 @@ export async function fetchSaleDetails(saleId: number): Promise<ISaleDetailRespo
  */
 export async function syncSaleItems(
   saleId: number,
-  items: IOpenSaleRequest['items']
+  items: IOpenSaleRequest['items'],
+  metadata?: {
+    sale_type?: SaleType;
+    table_id?: number | null;
+    guest_id?: number | null;
+    guest_count?: number | null;
+  }
 ): Promise<ISaleResponse> {
   try {
     const response = await authenticatedFetchJSON<ISaleResponse>(
@@ -148,7 +154,10 @@ export async function syncSaleItems(
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({
+          items,
+          ...metadata,
+        }),
       }
     );
     return response;

@@ -114,6 +114,16 @@ export function GuestSelector({
     }
   };
 
+  const handleFocus = async () => {
+    // Load initial guest list when focused
+    if (!searchTerm && guests.length === 0) {
+      setShowDropdown(true);
+      await loadGuestList();
+    } else if (searchTerm) {
+      setShowDropdown(true);
+    }
+  };
+
   const handleSelectGuest = (guest: IGuest) => {
     setSelectedGuest(guest);
     setSearchTerm(guest.name);
@@ -161,7 +171,7 @@ export function GuestSelector({
           type="text"
           value={searchTerm}
           onChange={(e) => handleSearchChange(e.target.value)}
-          onFocus={() => searchTerm && setShowDropdown(true)}
+          onFocus={handleFocus}
           placeholder="جستجو بر اساس شماره موبایل یا نام..."
           disabled={disabled}
           className="w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 transition-all"

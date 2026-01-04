@@ -44,6 +44,11 @@ class SyncSaleItemInput(Schema):
 
 class SyncSaleRequest(Schema):
     items: List[SyncSaleItemInput]
+    # Optional fields for updating sale metadata
+    sale_type: Optional[SaleType] = None
+    table_id: Optional[int] = None
+    guest_id: Optional[int] = None
+    guest_count: Optional[int] = None
 
 
 class OpenSaleRequest(Schema):

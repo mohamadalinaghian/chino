@@ -268,7 +268,9 @@ export interface ISaleDetailResponse {
   sale_type: SaleType;
   table_id?: number | null;
   table_name?: string | null;
+  guest_id?: number | null;
   guest_name?: string | null;
+  guest_count?: number | null;
   items: ISaleItemDetail[];
   subtotal_amount: number;
   discount_amount: number;

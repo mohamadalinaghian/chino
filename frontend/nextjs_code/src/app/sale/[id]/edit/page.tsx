@@ -100,7 +100,10 @@ export default function EditSalePage() {
       // Set sale type and table
       setSaleType(sale.sale_type);
       setSelectedTableId(sale.table_id || null);
-      setSelectedGuestId(null); // Will be populated if backend provides guest info
+
+      // Set guest information
+      setSelectedGuestId(sale.guest_id || null);
+      setGuestCount(sale.guest_count || null);
 
       // Convert sale items to cart items
       // Backend returns hierarchical structure with extras already nested
@@ -323,6 +326,11 @@ export default function EditSalePage() {
       return;
     }
 
+    if (saleType === SaleType.DINE_IN && !selectedTableId) {
+      showToast('لطفاً یک میز انتخاب کنید', 'warning');
+      return;
+    }
+
     try {
       setSubmitting(true);
       const items = cartItems.map((cartItem) => ({
@@ -334,7 +342,14 @@ export default function EditSalePage() {
         })),
       }));
 
-      await syncSaleItems(saleId, items);
+      // Include sale metadata in sync request
+      await syncSaleItems(saleId, items, {
+        sale_type: saleType,
+        table_id: saleType === SaleType.DINE_IN ? selectedTableId : null,
+        guest_id: selectedGuestId,
+        guest_count: guestCount,
+      });
+
       showToast('تغییرات با موفقیت ذخیره شد', 'success');
       setTimeout(() => {
         router.push('/sale/dashboard');

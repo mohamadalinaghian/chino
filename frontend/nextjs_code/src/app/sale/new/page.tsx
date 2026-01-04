@@ -29,7 +29,7 @@ export default function NewSalePage() {
   const { showToast, ToastContainer } = useToast();
 
   // Sale configuration
-  const [saleType, setSaleType] = useState<SaleType>(SaleType.TAKEAWAY);
+  const [saleType, setSaleType] = useState<SaleType>(SaleType.DINE_IN);
   const [selectedTableId, setSelectedTableId] = useState<number | null>(null);
 
   // Menu data

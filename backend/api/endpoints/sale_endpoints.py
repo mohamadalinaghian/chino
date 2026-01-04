@@ -119,8 +119,10 @@ def open_sale(request, payload: OpenSaleRequest):
 @router.post("/{sale_id}/sync", response={200: OpenSaleResponse, 422: ErrorResponse})
 def sync_sale_items(request, sale_id: int, payload: SyncSaleRequest):
     """
-    Syncs the sale items. This is the only endpoint needed for
-    Adding, Removing, or Editing items on an open sale.
+    Syncs the sale items and optionally updates sale metadata.
+    This endpoint handles:
+    - Adding, Removing, or Editing items on an open sale
+    - Optionally updating sale_type, table_id, guest_id, guest_count
     """
 
     sale = get_object_or_404(Sale, id=sale_id)
@@ -128,6 +130,43 @@ def sync_sale_items(request, sale_id: int, payload: SyncSaleRequest):
     can_modify_sale(request.auth, sale)
 
     try:
+        # Update sale metadata if provided
+        metadata_updated = False
+
+        if payload.sale_type is not None and payload.sale_type != sale.sale_type:
+            sale.sale_type = payload.sale_type
+            metadata_updated = True
+
+        if payload.table_id is not None:
+            if payload.table_id != sale.table_id:
+                table = get_object_or_404(Table, id=payload.table_id)
+                sale.table = table
+                metadata_updated = True
+        elif hasattr(payload, 'table_id') and payload.table_id is None and sale.table_id:
+            # Explicitly set to None (for TAKEAWAY)
+            sale.table = None
+            metadata_updated = True
+
+        if payload.guest_id is not None:
+            if payload.guest_id != sale.guest_id:
+                guest = get_object_or_404(User, id=payload.guest_id)
+                if payload.guest_id == request.auth.id:
+                    return 422, {"detail": "Guest cannot be the sale creator"}
+                sale.guest = guest
+                metadata_updated = True
+        elif hasattr(payload, 'guest_id') and payload.guest_id is None and sale.guest_id:
+            # Explicitly set to None
+            sale.guest = None
+            metadata_updated = True
+
+        if payload.guest_count is not None and payload.guest_count != sale.guest_count:
+            sale.guest_count = payload.guest_count
+            metadata_updated = True
+
+        if metadata_updated:
+            sale.modified_by = request.auth
+            sale.save()
+
         # We pass the Schema directly. The Service handles the efficient
         # bulk fetching and mapping internally.
         updated_sale = ModifySaleService.sync_items(
@@ -236,6 +275,7 @@ def get_sale_detail(request, sale_id: int):
         "sale_type": sale.sale_type,
         "table_id": sale.table.id if sale.table else None,
         "table_name": sale.table.name if sale.table else None,
+        "guest_id": sale.guest_id,
         "guest_name": (
             sale.guest.get_full_name() or sale.guest.username if sale.guest else None
         ),
