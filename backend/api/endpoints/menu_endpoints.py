@@ -85,16 +85,27 @@ def items_display(request):
     response=List[MenuGroupOut],
     summary="Get menu items grouped by category for new sale page",
 )
-def get_sale_menu(request):
+def get_sale_menu(request, smart_sort: bool = True):
     """
     Sale page optimized endpoint.
 
-    - Grouped by parent_group
-    - Categories ordered
-    - Items ordered
+    Args:
+        smart_sort: If True (default), sort by popularity analytics.
+                   If False, use manual order from OrderedModel.
+
+    Smart Sorting:
+    - Most frequently ordered items appear first
+    - Based on weekly selection counts
+    - Helps staff find popular items faster
+    - Falls back to manual order when analytics unavailable
+
+    Returns:
+    - Grouped by parent_group (BAR/FOOD)
+    - Categories ordered by popularity or manual order
+    - Items ordered by popularity or manual order
     - Read-only, stateless
     """
-    return get_sale_menu_grouped()
+    return get_sale_menu_grouped(smart_sort=smart_sort)
 
 
 @router_menu_display.get(
