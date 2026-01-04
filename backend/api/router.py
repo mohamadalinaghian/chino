@@ -4,6 +4,7 @@ from ninja import NinjaAPI
 from .endpoints import (
     auth_endpoints,
     core_setting_endpoints,
+    guest_endpoints,
     menu_endpoints,
     menu_pdf_endpoints,
     sale_endpoints,
@@ -21,6 +22,7 @@ api = NinjaAPI(
 
 # Register auth endpoints under /auth/
 api.add_router("/auth/", auth_endpoints.router)
+api.add_router("/guests/", guest_endpoints.router_guest)
 api.add_router("/menu/", menu_endpoints.router_menu_display)
 api.add_router("/menu/", menu_pdf_endpoints.router_menu_pdf)
 api.add_router("/sale/", sale_endpoints.router)

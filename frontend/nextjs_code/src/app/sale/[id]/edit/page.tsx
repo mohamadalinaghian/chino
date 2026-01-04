@@ -102,26 +102,35 @@ export default function EditSalePage() {
 
       // Convert sale items to cart items
       // Backend returns hierarchical structure with extras already nested
-      //
-      // IMPORTANT: Backend stores prices in "logical Toman units" (1 unit = 1,000 IRR)
-      // Frontend formatPersianMoney expects "thousands of Toman"
-      // Conversion: backend_value / 10 = display_value
-      // Example: 1000 (backend) -> 100 (display) -> "100 هزار تومان"
-      const convertedItems: ICartItem[] = sale.items.map((item) => ({
-        id: `item-${item.id}`,
-        menu_id: item.menu_id || 0,
-        name: item.product_name,
-        quantity: Number(item.quantity),
-        unit_price: Number(item.unit_price) / 10,
-        extras: item.extras.map((extra) => ({
+      // Calculate total locally (same as new sale page logic)
+      const convertedItems: ICartItem[] = sale.items.map((item) => {
+        const extras: ICartExtra[] = item.extras.map((extra) => ({
           id: `extra-${extra.id}`,
           product_id: extra.product_id,
           name: extra.product_name,
-          price: Number(extra.unit_price) / 10,
+          price: Number(extra.unit_price),
           quantity: Number(extra.quantity),
-        })),
-        total: Number(item.total) / 10,
-      }));
+        }));
+
+        // Calculate extras total
+        const extrasTotal = extras.reduce(
+          (sum, extra) => sum + extra.price * extra.quantity,
+          0
+        );
+
+        const quantity = Number(item.quantity);
+        const unitPrice = Number(item.unit_price);
+
+        return {
+          id: `item-${item.id}`,
+          menu_id: item.menu_id || 0,
+          name: item.product_name,
+          quantity,
+          unit_price: unitPrice,
+          extras,
+          total: (unitPrice + extrasTotal) * quantity,
+        };
+      });
 
       setCartItems(convertedItems);
     } catch (err) {
