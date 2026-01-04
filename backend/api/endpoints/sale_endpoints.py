@@ -320,7 +320,7 @@ def sale_dashboard(request):
             guest_name=(
                 sale.guest.get_full_name() or sale.guest.username
                 if sale.guest
-                else "Walk-in"
+                else "ناشناس"
             ),
             total_amount=sale.total_amount if can_see_total else None,
             opened_by_name=sale.opened_by.get_full_name() or sale.opened_by.username,
