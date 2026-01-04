@@ -1,4 +1,13 @@
 'use client';
+// TODO: REFACTOR - This file is 800+ lines and handles too many responsibilities
+// Recommended refactoring:
+// 1. Extract cart management logic into a custom hook (useCartManager)
+// 2. Extract sale data loading and state into a custom hook (useSaleEditor)
+// 3. Extract print logic into a custom hook (useSalePrintDiff)
+// 4. Move item/extra handlers to separate service functions
+// 5. Consider breaking this into smaller sub-components for each section
+// 6. Extract business logic (diff calculation, validation) into pure functions
+
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import {
@@ -23,6 +32,7 @@ import { useToast } from '@/components/common/Toast';
 import { LoadingOverlay } from '@/components/common/LoadingOverlay';
 import { THEME_COLORS, UI_TEXT } from '@/libs/constants';
 import { getCurrentJalaliDate } from '@/utils/persianUtils';
+import { printEditReceipt, PrintEditItem, PrintEditData } from '@/utils/printUtils';
 
 export default function EditSalePage() {
   const router = useRouter();
@@ -68,6 +78,10 @@ export default function EditSalePage() {
   const [guestCount, setGuestCount] = useState<number | null>(null);
   const [guestQuickCreateModalOpen, setGuestQuickCreateModalOpen] = useState(false);
   const [searchedMobile, setSearchedMobile] = useState<string>('');
+
+  // Original sale state for tracking changes
+  const [originalSale, setOriginalSale] = useState<ISaleDetailResponse | null>(null);
+  const [originalCartItems, setOriginalCartItems] = useState<ICartItem[]>([]);
 
   // Cart ref + floating button
   const cartSummaryRef = useRef<HTMLDivElement>(null);
@@ -138,6 +152,10 @@ export default function EditSalePage() {
       });
 
       setCartItems(convertedItems);
+
+      // Save original state for change tracking
+      setOriginalSale(sale);
+      setOriginalCartItems(JSON.parse(JSON.stringify(convertedItems))); // Deep copy
     } catch (err) {
       showToast(
         err instanceof Error ? err.message : 'خطا در بارگذاری فروش',
@@ -162,6 +180,120 @@ export default function EditSalePage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePrintChanges = () => {
+    if (!originalSale) {
+      showToast('خطا: اطلاعات اصلی فروش یافت نشد', 'error');
+      return;
+    }
+
+    // Check if table changed
+    const tableChanged = selectedTableId !== originalSale.table_id;
+    const oldTableName = originalSale.table_name || undefined;
+    const newTableName = selectedTableId ? `میز ${selectedTableId}` : undefined;
+
+    // Calculate item changes
+    const diffItems: PrintEditItem[] = [];
+
+    // Find removed and modified items
+    originalCartItems.forEach((originalItem) => {
+      const currentItem = cartItems.find(
+        (ci) => ci.menu_id === originalItem.menu_id &&
+                JSON.stringify(ci.extras) === JSON.stringify(originalItem.extras)
+      );
+
+      if (!currentItem) {
+        // Item was removed
+        diffItems.push({
+          name: originalItem.name,
+          quantity: originalItem.quantity,
+          unit_price: originalItem.unit_price,
+          total: originalItem.total,
+          extras: originalItem.extras.map(e => ({
+            name: e.name,
+            quantity: e.quantity,
+            unit_price: e.price,
+            total: e.price * e.quantity,
+          })),
+          status: 'removed',
+        });
+      } else if (currentItem.quantity !== originalItem.quantity) {
+        // Item quantity modified
+        diffItems.push({
+          name: currentItem.name,
+          quantity: currentItem.quantity,
+          unit_price: currentItem.unit_price,
+          total: currentItem.total,
+          extras: currentItem.extras.map(e => ({
+            name: e.name,
+            quantity: e.quantity,
+            unit_price: e.price,
+            total: e.price * e.quantity,
+          })),
+          status: 'modified',
+          oldQuantity: originalItem.quantity,
+          quantityDiff: currentItem.quantity - originalItem.quantity,
+        });
+      } else {
+        // Item unchanged
+        diffItems.push({
+          name: currentItem.name,
+          quantity: currentItem.quantity,
+          unit_price: currentItem.unit_price,
+          total: currentItem.total,
+          extras: currentItem.extras.map(e => ({
+            name: e.name,
+            quantity: e.quantity,
+            unit_price: e.price,
+            total: e.price * e.quantity,
+          })),
+          status: 'unchanged',
+        });
+      }
+    });
+
+    // Find added items
+    cartItems.forEach((currentItem) => {
+      const wasOriginal = originalCartItems.some(
+        (oi) => oi.menu_id === currentItem.menu_id &&
+                JSON.stringify(oi.extras) === JSON.stringify(currentItem.extras)
+      );
+
+      if (!wasOriginal) {
+        diffItems.push({
+          name: currentItem.name,
+          quantity: currentItem.quantity,
+          unit_price: currentItem.unit_price,
+          total: currentItem.total,
+          extras: currentItem.extras.map(e => ({
+            name: e.name,
+            quantity: e.quantity,
+            unit_price: e.price,
+            total: e.price * e.quantity,
+          })),
+          status: 'added',
+        });
+      }
+    });
+
+    // Calculate subtotal
+    const subtotal = cartItems.reduce((sum, item) => sum + item.total, 0);
+
+    const printData: PrintEditData = {
+      sale_id: saleId,
+      sale_type: saleType,
+      table_name: newTableName,
+      items: diffItems,
+      subtotal,
+      total: subtotal,
+      timestamp: new Date(),
+      tableChanged,
+      oldTableName,
+      newTableName,
+    };
+
+    printEditReceipt(printData);
   };
 
   const currentCategories = useMemo(() => {
@@ -621,6 +753,21 @@ export default function EditSalePage() {
                 proceedButtonLabel="💾 ذخیره تغییرات"
                 saveAsOpenButtonLabel="✕ لغو"
               />
+
+              {/* Print Changes Button */}
+              {originalSale && cartItems.length > 0 && (
+                <button
+                  onClick={handlePrintChanges}
+                  className="w-full mt-2 px-4 py-3 rounded-lg font-bold transition-all hover:opacity-90 border-2"
+                  style={{
+                    backgroundColor: THEME_COLORS.bgSecondary,
+                    borderColor: THEME_COLORS.accent,
+                    color: THEME_COLORS.accent,
+                  }}
+                >
+                  🖨️ چاپ تغییرات
+                </button>
+              )}
             </div>
           </div>
         </div>

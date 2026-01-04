@@ -12,6 +12,7 @@ import { CS_API_URL } from '@/libs/constants';
 import { IGuest, IGuestQuickCreateRequest, IGuestListResponse } from '@/types/guest';
 
 const GUEST_ENDPOINTS = {
+  GET_BY_ID: (id: number) => `/guests/${id}`,
   SEARCH: (mobile: string) => `/guests/search?mobile=${mobile}`,
   QUICK_CREATE: '/guests/quick-create',
   LIST: (params: { search?: string; limit?: number; offset?: number }) => {
@@ -22,6 +23,25 @@ const GUEST_ENDPOINTS = {
     return `/guests?${searchParams.toString()}`;
   },
 };
+
+/**
+ * Get a guest by ID
+ *
+ * @param id - Guest account ID
+ * @returns Guest information if found
+ * @throws Error if not found
+ */
+export async function getGuestById(id: number): Promise<IGuest> {
+  try {
+    const guest = await authenticatedFetchJSON<IGuest>(
+      `${CS_API_URL}${GUEST_ENDPOINTS.GET_BY_ID(id)}`
+    );
+    return guest;
+  } catch (error) {
+    console.error('Error fetching guest:', error);
+    throw error;
+  }
+}
 
 /**
  * Search for a guest by mobile number

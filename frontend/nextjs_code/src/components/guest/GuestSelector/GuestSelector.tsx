@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { THEME_COLORS, UI_TEXT } from '@/libs/constants';
 import { IGuest } from '@/types/guest';
-import { searchGuestByMobile, listGuests } from '@/service/guest';
+import { getGuestById, searchGuestByMobile, listGuests } from '@/service/guest';
 import { toPersianDigits } from '@/utils/persianUtils';
 
 interface GuestSelectorProps {
@@ -42,10 +42,27 @@ export function GuestSelector({
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Load selected guest info
+  const loadSelectedGuest = async (guestId: number) => {
+    try {
+      setLoading(true);
+      const guest = await getGuestById(guestId);
+      setSelectedGuest(guest);
+      setSearchTerm(guest.name);
+      onGuestChange(guest.id);
+    } catch (error) {
+      console.error('Error loading selected guest:', error);
+      // Guest not found or error - clear selection
+      setSelectedGuest(null);
+      setSearchTerm('');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load selected guest info when selectedGuestId changes
   useEffect(() => {
-    if (selectedGuestId && !selectedGuest) {
-      loadGuestList();
+    if (selectedGuestId && (!selectedGuest || selectedGuest.id !== selectedGuestId)) {
+      loadSelectedGuest(selectedGuestId);
     }
   }, [selectedGuestId]);
 
@@ -66,14 +83,6 @@ export function GuestSelector({
       setLoading(true);
       const response = await listGuests({ search, limit: 20 });
       setGuests(response.guests);
-
-      // If selectedGuestId exists, find and set it
-      if (selectedGuestId) {
-        const found = response.guests.find(g => g.id === selectedGuestId);
-        if (found) {
-          setSelectedGuest(found);
-        }
-      }
     } catch (error) {
       console.error('Error loading guests:', error);
     } finally {

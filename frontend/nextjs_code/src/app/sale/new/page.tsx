@@ -1,4 +1,13 @@
 'use client';
+// TODO: REFACTOR - This file is 680+ lines and has similar structure to edit page
+// Code duplication with edit page - consider:
+// 1. Extracting shared cart logic into a custom hook (useCartManager)
+// 2. Creating a shared SaleForm component for both new and edit modes
+// 3. Moving item/extras handlers to shared service functions
+// 4. Extract sale creation/update logic into custom hooks
+// 5. Consider a single sale page with mode prop (new vs edit)
+// 6. Extract print logic into reusable utilities
+
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {

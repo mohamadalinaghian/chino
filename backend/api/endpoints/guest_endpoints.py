@@ -70,6 +70,43 @@ def search_guest_by_mobile(request, mobile: str = Query(..., min_length=11, max_
         return 404, {"detail": "Guest not found"}
 
 
+@router_guest.get(
+    "/{guest_id}",
+    response={200: GuestResponse, 404: dict},
+    summary="Get guest by ID",
+)
+def get_guest_by_id(request, guest_id: int):
+    """
+    Fetch a guest account by ID.
+
+    **Use Case:**
+    When editing a sale that has an associated guest, we need to fetch
+    the guest details by ID to display in the guest selector.
+
+    **Parameters:**
+    - guest_id: Guest account ID
+
+    **Returns:**
+    - 200: Guest information if found
+    - 404: No guest with that ID exists
+
+    **Example:**
+    ```
+    GET /api/guests/123
+    ```
+    """
+    try:
+        guest = Account.objects.get(id=guest_id, is_active=True)
+        return 200, GuestResponse(
+            id=guest.id,
+            mobile=guest.mobile,
+            name=guest.name,
+            is_active=guest.is_active,
+        )
+    except Account.DoesNotExist:
+        return 404, {"detail": "Guest not found"}
+
+
 @router_guest.post(
     "/quick-create",
     response={201: GuestResponse},

@@ -1,3 +1,12 @@
+# TODO: REFACTOR - This file is 490+ lines and handles multiple sale operations
+# Recommended refactoring:
+# 1. Split into separate files: sale_create.py, sale_retrieve.py, sale_update.py, sale_dashboard.py
+# 2. Extract complex query building into dedicated query builder classes
+# 3. Move response construction logic to serializer functions
+# 4. Consider using Django REST Framework ViewSets for better organization
+# 5. Extract permission checks into decorator functions
+# 6. Add comprehensive docstrings for all endpoints
+
 from typing import Dict, List, Set
 
 from api.schemas.sale_schemas import (
