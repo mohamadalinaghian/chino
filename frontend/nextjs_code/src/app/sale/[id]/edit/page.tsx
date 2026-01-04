@@ -7,6 +7,7 @@ import {
   ICartItem,
   ICartExtra,
   IMenuGroup,
+  ISaleDetailResponse,
 } from '@/types/sale';
 import { fetchSaleMenu, fetchSaleDetails, syncSaleItems } from '@/service/sale';
 import { SaleTypeSelector } from '@/components/sale/SaleTypeSelector';
@@ -95,34 +96,28 @@ export default function EditSalePage() {
 
       // Set sale type and table
       setSaleType(sale.sale_type);
-      setSelectedTableId(sale.table?.id || null);
+      setSelectedTableId(sale.table_id || null);
       setSelectedGuestId(null); // Will be populated if backend provides guest info
       setGuestCount(null);
 
       // Convert sale items to cart items
-      const convertedItems: ICartItem[] = sale.items
-        .filter((item) => !item.parent_item) // Only get parent items
-        .map((item) => {
-          const itemExtras = sale.items
-            .filter((extra) => extra.parent_item === item.id)
-            .map((extra) => ({
-              id: `extra-${extra.id}`,
-              product_id: extra.id, // Assuming the extra item id maps to product_id
-              name: extra.product_name,
-              price: extra.unit_price,
-              quantity: extra.quantity,
-            }));
-
-          return {
-            id: `item-${item.id}`,
-            menu_id: item.id,
-            name: item.product_name,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            extras: itemExtras,
-            total: item.total_price,
-          };
-        });
+      // Backend returns hierarchical structure with extras already nested
+      const convertedItems: ICartItem[] = sale.items.map((item) => ({
+        id: `item-${item.id}`,
+        menu_id: item.menu_id || 0, // Use menu_id from backend
+        name: item.product_name,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        extras: item.extras.map((extra) => ({
+          // Use nested extras directly
+          id: `extra-${extra.id}`,
+          product_id: extra.product_id, // Use product_id from backend
+          name: extra.product_name,
+          price: extra.unit_price,
+          quantity: extra.quantity,
+        })),
+        total: item.total, // Use total from backend
+      }));
 
       setCartItems(convertedItems);
     } catch (err) {
@@ -378,8 +373,20 @@ export default function EditSalePage() {
               ویرایش فروش #{saleId}
             </h1>
           </div>
-          <div style={{ color: THEME_COLORS.subtext }}>
-            {getCurrentJalaliDate('dddd، jD jMMMM jYYYY')}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push(`/sale/${saleId}/payment`)}
+              className="px-4 py-2 rounded-lg font-bold transition-all hover:opacity-90"
+              style={{
+                backgroundColor: THEME_COLORS.green,
+                color: '#fff',
+              }}
+            >
+              💳 پرداخت
+            </button>
+            <div style={{ color: THEME_COLORS.subtext }}>
+              {getCurrentJalaliDate('dddd، jD jMMMM jYYYY')}
+            </div>
           </div>
         </div>
       </header>

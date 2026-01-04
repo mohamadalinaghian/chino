@@ -233,3 +233,48 @@ export interface IUserPermissions {
   is_superuser?: boolean; // Added for dashboard total_amount check
   permissions: string[];
 }
+
+/**
+ * Extra detail from sale detail endpoint (matches backend ExtraDetailSchema)
+ */
+export interface IExtraDetail {
+  id: number; // SaleItem PK
+  product_id: number; // Inventory Product ID
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  total: number;
+}
+
+/**
+ * Sale item detail from sale detail endpoint (matches backend SaleItemDetailSchema)
+ */
+export interface ISaleItemDetail {
+  id: number; // SaleItem PK
+  menu_id: number | null; // The Menu ID
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  total: number;
+  extras: IExtraDetail[];
+}
+
+/**
+ * Sale detail response (matches backend SaleDetailResponse)
+ */
+export interface ISaleDetailResponse {
+  id: number;
+  state: SaleState;
+  sale_type: SaleType;
+  table_id?: number | null;
+  table_name?: string | null;
+  guest_name?: string | null;
+  items: ISaleItemDetail[];
+  subtotal_amount: number;
+  discount_amount: number;
+  tax_amount: number;
+  total_amount: number;
+  payment_status: PaymentStatus;
+  opened_at: string;
+  opened_by_name: string;
+}

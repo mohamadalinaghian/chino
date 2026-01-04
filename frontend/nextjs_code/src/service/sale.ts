@@ -8,6 +8,7 @@ import { CS_API_URL, API_ENDPOINTS, UI_TEXT } from '@/libs/constants';
 import {
   IOpenSaleRequest,
   ISaleResponse,
+  ISaleDetailResponse,
   ITable,
   IMenuGroup,
   IExtraItem,
@@ -120,9 +121,9 @@ export async function saveAsOpenSale(
 /**
  * Fetches details of a specific sale
  */
-export async function fetchSaleDetails(saleId: number): Promise<ISaleResponse> {
+export async function fetchSaleDetails(saleId: number): Promise<ISaleDetailResponse> {
   try {
-    const sale = await authenticatedFetchJSON<ISaleResponse>(
+    const sale = await authenticatedFetchJSON<ISaleDetailResponse>(
       `${CS_API_URL}${API_ENDPOINTS.SALE_DETAILS(saleId)}`
     );
     return sale;
