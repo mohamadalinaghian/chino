@@ -114,6 +114,17 @@ export function GuestQuickCreateModal({
     setError(null);
   };
 
+  // Validate mobile number format for styling
+  const isValidMobileFormat = (value: string): boolean => {
+    if (!value) return true; // Empty is neutral
+    if (!value.startsWith('09')) return false;
+    if (value.length > 11) return false;
+    if (!/^\d+$/.test(value)) return false;
+    return true;
+  };
+
+  const mobileIsInvalid = mobile.length > 0 && !isValidMobileFormat(mobile);
+
   if (!isOpen) return null;
 
   return (
@@ -161,8 +172,8 @@ export function GuestQuickCreateModal({
               className="w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 transition-all"
               style={{
                 backgroundColor: THEME_COLORS.bgPrimary,
-                borderColor: error && !name ? THEME_COLORS.red : THEME_COLORS.border,
-                color: THEME_COLORS.text,
+                borderColor: mobileIsInvalid ? THEME_COLORS.red : THEME_COLORS.border,
+                color: mobileIsInvalid ? THEME_COLORS.red : THEME_COLORS.text,
               }}
               dir="ltr"
             />

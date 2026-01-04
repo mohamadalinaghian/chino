@@ -211,7 +211,7 @@ export default function GuestsPage() {
                       style={{ color: THEME_COLORS.subtext }}
                       dir="ltr"
                     >
-                      {toPersianDigits(guest.mobile)}
+                      {guest.mobile}
                     </div>
                   </div>
                   <div
@@ -238,7 +238,7 @@ export default function GuestsPage() {
                     color: THEME_COLORS.subtext,
                   }}
                 >
-                  شناسه: {toPersianDigits(guest.id)}
+                  شناسه: {guest.id}
                 </div>
               </div>
             ))}

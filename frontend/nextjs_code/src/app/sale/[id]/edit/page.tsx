@@ -445,7 +445,10 @@ export default function EditSalePage() {
               <GuestSelector
                 selectedGuestId={selectedGuestId}
                 onGuestChange={setSelectedGuestId}
-                onQuickCreate={() => setGuestQuickCreateModalOpen(true)}
+                onQuickCreate={(mobile) => {
+                  setSearchedMobile(mobile || '');
+                  setGuestQuickCreateModalOpen(true);
+                }}
               />
             </div>
 

@@ -31,7 +31,7 @@ router_guest = Router(tags=["Guest Management"])
 
 @router_guest.get(
     "/search",
-    response=GuestResponse,
+    response={200: GuestResponse, 404: dict},
     summary="Search guest by mobile number",
 )
 def search_guest_by_mobile(request, mobile: str = Query(..., min_length=11, max_length=11)):
@@ -46,8 +46,8 @@ def search_guest_by_mobile(request, mobile: str = Query(..., min_length=11, max_
     - mobile: 11-digit mobile number starting with 09
 
     **Returns:**
-    - Guest information if found
-    - 404 if no guest with that mobile exists
+    - 200: Guest information if found
+    - 404: No guest with that mobile exists
 
     **Example:**
     ```
@@ -60,15 +60,14 @@ def search_guest_by_mobile(request, mobile: str = Query(..., min_length=11, max_
 
     try:
         guest = Account.objects.get(mobile=mobile, is_active=True)
+        return 200, GuestResponse(
+            id=guest.id,
+            mobile=guest.mobile,
+            name=guest.name,
+            is_active=guest.is_active,
+        )
     except Account.DoesNotExist:
-        raise DjangoValidationError(f"No guest found with mobile {mobile}")
-
-    return GuestResponse(
-        id=guest.id,
-        mobile=guest.mobile,
-        name=guest.name,
-        is_active=guest.is_active,
-    )
+        return 404, {"detail": "Guest not found"}
 
 
 @router_guest.post(

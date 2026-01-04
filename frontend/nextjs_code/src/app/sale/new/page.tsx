@@ -476,7 +476,10 @@ export default function NewSalePage() {
               <GuestSelector
                 selectedGuestId={selectedGuestId}
                 onGuestChange={setSelectedGuestId}
-                onQuickCreate={() => setGuestQuickCreateModalOpen(true)}
+                onQuickCreate={(mobile) => {
+                  setSearchedMobile(mobile || '');
+                  setGuestQuickCreateModalOpen(true);
+                }}
               />
             </div>
 

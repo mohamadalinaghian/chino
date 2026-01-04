@@ -4,7 +4,10 @@ from typing import List
 
 from apps.inventory.models import Product
 from apps.menu.models import Menu, MenuCategory
-from apps.menu.services.get_sale_menu_grouped import get_sale_menu_grouped
+from apps.menu.services.get_sale_menu_grouped import (
+    get_sale_menu_grouped,
+    get_sale_menu_grouped_smart,
+)
 from ninja import Router
 
 from ..schemas.menu_schemas import (
@@ -85,27 +88,41 @@ def items_display(request):
     response=List[MenuGroupOut],
     summary="Get menu items grouped by category for new sale page",
 )
-def get_sale_menu(request, smart_sort: bool = True):
+def get_sale_menu(request):
     """
     Sale page optimized endpoint.
 
-    Args:
-        smart_sort: If True (default), sort by popularity analytics.
-                   If False, use manual order from OrderedModel.
+    - Grouped by parent_group
+    - Categories ordered
+    - Items ordered
+    - Read-only, stateless
+    """
+    return get_sale_menu_grouped()
 
-    Smart Sorting:
+
+@router_menu_display.get(
+    "/sale/menu/smart",
+    response=List[MenuGroupOut],
+    summary="Get menu items with smart sorting (analytics-based)",
+)
+def get_sale_menu_smart(request):
+    """
+    Sale page endpoint with smart sorting based on popularity analytics.
+
+    Smart Sorting Features:
     - Most frequently ordered items appear first
-    - Based on weekly selection counts
+    - Categories sorted by popularity
+    - Based on weekly selection counts with daily tiebreaker
     - Helps staff find popular items faster
     - Falls back to manual order when analytics unavailable
 
     Returns:
     - Grouped by parent_group (BAR/FOOD)
-    - Categories ordered by popularity or manual order
-    - Items ordered by popularity or manual order
+    - Categories ordered by selection frequency
+    - Items ordered by popularity
     - Read-only, stateless
     """
-    return get_sale_menu_grouped(smart_sort=smart_sort)
+    return get_sale_menu_grouped_smart()
 
 
 @router_menu_display.get(

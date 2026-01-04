@@ -9,7 +9,7 @@ import { toPersianDigits } from '@/utils/persianUtils';
 interface GuestSelectorProps {
   selectedGuestId: number | null;
   onGuestChange: (guestId: number | null) => void;
-  onQuickCreate?: () => void;
+  onQuickCreate?: (mobile?: string) => void;
   disabled?: boolean;
 }
 
@@ -132,8 +132,20 @@ export function GuestSelector({
 
   const handleQuickCreate = () => {
     setShowDropdown(false);
-    onQuickCreate?.();
+    // Pass the searched mobile number to the quick-create modal
+    onQuickCreate?.(searchTerm.length === 11 ? searchTerm : undefined);
   };
+
+  // Validate mobile number format
+  const isValidMobile = (value: string): boolean => {
+    if (!value) return true; // Empty is neutral
+    if (!value.startsWith('09')) return false;
+    if (value.length > 11) return false;
+    if (!/^\d+$/.test(value)) return false;
+    return true;
+  };
+
+  const mobileIsInvalid = searchTerm.length > 0 && searchTerm.startsWith('09') && !isValidMobile(searchTerm);
 
   return (
     <div ref={dropdownRef} className="relative">
@@ -155,8 +167,8 @@ export function GuestSelector({
           className="w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 transition-all"
           style={{
             backgroundColor: disabled ? THEME_COLORS.surface : THEME_COLORS.bgPrimary,
-            borderColor: THEME_COLORS.border,
-            color: THEME_COLORS.text,
+            borderColor: mobileIsInvalid ? THEME_COLORS.red : THEME_COLORS.border,
+            color: mobileIsInvalid ? THEME_COLORS.red : THEME_COLORS.text,
           }}
         />
 
@@ -207,8 +219,8 @@ export function GuestSelector({
                   <div className="font-bold" style={{ color: THEME_COLORS.text }}>
                     {guest.name}
                   </div>
-                  <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
-                    {toPersianDigits(guest.mobile)}
+                  <div className="text-sm" style={{ color: THEME_COLORS.subtext }} dir="ltr">
+                    {guest.mobile}
                   </div>
                 </button>
               ))}
@@ -252,8 +264,8 @@ export function GuestSelector({
           <div className="font-bold" style={{ color: THEME_COLORS.text }}>
             {selectedGuest.name}
           </div>
-          <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
-            {toPersianDigits(selectedGuest.mobile)}
+          <div className="text-sm" style={{ color: THEME_COLORS.subtext }} dir="ltr">
+            {selectedGuest.mobile}
           </div>
         </div>
       )}
