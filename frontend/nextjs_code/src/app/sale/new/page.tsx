@@ -8,13 +8,16 @@ import {
   ICartExtra,
   IMenuGroup,
 } from '@/types/sale';
+import { IGuest } from '@/types/guest';
 import { fetchSaleMenu, openSale, saveAsOpenSale } from '@/service/sale';
 import { SaleTypeSelector } from '@/components/sale/SaleTypeSelector';
 import { TableSelector } from '@/components/sale/TableSelector';
 import { CategoryList } from '@/components/sale/CategoryList';
 import { ItemsGrid } from '@/components/sale/ItemsGrid';
-import { CartSummary, IGuest } from '@/components/sale/CartSummary/CartSummary';
+import { CartSummary } from '@/components/sale/CartSummary/CartSummary';
 import { ExtrasModal, SelectedExtra } from '@/components/sale/ExtrasModal';
+import { GuestSelector } from '@/components/guest/GuestSelector';
+import { GuestQuickCreateModal } from '@/components/guest/GuestQuickCreateModal';
 import { useToast } from '@/components/common/Toast';
 import { LoadingOverlay } from '@/components/common/LoadingOverlay';
 import { THEME_COLORS, UI_TEXT } from '@/libs/constants';
@@ -59,10 +62,10 @@ export default function NewSalePage() {
   const [printOrder, setPrintOrder] = useState(true);
 
   // Guest information
-  const [guests, setGuests] = useState<IGuest[]>([]);
   const [selectedGuestId, setSelectedGuestId] = useState<number | null>(null);
   const [guestCount, setGuestCount] = useState<number | null>(null);
-  const [quickAddGuestModalOpen, setQuickAddGuestModalOpen] = useState(false);
+  const [guestQuickCreateModalOpen, setGuestQuickCreateModalOpen] = useState(false);
+  const [searchedMobile, setSearchedMobile] = useState<string>('');
 
   // Cart ref + floating button
   const cartSummaryRef = useRef<HTMLDivElement>(null);
@@ -304,6 +307,11 @@ export default function NewSalePage() {
     }, 300);
   };
 
+  const handleGuestCreated = (guest: IGuest) => {
+    setSelectedGuestId(guest.id);
+    showToast(`مهمان "${guest.name}" ایجاد شد`, 'success');
+  };
+
   const handleProceedToPayment = async () => {
     if (saleType === SaleType.DINE_IN && !selectedTableId) {
       showToast(UI_TEXT.VALIDATION_SELECT_TABLE, 'warning');
@@ -460,6 +468,18 @@ export default function NewSalePage() {
               </div>
             )}
 
+            {/* Guest Selector */}
+            <div
+              className="p-2 rounded-lg"
+              style={{ backgroundColor: THEME_COLORS.bgSecondary }}
+            >
+              <GuestSelector
+                selectedGuestId={selectedGuestId}
+                onGuestChange={setSelectedGuestId}
+                onQuickCreate={() => setGuestQuickCreateModalOpen(true)}
+              />
+            </div>
+
             <div className="flex gap-2">
               <button
                 onClick={() => setActiveTab('FOOD')}
@@ -583,12 +603,6 @@ export default function NewSalePage() {
                 onSaveAsOpen={handleSaveAsOpen}
                 printOrder={printOrder}
                 onPrintOrderChange={setPrintOrder}
-                guests={guests}
-                selectedGuestId={selectedGuestId}
-                onGuestChange={setSelectedGuestId}
-                guestCount={guestCount}
-                onGuestCountChange={setGuestCount}
-                onQuickAddGuest={() => setQuickAddGuestModalOpen(true)}
               />
             </div>
           </div>
@@ -620,6 +634,14 @@ export default function NewSalePage() {
           setEditingCartItem(null);
         }}
         onConfirm={handleConfirmExtras}
+      />
+
+      {/* Guest Quick-Create Modal */}
+      <GuestQuickCreateModal
+        isOpen={guestQuickCreateModalOpen}
+        onClose={() => setGuestQuickCreateModalOpen(false)}
+        onGuestCreated={handleGuestCreated}
+        initialMobile={searchedMobile}
       />
 
       {submitting && <LoadingOverlay message={UI_TEXT.MSG_CREATING_SALE} />}
