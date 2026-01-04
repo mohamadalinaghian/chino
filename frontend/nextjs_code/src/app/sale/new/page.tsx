@@ -468,19 +468,45 @@ export default function NewSalePage() {
               </div>
             )}
 
-            {/* Guest Selector */}
+            {/* Guest Selector and Guest Count */}
             <div
               className="p-2 rounded-lg"
               style={{ backgroundColor: THEME_COLORS.bgSecondary }}
             >
-              <GuestSelector
-                selectedGuestId={selectedGuestId}
-                onGuestChange={setSelectedGuestId}
-                onQuickCreate={(mobile) => {
-                  setSearchedMobile(mobile || '');
-                  setGuestQuickCreateModalOpen(true);
-                }}
-              />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <GuestSelector
+                    selectedGuestId={selectedGuestId}
+                    onGuestChange={setSelectedGuestId}
+                    onQuickCreate={(mobile) => {
+                      setSearchedMobile(mobile || '');
+                      setGuestQuickCreateModalOpen(true);
+                    }}
+                  />
+                </div>
+                <div>
+                  <label
+                    className="block text-sm font-medium mb-1"
+                    style={{ color: THEME_COLORS.text }}
+                  >
+                    تعداد نفرات
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="99"
+                    value={guestCount ?? ''}
+                    onChange={(e) => setGuestCount(e.target.value ? Number(e.target.value) : null)}
+                    placeholder="تعداد..."
+                    className="w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 transition-all"
+                    style={{
+                      backgroundColor: THEME_COLORS.bgPrimary,
+                      borderColor: THEME_COLORS.border,
+                      color: THEME_COLORS.text,
+                    }}
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="flex gap-2">

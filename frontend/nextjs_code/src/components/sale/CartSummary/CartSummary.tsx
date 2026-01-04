@@ -4,13 +4,6 @@ import { ICartItem } from '@/types/sale';
 import { THEME_COLORS, UI_TEXT } from '@/libs/constants';
 import { formatPersianMoney, toPersianDigits } from '@/utils/persianUtils';
 
-export interface IGuest {
-  id: number;
-  first_name: string;
-  last_name: string;
-  full_name?: string;
-}
-
 interface CartSummaryProps {
   cartItems: ICartItem[];
   onRemoveItem: (itemId: string) => void;
@@ -20,12 +13,6 @@ interface CartSummaryProps {
   onSaveAsOpen: () => void;
   printOrder: boolean;
   onPrintOrderChange: (value: boolean) => void;
-  guests?: IGuest[];
-  selectedGuestId: number | null;
-  onGuestChange: (guestId: number | null) => void;
-  guestCount: number | null;
-  onGuestCountChange: (count: number | null) => void;
-  onQuickAddGuest: () => void;
   // Optional custom button labels
   proceedButtonLabel?: string;
   saveAsOpenButtonLabel?: string;
@@ -42,12 +29,6 @@ export const CartSummary = forwardRef<HTMLDivElement, CartSummaryProps>(function
     onSaveAsOpen,
     printOrder,
     onPrintOrderChange,
-    guests = [],
-    selectedGuestId,
-    onGuestChange,
-    guestCount,
-    onGuestCountChange,
-    onQuickAddGuest,
     proceedButtonLabel,
     saveAsOpenButtonLabel,
   },
@@ -231,80 +212,6 @@ export const CartSummary = forwardRef<HTMLDivElement, CartSummaryProps>(function
             />
           </button>
         </label>
-      </div>
-
-      {/* Guest Information Section */}
-      <div
-        className="mb-3 p-3 rounded-lg border space-y-3"
-        style={{
-          backgroundColor: THEME_COLORS.bgPrimary,
-          borderColor: THEME_COLORS.border,
-        }}
-      >
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-lg">👤</span>
-          <span className="font-bold text-sm" style={{ color: THEME_COLORS.text }}>
-            اطلاعات مهمان
-          </span>
-        </div>
-
-        {/* Guest Selector */}
-        <div>
-          <label className="text-xs block mb-1" style={{ color: THEME_COLORS.subtext }}>
-            مهمان ثبت شده (اختیاری)
-          </label>
-          <div className="flex gap-2">
-            <select
-              value={selectedGuestId ?? ''}
-              onChange={(e) => onGuestChange(e.target.value ? Number(e.target.value) : null)}
-              className="flex-1 px-3 py-2 rounded-md text-sm border outline-none focus:ring-2 transition-all"
-              style={{
-                backgroundColor: THEME_COLORS.surface,
-                borderColor: THEME_COLORS.border,
-                color: THEME_COLORS.text,
-              }}
-            >
-              <option value="">بدون انتخاب مهمان</option>
-              {guests.map((guest) => (
-                <option key={guest.id} value={guest.id}>
-                  {guest.full_name || `${guest.first_name} ${guest.last_name}`}
-                </option>
-              ))}
-            </select>
-            <button
-              onClick={onQuickAddGuest}
-              className="px-3 py-2 rounded-md text-sm font-bold transition-all hover:opacity-90 whitespace-nowrap"
-              style={{
-                backgroundColor: THEME_COLORS.accent,
-                color: '#fff',
-              }}
-              title="افزودن سریع مهمان"
-            >
-              + جدید
-            </button>
-          </div>
-        </div>
-
-        {/* Guest Count */}
-        <div>
-          <label className="text-xs block mb-1" style={{ color: THEME_COLORS.subtext }}>
-            تعداد نفرات (اختیاری)
-          </label>
-          <input
-            type="number"
-            min="1"
-            max="99"
-            value={guestCount ?? ''}
-            onChange={(e) => onGuestCountChange(e.target.value ? Number(e.target.value) : null)}
-            placeholder="تعداد نفرات..."
-            className="w-full px-3 py-2 rounded-md text-sm border outline-none focus:ring-2 transition-all"
-            style={{
-              backgroundColor: THEME_COLORS.surface,
-              borderColor: THEME_COLORS.border,
-              color: THEME_COLORS.text,
-            }}
-          />
-        </div>
       </div>
 
       <div className="space-y-2">
