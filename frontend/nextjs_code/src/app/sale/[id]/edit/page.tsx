@@ -102,21 +102,25 @@ export default function EditSalePage() {
 
       // Convert sale items to cart items
       // Backend returns hierarchical structure with extras already nested
+      //
+      // IMPORTANT: Backend stores prices in "logical Toman units" (1 unit = 1,000 IRR)
+      // Frontend formatPersianMoney expects "thousands of Toman"
+      // Conversion: backend_value / 10 = display_value
+      // Example: 1000 (backend) -> 100 (display) -> "100 هزار تومان"
       const convertedItems: ICartItem[] = sale.items.map((item) => ({
         id: `item-${item.id}`,
-        menu_id: item.menu_id || 0, // Use menu_id from backend
+        menu_id: item.menu_id || 0,
         name: item.product_name,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
+        quantity: Number(item.quantity),
+        unit_price: Number(item.unit_price) / 10,
         extras: item.extras.map((extra) => ({
-          // Use nested extras directly
           id: `extra-${extra.id}`,
-          product_id: extra.product_id, // Use product_id from backend
+          product_id: extra.product_id,
           name: extra.product_name,
-          price: extra.unit_price,
-          quantity: extra.quantity,
+          price: Number(extra.unit_price) / 10,
+          quantity: Number(extra.quantity),
         })),
-        total: item.total, // Use total from backend
+        total: Number(item.total) / 10,
       }));
 
       setCartItems(convertedItems);
