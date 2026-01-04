@@ -88,7 +88,7 @@ export const CartSummary = forwardRef<HTMLDivElement, CartSummaryProps>(function
         <h2 className="text-xl font-bold" style={{ color: THEME_COLORS.text }}>
           سبد خرید
         </h2>
-        <p className="text-sm mt-1" style={{ color: THEME_COLORS.subtext, fontFamily: 'Tahoma, Arial, sans-serif' }}>
+        <p className="text-sm mt-1" style={{ color: THEME_COLORS.subtext }}>
           {toPersianDigits(itemCount)} مورد
         </p>
       </div>
@@ -123,7 +123,7 @@ export const CartSummary = forwardRef<HTMLDivElement, CartSummaryProps>(function
                   <div
                     key={extra.id}
                     className="text-xs flex justify-between"
-                    style={{ color: THEME_COLORS.subtext, fontFamily: 'Tahoma, Arial, sans-serif' }}
+                    style={{ color: THEME_COLORS.subtext }}
                   >
                     <span>+ {extra.name} (×{toPersianDigits(extra.quantity)})</span>
                     <span>{formatPersianMoney(extra.price * extra.quantity)}</span>
@@ -152,7 +152,7 @@ export const CartSummary = forwardRef<HTMLDivElement, CartSummaryProps>(function
                 >
                   −
                 </button>
-                <span className="w-8 text-center font-bold" style={{ color: THEME_COLORS.text, fontFamily: 'Tahoma, Arial, sans-serif' }}>
+                <span className="w-8 text-center font-bold" style={{ color: THEME_COLORS.text }}>
                   {toPersianDigits(item.quantity)}
                 </span>
                 <button
@@ -166,7 +166,7 @@ export const CartSummary = forwardRef<HTMLDivElement, CartSummaryProps>(function
                   +
                 </button>
               </div>
-              <div className="text-sm font-bold" style={{ color: THEME_COLORS.green, fontFamily: 'Tahoma, Arial, sans-serif' }}>
+              <div className="text-sm font-bold" style={{ color: THEME_COLORS.green }}>
                 {formatPersianMoney(item.total)}
               </div>
             </div>
@@ -191,7 +191,7 @@ export const CartSummary = forwardRef<HTMLDivElement, CartSummaryProps>(function
             <span style={{ color: THEME_COLORS.text }}>{formatPersianMoney(tax)}</span>
           </div>
         )}
-        <div className="flex justify-between text-lg font-bold pt-2 border-t" style={{ borderColor: THEME_COLORS.border, fontFamily: 'Tahoma, Arial, sans-serif' }}>
+        <div className="flex justify-between text-lg font-bold pt-2 border-t" style={{ borderColor: THEME_COLORS.border }}>
           <span style={{ color: THEME_COLORS.text }}>جمع کل:</span>
           <span style={{ color: THEME_COLORS.green }}>{formatPersianMoney(total)}</span>
         </div>

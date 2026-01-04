@@ -50,7 +50,6 @@ export function SaleCard({
             className="text-xl font-bold"
             style={{
               color: THEME_COLORS.green,
-              fontFamily: 'Tahoma, Arial, sans-serif',
             }}
           >
             {formatPersianMoney(sale.total_amount)}

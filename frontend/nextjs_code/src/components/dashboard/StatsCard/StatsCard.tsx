@@ -40,7 +40,6 @@ export function StatsCard({ totalSales, totalRevenue }: StatsCardProps) {
             className="text-3xl font-bold"
             style={{
               color: THEME_COLORS.green,
-              fontFamily: 'Tahoma, Arial, sans-serif',
             }}
           >
             {formatPersianMoney(totalRevenue)}
@@ -57,7 +56,6 @@ export function StatsCard({ totalSales, totalRevenue }: StatsCardProps) {
             className="text-2xl font-bold"
             style={{
               color: THEME_COLORS.text,
-              fontFamily: 'Tahoma, Arial, sans-serif',
             }}
           >
             {totalSales > 0 ? formatPersianMoney(averageOrderValue) : '—'}

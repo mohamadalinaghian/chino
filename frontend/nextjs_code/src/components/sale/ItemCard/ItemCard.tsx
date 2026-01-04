@@ -92,7 +92,6 @@ export function ItemCard({
           className="text-base font-extrabold text-right tracking-tight drop-shadow-sm"
           style={{
             color: THEME_COLORS.green,
-            fontFamily: 'Tahoma, Arial, sans-serif', // Explicit font for consistent number rendering
           }}
         >
           {formatPersianMoney(item.price)}
