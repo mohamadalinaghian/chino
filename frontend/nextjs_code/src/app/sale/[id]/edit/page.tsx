@@ -182,118 +182,162 @@ export default function EditSalePage() {
     }
   };
 
-  const handlePrintChanges = () => {
+  const handlePrintAndSave = async () => {
+    if (cartItems.length === 0) {
+      showToast('سبد خرید نمی‌تواند خالی باشد', 'warning');
+      return;
+    }
+
+    if (saleType === SaleType.DINE_IN && !selectedTableId) {
+      showToast('لطفاً یک میز انتخاب کنید', 'warning');
+      return;
+    }
+
     if (!originalSale) {
       showToast('خطا: اطلاعات اصلی فروش یافت نشد', 'error');
       return;
     }
 
-    // Check if table changed
-    const tableChanged = selectedTableId !== originalSale.table_id;
-    const oldTableName = originalSale.table_name || undefined;
-    const newTableName = selectedTableId ? `میز ${selectedTableId}` : undefined;
+    try {
+      setSubmitting(true);
 
-    // Calculate item changes
-    const diffItems: PrintEditItem[] = [];
+      // First, save the changes
+      const items = cartItems.map((cartItem) => ({
+        menu_id: cartItem.menu_id,
+        quantity: cartItem.quantity,
+        extras: cartItem.extras.map((extra) => ({
+          product_id: extra.product_id,
+          quantity: extra.quantity,
+        })),
+      }));
 
-    // Find removed and modified items
-    originalCartItems.forEach((originalItem) => {
-      const currentItem = cartItems.find(
-        (ci) => ci.menu_id === originalItem.menu_id &&
-                JSON.stringify(ci.extras) === JSON.stringify(originalItem.extras)
+      await syncSaleItems(saleId, items, {
+        sale_type: saleType,
+        table_id: saleType === SaleType.DINE_IN ? selectedTableId : null,
+        guest_id: selectedGuestId,
+        guest_count: guestCount,
+      });
+
+      showToast('تغییرات ذخیره شد، در حال چاپ...', 'success');
+
+      // Then, prepare and trigger print
+      const tableChanged = selectedTableId !== originalSale.table_id;
+      const oldTableName = originalSale.table_name || undefined;
+      const newTableName = selectedTableId ? `میز ${selectedTableId}` : undefined;
+
+      // Calculate item changes
+      const diffItems: PrintEditItem[] = [];
+
+      // Find removed and modified items
+      originalCartItems.forEach((originalItem) => {
+        const currentItem = cartItems.find(
+          (ci) => ci.menu_id === originalItem.menu_id &&
+                  JSON.stringify(ci.extras) === JSON.stringify(originalItem.extras)
+        );
+
+        if (!currentItem) {
+          diffItems.push({
+            name: originalItem.name,
+            quantity: originalItem.quantity,
+            unit_price: originalItem.unit_price,
+            total: originalItem.total,
+            extras: originalItem.extras.map(e => ({
+              name: e.name,
+              quantity: e.quantity,
+              unit_price: e.price,
+              total: e.price * e.quantity,
+            })),
+            status: 'removed',
+          });
+        } else if (currentItem.quantity !== originalItem.quantity) {
+          diffItems.push({
+            name: currentItem.name,
+            quantity: currentItem.quantity,
+            unit_price: currentItem.unit_price,
+            total: currentItem.total,
+            extras: currentItem.extras.map(e => ({
+              name: e.name,
+              quantity: e.quantity,
+              unit_price: e.price,
+              total: e.price * e.quantity,
+            })),
+            status: 'modified',
+            oldQuantity: originalItem.quantity,
+            quantityDiff: currentItem.quantity - originalItem.quantity,
+          });
+        } else {
+          diffItems.push({
+            name: currentItem.name,
+            quantity: currentItem.quantity,
+            unit_price: currentItem.unit_price,
+            total: currentItem.total,
+            extras: currentItem.extras.map(e => ({
+              name: e.name,
+              quantity: e.quantity,
+              unit_price: e.price,
+              total: e.price * e.quantity,
+            })),
+            status: 'unchanged',
+          });
+        }
+      });
+
+      // Find added items
+      cartItems.forEach((currentItem) => {
+        const wasOriginal = originalCartItems.some(
+          (oi) => oi.menu_id === currentItem.menu_id &&
+                  JSON.stringify(oi.extras) === JSON.stringify(currentItem.extras)
+        );
+
+        if (!wasOriginal) {
+          diffItems.push({
+            name: currentItem.name,
+            quantity: currentItem.quantity,
+            unit_price: currentItem.unit_price,
+            total: currentItem.total,
+            extras: currentItem.extras.map(e => ({
+              name: e.name,
+              quantity: e.quantity,
+              unit_price: e.price,
+              total: e.price * e.quantity,
+            })),
+            status: 'added',
+          });
+        }
+      });
+
+      const subtotal = cartItems.reduce((sum, item) => sum + item.total, 0);
+
+      const printData: PrintEditData = {
+        sale_id: saleId,
+        sale_type: saleType,
+        table_name: newTableName,
+        items: diffItems,
+        subtotal,
+        total: subtotal,
+        timestamp: new Date(),
+        tableChanged,
+        oldTableName,
+        newTableName,
+      };
+
+      // Trigger print after a short delay
+      setTimeout(() => {
+        printEditReceipt(printData);
+      }, 300);
+
+      // Navigate back after print is triggered
+      setTimeout(() => {
+        router.push('/sale/dashboard');
+      }, 1000);
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : 'خطا در ذخیره تغییرات',
+        'error'
       );
-
-      if (!currentItem) {
-        // Item was removed
-        diffItems.push({
-          name: originalItem.name,
-          quantity: originalItem.quantity,
-          unit_price: originalItem.unit_price,
-          total: originalItem.total,
-          extras: originalItem.extras.map(e => ({
-            name: e.name,
-            quantity: e.quantity,
-            unit_price: e.price,
-            total: e.price * e.quantity,
-          })),
-          status: 'removed',
-        });
-      } else if (currentItem.quantity !== originalItem.quantity) {
-        // Item quantity modified
-        diffItems.push({
-          name: currentItem.name,
-          quantity: currentItem.quantity,
-          unit_price: currentItem.unit_price,
-          total: currentItem.total,
-          extras: currentItem.extras.map(e => ({
-            name: e.name,
-            quantity: e.quantity,
-            unit_price: e.price,
-            total: e.price * e.quantity,
-          })),
-          status: 'modified',
-          oldQuantity: originalItem.quantity,
-          quantityDiff: currentItem.quantity - originalItem.quantity,
-        });
-      } else {
-        // Item unchanged
-        diffItems.push({
-          name: currentItem.name,
-          quantity: currentItem.quantity,
-          unit_price: currentItem.unit_price,
-          total: currentItem.total,
-          extras: currentItem.extras.map(e => ({
-            name: e.name,
-            quantity: e.quantity,
-            unit_price: e.price,
-            total: e.price * e.quantity,
-          })),
-          status: 'unchanged',
-        });
-      }
-    });
-
-    // Find added items
-    cartItems.forEach((currentItem) => {
-      const wasOriginal = originalCartItems.some(
-        (oi) => oi.menu_id === currentItem.menu_id &&
-                JSON.stringify(oi.extras) === JSON.stringify(currentItem.extras)
-      );
-
-      if (!wasOriginal) {
-        diffItems.push({
-          name: currentItem.name,
-          quantity: currentItem.quantity,
-          unit_price: currentItem.unit_price,
-          total: currentItem.total,
-          extras: currentItem.extras.map(e => ({
-            name: e.name,
-            quantity: e.quantity,
-            unit_price: e.price,
-            total: e.price * e.quantity,
-          })),
-          status: 'added',
-        });
-      }
-    });
-
-    // Calculate subtotal
-    const subtotal = cartItems.reduce((sum, item) => sum + item.total, 0);
-
-    const printData: PrintEditData = {
-      sale_id: saleId,
-      sale_type: saleType,
-      table_name: newTableName,
-      items: diffItems,
-      subtotal,
-      total: subtotal,
-      timestamp: new Date(),
-      tableChanged,
-      oldTableName,
-      newTableName,
-    };
-
-    printEditReceipt(printData);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const currentCategories = useMemo(() => {
@@ -585,6 +629,57 @@ export default function EditSalePage() {
               </div>
             )}
 
+            {/* Current Sale Info Card - Show guest and table if they exist */}
+            {originalSale && (originalSale.guest_name || originalSale.table_name) && (
+              <div
+                className="p-3 rounded-lg border-2"
+                style={{
+                  backgroundColor: THEME_COLORS.bgSecondary,
+                  borderColor: THEME_COLORS.accent,
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span style={{ fontSize: '16px' }}>ℹ️</span>
+                  <strong style={{ color: THEME_COLORS.text }}>اطلاعات فروش فعلی:</strong>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  {originalSale.guest_name && (
+                    <div
+                      className="p-2 rounded"
+                      style={{ backgroundColor: THEME_COLORS.bgPrimary }}
+                    >
+                      <div style={{ color: THEME_COLORS.subtext, fontSize: '11px' }}>مهمان:</div>
+                      <div style={{ color: THEME_COLORS.text, fontWeight: 'bold' }}>
+                        {originalSale.guest_name}
+                      </div>
+                    </div>
+                  )}
+                  {originalSale.table_name && (
+                    <div
+                      className="p-2 rounded"
+                      style={{ backgroundColor: THEME_COLORS.bgPrimary }}
+                    >
+                      <div style={{ color: THEME_COLORS.subtext, fontSize: '11px' }}>میز:</div>
+                      <div style={{ color: THEME_COLORS.text, fontWeight: 'bold' }}>
+                        {originalSale.table_name}
+                      </div>
+                    </div>
+                  )}
+                  {originalSale.guest_count && (
+                    <div
+                      className="p-2 rounded"
+                      style={{ backgroundColor: THEME_COLORS.bgPrimary }}
+                    >
+                      <div style={{ color: THEME_COLORS.subtext, fontSize: '11px' }}>تعداد نفرات:</div>
+                      <div style={{ color: THEME_COLORS.text, fontWeight: 'bold' }}>
+                        {originalSale.guest_count} نفر
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Guest Selector and Guest Count */}
             <div
               className="p-2 rounded-lg"
@@ -754,18 +849,19 @@ export default function EditSalePage() {
                 saveAsOpenButtonLabel="✕ لغو"
               />
 
-              {/* Print Changes Button */}
+              {/* Print and Save Button */}
               {originalSale && cartItems.length > 0 && (
                 <button
-                  onClick={handlePrintChanges}
-                  className="w-full mt-2 px-4 py-3 rounded-lg font-bold transition-all hover:opacity-90 border-2"
+                  onClick={handlePrintAndSave}
+                  disabled={submitting}
+                  className="w-full mt-2 px-4 py-3 rounded-lg font-bold transition-all hover:opacity-90"
                   style={{
-                    backgroundColor: THEME_COLORS.bgSecondary,
-                    borderColor: THEME_COLORS.accent,
-                    color: THEME_COLORS.accent,
+                    backgroundColor: submitting ? THEME_COLORS.surface : THEME_COLORS.accent,
+                    color: '#fff',
+                    opacity: submitting ? 0.6 : 1,
                   }}
                 >
-                  🖨️ چاپ تغییرات
+                  {submitting ? 'در حال ذخیره و چاپ...' : '🖨️ ذخیره و چاپ تغییرات'}
                 </button>
               )}
             </div>
