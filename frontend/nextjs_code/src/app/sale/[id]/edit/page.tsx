@@ -64,10 +64,9 @@ export default function EditSalePage() {
   const [printOrder, setPrintOrder] = useState(true);
 
   // Guest information
-  const [guests, setGuests] = useState<IGuest[]>([]);
   const [selectedGuestId, setSelectedGuestId] = useState<number | null>(null);
-  const [guestCount, setGuestCount] = useState<number | null>(null);
-  const [quickAddGuestModalOpen, setQuickAddGuestModalOpen] = useState(false);
+  const [guestQuickCreateModalOpen, setGuestQuickCreateModalOpen] = useState(false);
+  const [searchedMobile, setSearchedMobile] = useState<string>('');
 
   // Cart ref + floating button
   const cartSummaryRef = useRef<HTMLDivElement>(null);
@@ -101,7 +100,6 @@ export default function EditSalePage() {
       setSaleType(sale.sale_type);
       setSelectedTableId(sale.table_id || null);
       setSelectedGuestId(null); // Will be populated if backend provides guest info
-      setGuestCount(null);
 
       // Convert sale items to cart items
       // Backend returns hierarchical structure with extras already nested
@@ -356,6 +354,11 @@ export default function EditSalePage() {
     }
   };
 
+  const handleGuestCreated = (guest: IGuest) => {
+    setSelectedGuestId(guest.id);
+    showToast(`مهمان "${guest.name}" ایجاد شد`, 'success');
+  };
+
   return (
     <div
       className="min-h-screen relative"
@@ -433,6 +436,18 @@ export default function EditSalePage() {
                 />
               </div>
             )}
+
+            {/* Guest Selector */}
+            <div
+              className="p-2 rounded-lg"
+              style={{ backgroundColor: THEME_COLORS.bgSecondary }}
+            >
+              <GuestSelector
+                selectedGuestId={selectedGuestId}
+                onGuestChange={setSelectedGuestId}
+                onQuickCreate={() => setGuestQuickCreateModalOpen(true)}
+              />
+            </div>
 
             <div className="flex gap-2">
               <button
@@ -557,12 +572,6 @@ export default function EditSalePage() {
                 onSaveAsOpen={handleCancel}
                 printOrder={printOrder}
                 onPrintOrderChange={setPrintOrder}
-                guests={guests}
-                selectedGuestId={selectedGuestId}
-                onGuestChange={setSelectedGuestId}
-                guestCount={guestCount}
-                onGuestCountChange={setGuestCount}
-                onQuickAddGuest={() => setQuickAddGuestModalOpen(true)}
                 // Override button labels for edit mode
                 proceedButtonLabel="💾 ذخیره تغییرات"
                 saveAsOpenButtonLabel="✕ لغو"
@@ -600,6 +609,14 @@ export default function EditSalePage() {
       />
 
       {submitting && <LoadingOverlay message="در حال ذخیره تغییرات..." />}
+
+      {/* Guest Quick-Create Modal */}
+      <GuestQuickCreateModal
+        isOpen={guestQuickCreateModalOpen}
+        onClose={() => setGuestQuickCreateModalOpen(false)}
+        onGuestCreated={handleGuestCreated}
+        initialMobile={searchedMobile}
+      />
 
       <ToastContainer />
     </div>
