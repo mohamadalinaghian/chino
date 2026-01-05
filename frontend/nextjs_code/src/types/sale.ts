@@ -282,6 +282,7 @@ export interface ISaleDetailResponse {
   is_fully_paid?: boolean;
   opened_at: string;
   opened_by_name: string;
+  payments: IPaymentDetail[];
 }
 
 /**

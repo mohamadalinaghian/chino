@@ -142,6 +142,11 @@ class SaleDetailResponse(Schema):
     # ---- Items ----
     items: List[SaleItemDetailSchema]
 
+    # ---- Payments ----
+    payments: List["PaymentDetailExtendedSchema"] = Field(
+        default_factory=list, description="Payment history for this sale"
+    )
+
 
 class SaleDashboardItemSchema(Schema):
     """

@@ -219,6 +219,10 @@ def get_sale_detail(request, sale_id: int):
         ).prefetch_related(
             "items",
             "items__product",  # Fetch product details for names/prices
+            "payments",  # Fetch payments
+            "payments__destination_account",  # Fetch payment account details
+            "payments__received_by",  # Fetch payment received by staff
+            "payments__sale_items",  # Fetch covered items for partial payments
         ),
         id=sale_id,
     )
@@ -277,10 +281,32 @@ def get_sale_detail(request, sale_id: int):
             )
         )
 
-    # 5. Check permissions for revenue data
+    # 5. Build payment history with extended details
+    payment_list = []
+    for payment in sale.payments.all():
+        covered_item_ids = [item.id for item in payment.sale_items.all()]
+
+        payment_data = PaymentDetailExtendedSchema(
+            id=payment.pk,
+            method=payment.method,
+            amount_total=payment.amount_total,
+            amount_applied=payment.amount_applied,
+            tip_amount=payment.tip_amount,
+            destination_account_id=payment.destination_account.pk if payment.destination_account else None,
+            destination_card_number=payment.destination_account.card_number if payment.destination_account else None,
+            destination_account_owner=payment.destination_account.account_owner if payment.destination_account else None,
+            destination_bank_name=payment.destination_account.bank_name if payment.destination_account else None,
+            received_by_name=payment.received_by.get_full_name() or payment.received_by.username,
+            received_at=payment.received_at,
+            status=payment.status,
+            covered_item_ids=covered_item_ids,
+        )
+        payment_list.append(payment_data)
+
+    # 6. Check permissions for revenue data
     can_view_revenue = request.auth.has_perm("sale.view_revenue_data")
 
-    # 6. Build response with conditional COGS data
+    # 7. Build response with conditional COGS data
     response_data = {
         # ---- Sale Metadata ----
         "id": sale.pk,
@@ -332,6 +358,8 @@ def get_sale_detail(request, sale_id: int):
         "cancel_reason": sale.cancel_reason,
         # ---- Items ----
         "items": response_items,
+        # ---- Payments ----
+        "payments": payment_list,
     }
 
     return response_data
