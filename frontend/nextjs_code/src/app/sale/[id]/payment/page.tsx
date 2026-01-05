@@ -452,7 +452,7 @@ export default function SalePaymentPage() {
             <div className="p-3 rounded-lg border-2" style={{ backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.accent }}>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
-                  <label className="block text-xs mb-1" style={{ color: THEME_COLORS.text }}>مبلغ پرداخت *</label>
+                  <label className="block text-sm mb-1" style={{ color: THEME_COLORS.text }}>مبلغ پرداخت *</label>
                   <input
                     type="number"
                     value={amount}
@@ -462,7 +462,7 @@ export default function SalePaymentPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs mb-1" style={{ color: THEME_COLORS.text }}>انعام</label>
+                  <label className="block text-sm mb-1" style={{ color: THEME_COLORS.text }}>انعام</label>
                   <input
                     type="number"
                     value={tipAmount}
@@ -533,7 +533,7 @@ export default function SalePaymentPage() {
                         const finalAmt = baseAmount + taxAmt - discountAmt;
                         setAmount((finalAmt / divisor).toFixed(0));
                       }}
-                      className="py-1 rounded text-xs font-bold transition-all"
+                      className="py-1 rounded text-sm font-bold transition-all"
                       style={{
                         backgroundColor: THEME_COLORS.accent,
                         color: '#fff'
@@ -577,13 +577,13 @@ export default function SalePaymentPage() {
 
             {/* Paid Items - Read Only */}
             {paidItems.length > 0 && (
-              <div className="p-2 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
+              <div className="p-3 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
                 <h3 className="text-sm font-bold mb-2" style={{ color: THEME_COLORS.green }}>اقلام پرداخت شده</h3>
                 <div className="space-y-1 max-h-32 overflow-y-auto">
                   {paidItems.map((item) => (
                     <div
                       key={item.id}
-                      className="p-2 rounded text-xs opacity-60"
+                      className="p-3 rounded text-sm opacity-60"
                       style={{ backgroundColor: THEME_COLORS.bgSecondary }}
                     >
                       <div className="flex items-center justify-between">
@@ -611,14 +611,14 @@ export default function SalePaymentPage() {
                     {paidItems.length > 0 ? '🛒 اقلام پرداخت نشده' : '🛒 اقلام'}
                   </h3>
                   {!selectAllItems && unpaidItems.length > 0 && (
-                    <div className="text-xs mt-1" style={{ color: THEME_COLORS.subtext }}>
+                    <div className="text-sm mt-1" style={{ color: THEME_COLORS.subtext }}>
                       {selectedItems.filter(s => s.quantity > 0).length} از {unpaidItems.length} مورد انتخاب شده
                     </div>
                   )}
                 </div>
                 <button
                   onClick={handleSelectAllToggle}
-                  className="px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all"
+                  className="px-3 py-1.5 rounded-lg text-sm font-bold border-2 transition-all"
                   style={{
                     backgroundColor: selectAllItems ? THEME_COLORS.accent : 'transparent',
                     borderColor: selectAllItems ? THEME_COLORS.accent : THEME_COLORS.border,
@@ -668,13 +668,13 @@ export default function SalePaymentPage() {
                               {item.product_name}
                             </div>
                           </div>
-                          <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>
+                          <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
                             قیمت واحد: {formatPersianMoney(item.unit_price)}
                           </div>
                         </div>
                         {isSelected && (
                           <div className="text-right">
-                            <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>جمع:</div>
+                            <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>جمع:</div>
                             <div className="text-sm font-bold" style={{ color: THEME_COLORS.green }}>
                               {formatPersianMoney(itemTotal)}
                             </div>
@@ -701,7 +701,7 @@ export default function SalePaymentPage() {
                               <div className="text-lg font-bold" style={{ color: THEME_COLORS.text }}>
                                 {selectedQty}
                               </div>
-                              <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>
+                              <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
                                 از {item.quantity}
                               </div>
                             </div>
@@ -720,7 +720,7 @@ export default function SalePaymentPage() {
                           <button
                             onClick={() => handleItemQuantityChange(item.id, item.quantity)}
                             disabled={selectedQty === item.quantity}
-                            className="px-3 py-1 rounded text-xs font-bold transition-all disabled:opacity-50"
+                            className="px-3 py-1 rounded text-sm font-bold transition-all disabled:opacity-50"
                             style={{
                               backgroundColor: THEME_COLORS.blue,
                               color: '#fff',
@@ -731,7 +731,7 @@ export default function SalePaymentPage() {
                         </div>
                       ) : (
                         <div className="pt-2 border-t text-center" style={{ borderColor: THEME_COLORS.border }}>
-                          <div className="text-xs" style={{ color: THEME_COLORS.accent }}>
+                          <div className="text-sm" style={{ color: THEME_COLORS.accent }}>
                             ✓ {item.quantity} عدد انتخاب شده
                           </div>
                         </div>
@@ -740,11 +740,11 @@ export default function SalePaymentPage() {
                       {/* Extras Display */}
                       {item.extras && item.extras.length > 0 && (
                         <div className="mt-2 pt-2 border-t" style={{ borderColor: THEME_COLORS.border }}>
-                          <div className="text-xs font-bold mb-1" style={{ color: THEME_COLORS.subtext }}>
+                          <div className="text-sm font-bold mb-1" style={{ color: THEME_COLORS.subtext }}>
                             ➕ افزودنی‌ها:
                           </div>
                           {item.extras.map((extra) => (
-                            <div key={extra.id} className="flex justify-between text-xs pr-4" style={{ color: THEME_COLORS.subtext }}>
+                            <div key={extra.id} className="flex justify-between text-sm pr-4" style={{ color: THEME_COLORS.subtext }}>
                               <span>• {extra.product_name} (×{extra.quantity})</span>
                               <span>{formatPersianMoney(extra.total)}</span>
                             </div>
@@ -764,7 +764,7 @@ export default function SalePaymentPage() {
             </div>
 
             {/* Payment Method - Compact */}
-            <div className="p-2 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
+            <div className="p-3 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
               <h3 className="text-sm font-bold mb-2" style={{ color: THEME_COLORS.text }}>روش پرداخت</h3>
               <div className="grid grid-cols-3 gap-2">
                 {[
@@ -775,7 +775,7 @@ export default function SalePaymentPage() {
                   <button
                     key={method.value}
                     onClick={() => handlePaymentMethodChange(method.value)}
-                    className="py-2 rounded text-xs font-bold border-2"
+                    className="py-2 rounded text-sm font-bold border-2"
                     style={{
                       backgroundColor: paymentMethod === method.value ? THEME_COLORS.accent : 'transparent',
                       borderColor: paymentMethod === method.value ? THEME_COLORS.accent : THEME_COLORS.border,
@@ -790,21 +790,21 @@ export default function SalePaymentPage() {
 
             {/* Account Selection - Only for Card Transfer */}
             {paymentMethod === PaymentMethod.CARD_TRANSFER && (
-              <div className="p-2 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
+              <div className="p-3 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
                 <h3 className="text-sm font-bold mb-2" style={{ color: THEME_COLORS.text }}>انتخاب حساب مقصد</h3>
                 <input
                   type="text"
                   value={accountSearchQuery}
                   onChange={(e) => setAccountSearchQuery(e.target.value)}
                   placeholder="جستجو..."
-                  className="w-full px-2 py-1.5 rounded border mb-2 text-xs"
+                  className="w-full px-2 py-1.5 rounded border mb-2 text-sm"
                   style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border, color: THEME_COLORS.text }}
                 />
                 <div className="space-y-1 max-h-48 overflow-y-auto">
                   {filteredBankAccounts.map((account) => (
                     <label
                       key={account.id}
-                      className="flex items-center gap-2 p-2 rounded cursor-pointer border text-xs"
+                      className="flex items-center gap-2 p-2 rounded cursor-pointer border text-sm"
                       style={{
                         backgroundColor: selectedAccountId === account.id ? THEME_COLORS.hover : THEME_COLORS.bgSecondary,
                         borderColor: selectedAccountId === account.id ? THEME_COLORS.accent : THEME_COLORS.border,
@@ -854,11 +854,11 @@ export default function SalePaymentPage() {
 
             {/* POS Account Display (Cash has no destination account) */}
             {paymentMethod === PaymentMethod.POS && posAccount?.id && (
-              <div className="p-2 rounded-lg border" style={{ backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.green }}>
-                <div className="text-xs font-bold mb-1" style={{ color: THEME_COLORS.green }}>
+              <div className="p-3 rounded-lg border" style={{ backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.green }}>
+                <div className="text-sm font-bold mb-1" style={{ color: THEME_COLORS.green }}>
                   حساب مقصد (کارتخوان):
                 </div>
-                <div className="text-xs" style={{ color: THEME_COLORS.text }}>
+                <div className="text-sm" style={{ color: THEME_COLORS.text }}>
                   {posAccount.account_owner} - {posAccount.card_number}
                 </div>
               </div>
@@ -866,18 +866,18 @@ export default function SalePaymentPage() {
 
             {/* Tax/Discount - With Clear Labels */}
             {canEditTaxDiscount && (
-              <div className="p-2 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
+              <div className="p-3 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
                 <h3 className="text-sm font-bold mb-2" style={{ color: THEME_COLORS.text }}>مالیات و تخفیف</h3>
                 <div className="grid grid-cols-2 gap-2">
                   {/* Tax Section */}
-                  <div className="p-2 rounded border" style={{ borderColor: THEME_COLORS.blue, backgroundColor: `${THEME_COLORS.blue}10` }}>
-                    <div className="text-xs font-bold mb-1" style={{ color: THEME_COLORS.blue }}>
+                  <div className="p-3 rounded border" style={{ borderColor: THEME_COLORS.blue, backgroundColor: `${THEME_COLORS.blue}10` }}>
+                    <div className="text-sm font-bold mb-1" style={{ color: THEME_COLORS.blue }}>
                       ➕ مالیات
                     </div>
                     <div className="flex gap-1 mb-1">
                       <button
                         onClick={() => setTaxType(TaxDiscountType.FIXED)}
-                        className="flex-1 py-1 rounded text-xs border"
+                        className="flex-1 py-1 rounded text-sm border"
                         style={{
                           backgroundColor: taxType === TaxDiscountType.FIXED ? THEME_COLORS.blue : 'transparent',
                           borderColor: THEME_COLORS.blue,
@@ -888,7 +888,7 @@ export default function SalePaymentPage() {
                       </button>
                       <button
                         onClick={() => setTaxType(TaxDiscountType.PERCENTAGE)}
-                        className="flex-1 py-1 rounded text-xs border"
+                        className="flex-1 py-1 rounded text-sm border"
                         style={{
                           backgroundColor: taxType === TaxDiscountType.PERCENTAGE ? THEME_COLORS.blue : 'transparent',
                           borderColor: THEME_COLORS.blue,
@@ -903,20 +903,20 @@ export default function SalePaymentPage() {
                       value={taxValue}
                       onChange={(e) => setTaxValue(e.target.value)}
                       placeholder="مقدار مالیات"
-                      className="w-full px-2 py-1 rounded border text-xs"
+                      className="w-full px-2 py-1 rounded border text-sm"
                       style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.blue, color: THEME_COLORS.text }}
                     />
                   </div>
 
                   {/* Discount Section */}
-                  <div className="p-2 rounded border" style={{ borderColor: THEME_COLORS.orange, backgroundColor: `${THEME_COLORS.orange}10` }}>
-                    <div className="text-xs font-bold mb-1" style={{ color: THEME_COLORS.orange }}>
+                  <div className="p-3 rounded border" style={{ borderColor: THEME_COLORS.orange, backgroundColor: `${THEME_COLORS.orange}10` }}>
+                    <div className="text-sm font-bold mb-1" style={{ color: THEME_COLORS.orange }}>
                       ➖ تخفیف
                     </div>
                     <div className="flex gap-1 mb-1">
                       <button
                         onClick={() => setDiscountType(TaxDiscountType.FIXED)}
-                        className="flex-1 py-1 rounded text-xs border"
+                        className="flex-1 py-1 rounded text-sm border"
                         style={{
                           backgroundColor: discountType === TaxDiscountType.FIXED ? THEME_COLORS.orange : 'transparent',
                           borderColor: THEME_COLORS.orange,
@@ -927,7 +927,7 @@ export default function SalePaymentPage() {
                       </button>
                       <button
                         onClick={() => setDiscountType(TaxDiscountType.PERCENTAGE)}
-                        className="flex-1 py-1 rounded text-xs border"
+                        className="flex-1 py-1 rounded text-sm border"
                         style={{
                           backgroundColor: discountType === TaxDiscountType.PERCENTAGE ? THEME_COLORS.orange : 'transparent',
                           borderColor: THEME_COLORS.orange,
@@ -942,7 +942,7 @@ export default function SalePaymentPage() {
                       value={discountValue}
                       onChange={(e) => setDiscountValue(e.target.value)}
                       placeholder="مقدار تخفیف"
-                      className="w-full px-2 py-1 rounded border text-xs"
+                      className="w-full px-2 py-1 rounded border text-sm"
                       style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.orange, color: THEME_COLORS.text }}
                     />
                   </div>
@@ -963,7 +963,7 @@ export default function SalePaymentPage() {
 
           {/* Right Column - Payment History */}
           <div className="lg:col-span-2">
-            <div className="p-2 rounded-lg sticky top-2" style={{ backgroundColor: THEME_COLORS.surface }}>
+            <div className="p-3 rounded-lg sticky top-2" style={{ backgroundColor: THEME_COLORS.surface }}>
               <h3 className="text-sm font-bold mb-2" style={{ color: THEME_COLORS.text }}>تاریخچه پرداخت‌ها</h3>
 
               {sale.payments && sale.payments.length > 0 ? (
@@ -973,7 +973,7 @@ export default function SalePaymentPage() {
                     return (
                       <div
                         key={payment.id}
-                        className="p-2 rounded border text-xs relative"
+                        className="p-3 rounded border text-sm relative"
                         style={{
                           backgroundColor: isVoided ? `${THEME_COLORS.red}10` : THEME_COLORS.bgSecondary,
                           borderColor: isVoided ? THEME_COLORS.red : THEME_COLORS.border,
@@ -982,7 +982,7 @@ export default function SalePaymentPage() {
                       >
                         {isVoided && (
                           <div
-                            className="absolute top-1 left-1 px-2 py-0.5 rounded text-xs font-bold"
+                            className="absolute top-1 left-1 px-2 py-0.5 rounded text-sm font-bold"
                             style={{ backgroundColor: THEME_COLORS.red, color: '#fff' }}
                           >
                             لغو شده
@@ -994,7 +994,7 @@ export default function SalePaymentPage() {
                             #{index + 1}
                           </span>
                           <span
-                            className="px-2 py-0.5 rounded text-xs"
+                            className="px-2 py-0.5 rounded text-sm"
                             style={{
                               backgroundColor:
                                 payment.method === 'CASH'
@@ -1064,7 +1064,7 @@ export default function SalePaymentPage() {
                           <button
                             onClick={() => handleVoidPayment(payment.id)}
                             disabled={submitting}
-                            className="w-full mt-2 py-1.5 rounded text-xs font-bold transition-all hover:opacity-90 disabled:opacity-50"
+                            className="w-full mt-2 py-1.5 rounded text-sm font-bold transition-all hover:opacity-90 disabled:opacity-50"
                             style={{
                               backgroundColor: `${THEME_COLORS.red}20`,
                               color: THEME_COLORS.red,
@@ -1079,7 +1079,7 @@ export default function SalePaymentPage() {
                   })}
                 </div>
               ) : (
-                <div className="text-center py-4 text-xs" style={{ color: THEME_COLORS.subtext }}>
+                <div className="text-center py-4 text-sm" style={{ color: THEME_COLORS.subtext }}>
                   پرداختی ثبت نشده است
                 </div>
               )}
