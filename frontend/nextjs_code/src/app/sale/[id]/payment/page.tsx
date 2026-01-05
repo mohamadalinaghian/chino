@@ -386,10 +386,10 @@ export default function SalePaymentPage() {
       </header>
 
       {/* Main Content */}
-      <div className="max-w-screen-xl mx-auto p-2">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
+      <div className="max-w-6xl mx-auto p-2">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-2">
           {/* Left Column */}
-          <div className="lg:col-span-2 space-y-2">
+          <div className="lg:col-span-3 space-y-2">
             {/* Sale Info - Compact */}
             <div className="p-2 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
@@ -789,7 +789,7 @@ export default function SalePaymentPage() {
           </div>
 
           {/* Right Column - Payment History */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-2">
             <div className="p-2 rounded-lg sticky top-2" style={{ backgroundColor: THEME_COLORS.surface }}>
               <h3 className="text-sm font-bold mb-2" style={{ color: THEME_COLORS.text }}>تاریخچه پرداخت‌ها</h3>
 
