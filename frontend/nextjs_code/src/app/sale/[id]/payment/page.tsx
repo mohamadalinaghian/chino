@@ -306,8 +306,6 @@ export default function SalePaymentPage() {
 
       const response = await addPaymentsToSale(saleId, { payments: [payment] });
 
-      showToast(UI_TEXT.MSG_PAYMENT_SUCCESS, 'success');
-
       // Reload sale data to show updated payment history
       await loadSaleData();
 
@@ -319,11 +317,14 @@ export default function SalePaymentPage() {
       setTaxValue('0');
       setDiscountValue('0');
 
+      // Show appropriate message based on payment result
       if (response.was_auto_closed || response.is_fully_paid) {
-        showToast(UI_TEXT.MSG_SALE_AUTO_CLOSED, 'info');
+        showToast('پرداخت ثبت شد و فروش بسته شد', 'success');
         setTimeout(() => {
           router.push('/sale/dashboard');
         }, 1500);
+      } else {
+        showToast(UI_TEXT.MSG_PAYMENT_SUCCESS, 'success');
       }
     } catch (err) {
       showToast(
@@ -637,20 +638,24 @@ export default function SalePaymentPage() {
               </div>
             )}
 
-            {/* Tax/Discount - Compact */}
+            {/* Tax/Discount - With Clear Labels */}
             {canEditTaxDiscount && (
               <div className="p-2 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
                 <h3 className="text-sm font-bold mb-2" style={{ color: THEME_COLORS.text }}>مالیات و تخفیف</h3>
                 <div className="grid grid-cols-2 gap-2">
-                  <div>
+                  {/* Tax Section */}
+                  <div className="p-2 rounded border" style={{ borderColor: THEME_COLORS.blue, backgroundColor: `${THEME_COLORS.blue}10` }}>
+                    <div className="text-xs font-bold mb-1" style={{ color: THEME_COLORS.blue }}>
+                      ➕ مالیات
+                    </div>
                     <div className="flex gap-1 mb-1">
                       <button
                         onClick={() => setTaxType(TaxDiscountType.FIXED)}
                         className="flex-1 py-1 rounded text-xs border"
                         style={{
-                          backgroundColor: taxType === TaxDiscountType.FIXED ? THEME_COLORS.accent : 'transparent',
-                          borderColor: THEME_COLORS.border,
-                          color: taxType === TaxDiscountType.FIXED ? '#fff' : THEME_COLORS.text,
+                          backgroundColor: taxType === TaxDiscountType.FIXED ? THEME_COLORS.blue : 'transparent',
+                          borderColor: THEME_COLORS.blue,
+                          color: taxType === TaxDiscountType.FIXED ? '#fff' : THEME_COLORS.blue,
                         }}
                       >
                         ثابت
@@ -659,9 +664,9 @@ export default function SalePaymentPage() {
                         onClick={() => setTaxType(TaxDiscountType.PERCENTAGE)}
                         className="flex-1 py-1 rounded text-xs border"
                         style={{
-                          backgroundColor: taxType === TaxDiscountType.PERCENTAGE ? THEME_COLORS.accent : 'transparent',
-                          borderColor: THEME_COLORS.border,
-                          color: taxType === TaxDiscountType.PERCENTAGE ? '#fff' : THEME_COLORS.text,
+                          backgroundColor: taxType === TaxDiscountType.PERCENTAGE ? THEME_COLORS.blue : 'transparent',
+                          borderColor: THEME_COLORS.blue,
+                          color: taxType === TaxDiscountType.PERCENTAGE ? '#fff' : THEME_COLORS.blue,
                         }}
                       >
                         درصد
@@ -671,20 +676,25 @@ export default function SalePaymentPage() {
                       type="number"
                       value={taxValue}
                       onChange={(e) => setTaxValue(e.target.value)}
-                      placeholder="مالیات"
+                      placeholder="مقدار مالیات"
                       className="w-full px-2 py-1 rounded border text-xs"
-                      style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border, color: THEME_COLORS.text }}
+                      style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.blue, color: THEME_COLORS.text }}
                     />
                   </div>
-                  <div>
+
+                  {/* Discount Section */}
+                  <div className="p-2 rounded border" style={{ borderColor: THEME_COLORS.orange, backgroundColor: `${THEME_COLORS.orange}10` }}>
+                    <div className="text-xs font-bold mb-1" style={{ color: THEME_COLORS.orange }}>
+                      ➖ تخفیف
+                    </div>
                     <div className="flex gap-1 mb-1">
                       <button
                         onClick={() => setDiscountType(TaxDiscountType.FIXED)}
                         className="flex-1 py-1 rounded text-xs border"
                         style={{
-                          backgroundColor: discountType === TaxDiscountType.FIXED ? THEME_COLORS.accent : 'transparent',
-                          borderColor: THEME_COLORS.border,
-                          color: discountType === TaxDiscountType.FIXED ? '#fff' : THEME_COLORS.text,
+                          backgroundColor: discountType === TaxDiscountType.FIXED ? THEME_COLORS.orange : 'transparent',
+                          borderColor: THEME_COLORS.orange,
+                          color: discountType === TaxDiscountType.FIXED ? '#fff' : THEME_COLORS.orange,
                         }}
                       >
                         ثابت
@@ -693,9 +703,9 @@ export default function SalePaymentPage() {
                         onClick={() => setDiscountType(TaxDiscountType.PERCENTAGE)}
                         className="flex-1 py-1 rounded text-xs border"
                         style={{
-                          backgroundColor: discountType === TaxDiscountType.PERCENTAGE ? THEME_COLORS.accent : 'transparent',
-                          borderColor: THEME_COLORS.border,
-                          color: discountType === TaxDiscountType.PERCENTAGE ? '#fff' : THEME_COLORS.text,
+                          backgroundColor: discountType === TaxDiscountType.PERCENTAGE ? THEME_COLORS.orange : 'transparent',
+                          borderColor: THEME_COLORS.orange,
+                          color: discountType === TaxDiscountType.PERCENTAGE ? '#fff' : THEME_COLORS.orange,
                         }}
                       >
                         درصد
@@ -705,9 +715,9 @@ export default function SalePaymentPage() {
                       type="number"
                       value={discountValue}
                       onChange={(e) => setDiscountValue(e.target.value)}
-                      placeholder="تخفیف"
+                      placeholder="مقدار تخفیف"
                       className="w-full px-2 py-1 rounded border text-xs"
-                      style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border, color: THEME_COLORS.text }}
+                      style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.orange, color: THEME_COLORS.text }}
                     />
                   </div>
                 </div>
