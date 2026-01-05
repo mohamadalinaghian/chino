@@ -1,14 +1,6 @@
 'use client';
-// TODO: REFACTOR - This file is 680+ lines and has similar structure to edit page
-// Code duplication with edit page - consider:
-// 1. Extracting shared cart logic into a custom hook (useCartManager)
-// 2. Creating a shared SaleForm component for both new and edit modes
-// 3. Moving item/extras handlers to shared service functions
-// 4. Extract sale creation/update logic into custom hooks
-// 5. Consider a single sale page with mode prop (new vs edit)
-// 6. Extract print logic into reusable utilities
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   SaleType,
@@ -31,77 +23,28 @@ import { useToast } from '@/components/common/Toast';
 import { LoadingOverlay } from '@/components/common/LoadingOverlay';
 import { THEME_COLORS, UI_TEXT } from '@/libs/constants';
 import { getCurrentJalaliDate } from '@/utils/persianUtils';
-import { printReceipt, PrintSaleData, PrintSaleItem, queueReceipt } from '@/utils/printUtils';
+import { PrintSaleData, PrintSaleItem, queueReceipt } from '@/utils/printUtils';
 
-export default function NewSalePage() {
-  const router = useRouter();
-  const { showToast, ToastContainer } = useToast();
+// --- CUSTOM HOOKS (Ideally move these to /src/hooks/sale/...) ---
 
-  // Sale configuration
-  const [saleType, setSaleType] = useState<SaleType>(SaleType.DINE_IN);
-  const [selectedTableId, setSelectedTableId] = useState<number | null>(null);
-
-  // Menu data
+/**
+ * Manages Menu Data, Tabs (Food/Bar), and Category Selection
+ */
+const useSaleMenu = () => {
   const [menuData, setMenuData] = useState<IMenuGroup[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Navigation state
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'BAR' | 'FOOD'>('FOOD');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  // Cart state
-  const [cartItems, setCartItems] = useState<ICartItem[]>([]);
-
-  // Animation state
-  const [animatingItemId, setAnimatingItemId] = useState<number | null>(null);
-
-  // Extras modal state
-  const [extrasModalOpen, setExtrasModalOpen] = useState(false);
-  const [selectedItemForExtras, setSelectedItemForExtras] =
-    useState<IMenuItemForSale | null>(null);
-
-  // Editing cart item extras
-  const [editingCartItem, setEditingCartItem] = useState<ICartItem | null>(null);
-
-  // Submission state
-  const [submitting, setSubmitting] = useState(false);
-
-  // Guest information
-  const [selectedGuestId, setSelectedGuestId] = useState<number | null>(null);
-  const [guestCount, setGuestCount] = useState<number | null>(null);
-  const [guestQuickCreateModalOpen, setGuestQuickCreateModalOpen] = useState(false);
-  const [searchedMobile, setSearchedMobile] = useState<string>('');
-
-  // Cart ref + floating button
-  const cartSummaryRef = useRef<HTMLDivElement>(null);
-  const showFloatingButton = cartItems.length > 0;
-
-  const scrollToCart = () => {
-    cartSummaryRef.current?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start',
-    });
-  };
-
-  useEffect(() => {
-    loadMenu();
-  }, []);
-
-  useEffect(() => {
-    if (!menuData) return;
-    const group = menuData.find((g) => g.parent_group === activeTab);
-    if (group && group.categories.length > 0) {
-      setSelectedCategory(group.categories[0].title);
-    }
-  }, [activeTab, menuData]);
-
-  const loadMenu = async () => {
+  const loadMenu = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await fetchSaleMenu();
       setMenuData(data);
+
+      // Default to first category of FOOD
       const foodGroup = data.find((g) => g.parent_group === 'FOOD');
       if (foodGroup && foodGroup.categories.length > 0) {
         setSelectedCategory(foodGroup.categories[0].title);
@@ -111,7 +54,20 @@ export default function NewSalePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadMenu();
+  }, [loadMenu]);
+
+  // Update category when tab changes
+  useEffect(() => {
+    if (!menuData) return;
+    const group = menuData.find((g) => g.parent_group === activeTab);
+    if (group && group.categories.length > 0) {
+      setSelectedCategory(group.categories[0].title);
+    }
+  }, [activeTab, menuData]);
 
   const currentCategories = useMemo(() => {
     if (!menuData) return [];
@@ -132,21 +88,33 @@ export default function NewSalePage() {
     return category?.items || [];
   }, [menuData, selectedCategory, activeTab]);
 
-  const handleSaleTypeChange = (type: SaleType) => {
-    setSaleType(type);
-    if (type === SaleType.TAKEAWAY) {
-      setSelectedTableId(null);
-    }
+  return {
+    menuData,
+    loading,
+    error,
+    activeTab,
+    setActiveTab,
+    selectedCategory,
+    setSelectedCategory,
+    currentCategories,
+    currentItems,
+    retryLoad: loadMenu
   };
+};
 
-  const handleAddToCart = (item: IMenuItemForSale) => {
-    setAnimatingItemId(item.id);
-    setTimeout(() => setAnimatingItemId(null), 500);
+/**
+ * Manages Cart State and Logic
+ */
+const useCart = () => {
+  const [cartItems, setCartItems] = useState<ICartItem[]>([]);
 
+  const addToCart = (item: IMenuItemForSale) => {
     setCartItems((prev) => {
+      // Find item with same ID and NO extras
       const existingItemIndex = prev.findIndex(
         (cartItem) => cartItem.menu_id === item.id && cartItem.extras.length === 0
       );
+
       if (existingItemIndex !== -1) {
         const updated = [...prev];
         const existingItem = updated[existingItemIndex];
@@ -156,105 +124,26 @@ export default function NewSalePage() {
           total: existingItem.unit_price * (existingItem.quantity + 1),
         };
         return updated;
-      } else {
-        const cartItemId = `${Date.now()}-${Math.random()}`;
-        const newCartItem: ICartItem = {
-          id: cartItemId,
-          menu_id: item.id,
-          name: item.name,
-          quantity: 1,
-          unit_price: item.price,
-          extras: [],
-          total: item.price,
-        };
-        return [...prev, newCartItem];
       }
-    });
-  };
 
-  // Always allow requesting extras for any item
-  const handleRequestExtras = (item: IMenuItemForSale) => {
-    setSelectedItemForExtras(item);
-    setEditingCartItem(null);
-    setExtrasModalOpen(true);
-  };
-
-  const handleEditCartItemExtras = (cartItem: ICartItem) => {
-    const menuItem: IMenuItemForSale = {
-      id: cartItem.menu_id,
-      name: cartItem.name,
-      price: cartItem.unit_price,
-    };
-    setSelectedItemForExtras(menuItem);
-    setEditingCartItem(cartItem);
-    setExtrasModalOpen(true);
-  };
-
-  const handleConfirmExtras = (
-    item: IMenuItemForSale,
-    selectedExtras: SelectedExtra[],
-    quantity: number
-  ) => {
-    setAnimatingItemId(item.id);
-    setTimeout(() => setAnimatingItemId(null), 500);
-
-    if (editingCartItem) {
-      // Editing existing item
-      const updatedExtras: ICartExtra[] = selectedExtras.map((se, idx) => ({
-        id: editingCartItem.extras[idx]?.id || `${editingCartItem.id}-extra-${se.extra.id}`,
-        product_id: se.extra.id,
-        name: se.extra.name,
-        price: se.extra.price,
-        quantity: se.quantity,
-      }));
-
-      const extrasTotal = updatedExtras.reduce((sum, e) => sum + e.price * e.quantity, 0);
-
-      setCartItems((prev) =>
-        prev.map((ci) =>
-          ci.id === editingCartItem.id
-            ? {
-              ...ci,
-              quantity,
-              extras: updatedExtras,
-              total: (item.price + extrasTotal) * quantity,
-            }
-            : ci
-        )
-      );
-      setEditingCartItem(null);
-    } else {
-      // Adding new item with extras
       const cartItemId = `${Date.now()}-${Math.random()}`;
-      const cartExtras: ICartExtra[] = selectedExtras.map((se) => ({
-        id: `${cartItemId}-extra-${se.extra.id}`,
-        product_id: se.extra.id,
-        name: se.extra.name,
-        price: se.extra.price,
-        quantity: se.quantity,
-      }));
-      const extrasTotal = cartExtras.reduce((sum, extra) => sum + extra.price * extra.quantity, 0);
-      const newCartItem: ICartItem = {
+      return [...prev, {
         id: cartItemId,
         menu_id: item.id,
         name: item.name,
-        quantity,
+        quantity: 1,
         unit_price: item.price,
-        extras: cartExtras,
-        total: (item.price + extrasTotal) * quantity,
-      };
-      setCartItems((prev) => [...prev, newCartItem]);
-    }
-
-    setExtrasModalOpen(false);
-    setSelectedItemForExtras(null);
+        extras: [],
+        total: item.price,
+      }];
+    });
   };
 
-  const handleRemoveItem = (itemId: string) => {
+  const removeItem = (itemId: string) => {
     setCartItems((prev) => prev.filter((item) => item.id !== itemId));
   };
 
-  const handleUpdateQuantity = (itemId: string, newQuantity: number) => {
+  const updateQuantity = (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
     setCartItems((prev) =>
       prev.map((item) => {
@@ -272,8 +161,87 @@ export default function NewSalePage() {
     );
   };
 
-  // Helper to queue print job after sale creation
-  const triggerPrintReceipt = async (saleId?: number, invoiceNumber?: string) => {
+  const addOrUpdateWithExtras = (
+    item: IMenuItemForSale,
+    selectedExtras: SelectedExtra[],
+    quantity: number,
+    editingCartItem: ICartItem | null
+  ) => {
+    // Helper to map selected extras to cart extras
+    const mapExtras = (prefixId: string): ICartExtra[] =>
+      selectedExtras.map((se) => ({
+        id: `${prefixId}-extra-${se.extra.id}`,
+        product_id: se.extra.id,
+        name: se.extra.name,
+        price: se.extra.price,
+        quantity: se.quantity,
+      }));
+
+    if (editingCartItem) {
+      // Logic for updating existing cart item
+      const updatedExtras = mapExtras(editingCartItem.id);
+      const extrasTotal = updatedExtras.reduce((sum, e) => sum + e.price * e.quantity, 0);
+
+      setCartItems((prev) =>
+        prev.map((ci) =>
+          ci.id === editingCartItem.id
+            ? {
+                ...ci,
+                quantity,
+                extras: updatedExtras,
+                total: (item.price + extrasTotal) * quantity,
+              }
+            : ci
+        )
+      );
+    } else {
+      // Logic for creating new cart item with extras
+      const cartItemId = `${Date.now()}-${Math.random()}`;
+      const cartExtras = mapExtras(cartItemId);
+      const extrasTotal = cartExtras.reduce((sum, extra) => sum + extra.price * extra.quantity, 0);
+
+      const newCartItem: ICartItem = {
+        id: cartItemId,
+        menu_id: item.id,
+        name: item.name,
+        quantity,
+        unit_price: item.price,
+        extras: cartExtras,
+        total: (item.price + extrasTotal) * quantity,
+      };
+      setCartItems((prev) => [...prev, newCartItem]);
+    }
+  };
+
+  return {
+    cartItems,
+    setCartItems, // Exposed for clear/bulk set if needed
+    addToCart,
+    removeItem,
+    updateQuantity,
+    addOrUpdateWithExtras
+  };
+};
+
+/**
+ * Manages Sale Submission (Open, Pay, Print)
+ */
+type SubmissionAction = 'PROCEED_PAYMENT' | 'SAVE_OPEN' | 'SAVE_PAY' | 'SAVE_PRINT';
+
+const useSaleSubmission = (
+  router: ReturnType<typeof useRouter>,
+  showToast: (msg: string, type: 'success' | 'error' | 'warning') => void
+) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  // Helper to trigger printing
+  const triggerPrintReceipt = async (
+    cartItems: ICartItem[],
+    saleType: SaleType,
+    selectedTableId: number | null,
+    saleId?: number,
+    invoiceNumber?: string
+  ) => {
     const printItems: PrintSaleItem[] = cartItems.map((item) => ({
       name: item.name,
       quantity: item.quantity,
@@ -300,189 +268,207 @@ export default function NewSalePage() {
       timestamp: new Date(),
     };
 
-    // Queue print job instead of direct print
     try {
       await queueReceipt(printData, saleId);
     } catch (error) {
       console.error('Print queue error:', error);
-      // Don't show error to user - printing is non-critical
     }
+  };
+
+  // Main submission handler
+  const submitSale = async (
+    action: SubmissionAction,
+    data: {
+      saleType: SaleType;
+      selectedTableId: number | null;
+      cartItems: ICartItem[];
+      selectedGuestId: number | null;
+      guestCount: number | null;
+    }
+  ) => {
+    const { saleType, selectedTableId, cartItems, selectedGuestId, guestCount } = data;
+
+    // Validation
+    if (saleType === SaleType.DINE_IN && !selectedTableId) {
+      showToast(UI_TEXT.VALIDATION_SELECT_TABLE, 'warning');
+      return;
+    }
+    if (cartItems.length === 0) {
+      showToast(UI_TEXT.VALIDATION_EMPTY_CART, 'warning');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      const apiPayload = {
+        sale_type: saleType,
+        table_id: saleType === SaleType.DINE_IN ? selectedTableId : null,
+        guest_id: selectedGuestId,
+        guest_count: guestCount,
+        note: null,
+        items: cartItems.map((cartItem) => ({
+          menu_id: cartItem.menu_id,
+          quantity: cartItem.quantity,
+          extras: cartItem.extras.map((extra) => ({
+            product_id: extra.product_id,
+            quantity: extra.quantity,
+          })),
+        })),
+      };
+
+      let sale;
+      let successMsg = '';
+      let nextRoute = '';
+
+      // Execute specific logic based on action
+      switch (action) {
+        case 'PROCEED_PAYMENT':
+          sale = await openSale(apiPayload);
+          successMsg = UI_TEXT.SUCCESS_SALE_CREATED;
+          nextRoute = `/sale/${sale.id}/payment`;
+          break;
+
+        case 'SAVE_OPEN':
+          sale = await saveAsOpenSale(apiPayload);
+          successMsg = UI_TEXT.SUCCESS_OPEN_SALE_SAVED;
+          nextRoute = '/sale/dashboard';
+          break;
+
+        case 'SAVE_PAY':
+          sale = await saveAsOpenSale(apiPayload);
+          successMsg = UI_TEXT.SUCCESS_OPEN_SALE_SAVED;
+          nextRoute = `/sale/${sale.id}/payment`;
+          break;
+
+        case 'SAVE_PRINT':
+          sale = await openSale(apiPayload);
+          successMsg = UI_TEXT.SUCCESS_SALE_CREATED;
+          nextRoute = `/sale/${sale.id}/payment`;
+          // Fire and forget print
+          triggerPrintReceipt(cartItems, saleType, selectedTableId, sale.id);
+          break;
+      }
+
+      showToast(successMsg, 'success');
+      setTimeout(() => {
+        router.push(nextRoute);
+      }, 500);
+
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : UI_TEXT.ERROR_CREATING_SALE,
+        'error'
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return { submitting, submitSale };
+};
+
+// --- MAIN COMPONENT ---
+
+export default function NewSalePage() {
+  const router = useRouter();
+  const { showToast, ToastContainer } = useToast();
+
+  // --- State: Sale Configuration ---
+  const [saleType, setSaleType] = useState<SaleType>(SaleType.DINE_IN);
+  const [selectedTableId, setSelectedTableId] = useState<number | null>(null);
+  const [selectedGuestId, setSelectedGuestId] = useState<number | null>(null);
+  const [guestCount, setGuestCount] = useState<number | null>(null);
+
+  // --- State: UI & Modals ---
+  const [animatingItemId, setAnimatingItemId] = useState<number | null>(null);
+  const [extrasModalOpen, setExtrasModalOpen] = useState(false);
+  const [guestQuickCreateModalOpen, setGuestQuickCreateModalOpen] = useState(false);
+  const [searchedMobile, setSearchedMobile] = useState<string>('');
+
+  // Selection state for Extras Modal
+  const [selectedItemForExtras, setSelectedItemForExtras] = useState<IMenuItemForSale | null>(null);
+  const [editingCartItem, setEditingCartItem] = useState<ICartItem | null>(null);
+
+  // --- Hooks ---
+  const {
+    loading: menuLoading,
+    error: menuError,
+    activeTab,
+    setActiveTab,
+    selectedCategory,
+    setSelectedCategory,
+    currentCategories,
+    currentItems,
+    retryLoad
+  } = useSaleMenu();
+
+  const {
+    cartItems,
+    addToCart,
+    removeItem,
+    updateQuantity,
+    addOrUpdateWithExtras
+  } = useCart();
+
+  const { submitting, submitSale } = useSaleSubmission(router, showToast);
+
+  // --- Ref for Scrolling ---
+  const cartSummaryRef = useRef<HTMLDivElement>(null);
+  const showFloatingButton = cartItems.length > 0;
+
+  const scrollToCart = () => {
+    cartSummaryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  // --- Event Handlers ---
+
+  const handleSaleTypeChange = (type: SaleType) => {
+    setSaleType(type);
+    if (type === SaleType.TAKEAWAY) {
+      setSelectedTableId(null);
+    }
+  };
+
+  const handleAddToCart = (item: IMenuItemForSale) => {
+    setAnimatingItemId(item.id);
+    setTimeout(() => setAnimatingItemId(null), 500);
+    addToCart(item);
+  };
+
+  const handleRequestExtras = (item: IMenuItemForSale) => {
+    setSelectedItemForExtras(item);
+    setEditingCartItem(null);
+    setExtrasModalOpen(true);
+  };
+
+  const handleEditCartItemExtras = (cartItem: ICartItem) => {
+    setSelectedItemForExtras({
+      id: cartItem.menu_id,
+      name: cartItem.name,
+      price: cartItem.unit_price,
+    });
+    setEditingCartItem(cartItem);
+    setExtrasModalOpen(true);
+  };
+
+  const handleConfirmExtras = (
+    item: IMenuItemForSale,
+    selectedExtras: SelectedExtra[],
+    quantity: number
+  ) => {
+    setAnimatingItemId(item.id);
+    setTimeout(() => setAnimatingItemId(null), 500);
+
+    addOrUpdateWithExtras(item, selectedExtras, quantity, editingCartItem);
+
+    setExtrasModalOpen(false);
+    setSelectedItemForExtras(null);
   };
 
   const handleGuestCreated = (guest: IGuest) => {
     setSelectedGuestId(guest.id);
     showToast(`مهمان "${guest.name}" ایجاد شد`, 'success');
-  };
-
-  const handleProceedToPayment = async () => {
-    if (saleType === SaleType.DINE_IN && !selectedTableId) {
-      showToast(UI_TEXT.VALIDATION_SELECT_TABLE, 'warning');
-      return;
-    }
-    if (cartItems.length === 0) {
-      showToast(UI_TEXT.VALIDATION_EMPTY_CART, 'warning');
-      return;
-    }
-    try {
-      setSubmitting(true);
-      const saleData = {
-        sale_type: saleType,
-        table_id: saleType === SaleType.DINE_IN ? selectedTableId : null,
-        guest_id: selectedGuestId,
-        guest_count: guestCount,
-        note: null,
-        items: cartItems.map((cartItem) => ({
-          menu_id: cartItem.menu_id,
-          quantity: cartItem.quantity,
-          extras: cartItem.extras.map((extra) => ({
-            product_id: extra.product_id,
-            quantity: extra.quantity,
-          })),
-        })),
-      };
-      const sale = await openSale(saleData);
-      showToast(UI_TEXT.SUCCESS_SALE_CREATED, 'success');
-
-      setTimeout(() => {
-        router.push(`/sale/${sale.id}/payment`);
-      }, 500);
-    } catch (err) {
-      showToast(
-        err instanceof Error ? err.message : UI_TEXT.ERROR_CREATING_SALE,
-        'error'
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleSaveAsOpen = async () => {
-    if (saleType === SaleType.DINE_IN && !selectedTableId) {
-      showToast(UI_TEXT.VALIDATION_SELECT_TABLE, 'warning');
-      return;
-    }
-    if (cartItems.length === 0) {
-      showToast(UI_TEXT.VALIDATION_EMPTY_CART, 'warning');
-      return;
-    }
-    try {
-      setSubmitting(true);
-      const saleData = {
-        sale_type: saleType,
-        table_id: saleType === SaleType.DINE_IN ? selectedTableId : null,
-        guest_id: selectedGuestId,
-        guest_count: guestCount,
-        note: null,
-        items: cartItems.map((cartItem) => ({
-          menu_id: cartItem.menu_id,
-          quantity: cartItem.quantity,
-          extras: cartItem.extras.map((extra) => ({
-            product_id: extra.product_id,
-            quantity: extra.quantity,
-          })),
-        })),
-      };
-      const sale = await saveAsOpenSale(saleData);
-      showToast(UI_TEXT.SUCCESS_OPEN_SALE_SAVED, 'success');
-
-      setTimeout(() => {
-        router.push('/sale/dashboard');
-      }, 500);
-    } catch (err) {
-      showToast(
-        err instanceof Error ? err.message : UI_TEXT.ERROR_CREATING_SALE,
-        'error'
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleSaveAndPay = async () => {
-    if (saleType === SaleType.DINE_IN && !selectedTableId) {
-      showToast(UI_TEXT.VALIDATION_SELECT_TABLE, 'warning');
-      return;
-    }
-    if (cartItems.length === 0) {
-      showToast(UI_TEXT.VALIDATION_EMPTY_CART, 'warning');
-      return;
-    }
-    try {
-      setSubmitting(true);
-      const saleData = {
-        sale_type: saleType,
-        table_id: saleType === SaleType.DINE_IN ? selectedTableId : null,
-        guest_id: selectedGuestId,
-        guest_count: guestCount,
-        note: null,
-        items: cartItems.map((cartItem) => ({
-          menu_id: cartItem.menu_id,
-          quantity: cartItem.quantity,
-          extras: cartItem.extras.map((extra) => ({
-            product_id: extra.product_id,
-            quantity: extra.quantity,
-          })),
-        })),
-      };
-      const sale = await saveAsOpenSale(saleData);
-      showToast(UI_TEXT.SUCCESS_OPEN_SALE_SAVED, 'success');
-
-      setTimeout(() => {
-        router.push(`/sale/${sale.id}/payment`);
-      }, 500);
-    } catch (err) {
-      showToast(
-        err instanceof Error ? err.message : UI_TEXT.ERROR_CREATING_SALE,
-        'error'
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleSaveAndPrintAll = async () => {
-    if (saleType === SaleType.DINE_IN && !selectedTableId) {
-      showToast(UI_TEXT.VALIDATION_SELECT_TABLE, 'warning');
-      return;
-    }
-    if (cartItems.length === 0) {
-      showToast(UI_TEXT.VALIDATION_EMPTY_CART, 'warning');
-      return;
-    }
-    try {
-      setSubmitting(true);
-      const saleData = {
-        sale_type: saleType,
-        table_id: saleType === SaleType.DINE_IN ? selectedTableId : null,
-        guest_id: selectedGuestId,
-        guest_count: guestCount,
-        note: null,
-        items: cartItems.map((cartItem) => ({
-          menu_id: cartItem.menu_id,
-          quantity: cartItem.quantity,
-          extras: cartItem.extras.map((extra) => ({
-            product_id: extra.product_id,
-            quantity: extra.quantity,
-          })),
-        })),
-      };
-      const sale = await openSale(saleData);
-      showToast(UI_TEXT.SUCCESS_SALE_CREATED, 'success');
-
-      // Trigger print
-      triggerPrintReceipt(sale.id);
-
-      setTimeout(() => {
-        router.push(`/sale/${sale.id}/payment`);
-      }, 500);
-    } catch (err) {
-      showToast(
-        err instanceof Error ? err.message : UI_TEXT.ERROR_CREATING_SALE,
-        'error'
-      );
-    } finally {
-      setSubmitting(false);
-    }
   };
 
   const handleCancel = () => {
@@ -495,18 +481,25 @@ export default function NewSalePage() {
     }
   };
 
+  // Wrapper for all submission actions to pass current state
+  const handleSubmission = (action: SubmissionAction) => {
+    submitSale(action, {
+      saleType,
+      selectedTableId,
+      cartItems,
+      selectedGuestId,
+      guestCount
+    });
+  };
+
+  // --- Render ---
+
   return (
-    <div
-      className="min-h-screen relative"
-      style={{ backgroundColor: THEME_COLORS.bgPrimary }}
-    >
+    <div className="min-h-screen relative" style={{ backgroundColor: THEME_COLORS.bgPrimary }}>
       {/* Header */}
       <header
         className="p-2 border-b"
-        style={{
-          backgroundColor: THEME_COLORS.bgSecondary,
-          borderColor: THEME_COLORS.border,
-        }}
+        style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border }}
       >
         <div className="max-w-screen-2xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -521,10 +514,7 @@ export default function NewSalePage() {
             >
               ← بازگشت
             </button>
-            <h1
-              className="text-2xl md:text-3xl font-bold"
-              style={{ color: THEME_COLORS.text }}
-            >
+            <h1 className="text-2xl md:text-3xl font-bold" style={{ color: THEME_COLORS.text }}>
               {UI_TEXT.PAGE_TITLE}
             </h1>
           </div>
@@ -537,23 +527,21 @@ export default function NewSalePage() {
       {/* Main Content */}
       <div className="max-w-screen-2xl mx-auto p-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
-          {/* Left Column - Menu Selection */}
+
+          {/* Left Column - Selection & Menu */}
           <div className="lg:col-span-2 space-y-2">
-            <div
-              className="p-2 rounded-lg"
-              style={{ backgroundColor: THEME_COLORS.bgSecondary }}
-            >
+
+            {/* Sale Type */}
+            <div className="p-2 rounded-lg" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
               <SaleTypeSelector
                 selectedType={saleType}
                 onTypeChange={handleSaleTypeChange}
               />
             </div>
 
+            {/* Table Selection */}
             {saleType === SaleType.DINE_IN && (
-              <div
-                className="p-2 rounded-lg"
-                style={{ backgroundColor: THEME_COLORS.bgSecondary }}
-              >
+              <div className="p-2 rounded-lg" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
                 <TableSelector
                   selectedTableId={selectedTableId}
                   onTableSelect={setSelectedTableId}
@@ -561,11 +549,8 @@ export default function NewSalePage() {
               </div>
             )}
 
-            {/* Guest Selector and Guest Count */}
-            <div
-              className="p-2 rounded-lg"
-              style={{ backgroundColor: THEME_COLORS.bgSecondary }}
-            >
+            {/* Guest Info */}
+            <div className="p-2 rounded-lg" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <GuestSelector
@@ -578,10 +563,7 @@ export default function NewSalePage() {
                   />
                 </div>
                 <div>
-                  <label
-                    className="block text-sm font-medium mb-1"
-                    style={{ color: THEME_COLORS.text }}
-                  >
+                  <label className="block text-sm font-medium mb-1" style={{ color: THEME_COLORS.text }}>
                     تعداد نفرات
                   </label>
                   <input
@@ -602,53 +584,36 @@ export default function NewSalePage() {
               </div>
             </div>
 
+            {/* Tabs */}
             <div className="flex gap-2">
               <button
                 onClick={() => setActiveTab('FOOD')}
-                className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${activeTab === 'FOOD' ? 'scale-105' : ''
-                  }`}
+                className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${activeTab === 'FOOD' ? 'scale-105' : ''}`}
                 style={{
-                  backgroundColor:
-                    activeTab === 'FOOD'
-                      ? THEME_COLORS.accent
-                      : THEME_COLORS.surface,
-                  color:
-                    activeTab === 'FOOD'
-                      ? '#fff'
-                      : THEME_COLORS.subtext,
+                  backgroundColor: activeTab === 'FOOD' ? THEME_COLORS.accent : THEME_COLORS.surface,
+                  color: activeTab === 'FOOD' ? '#fff' : THEME_COLORS.subtext,
                 }}
               >
                 {UI_TEXT.TAB_FOOD}
               </button>
               <button
                 onClick={() => setActiveTab('BAR')}
-                className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${activeTab === 'BAR' ? 'scale-105' : ''
-                  }`}
+                className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${activeTab === 'BAR' ? 'scale-105' : ''}`}
                 style={{
-                  backgroundColor:
-                    activeTab === 'BAR'
-                      ? THEME_COLORS.accent
-                      : THEME_COLORS.surface,
-                  color:
-                    activeTab === 'BAR'
-                      ? '#fff'
-                      : THEME_COLORS.subtext,
+                  backgroundColor: activeTab === 'BAR' ? THEME_COLORS.accent : THEME_COLORS.surface,
+                  color: activeTab === 'BAR' ? '#fff' : THEME_COLORS.subtext,
                 }}
               >
                 {UI_TEXT.TAB_DRINKS}
               </button>
             </div>
 
-            {loading && (
-              <div
-                className="p-6 rounded-lg text-center"
-                style={{ backgroundColor: THEME_COLORS.bgSecondary }}
-              >
+            {/* Content: Loading / Error / Menu */}
+            {menuLoading && (
+              <div className="p-6 rounded-lg text-center" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
                 <div
                   className="animate-spin w-12 h-12 border-4 border-t-transparent rounded-full mx-auto"
-                  style={{
-                    borderColor: `${THEME_COLORS.accent} transparent transparent transparent`,
-                  }}
+                  style={{ borderColor: `${THEME_COLORS.accent} transparent transparent transparent` }}
                 />
                 <p className="mt-4" style={{ color: THEME_COLORS.subtext }}>
                   {UI_TEXT.MSG_LOADING_MENU}
@@ -656,39 +621,23 @@ export default function NewSalePage() {
               </div>
             )}
 
-            {error && (
-              <div
-                className="p-4 rounded-lg text-center"
-                style={{ backgroundColor: THEME_COLORS.bgSecondary }}
-              >
-                <div
-                  className="text-4xl mb-3"
-                  style={{ color: THEME_COLORS.red }}
-                >
-                  ⚠️
-                </div>
-                <p className="mb-4" style={{ color: THEME_COLORS.red }}>
-                  {error}
-                </p>
+            {menuError && (
+              <div className="p-4 rounded-lg text-center" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
+                <div className="text-4xl mb-3" style={{ color: THEME_COLORS.red }}>⚠️</div>
+                <p className="mb-4" style={{ color: THEME_COLORS.red }}>{menuError}</p>
                 <button
-                  onClick={loadMenu}
+                  onClick={retryLoad}
                   className="px-6 py-2 rounded-lg font-bold transition-all hover:opacity-90"
-                  style={{
-                    backgroundColor: THEME_COLORS.accent,
-                    color: '#fff',
-                  }}
+                  style={{ backgroundColor: THEME_COLORS.accent, color: '#fff' }}
                 >
                   {UI_TEXT.BTN_RETRY}
                 </button>
               </div>
             )}
 
-            {!loading && !error && menuData && (
+            {!menuLoading && !menuError && (
               <>
-                <div
-                  className="p-2 rounded-lg"
-                  style={{ backgroundColor: THEME_COLORS.bgSecondary }}
-                >
+                <div className="p-2 rounded-lg" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
                   <CategoryList
                     categories={currentCategories}
                     selectedCategory={selectedCategory}
@@ -696,10 +645,7 @@ export default function NewSalePage() {
                   />
                 </div>
 
-                <div
-                  className="p-2 rounded-lg"
-                  style={{ backgroundColor: THEME_COLORS.bgSecondary }}
-                >
+                <div className="p-2 rounded-lg" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
                   <ItemsGrid
                     items={currentItems}
                     selectedCategory={selectedCategory}
@@ -718,12 +664,13 @@ export default function NewSalePage() {
               <CartSummary
                 ref={cartSummaryRef}
                 cartItems={cartItems}
-                onRemoveItem={handleRemoveItem}
-                onUpdateQuantity={handleUpdateQuantity}
+                onRemoveItem={removeItem}
+                onUpdateQuantity={updateQuantity}
                 onEditExtras={handleEditCartItemExtras}
-                onSaveSilent={handleProceedToPayment}
-                onSaveAndPrintAll={handleSaveAndPrintAll}
-                onSaveAndPay={handleSaveAndPay}
+                // Mapping generalized submission handler to specific props
+                onSaveSilent={() => handleSubmission('PROCEED_PAYMENT')}
+                onSaveAndPrintAll={() => handleSubmission('SAVE_PRINT')}
+                onSaveAndPay={() => handleSubmission('SAVE_PAY')}
                 onCancel={handleCancel}
                 isEditMode={false}
                 isSubmitting={submitting}
@@ -733,6 +680,7 @@ export default function NewSalePage() {
         </div>
       </div>
 
+      {/* Mobile Floating Button */}
       {showFloatingButton && (
         <button
           onClick={scrollToCart}
@@ -748,7 +696,7 @@ export default function NewSalePage() {
         </button>
       )}
 
-      {/* Extras Modal */}
+      {/* Modals */}
       <ExtrasModal
         item={selectedItemForExtras}
         isOpen={extrasModalOpen}
@@ -760,7 +708,6 @@ export default function NewSalePage() {
         onConfirm={handleConfirmExtras}
       />
 
-      {/* Guest Quick-Create Modal */}
       <GuestQuickCreateModal
         isOpen={guestQuickCreateModalOpen}
         onClose={() => setGuestQuickCreateModalOpen(false)}
