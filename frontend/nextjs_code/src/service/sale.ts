@@ -284,3 +284,28 @@ export async function addPaymentsToSale(
     throw new Error('خطا در افزودن پرداخت');
   }
 }
+
+/**
+ * Voids a payment (sets status to VOID)
+ * Only superusers can void payments
+ */
+export async function voidPayment(
+  saleId: number,
+  paymentId: number
+): Promise<IAddPaymentsResponse> {
+  try {
+    const response = await authenticatedFetchJSON<IAddPaymentsResponse>(
+      `${CS_API_URL}/api/sale/${saleId}/payment/${paymentId}`,
+      {
+        method: 'DELETE',
+      }
+    );
+    return response;
+  } catch (error) {
+    console.error(`Error voiding payment ${paymentId}:`, error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('خطا در لغو پرداخت');
+  }
+}

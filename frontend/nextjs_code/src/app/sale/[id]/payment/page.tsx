@@ -14,6 +14,7 @@ import {
   fetchSaleDetails,
   addPaymentsToSale,
   fetchBankAccounts,
+  voidPayment,
 } from '@/service/sale';
 import { useToast } from '@/components/common/Toast';
 import { LoadingOverlay } from '@/components/common/LoadingOverlay';
@@ -330,6 +331,32 @@ export default function SalePaymentPage() {
     } catch (err) {
       showToast(
         err instanceof Error ? err.message : UI_TEXT.ERROR_ADDING_PAYMENT,
+        'error'
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleVoidPayment = async (paymentId: number) => {
+    if (!sale) return;
+
+    // Confirmation dialog
+    const confirmed = window.confirm('آیا مطمئن هستید که می‌خواهید این پرداخت را لغو کنید؟');
+    if (!confirmed) return;
+
+    try {
+      setSubmitting(true);
+
+      await voidPayment(saleId, paymentId);
+
+      // Reload sale data to show updated payment history
+      await loadSaleData();
+
+      showToast('پرداخت با موفقیت لغو شد', 'success');
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : 'خطا در لغو پرداخت',
         'error'
       );
     } finally {
@@ -920,83 +947,115 @@ export default function SalePaymentPage() {
 
               {sale.payments && sale.payments.length > 0 ? (
                 <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {sale.payments.map((payment, index) => (
-                    <div
-                      key={payment.id}
-                      className="p-2 rounded border text-xs"
-                      style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border }}
-                    >
-                      <div className="flex justify-between items-start mb-1">
-                        <span className="font-bold" style={{ color: THEME_COLORS.text }}>
-                          #{index + 1}
-                        </span>
-                        <span
-                          className="px-2 py-0.5 rounded text-xs"
-                          style={{
-                            backgroundColor:
-                              payment.method === 'CASH'
-                                ? THEME_COLORS.green
-                                : payment.method === 'POS'
-                                ? THEME_COLORS.blue
-                                : THEME_COLORS.purple,
-                            color: '#fff',
-                          }}
-                        >
-                          {payment.method === 'CASH'
-                            ? 'نقدی'
-                            : payment.method === 'POS'
-                            ? 'کارتخوان'
-                            : 'کارت به کارت'}
-                        </span>
-                      </div>
-
-                      <div className="space-y-0.5" style={{ color: THEME_COLORS.subtext }}>
-                        <div className="flex justify-between">
-                          <span>مبلغ:</span>
-                          <span style={{ color: THEME_COLORS.text }}>
-                            {formatPersianMoney(payment.amount_applied)}
-                          </span>
-                        </div>
-                        {payment.tip_amount > 0 && (
-                          <div className="flex justify-between">
-                            <span>انعام:</span>
-                            <span style={{ color: THEME_COLORS.text }}>
-                              {formatPersianMoney(payment.tip_amount)}
-                            </span>
+                  {sale.payments.map((payment, index) => {
+                    const isVoided = payment.status === 'VOID';
+                    return (
+                      <div
+                        key={payment.id}
+                        className="p-2 rounded border text-xs relative"
+                        style={{
+                          backgroundColor: isVoided ? `${THEME_COLORS.red}10` : THEME_COLORS.bgSecondary,
+                          borderColor: isVoided ? THEME_COLORS.red : THEME_COLORS.border,
+                          opacity: isVoided ? 0.6 : 1,
+                        }}
+                      >
+                        {isVoided && (
+                          <div
+                            className="absolute top-1 left-1 px-2 py-0.5 rounded text-xs font-bold"
+                            style={{ backgroundColor: THEME_COLORS.red, color: '#fff' }}
+                          >
+                            لغو شده
                           </div>
                         )}
-                        <div className="flex justify-between font-bold">
-                          <span>جمع:</span>
-                          <span style={{ color: THEME_COLORS.accent }}>
-                            {formatPersianMoney(payment.amount_total)}
+
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="font-bold" style={{ color: THEME_COLORS.text }}>
+                            #{index + 1}
+                          </span>
+                          <span
+                            className="px-2 py-0.5 rounded text-xs"
+                            style={{
+                              backgroundColor:
+                                payment.method === 'CASH'
+                                  ? THEME_COLORS.green
+                                  : payment.method === 'POS'
+                                  ? THEME_COLORS.blue
+                                  : THEME_COLORS.purple,
+                              color: '#fff',
+                            }}
+                          >
+                            {payment.method === 'CASH'
+                              ? 'نقدی'
+                              : payment.method === 'POS'
+                              ? 'کارتخوان'
+                              : 'کارت به کارت'}
                           </span>
                         </div>
-                      </div>
 
-                      {payment.destination_account_owner && (
-                        <div className="mt-1 pt-1 border-t" style={{ borderColor: THEME_COLORS.border }}>
-                          <div style={{ color: THEME_COLORS.subtext }}>حساب مقصد:</div>
-                          <div style={{ color: THEME_COLORS.text }}>
-                            {payment.destination_account_owner}
+                        <div className="space-y-0.5" style={{ color: THEME_COLORS.subtext }}>
+                          <div className="flex justify-between">
+                            <span>مبلغ:</span>
+                            <span style={{ color: THEME_COLORS.text, textDecoration: isVoided ? 'line-through' : 'none' }}>
+                              {formatPersianMoney(payment.amount_applied)}
+                            </span>
                           </div>
-                          {payment.destination_card_number && (
-                            <div style={{ color: THEME_COLORS.subtext }}>
-                              {payment.destination_card_number}
+                          {payment.tip_amount > 0 && (
+                            <div className="flex justify-between">
+                              <span>انعام:</span>
+                              <span style={{ color: THEME_COLORS.text, textDecoration: isVoided ? 'line-through' : 'none' }}>
+                                {formatPersianMoney(payment.tip_amount)}
+                              </span>
                             </div>
                           )}
+                          <div className="flex justify-between font-bold">
+                            <span>جمع:</span>
+                            <span style={{ color: THEME_COLORS.accent, textDecoration: isVoided ? 'line-through' : 'none' }}>
+                              {formatPersianMoney(payment.amount_total)}
+                            </span>
+                          </div>
                         </div>
-                      )}
 
-                      <div className="mt-1 pt-1 border-t" style={{ borderColor: THEME_COLORS.border }}>
-                        <div style={{ color: THEME_COLORS.subtext }}>
-                          {formatJalaliDateTime(payment.received_at)}
+                        {payment.destination_account_owner && (
+                          <div className="mt-1 pt-1 border-t" style={{ borderColor: THEME_COLORS.border }}>
+                            <div style={{ color: THEME_COLORS.subtext }}>حساب مقصد:</div>
+                            <div style={{ color: THEME_COLORS.text }}>
+                              {payment.destination_account_owner}
+                            </div>
+                            {payment.destination_card_number && (
+                              <div style={{ color: THEME_COLORS.subtext }}>
+                                {payment.destination_card_number}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="mt-1 pt-1 border-t" style={{ borderColor: THEME_COLORS.border }}>
+                          <div style={{ color: THEME_COLORS.subtext }}>
+                            {formatJalaliDateTime(payment.received_at)}
+                          </div>
+                          <div style={{ color: THEME_COLORS.subtext }}>
+                            دریافت کننده: {payment.received_by_name}
+                          </div>
                         </div>
-                        <div style={{ color: THEME_COLORS.subtext }}>
-                          دریافت کننده: {payment.received_by_name}
-                        </div>
+
+                        {/* Void button - only for superusers and non-voided payments */}
+                        {userPermissions?.is_superuser && !isVoided && (
+                          <button
+                            onClick={() => handleVoidPayment(payment.id)}
+                            disabled={submitting}
+                            className="w-full mt-2 py-1.5 rounded text-xs font-bold transition-all hover:opacity-90 disabled:opacity-50"
+                            style={{
+                              backgroundColor: `${THEME_COLORS.red}20`,
+                              color: THEME_COLORS.red,
+                              border: `1px solid ${THEME_COLORS.red}`,
+                            }}
+                          >
+                            🗑️ لغو پرداخت
+                          </button>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-4 text-xs" style={{ color: THEME_COLORS.subtext }}>
