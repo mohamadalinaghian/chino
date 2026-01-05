@@ -50,20 +50,20 @@ export default function SalePaymentPage() {
   const [loadingAccounts, setLoadingAccounts] = useState(false);
   const [userPermissions, setUserPermissions] = useState<IUserPermissions | null>(null);
 
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.CARD_TRANSFER);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.CASH);
   const [amount, setAmount] = useState<string>('');
   const [tipAmount, setTipAmount] = useState<string>('0');
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
   const [selectedItems, setSelectedItems] = useState<IItemSelection[]>([]);
-  const [accountSearchQuery, setAccountSearchQuery] = useState('');
 
   const [taxType, setTaxType] = useState<TaxDiscountType>(TaxDiscountType.PERCENTAGE);
   const [taxValue, setTaxValue] = useState<string>('0');
   const [discountType, setDiscountType] = useState<TaxDiscountType>(TaxDiscountType.PERCENTAGE);
   const [discountValue, setDiscountValue] = useState<string>('0');
+  const [showTaxDiscount, setShowTaxDiscount] = useState(false);
 
   const [selectAllItems, setSelectAllItems] = useState(true);
-  const [customDivisor, setCustomDivisor] = useState<string>('3');
+  const [customDivisor, setCustomDivisor] = useState<string>('2');
 
   useEffect(() => {
     loadSaleData();
@@ -71,18 +71,6 @@ export default function SalePaymentPage() {
     loadPOSAccount();
     loadUserPermissions();
   }, [saleId]);
-
-  // Auto-update amount when selection, tax/discount, or tip changes
-  useEffect(() => {
-    if (sale) {
-      const baseAmount = calculateSelectedItemsTotal();
-      const taxAmt = calculateTaxAmount(baseAmount);
-      const discountAmt = calculateDiscountAmount(baseAmount);
-      const tip = parseFloat(tipAmount) || 0;
-      const finalAmount = baseAmount + taxAmt - discountAmt + tip;
-      setAmount(finalAmount.toString());
-    }
-  }, [selectedItems, selectAllItems, taxValue, taxType, discountValue, discountType, tipAmount, sale]);
 
   const loadSaleData = async () => {
     try {
@@ -102,7 +90,7 @@ export default function SalePaymentPage() {
       const accounts = await fetchBankAccounts();
       setBankAccounts(accounts);
     } catch (err) {
-      showToast(UI_TEXT.ERROR_LOADING_BANK_ACCOUNTS, 'error');
+      console.error('Error loading bank accounts:', err);
     } finally {
       setLoadingAccounts(false);
     }
@@ -110,10 +98,10 @@ export default function SalePaymentPage() {
 
   const loadPOSAccount = async () => {
     try {
-      const account = await authenticatedFetchJSON<IPOSAccount>(
+      const response = await authenticatedFetchJSON<IPOSAccount>(
         `${CS_API_URL}${API_ENDPOINTS.POS_ACCOUNT}`
       );
-      setPosAccount(account);
+      setPosAccount(response);
     } catch (err) {
       console.error('Error loading POS account:', err);
     }
@@ -121,27 +109,21 @@ export default function SalePaymentPage() {
 
   const loadUserPermissions = async () => {
     try {
-      const permissions = await authenticatedFetchJSON<IUserPermissions>(
-        `${CS_API_URL}${API_ENDPOINTS.AUTH_ME}`
+      const response = await authenticatedFetchJSON<IUserPermissions>(
+        `${CS_API_URL}${API_ENDPOINTS.USER_PERMISSIONS}`
       );
-      setUserPermissions(permissions);
+      setUserPermissions(response);
     } catch (err) {
-      console.error('Error loading permissions:', err);
+      console.error('Error loading user permissions:', err);
     }
   };
 
-  const canEditTaxDiscount = useMemo(() => {
-    return userPermissions?.is_superuser || false;
-  }, [userPermissions]);
-
-  const canSeeAccountBalance = useMemo(() => {
-    return userPermissions?.is_superuser || false;
-  }, [userPermissions]);
-
-  const calculateUnpaidTotal = (): number => {
+  const calculateUnpaidTotal = useCallback((): number => {
     if (!sale) return 0;
-    return sale.balance_due ?? sale.total_amount;
-  };
+    return sale.items
+      .filter((item) => !item.is_paid)
+      .reduce((sum, item) => sum + Number(item.unit_price) * item.quantity, 0);
+  }, [sale]);
 
   const calculateSelectedItemsTotal = useCallback((): number => {
     if (!sale) return 0;
@@ -154,7 +136,7 @@ export default function SalePaymentPage() {
       if (!item) return sum;
       return sum + Number(item.unit_price) * selection.quantity;
     }, 0);
-  }, [sale, selectAllItems, selectedItems]);
+  }, [sale, selectAllItems, selectedItems, calculateUnpaidTotal]);
 
   const calculateTaxAmount = (baseAmount: number): number => {
     const val = parseFloat(taxValue);
@@ -162,9 +144,8 @@ export default function SalePaymentPage() {
 
     if (taxType === TaxDiscountType.FIXED) {
       return val;
-    } else {
-      return (baseAmount * val) / 100;
     }
+    return (baseAmount * val) / 100;
   };
 
   const calculateDiscountAmount = (baseAmount: number): number => {
@@ -173,79 +154,29 @@ export default function SalePaymentPage() {
 
     if (discountType === TaxDiscountType.FIXED) {
       return val;
-    } else {
-      return (baseAmount * val) / 100;
     }
+    return (baseAmount * val) / 100;
   };
 
-  const { paidItems, unpaidItems } = useMemo(() => {
-    if (!sale) return { paidItems: [], unpaidItems: [] };
-
-    // Build a set of all item IDs that have been paid (fully)
-    const paidItemIds = new Set<number>();
-
-    // Track which items are covered by payments
-    if (sale.payments && sale.payments.length > 0) {
-      sale.payments.forEach((payment) => {
-        if (payment.covered_item_ids && payment.covered_item_ids.length > 0) {
-          payment.covered_item_ids.forEach((itemId) => {
-            paidItemIds.add(itemId);
-          });
-        }
-      });
-    }
-
-    const paid: ISaleItemDetail[] = [];
-    const unpaid: ISaleItemDetail[] = [];
-
-    sale.items.forEach((item) => {
-      if (paidItemIds.has(item.id)) {
-        paid.push(item);
-      } else {
-        unpaid.push(item);
-      }
-    });
-
-    return { paidItems: paid, unpaidItems: unpaid };
+  const unpaidItems = useMemo(() => {
+    return sale?.items.filter((item) => !item.is_paid) || [];
   }, [sale]);
 
-  const filteredBankAccounts = useMemo(() => {
-    if (!accountSearchQuery.trim()) return bankAccounts;
-    const query = accountSearchQuery.toLowerCase();
-    return bankAccounts.filter(
-      (account) =>
-        account.card_number.includes(query) ||
-        account.account_owner.toLowerCase().includes(query) ||
-        (account.bank_name && account.bank_name.toLowerCase().includes(query))
-    );
-  }, [bankAccounts, accountSearchQuery]);
-
-  const handlePaymentMethodChange = (method: PaymentMethod) => {
-    setPaymentMethod(method);
-
-    // Only auto-select for POS
-    if (method === PaymentMethod.POS && posAccount?.id) {
-      setSelectedAccountId(posAccount.id);
-    } else if (method === PaymentMethod.CASH) {
-      setSelectedAccountId(null);
-    }
-    // For CARD_TRANSFER, don't auto-select - let user choose
-  };
+  const paidItems = useMemo(() => {
+    return sale?.items.filter((item) => item.is_paid) || [];
+  }, [sale]);
 
   const handleItemQuantityChange = (itemId: number, quantity: number) => {
-    setSelectAllItems(false);
-    if (quantity === 0) {
-      setSelectedItems((prev) => prev.filter((s) => s.itemId !== itemId));
-    } else {
-      setSelectedItems((prev) => {
-        const existing = prev.find((s) => s.itemId === itemId);
-        if (existing) {
-          return prev.map((s) => (s.itemId === itemId ? { ...s, quantity } : s));
-        } else {
-          return [...prev, { itemId, quantity }];
-        }
-      });
-    }
+    setSelectedItems((prev) => {
+      const existing = prev.find((s) => s.itemId === itemId);
+      if (quantity === 0) {
+        return prev.filter((s) => s.itemId !== itemId);
+      }
+      if (existing) {
+        return prev.map((s) => (s.itemId === itemId ? { ...s, quantity } : s));
+      }
+      return [...prev, { itemId, quantity }];
+    });
   };
 
   const handleSelectAllToggle = () => {
@@ -255,9 +186,11 @@ export default function SalePaymentPage() {
     }
   };
 
-  const handlePrintInvoice = () => {
-    // TODO: Implement print functionality
-    showToast('قابلیت چاپ به زودی اضافه می‌شود', 'info');
+  const handlePaymentMethodChange = (method: PaymentMethod) => {
+    setPaymentMethod(method);
+    if (method === PaymentMethod.CASH) {
+      setSelectedAccountId(null);
+    }
   };
 
   const validatePayment = (): boolean => {
@@ -318,6 +251,7 @@ export default function SalePaymentPage() {
       setSelectAllItems(true);
       setTaxValue('0');
       setDiscountValue('0');
+      setShowTaxDiscount(false);
 
       // Show appropriate message based on payment result
       if (response.was_auto_closed || response.is_fully_paid) {
@@ -341,18 +275,13 @@ export default function SalePaymentPage() {
   const handleVoidPayment = async (paymentId: number) => {
     if (!sale) return;
 
-    // Confirmation dialog
     const confirmed = window.confirm('آیا مطمئن هستید که می‌خواهید این پرداخت را لغو کنید؟');
     if (!confirmed) return;
 
     try {
       setSubmitting(true);
-
       await voidPayment(saleId, paymentId);
-
-      // Reload sale data to show updated payment history
       await loadSaleData();
-
       showToast('پرداخت با موفقیت لغو شد', 'success');
     } catch (err) {
       showToast(
@@ -386,705 +315,509 @@ export default function SalePaymentPage() {
   const finalAmount = selectedTotal + taxAmount - discountAmount + tipAmountValue;
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: THEME_COLORS.bgPrimary }}>
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: THEME_COLORS.bgPrimary }}>
       {/* Header */}
-      <header className="p-2 border-b" style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border }}>
-        <div className="max-w-screen-xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-2">
+      <header className="px-4 py-3 border-b flex-shrink-0" style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border }}>
+        <div className="max-w-full flex justify-between items-center">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => router.back()}
-              className="px-3 py-1.5 rounded-lg font-bold text-sm"
-              style={{ backgroundColor: 'transparent', borderColor: THEME_COLORS.border, color: THEME_COLORS.subtext, border: '2px solid' }}
+              className="px-4 py-2 rounded font-bold text-sm"
+              style={{ backgroundColor: THEME_COLORS.surface, color: THEME_COLORS.text }}
             >
               ← بازگشت
             </button>
             <h1 className="text-xl font-bold" style={{ color: THEME_COLORS.text }}>
-              پرداخت #{saleId}
+              پرداخت فروش #{saleId}
             </h1>
           </div>
-          <button
-            onClick={handlePrintInvoice}
-            className="px-3 py-1.5 rounded-lg font-bold text-sm"
-            style={{ backgroundColor: THEME_COLORS.cyan, color: '#fff' }}
-          >
-            🖨️ چاپ فاکتور
-          </button>
         </div>
       </header>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto p-3">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          {/* Left Column */}
-          <div className="lg:col-span-2 space-y-3">
-            {/* Sale Info - Compact */}
-            <div className="p-4 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                <div>
-                  <div className="mb-1" style={{ color: THEME_COLORS.subtext }}>مجموع:</div>
-                  <div className="font-bold text-base" style={{ color: THEME_COLORS.text }}>
-                    {formatPersianMoney(sale.total_amount)}
-                  </div>
-                </div>
-                <div>
-                  <div className="mb-1" style={{ color: THEME_COLORS.subtext }}>پرداخت شده:</div>
-                  <div className="font-bold text-base" style={{ color: THEME_COLORS.green }}>
-                    {formatPersianMoney(sale.total_paid || 0)}
-                  </div>
-                </div>
-                <div>
-                  <div className="mb-1" style={{ color: THEME_COLORS.subtext }}>مانده:</div>
-                  <div className="font-bold text-base" style={{ color: THEME_COLORS.orange }}>
-                    {formatPersianMoney(sale.balance_due ?? sale.total_amount)}
-                  </div>
-                </div>
-                <div>
-                  <div className="mb-1" style={{ color: THEME_COLORS.subtext }}>وضعیت:</div>
-                  <div className="font-bold text-sm" style={{ color: THEME_COLORS.cyan }}>
-                    {sale.payment_status === 'PAID' ? 'پرداخت شده' :
-                      sale.payment_status === 'PARTIALLY_PAID' ? 'پرداخت جزئی' : 'پرداخت نشده'}
-                  </div>
-                </div>
-              </div>
+      {/* Main 2-Column Layout */}
+      <div className="flex-1 grid grid-cols-12 gap-0 overflow-hidden">
+
+        {/* LEFT COLUMN - Scrollable Items List (65%) */}
+        <div className="col-span-8 flex flex-col overflow-hidden border-l" style={{ borderColor: THEME_COLORS.border }}>
+
+          {/* Quick Select Bar */}
+          <div className="flex-shrink-0 px-4 py-3 border-b flex items-center justify-between" style={{ backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.border }}>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setSelectAllItems(true);
+                  setSelectedItems([]);
+                }}
+                className="px-4 py-2 rounded font-bold text-sm border-2 transition-all"
+                style={{
+                  backgroundColor: selectAllItems ? THEME_COLORS.accent : 'transparent',
+                  borderColor: THEME_COLORS.accent,
+                  color: selectAllItems ? '#fff' : THEME_COLORS.text,
+                }}
+              >
+                همه اقلام
+              </button>
+              <span className="text-sm" style={{ color: THEME_COLORS.subtext }}>
+                {unpaidItems.length} مورد پرداخت نشده
+              </span>
             </div>
+          </div>
 
-            {/* Amount Card - Dynamic */}
-            <div className="p-3 rounded-lg border-2" style={{ backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.accent }}>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <label className="block text-sm mb-1" style={{ color: THEME_COLORS.text }}>مبلغ پرداخت *</label>
-                  <input
-                    type="number"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    className="w-full px-2 py-1.5 rounded border text-sm"
-                    style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border, color: THEME_COLORS.text }}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm mb-1" style={{ color: THEME_COLORS.text }}>انعام</label>
-                  <input
-                    type="number"
-                    value={tipAmount}
-                    onChange={(e) => setTipAmount(e.target.value)}
-                    className="w-full px-2 py-1.5 rounded border text-sm"
-                    style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border, color: THEME_COLORS.text }}
-                  />
-                </div>
-              </div>
+          {/* Scrollable Items List */}
+          <div className="flex-1 overflow-y-auto px-4 py-2">
+            <div className="space-y-1">
+              {/* Unpaid Items */}
+              {unpaidItems.map((item) => {
+                const selection = selectedItems.find((s) => s.itemId === item.id);
+                const selectedQty = selectAllItems ? item.quantity : (selection?.quantity || 0);
+                const isSelected = selectAllItems || selectedQty > 0;
+                const itemTotal = selectedQty * item.unit_price;
 
-              {/* Quick Calculation Buttons */}
-              <div className="mt-3">
-                <div className="text-sm mb-2 font-bold" style={{ color: THEME_COLORS.subtext }}>محاسبه سریع (بر اساس اقلام انتخابی):</div>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    onClick={() => {
-                      const baseAmount = calculateSelectedItemsTotal();
-                      const taxAmt = calculateTaxAmount(baseAmount);
-                      const discountAmt = calculateDiscountAmount(baseAmount);
-                      const finalAmt = baseAmount + taxAmt - discountAmt;
-                      setAmount(finalAmt.toFixed(0));
-                    }}
-                    className="py-2 rounded text-sm border-2 font-bold transition-all"
+                return (
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-3 px-3 py-2 rounded border"
                     style={{
-                      backgroundColor: parseFloat(amount) === (selectedTotal + taxAmount - discountAmount) ? THEME_COLORS.green : THEME_COLORS.surface,
-                      borderColor: THEME_COLORS.green,
-                      color: parseFloat(amount) === (selectedTotal + taxAmount - discountAmount) ? '#fff' : THEME_COLORS.text
+                      backgroundColor: isSelected ? `${THEME_COLORS.accent}15` : THEME_COLORS.surface,
+                      borderColor: isSelected ? THEME_COLORS.accent : THEME_COLORS.border,
                     }}
                   >
-                    همه
-                  </button>
-                  <button
-                    onClick={() => {
-                      const baseAmount = calculateSelectedItemsTotal();
-                      const taxAmt = calculateTaxAmount(baseAmount);
-                      const discountAmt = calculateDiscountAmount(baseAmount);
-                      const finalAmt = baseAmount + taxAmt - discountAmt;
-                      setAmount((finalAmt / 2).toFixed(0));
-                    }}
-                    className="py-2 rounded text-sm border-2 transition-all"
-                    style={{
-                      backgroundColor: parseFloat(amount) === (selectedTotal + taxAmount - discountAmount) / 2 ? THEME_COLORS.blue : THEME_COLORS.surface,
-                      borderColor: THEME_COLORS.blue,
-                      color: parseFloat(amount) === (selectedTotal + taxAmount - discountAmount) / 2 ? '#fff' : THEME_COLORS.text
-                    }}
-                  >
-                    نصف
-                  </button>
-                  <div className="flex flex-col gap-1">
-                    <div className="flex gap-1">
-                      <span className="text-sm py-1 font-bold" style={{ color: THEME_COLORS.text }}>÷</span>
+                    {!selectAllItems && (
                       <input
-                        type="number"
-                        min="2"
-                        value={customDivisor}
-                        onChange={(e) => setCustomDivisor(e.target.value)}
-                        className="w-full px-2 py-1 rounded border text-sm text-center"
-                        style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border, color: THEME_COLORS.text }}
-                        placeholder="3"
+                        type="checkbox"
+                        checked={selectedQty > 0}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            handleItemQuantityChange(item.id, item.quantity);
+                          } else {
+                            handleItemQuantityChange(item.id, 0);
+                          }
+                        }}
+                        className="w-5 h-5"
                       />
+                    )}
+                    <div className="flex-1">
+                      <div className="font-bold" style={{ color: THEME_COLORS.text }}>
+                        {item.product_name}
+                      </div>
+                      <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
+                        {formatPersianMoney(item.unit_price)} × {item.quantity}
+                      </div>
                     </div>
-                    <button
-                      onClick={() => {
-                        const divisor = parseInt(customDivisor) || 3;
-                        const baseAmount = calculateSelectedItemsTotal();
-                        const taxAmt = calculateTaxAmount(baseAmount);
-                        const discountAmt = calculateDiscountAmount(baseAmount);
-                        const finalAmt = baseAmount + taxAmt - discountAmt;
-                        setAmount((finalAmt / divisor).toFixed(0));
-                      }}
-                      className="py-1 rounded text-sm font-bold transition-all"
-                      style={{
-                        backgroundColor: THEME_COLORS.accent,
-                        color: '#fff'
-                      }}
-                    >
-                      اعمال
-                    </button>
+                    {!selectAllItems && selectedQty > 0 && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleItemQuantityChange(item.id, Math.max(0, selectedQty - 1))}
+                          className="w-8 h-8 rounded font-bold flex items-center justify-center"
+                          style={{ backgroundColor: THEME_COLORS.red, color: '#fff' }}
+                        >
+                          −
+                        </button>
+                        <div className="w-12 text-center font-bold" style={{ color: THEME_COLORS.text }}>
+                          {selectedQty}
+                        </div>
+                        <button
+                          onClick={() => handleItemQuantityChange(item.id, Math.min(item.quantity, selectedQty + 1))}
+                          className="w-8 h-8 rounded font-bold flex items-center justify-center"
+                          style={{ backgroundColor: THEME_COLORS.green, color: '#fff' }}
+                        >
+                          +
+                        </button>
+                      </div>
+                    )}
+                    {isSelected && (
+                      <div className="text-right">
+                        <div className="text-lg font-bold" style={{ color: THEME_COLORS.green }}>
+                          {formatPersianMoney(itemTotal)}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              </div>
+                );
+              })}
 
-              <div className="mt-2 pt-2 border-t" style={{ borderColor: THEME_COLORS.border }}>
-                <div className="flex justify-between text-sm">
-                  <span style={{ color: THEME_COLORS.subtext }}>انتخاب شده:</span>
-                  <span style={{ color: THEME_COLORS.text }}>{formatPersianMoney(selectedTotal)}</span>
-                </div>
-                {taxAmount > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span style={{ color: THEME_COLORS.subtext }}>مالیات:</span>
-                    <span style={{ color: THEME_COLORS.text }}>+{formatPersianMoney(taxAmount)}</span>
+              {/* Paid Items */}
+              {paidItems.length > 0 && (
+                <div className="mt-4 pt-4 border-t" style={{ borderColor: THEME_COLORS.border }}>
+                  <div className="text-sm font-bold mb-2 px-2" style={{ color: THEME_COLORS.green }}>
+                    ✓ پرداخت شده ({paidItems.length})
                   </div>
-                )}
-                {discountAmount > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span style={{ color: THEME_COLORS.subtext }}>تخفیف:</span>
-                    <span style={{ color: THEME_COLORS.red }}>-{formatPersianMoney(discountAmount)}</span>
-                  </div>
-                )}
-                {tipAmountValue > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span style={{ color: THEME_COLORS.subtext }}>انعام:</span>
-                    <span style={{ color: THEME_COLORS.text }}>+{formatPersianMoney(tipAmountValue)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-base font-bold mt-1 pt-1 border-t" style={{ borderColor: THEME_COLORS.border }}>
-                  <span style={{ color: THEME_COLORS.text }}>جمع نهایی:</span>
-                  <span style={{ color: THEME_COLORS.accent }}>{formatPersianMoney(finalAmount)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Paid Items - Read Only */}
-            {paidItems.length > 0 && (
-              <div className="p-3 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
-                <h3 className="text-sm font-bold mb-2" style={{ color: THEME_COLORS.green }}>اقلام پرداخت شده</h3>
-                <div className="space-y-1 max-h-32 overflow-y-auto">
                   {paidItems.map((item) => (
                     <div
                       key={item.id}
-                      className="p-3 rounded text-sm opacity-60"
-                      style={{ backgroundColor: THEME_COLORS.bgSecondary }}
+                      className="flex items-center gap-3 px-3 py-2 rounded opacity-50"
+                      style={{ backgroundColor: THEME_COLORS.surface }}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div style={{ color: THEME_COLORS.text }}>✓ {item.product_name}</div>
-                          <div style={{ color: THEME_COLORS.subtext }}>
-                            {item.quantity} × {formatPersianMoney(item.unit_price)}
-                          </div>
+                      <div className="flex-1">
+                        <div className="font-bold" style={{ color: THEME_COLORS.text }}>
+                          {item.product_name}
                         </div>
-                        <div className="font-bold" style={{ color: THEME_COLORS.green }}>
-                          پرداخت شده
+                        <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
+                          {formatPersianMoney(item.unit_price)} × {item.quantity}
                         </div>
+                      </div>
+                      <div className="text-sm font-bold" style={{ color: THEME_COLORS.green }}>
+                        پرداخت شده
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+          </div>
+        </div>
 
-            {/* Unpaid Item Selection - Modern */}
-            <div className="p-3 rounded-lg border" style={{ backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.border }}>
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h3 className="text-sm font-bold" style={{ color: THEME_COLORS.text }}>
-                    {paidItems.length > 0 ? '🛒 اقلام پرداخت نشده' : '🛒 اقلام'}
-                  </h3>
-                  {!selectAllItems && unpaidItems.length > 0 && (
-                    <div className="text-sm mt-1" style={{ color: THEME_COLORS.subtext }}>
-                      {selectedItems.filter(s => s.quantity > 0).length} از {unpaidItems.length} مورد انتخاب شده
-                    </div>
-                  )}
-                </div>
+        {/* RIGHT COLUMN - Sticky Payment Panel (35%) */}
+        <div className="col-span-4 flex flex-col overflow-hidden" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
+
+          {/* Compact Summary Bar */}
+          <div className="flex-shrink-0 px-4 py-3 border-b grid grid-cols-4 gap-2 text-center" style={{ borderColor: THEME_COLORS.border }}>
+            <div>
+              <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>مجموع</div>
+              <div className="font-bold text-base" style={{ color: THEME_COLORS.text }}>
+                {formatPersianMoney(sale.total_amount)}
+              </div>
+            </div>
+            <div>
+              <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>پرداخت شده</div>
+              <div className="font-bold text-base" style={{ color: THEME_COLORS.green }}>
+                {formatPersianMoney(sale.total_paid || 0)}
+              </div>
+            </div>
+            <div>
+              <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>مانده</div>
+              <div className="font-bold text-base" style={{ color: THEME_COLORS.orange }}>
+                {formatPersianMoney(sale.balance_due ?? sale.total_amount)}
+              </div>
+            </div>
+            <div>
+              <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>وضعیت</div>
+              <div className="font-bold text-sm" style={{ color: THEME_COLORS.cyan }}>
+                {sale.payment_status === 'PAID' ? '✓' :
+                  sale.payment_status === 'PARTIALLY_PAID' ? 'جزئی' : 'بدون'}
+              </div>
+            </div>
+          </div>
+
+          {/* Payment Form - No Scroll */}
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+
+            {/* Large Amount Input */}
+            <div>
+              <label className="block text-base font-bold mb-2" style={{ color: THEME_COLORS.text }}>مبلغ پرداخت</label>
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="w-full px-4 py-4 rounded text-2xl font-bold text-center border-2"
+                style={{
+                  backgroundColor: THEME_COLORS.surface,
+                  borderColor: THEME_COLORS.accent,
+                  color: THEME_COLORS.text
+                }}
+                placeholder="0"
+              />
+            </div>
+
+            {/* Quick Calculation - AFTER inputs */}
+            <div>
+              <div className="text-sm font-bold mb-2" style={{ color: THEME_COLORS.subtext }}>محاسبه سریع</div>
+              <div className="grid grid-cols-3 gap-2">
                 <button
-                  onClick={handleSelectAllToggle}
-                  className="px-3 py-1.5 rounded-lg text-sm font-bold border-2 transition-all"
+                  onClick={() => {
+                    const baseAmount = calculateSelectedItemsTotal();
+                    const taxAmt = calculateTaxAmount(baseAmount);
+                    const discountAmt = calculateDiscountAmount(baseAmount);
+                    const tip = parseFloat(tipAmount) || 0;
+                    const final = baseAmount + taxAmt - discountAmt + tip;
+                    setAmount(final.toFixed(0));
+                  }}
+                  className="py-3 rounded font-bold border-2"
                   style={{
-                    backgroundColor: selectAllItems ? THEME_COLORS.accent : 'transparent',
-                    borderColor: selectAllItems ? THEME_COLORS.accent : THEME_COLORS.border,
-                    color: selectAllItems ? '#fff' : THEME_COLORS.text,
+                    backgroundColor: THEME_COLORS.green,
+                    borderColor: THEME_COLORS.green,
+                    color: '#fff',
                   }}
                 >
-                  {selectAllItems ? '✓ همه موارد' : 'انتخاب همه'}
+                  همه
                 </button>
-              </div>
-
-              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                {unpaidItems.length > 0 ? (
-                  unpaidItems.map((item) => {
-                  const selection = selectedItems.find((s) => s.itemId === item.id);
-                  const selectedQty = selectAllItems ? item.quantity : (selection?.quantity || 0);
-                  const isSelected = selectAllItems || selectedQty > 0;
-                  const itemTotal = selectedQty * item.unit_price;
-
-                  return (
-                    <div
-                      key={item.id}
-                      className="p-3 rounded-lg border-2 transition-all"
-                      style={{
-                        backgroundColor: isSelected ? `${THEME_COLORS.accent}15` : THEME_COLORS.bgSecondary,
-                        borderColor: isSelected ? THEME_COLORS.accent : THEME_COLORS.border,
-                      }}
-                    >
-                      {/* Item Header */}
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            {!selectAllItems && (
-                              <input
-                                type="checkbox"
-                                checked={selectedQty > 0}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    handleItemQuantityChange(item.id, item.quantity);
-                                  } else {
-                                    handleItemQuantityChange(item.id, 0);
-                                  }
-                                }}
-                                className="w-4 h-4 cursor-pointer"
-                              />
-                            )}
-                            <div className="text-sm font-bold" style={{ color: THEME_COLORS.text }}>
-                              {item.product_name}
-                            </div>
-                          </div>
-                          <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
-                            قیمت واحد: {formatPersianMoney(item.unit_price)}
-                          </div>
-                        </div>
-                        {isSelected && (
-                          <div className="text-right">
-                            <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>جمع:</div>
-                            <div className="text-sm font-bold" style={{ color: THEME_COLORS.green }}>
-                              {formatPersianMoney(itemTotal)}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Quantity Controls */}
-                      {!selectAllItems ? (
-                        <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: THEME_COLORS.border }}>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => handleItemQuantityChange(item.id, Math.max(0, selectedQty - 1))}
-                              disabled={selectedQty === 0}
-                              className="w-8 h-8 rounded-lg font-bold text-lg flex items-center justify-center transition-all disabled:opacity-30"
-                              style={{
-                                backgroundColor: THEME_COLORS.red,
-                                color: '#fff',
-                              }}
-                            >
-                              −
-                            </button>
-                            <div className="w-16 text-center">
-                              <div className="text-lg font-bold" style={{ color: THEME_COLORS.text }}>
-                                {selectedQty}
-                              </div>
-                              <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
-                                از {item.quantity}
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => handleItemQuantityChange(item.id, Math.min(item.quantity, selectedQty + 1))}
-                              disabled={selectedQty >= item.quantity}
-                              className="w-8 h-8 rounded-lg font-bold text-lg flex items-center justify-center transition-all disabled:opacity-30"
-                              style={{
-                                backgroundColor: THEME_COLORS.green,
-                                color: '#fff',
-                              }}
-                            >
-                              +
-                            </button>
-                          </div>
-                          <button
-                            onClick={() => handleItemQuantityChange(item.id, item.quantity)}
-                            disabled={selectedQty === item.quantity}
-                            className="px-3 py-1 rounded text-sm font-bold transition-all disabled:opacity-50"
-                            style={{
-                              backgroundColor: THEME_COLORS.blue,
-                              color: '#fff',
-                            }}
-                          >
-                            همه ({item.quantity})
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="pt-2 border-t text-center" style={{ borderColor: THEME_COLORS.border }}>
-                          <div className="text-sm" style={{ color: THEME_COLORS.accent }}>
-                            ✓ {item.quantity} عدد انتخاب شده
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Extras Display */}
-                      {item.extras && item.extras.length > 0 && (
-                        <div className="mt-2 pt-2 border-t" style={{ borderColor: THEME_COLORS.border }}>
-                          <div className="text-sm font-bold mb-1" style={{ color: THEME_COLORS.subtext }}>
-                            ➕ افزودنی‌ها:
-                          </div>
-                          {item.extras.map((extra) => (
-                            <div key={extra.id} className="flex justify-between text-sm pr-4" style={{ color: THEME_COLORS.subtext }}>
-                              <span>• {extra.product_name} (×{extra.quantity})</span>
-                              <span>{formatPersianMoney(extra.total)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
-                ) : (
-                  <div className="text-center py-8 text-sm" style={{ color: THEME_COLORS.subtext }}>
-                    <div className="text-4xl mb-2">✓</div>
-                    همه اقلام پرداخت شده است
-                  </div>
-                )}
+                <button
+                  onClick={() => {
+                    const baseAmount = calculateSelectedItemsTotal();
+                    const taxAmt = calculateTaxAmount(baseAmount);
+                    const discountAmt = calculateDiscountAmount(baseAmount);
+                    const tip = parseFloat(tipAmount) || 0;
+                    const final = baseAmount + taxAmt - discountAmt + tip;
+                    setAmount((final / 2).toFixed(0));
+                  }}
+                  className="py-3 rounded font-bold border-2"
+                  style={{
+                    backgroundColor: THEME_COLORS.blue,
+                    borderColor: THEME_COLORS.blue,
+                    color: '#fff',
+                  }}
+                >
+                  نصف
+                </button>
+                <div className="flex flex-col gap-1">
+                  <input
+                    type="number"
+                    min="2"
+                    value={customDivisor}
+                    onChange={(e) => setCustomDivisor(e.target.value)}
+                    className="px-2 py-1 rounded text-center border"
+                    style={{ backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.border, color: THEME_COLORS.text }}
+                    placeholder="÷ 2"
+                  />
+                  <button
+                    onClick={() => {
+                      const divisor = parseInt(customDivisor) || 2;
+                      const baseAmount = calculateSelectedItemsTotal();
+                      const taxAmt = calculateTaxAmount(baseAmount);
+                      const discountAmt = calculateDiscountAmount(baseAmount);
+                      const tip = parseFloat(tipAmount) || 0;
+                      const final = baseAmount + taxAmt - discountAmt + tip;
+                      setAmount((final / divisor).toFixed(0));
+                    }}
+                    className="py-1 rounded font-bold text-sm"
+                    style={{
+                      backgroundColor: THEME_COLORS.accent,
+                      color: '#fff',
+                    }}
+                  >
+                    اعمال
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Payment Method - Compact */}
-            <div className="p-3 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
-              <h3 className="text-sm font-bold mb-2" style={{ color: THEME_COLORS.text }}>روش پرداخت</h3>
-              <div className="grid grid-cols-3 gap-2">
+            {/* Payment Method - Segmented */}
+            <div>
+              <div className="text-sm font-bold mb-2" style={{ color: THEME_COLORS.text }}>روش پرداخت</div>
+              <div className="grid grid-cols-3 gap-1 rounded p-1" style={{ backgroundColor: THEME_COLORS.surface }}>
                 {[
-                  { value: PaymentMethod.CARD_TRANSFER, label: 'کارت به کارت' },
-                  { value: PaymentMethod.POS, label: 'کارتخوان' },
-                  { value: PaymentMethod.CASH, label: 'نقدی' },
+                  { value: PaymentMethod.CASH, label: 'نقدی', icon: '💵' },
+                  { value: PaymentMethod.POS, label: 'کارتخوان', icon: '💳' },
+                  { value: PaymentMethod.CARD_TRANSFER, label: 'کارت', icon: '🏦' },
                 ].map((method) => (
                   <button
                     key={method.value}
                     onClick={() => handlePaymentMethodChange(method.value)}
-                    className="py-2 rounded text-sm font-bold border-2"
+                    className="py-3 rounded font-bold transition-all text-sm"
                     style={{
                       backgroundColor: paymentMethod === method.value ? THEME_COLORS.accent : 'transparent',
-                      borderColor: paymentMethod === method.value ? THEME_COLORS.accent : THEME_COLORS.border,
                       color: paymentMethod === method.value ? '#fff' : THEME_COLORS.text,
                     }}
                   >
-                    {method.label}
+                    <div>{method.icon}</div>
+                    <div>{method.label}</div>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Account Selection - Only for Card Transfer */}
-            {paymentMethod === PaymentMethod.CARD_TRANSFER && (
-              <div className="p-3 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
-                <h3 className="text-sm font-bold mb-2" style={{ color: THEME_COLORS.text }}>انتخاب حساب مقصد</h3>
-                <input
-                  type="text"
-                  value={accountSearchQuery}
-                  onChange={(e) => setAccountSearchQuery(e.target.value)}
-                  placeholder="جستجو..."
-                  className="w-full px-2 py-1.5 rounded border mb-2 text-sm"
-                  style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border, color: THEME_COLORS.text }}
-                />
-                <div className="space-y-1 max-h-48 overflow-y-auto">
-                  {filteredBankAccounts.map((account) => (
-                    <label
-                      key={account.id}
-                      className="flex items-center gap-2 p-2 rounded cursor-pointer border text-sm"
-                      style={{
-                        backgroundColor: selectedAccountId === account.id ? THEME_COLORS.hover : THEME_COLORS.bgSecondary,
-                        borderColor: selectedAccountId === account.id ? THEME_COLORS.accent : THEME_COLORS.border,
-                      }}
-                    >
-                      <input
-                        type="radio"
-                        name="account"
-                        checked={selectedAccountId === account.id}
-                        onChange={() => setSelectedAccountId(account.id)}
-                        className="w-4 h-4"
-                      />
-                      <div className="flex-1 space-y-1">
-                        {/* User name */}
-                        <div className="font-bold" style={{ color: THEME_COLORS.text }}>
-                          👤 {account.related_user_name}
-                        </div>
-                        {/* Account owner */}
-                        <div style={{ color: THEME_COLORS.text }}>
-                          صاحب حساب: {account.account_owner}
-                        </div>
-                        {/* Card number */}
-                        <div style={{ color: THEME_COLORS.subtext }}>
-                          💳 {account.card_number}
-                        </div>
-                        {/* Bank name (optional) */}
-                        {account.bank_name && (
-                          <div style={{ color: THEME_COLORS.subtext }}>
-                            🏦 {account.bank_name}
-                          </div>
-                        )}
-                        {/* Balance (if has permission) - Balance represents debt: positive=debt (red), zero/negative=no debt (green) */}
-                        {account.account_balance !== null && (
-                          <div className="pt-1 border-t" style={{ borderColor: THEME_COLORS.border }}>
-                            <span style={{ color: THEME_COLORS.subtext }}>بدهی: </span>
-                            <span className="font-bold" style={{ color: parseFloat(account.account_balance) > 0 ? THEME_COLORS.red : THEME_COLORS.green }}>
-                              {formatPersianMoney(parseFloat(account.account_balance))}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </label>
-                  ))}
+            {/* Account Selection - Compact */}
+            {paymentMethod !== PaymentMethod.CASH && (
+              <div>
+                <div className="text-sm font-bold mb-2" style={{ color: THEME_COLORS.text }}>
+                  {paymentMethod === PaymentMethod.POS ? 'کارتخوان' : 'حساب مقصد'}
                 </div>
-              </div>
-            )}
-
-            {/* POS Account Display (Cash has no destination account) */}
-            {paymentMethod === PaymentMethod.POS && posAccount?.id && (
-              <div className="p-3 rounded-lg border" style={{ backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.green }}>
-                <div className="text-sm font-bold mb-1" style={{ color: THEME_COLORS.green }}>
-                  حساب مقصد (کارتخوان):
-                </div>
-                <div className="text-sm" style={{ color: THEME_COLORS.text }}>
-                  {posAccount.account_owner} - {posAccount.card_number}
-                </div>
-              </div>
-            )}
-
-            {/* Tax/Discount - With Clear Labels */}
-            {canEditTaxDiscount && (
-              <div className="p-3 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
-                <h3 className="text-sm font-bold mb-2" style={{ color: THEME_COLORS.text }}>مالیات و تخفیف</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  {/* Tax Section */}
-                  <div className="p-3 rounded border" style={{ borderColor: THEME_COLORS.blue, backgroundColor: `${THEME_COLORS.blue}10` }}>
-                    <div className="text-sm font-bold mb-1" style={{ color: THEME_COLORS.blue }}>
-                      ➕ مالیات
+                {paymentMethod === PaymentMethod.POS && posAccount?.id ? (
+                  <div className="p-3 rounded border" style={{ backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.green }}>
+                    <div className="font-bold" style={{ color: THEME_COLORS.text }}>
+                      {posAccount.account_owner}
                     </div>
-                    <div className="flex gap-1 mb-1">
+                    <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
+                      {posAccount.card_number}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                    {bankAccounts.map((account) => (
+                      <label
+                        key={account.id}
+                        className="flex items-center gap-2 p-2 rounded cursor-pointer border"
+                        style={{
+                          backgroundColor: selectedAccountId === account.id ? `${THEME_COLORS.accent}20` : THEME_COLORS.surface,
+                          borderColor: selectedAccountId === account.id ? THEME_COLORS.accent : THEME_COLORS.border,
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          name="account"
+                          checked={selectedAccountId === account.id}
+                          onChange={() => setSelectedAccountId(account.id)}
+                          className="w-4 h-4"
+                        />
+                        <div className="flex-1">
+                          <div className="font-bold text-sm" style={{ color: THEME_COLORS.text }}>
+                            {account.related_user_name}
+                          </div>
+                          <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
+                            {account.card_number}
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tax/Discount/Tip - Collapsible */}
+            <div>
+              <button
+                onClick={() => setShowTaxDiscount(!showTaxDiscount)}
+                className="w-full flex items-center justify-between py-2 px-3 rounded"
+                style={{ backgroundColor: THEME_COLORS.surface }}
+              >
+                <span className="font-bold" style={{ color: THEME_COLORS.text }}>
+                  مالیات / تخفیف / انعام
+                </span>
+                <span style={{ color: THEME_COLORS.accent }}>
+                  {showTaxDiscount ? '▼' : '◀'}
+                </span>
+              </button>
+
+              {showTaxDiscount && (
+                <div className="mt-2 space-y-3 p-3 rounded" style={{ backgroundColor: THEME_COLORS.surface }}>
+                  {/* Tax */}
+                  <div>
+                    <div className="text-sm font-bold mb-1" style={{ color: THEME_COLORS.blue }}>مالیات</div>
+                    <div className="flex gap-2">
                       <button
                         onClick={() => setTaxType(TaxDiscountType.FIXED)}
-                        className="flex-1 py-1 rounded text-sm border"
+                        className="flex-1 py-1 rounded text-sm"
                         style={{
                           backgroundColor: taxType === TaxDiscountType.FIXED ? THEME_COLORS.blue : 'transparent',
-                          borderColor: THEME_COLORS.blue,
-                          color: taxType === TaxDiscountType.FIXED ? '#fff' : THEME_COLORS.blue,
+                          color: taxType === TaxDiscountType.FIXED ? '#fff' : THEME_COLORS.text,
+                          border: `1px solid ${THEME_COLORS.blue}`,
                         }}
                       >
                         ثابت
                       </button>
                       <button
                         onClick={() => setTaxType(TaxDiscountType.PERCENTAGE)}
-                        className="flex-1 py-1 rounded text-sm border"
+                        className="flex-1 py-1 rounded text-sm"
                         style={{
                           backgroundColor: taxType === TaxDiscountType.PERCENTAGE ? THEME_COLORS.blue : 'transparent',
-                          borderColor: THEME_COLORS.blue,
-                          color: taxType === TaxDiscountType.PERCENTAGE ? '#fff' : THEME_COLORS.blue,
+                          color: taxType === TaxDiscountType.PERCENTAGE ? '#fff' : THEME_COLORS.text,
+                          border: `1px solid ${THEME_COLORS.blue}`,
                         }}
                       >
                         درصد
                       </button>
+                      <input
+                        type="number"
+                        value={taxValue}
+                        onChange={(e) => setTaxValue(e.target.value)}
+                        className="flex-1 px-2 py-1 rounded border text-center"
+                        style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.blue, color: THEME_COLORS.text }}
+                        placeholder="0"
+                      />
                     </div>
-                    <input
-                      type="number"
-                      value={taxValue}
-                      onChange={(e) => setTaxValue(e.target.value)}
-                      placeholder="مقدار مالیات"
-                      className="w-full px-2 py-1 rounded border text-sm"
-                      style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.blue, color: THEME_COLORS.text }}
-                    />
                   </div>
 
-                  {/* Discount Section */}
-                  <div className="p-3 rounded border" style={{ borderColor: THEME_COLORS.orange, backgroundColor: `${THEME_COLORS.orange}10` }}>
-                    <div className="text-sm font-bold mb-1" style={{ color: THEME_COLORS.orange }}>
-                      ➖ تخفیف
-                    </div>
-                    <div className="flex gap-1 mb-1">
+                  {/* Discount */}
+                  <div>
+                    <div className="text-sm font-bold mb-1" style={{ color: THEME_COLORS.orange }}>تخفیف</div>
+                    <div className="flex gap-2">
                       <button
                         onClick={() => setDiscountType(TaxDiscountType.FIXED)}
-                        className="flex-1 py-1 rounded text-sm border"
+                        className="flex-1 py-1 rounded text-sm"
                         style={{
                           backgroundColor: discountType === TaxDiscountType.FIXED ? THEME_COLORS.orange : 'transparent',
-                          borderColor: THEME_COLORS.orange,
-                          color: discountType === TaxDiscountType.FIXED ? '#fff' : THEME_COLORS.orange,
+                          color: discountType === TaxDiscountType.FIXED ? '#fff' : THEME_COLORS.text,
+                          border: `1px solid ${THEME_COLORS.orange}`,
                         }}
                       >
                         ثابت
                       </button>
                       <button
                         onClick={() => setDiscountType(TaxDiscountType.PERCENTAGE)}
-                        className="flex-1 py-1 rounded text-sm border"
+                        className="flex-1 py-1 rounded text-sm"
                         style={{
                           backgroundColor: discountType === TaxDiscountType.PERCENTAGE ? THEME_COLORS.orange : 'transparent',
-                          borderColor: THEME_COLORS.orange,
-                          color: discountType === TaxDiscountType.PERCENTAGE ? '#fff' : THEME_COLORS.orange,
+                          color: discountType === TaxDiscountType.PERCENTAGE ? '#fff' : THEME_COLORS.text,
+                          border: `1px solid ${THEME_COLORS.orange}`,
                         }}
                       >
                         درصد
                       </button>
+                      <input
+                        type="number"
+                        value={discountValue}
+                        onChange={(e) => setDiscountValue(e.target.value)}
+                        className="flex-1 px-2 py-1 rounded border text-center"
+                        style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.orange, color: THEME_COLORS.text }}
+                        placeholder="0"
+                      />
                     </div>
+                  </div>
+
+                  {/* Tip */}
+                  <div>
+                    <div className="text-sm font-bold mb-1" style={{ color: THEME_COLORS.text }}>انعام</div>
                     <input
                       type="number"
-                      value={discountValue}
-                      onChange={(e) => setDiscountValue(e.target.value)}
-                      placeholder="مقدار تخفیف"
-                      className="w-full px-2 py-1 rounded border text-sm"
-                      style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.orange, color: THEME_COLORS.text }}
+                      value={tipAmount}
+                      onChange={(e) => setTipAmount(e.target.value)}
+                      className="w-full px-3 py-2 rounded border"
+                      style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border, color: THEME_COLORS.text }}
+                      placeholder="0"
                     />
                   </div>
-                </div>
-              </div>
-            )}
 
-            {/* Submit Button */}
-            <button
-              onClick={handleSubmitPayment}
-              disabled={submitting}
-              className="w-full py-3 rounded-lg font-bold transition-all disabled:opacity-50"
-              style={{ backgroundColor: THEME_COLORS.green, color: '#fff' }}
-            >
-              {submitting ? 'در حال ثبت...' : 'ثبت پرداخت'}
-            </button>
-          </div>
-
-          {/* Right Column - Payment History */}
-          <div className="lg:col-span-2">
-            <div className="p-3 rounded-lg sticky top-2" style={{ backgroundColor: THEME_COLORS.surface }}>
-              <h3 className="text-sm font-bold mb-2" style={{ color: THEME_COLORS.text }}>تاریخچه پرداخت‌ها</h3>
-
-              {sale.payments && sale.payments.length > 0 ? (
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {sale.payments.map((payment, index) => {
-                    const isVoided = payment.status === 'VOID';
-                    return (
-                      <div
-                        key={payment.id}
-                        className="p-3 rounded border text-sm relative"
-                        style={{
-                          backgroundColor: isVoided ? `${THEME_COLORS.red}10` : THEME_COLORS.bgSecondary,
-                          borderColor: isVoided ? THEME_COLORS.red : THEME_COLORS.border,
-                          opacity: isVoided ? 0.6 : 1,
-                        }}
-                      >
-                        {isVoided && (
-                          <div
-                            className="absolute top-1 left-1 px-2 py-0.5 rounded text-sm font-bold"
-                            style={{ backgroundColor: THEME_COLORS.red, color: '#fff' }}
-                          >
-                            لغو شده
-                          </div>
-                        )}
-
-                        <div className="flex justify-between items-start mb-1">
-                          <span className="font-bold" style={{ color: THEME_COLORS.text }}>
-                            #{index + 1}
-                          </span>
-                          <span
-                            className="px-2 py-0.5 rounded text-sm"
-                            style={{
-                              backgroundColor:
-                                payment.method === 'CASH'
-                                  ? THEME_COLORS.green
-                                  : payment.method === 'POS'
-                                  ? THEME_COLORS.blue
-                                  : THEME_COLORS.purple,
-                              color: '#fff',
-                            }}
-                          >
-                            {payment.method === 'CASH'
-                              ? 'نقدی'
-                              : payment.method === 'POS'
-                              ? 'کارتخوان'
-                              : 'کارت به کارت'}
-                          </span>
-                        </div>
-
-                        <div className="space-y-0.5" style={{ color: THEME_COLORS.subtext }}>
-                          <div className="flex justify-between">
-                            <span>مبلغ:</span>
-                            <span style={{ color: THEME_COLORS.text, textDecoration: isVoided ? 'line-through' : 'none' }}>
-                              {formatPersianMoney(payment.amount_applied)}
-                            </span>
-                          </div>
-                          {payment.tip_amount > 0 && (
-                            <div className="flex justify-between">
-                              <span>انعام:</span>
-                              <span style={{ color: THEME_COLORS.text, textDecoration: isVoided ? 'line-through' : 'none' }}>
-                                {formatPersianMoney(payment.tip_amount)}
-                              </span>
-                            </div>
-                          )}
-                          <div className="flex justify-between font-bold">
-                            <span>جمع:</span>
-                            <span style={{ color: THEME_COLORS.accent, textDecoration: isVoided ? 'line-through' : 'none' }}>
-                              {formatPersianMoney(payment.amount_total)}
-                            </span>
-                          </div>
-                        </div>
-
-                        {payment.destination_account_owner && (
-                          <div className="mt-1 pt-1 border-t" style={{ borderColor: THEME_COLORS.border }}>
-                            <div style={{ color: THEME_COLORS.subtext }}>حساب مقصد:</div>
-                            <div style={{ color: THEME_COLORS.text }}>
-                              {payment.destination_account_owner}
-                            </div>
-                            {payment.destination_card_number && (
-                              <div style={{ color: THEME_COLORS.subtext }}>
-                                {payment.destination_card_number}
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        <div className="mt-1 pt-1 border-t" style={{ borderColor: THEME_COLORS.border }}>
-                          <div style={{ color: THEME_COLORS.subtext }}>
-                            {formatJalaliDateTime(payment.received_at)}
-                          </div>
-                          <div style={{ color: THEME_COLORS.subtext }}>
-                            دریافت کننده: {payment.received_by_name}
-                          </div>
-                        </div>
-
-                        {/* Void button - only for superusers and non-voided payments */}
-                        {userPermissions?.is_superuser && !isVoided && (
-                          <button
-                            onClick={() => handleVoidPayment(payment.id)}
-                            disabled={submitting}
-                            className="w-full mt-2 py-1.5 rounded text-sm font-bold transition-all hover:opacity-90 disabled:opacity-50"
-                            style={{
-                              backgroundColor: `${THEME_COLORS.red}20`,
-                              color: THEME_COLORS.red,
-                              border: `1px solid ${THEME_COLORS.red}`,
-                            }}
-                          >
-                            🗑️ لغو پرداخت
-                          </button>
-                        )}
+                  {/* Summary */}
+                  <div className="pt-2 border-t space-y-1" style={{ borderColor: THEME_COLORS.border }}>
+                    <div className="flex justify-between text-sm">
+                      <span style={{ color: THEME_COLORS.subtext }}>انتخاب شده:</span>
+                      <span style={{ color: THEME_COLORS.text }}>{formatPersianMoney(selectedTotal)}</span>
+                    </div>
+                    {taxAmount > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span style={{ color: THEME_COLORS.subtext }}>مالیات:</span>
+                        <span style={{ color: THEME_COLORS.text }}>+{formatPersianMoney(taxAmount)}</span>
                       </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-4 text-sm" style={{ color: THEME_COLORS.subtext }}>
-                  پرداختی ثبت نشده است
+                    )}
+                    {discountAmount > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span style={{ color: THEME_COLORS.subtext }}>تخفیف:</span>
+                        <span style={{ color: THEME_COLORS.red }}>-{formatPersianMoney(discountAmount)}</span>
+                      </div>
+                    )}
+                    {tipAmountValue > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span style={{ color: THEME_COLORS.subtext }}>انعام:</span>
+                        <span style={{ color: THEME_COLORS.text }}>+{formatPersianMoney(tipAmountValue)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-base font-bold pt-1 border-t" style={{ borderColor: THEME_COLORS.border }}>
+                      <span style={{ color: THEME_COLORS.text }}>جمع:</span>
+                      <span style={{ color: THEME_COLORS.accent }}>{formatPersianMoney(finalAmount)}</span>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
+
           </div>
+
+          {/* Submit Button - Always Visible */}
+          <div className="flex-shrink-0 p-4 border-t" style={{ borderColor: THEME_COLORS.border }}>
+            <button
+              onClick={handleSubmitPayment}
+              disabled={submitting}
+              className="w-full py-4 rounded-lg font-bold text-lg transition-all disabled:opacity-50"
+              style={{
+                backgroundColor: THEME_COLORS.green,
+                color: '#fff',
+              }}
+            >
+              {submitting ? 'در حال ثبت...' : `ثبت پرداخت ${formatPersianMoney(parseFloat(amount) || 0)}`}
+            </button>
+          </div>
+
         </div>
       </div>
 
