@@ -62,6 +62,7 @@ export default function SalePaymentPage() {
   const [discountValue, setDiscountValue] = useState<string>('0');
 
   const [selectAllItems, setSelectAllItems] = useState(true);
+  const [customDivisor, setCustomDivisor] = useState<string>('3');
 
   useEffect(() => {
     loadSaleData();
@@ -447,36 +448,52 @@ export default function SalePaymentPage() {
 
               {/* Quick Calculation Buttons */}
               <div className="mt-2">
-                <div className="text-xs mb-1" style={{ color: THEME_COLORS.subtext }}>محاسبه سریع:</div>
-                <div className="grid grid-cols-4 gap-1">
+                <div className="text-xs mb-1" style={{ color: THEME_COLORS.subtext }}>محاسبه سریع (بر اساس مانده):</div>
+                <div className="grid grid-cols-3 gap-1">
                   <button
-                    onClick={() => setAmount((finalAmount / 4).toFixed(0))}
-                    className="py-1 rounded text-xs border"
-                    style={{ backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.border, color: THEME_COLORS.text }}
-                  >
-                    ¼
-                  </button>
-                  <button
-                    onClick={() => setAmount((finalAmount / 2).toFixed(0))}
-                    className="py-1 rounded text-xs border"
-                    style={{ backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.border, color: THEME_COLORS.text }}
-                  >
-                    ½
-                  </button>
-                  <button
-                    onClick={() => setAmount((finalAmount * 0.75).toFixed(0))}
-                    className="py-1 rounded text-xs border"
-                    style={{ backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.border, color: THEME_COLORS.text }}
-                  >
-                    ¾
-                  </button>
-                  <button
-                    onClick={() => setAmount(finalAmount.toFixed(0))}
+                    onClick={() => {
+                      const remaining = sale.balance_due ?? sale.total_amount;
+                      setAmount(remaining.toFixed(0));
+                    }}
                     className="py-1 rounded text-xs border font-bold"
-                    style={{ backgroundColor: THEME_COLORS.green, borderColor: THEME_COLORS.green, color: '#fff' }}
+                    style={{
+                      backgroundColor: amount === (sale.balance_due ?? sale.total_amount).toFixed(0) ? THEME_COLORS.green : THEME_COLORS.surface,
+                      borderColor: THEME_COLORS.green,
+                      color: amount === (sale.balance_due ?? sale.total_amount).toFixed(0) ? '#fff' : THEME_COLORS.text
+                    }}
                   >
                     همه
                   </button>
+                  <button
+                    onClick={() => {
+                      const remaining = sale.balance_due ?? sale.total_amount;
+                      setAmount((remaining / 2).toFixed(0));
+                    }}
+                    className="py-1 rounded text-xs border"
+                    style={{
+                      backgroundColor: amount === ((sale.balance_due ?? sale.total_amount) / 2).toFixed(0) ? THEME_COLORS.blue : THEME_COLORS.surface,
+                      borderColor: THEME_COLORS.border,
+                      color: amount === ((sale.balance_due ?? sale.total_amount) / 2).toFixed(0) ? '#fff' : THEME_COLORS.text
+                    }}
+                  >
+                    نصف
+                  </button>
+                  <div className="flex gap-1">
+                    <span className="text-xs py-1" style={{ color: THEME_COLORS.text }}>÷</span>
+                    <input
+                      type="number"
+                      min="2"
+                      value={customDivisor}
+                      onChange={(e) => setCustomDivisor(e.target.value)}
+                      onBlur={() => {
+                        const divisor = parseInt(customDivisor) || 3;
+                        const remaining = sale.balance_due ?? sale.total_amount;
+                        setAmount((remaining / divisor).toFixed(0));
+                      }}
+                      className="w-full px-1 py-1 rounded border text-xs text-center"
+                      style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border, color: THEME_COLORS.text }}
+                    />
+                  </div>
                 </div>
               </div>
 
