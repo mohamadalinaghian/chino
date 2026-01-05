@@ -71,6 +71,7 @@ export const THEME_COLORS = {
   // Accent colors
   accent: '#58a6ff',         // Blue - Primary accent (GitHub blue)
   accentDark: '#1f6feb',     // Dark blue - hover state
+  blue: '#58a6ff',           // Blue - Same as accent for consistency
   green: '#3fb950',          // Green - Success states
   red: '#f85149',            // Red - Error/warning states
   orange: '#d29922',         // Orange - Warning states

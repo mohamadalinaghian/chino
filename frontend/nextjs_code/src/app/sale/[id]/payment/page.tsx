@@ -413,34 +413,34 @@ export default function SalePaymentPage() {
       </header>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto p-2">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-2">
+      <div className="max-w-7xl mx-auto p-3">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           {/* Left Column */}
-          <div className="lg:col-span-3 space-y-2">
+          <div className="lg:col-span-2 space-y-3">
             {/* Sale Info - Compact */}
-            <div className="p-2 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+            <div className="p-4 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                 <div>
-                  <div style={{ color: THEME_COLORS.subtext }}>مجموع:</div>
-                  <div className="font-bold" style={{ color: THEME_COLORS.text }}>
+                  <div className="mb-1" style={{ color: THEME_COLORS.subtext }}>مجموع:</div>
+                  <div className="font-bold text-base" style={{ color: THEME_COLORS.text }}>
                     {formatPersianMoney(sale.total_amount)}
                   </div>
                 </div>
                 <div>
-                  <div style={{ color: THEME_COLORS.subtext }}>پرداخت شده:</div>
-                  <div className="font-bold" style={{ color: THEME_COLORS.green }}>
+                  <div className="mb-1" style={{ color: THEME_COLORS.subtext }}>پرداخت شده:</div>
+                  <div className="font-bold text-base" style={{ color: THEME_COLORS.green }}>
                     {formatPersianMoney(sale.total_paid || 0)}
                   </div>
                 </div>
                 <div>
-                  <div style={{ color: THEME_COLORS.subtext }}>مانده:</div>
-                  <div className="font-bold" style={{ color: THEME_COLORS.orange }}>
+                  <div className="mb-1" style={{ color: THEME_COLORS.subtext }}>مانده:</div>
+                  <div className="font-bold text-base" style={{ color: THEME_COLORS.orange }}>
                     {formatPersianMoney(sale.balance_due ?? sale.total_amount)}
                   </div>
                 </div>
                 <div>
-                  <div style={{ color: THEME_COLORS.subtext }}>وضعیت:</div>
-                  <div className="font-bold text-xs" style={{ color: THEME_COLORS.cyan }}>
+                  <div className="mb-1" style={{ color: THEME_COLORS.subtext }}>وضعیت:</div>
+                  <div className="font-bold text-sm" style={{ color: THEME_COLORS.cyan }}>
                     {sale.payment_status === 'PAID' ? 'پرداخت شده' :
                       sale.payment_status === 'PARTIALLY_PAID' ? 'پرداخت جزئی' : 'پرداخت نشده'}
                   </div>
@@ -474,52 +474,73 @@ export default function SalePaymentPage() {
               </div>
 
               {/* Quick Calculation Buttons */}
-              <div className="mt-2">
-                <div className="text-xs mb-1" style={{ color: THEME_COLORS.subtext }}>محاسبه سریع (بر اساس مانده):</div>
-                <div className="grid grid-cols-3 gap-1">
+              <div className="mt-3">
+                <div className="text-sm mb-2 font-bold" style={{ color: THEME_COLORS.subtext }}>محاسبه سریع (بر اساس اقلام انتخابی):</div>
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     onClick={() => {
-                      const remaining = sale.balance_due ?? sale.total_amount;
-                      setAmount(Number(remaining).toFixed(0));
+                      const baseAmount = calculateSelectedItemsTotal();
+                      const taxAmt = calculateTaxAmount(baseAmount);
+                      const discountAmt = calculateDiscountAmount(baseAmount);
+                      const finalAmt = baseAmount + taxAmt - discountAmt;
+                      setAmount(finalAmt.toFixed(0));
                     }}
-                    className="py-1 rounded text-xs border font-bold"
+                    className="py-2 rounded text-sm border-2 font-bold transition-all"
                     style={{
-                      backgroundColor: amount === Number(sale.balance_due ?? sale.total_amount).toFixed(0) ? THEME_COLORS.green : THEME_COLORS.surface,
+                      backgroundColor: parseFloat(amount) === (selectedTotal + taxAmount - discountAmount) ? THEME_COLORS.green : THEME_COLORS.surface,
                       borderColor: THEME_COLORS.green,
-                      color: amount === Number(sale.balance_due ?? sale.total_amount).toFixed(0) ? '#fff' : THEME_COLORS.text
+                      color: parseFloat(amount) === (selectedTotal + taxAmount - discountAmount) ? '#fff' : THEME_COLORS.text
                     }}
                   >
                     همه
                   </button>
                   <button
                     onClick={() => {
-                      const remaining = sale.balance_due ?? sale.total_amount;
-                      setAmount((Number(remaining) / 2).toFixed(0));
+                      const baseAmount = calculateSelectedItemsTotal();
+                      const taxAmt = calculateTaxAmount(baseAmount);
+                      const discountAmt = calculateDiscountAmount(baseAmount);
+                      const finalAmt = baseAmount + taxAmt - discountAmt;
+                      setAmount((finalAmt / 2).toFixed(0));
                     }}
-                    className="py-1 rounded text-xs border"
+                    className="py-2 rounded text-sm border-2 transition-all"
                     style={{
-                      backgroundColor: amount === (Number(sale.balance_due ?? sale.total_amount) / 2).toFixed(0) ? THEME_COLORS.blue : THEME_COLORS.surface,
-                      borderColor: THEME_COLORS.border,
-                      color: amount === (Number(sale.balance_due ?? sale.total_amount) / 2).toFixed(0) ? '#fff' : THEME_COLORS.text
+                      backgroundColor: parseFloat(amount) === (selectedTotal + taxAmount - discountAmount) / 2 ? THEME_COLORS.blue : THEME_COLORS.surface,
+                      borderColor: THEME_COLORS.blue,
+                      color: parseFloat(amount) === (selectedTotal + taxAmount - discountAmount) / 2 ? '#fff' : THEME_COLORS.text
                     }}
                   >
                     نصف
                   </button>
-                  <div className="flex gap-1">
-                    <span className="text-xs py-1" style={{ color: THEME_COLORS.text }}>÷</span>
-                    <input
-                      type="number"
-                      min="2"
-                      value={customDivisor}
-                      onChange={(e) => setCustomDivisor(e.target.value)}
-                      onBlur={() => {
+                  <div className="flex flex-col gap-1">
+                    <div className="flex gap-1">
+                      <span className="text-sm py-1 font-bold" style={{ color: THEME_COLORS.text }}>÷</span>
+                      <input
+                        type="number"
+                        min="2"
+                        value={customDivisor}
+                        onChange={(e) => setCustomDivisor(e.target.value)}
+                        className="w-full px-2 py-1 rounded border text-sm text-center"
+                        style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border, color: THEME_COLORS.text }}
+                        placeholder="3"
+                      />
+                    </div>
+                    <button
+                      onClick={() => {
                         const divisor = parseInt(customDivisor) || 3;
-                        const remaining = sale.balance_due ?? sale.total_amount;
-                        setAmount((Number(remaining) / divisor).toFixed(0));
+                        const baseAmount = calculateSelectedItemsTotal();
+                        const taxAmt = calculateTaxAmount(baseAmount);
+                        const discountAmt = calculateDiscountAmount(baseAmount);
+                        const finalAmt = baseAmount + taxAmt - discountAmt;
+                        setAmount((finalAmt / divisor).toFixed(0));
                       }}
-                      className="w-full px-1 py-1 rounded border text-xs text-center"
-                      style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border, color: THEME_COLORS.text }}
-                    />
+                      className="py-1 rounded text-xs font-bold transition-all"
+                      style={{
+                        backgroundColor: THEME_COLORS.accent,
+                        color: '#fff'
+                      }}
+                    >
+                      اعمال
+                    </button>
                   </div>
                 </div>
               </div>
@@ -815,11 +836,11 @@ export default function SalePaymentPage() {
                             🏦 {account.bank_name}
                           </div>
                         )}
-                        {/* Balance (if has permission) */}
+                        {/* Balance (if has permission) - Balance represents debt: positive=debt (red), zero/negative=no debt (green) */}
                         {account.account_balance !== null && (
                           <div className="pt-1 border-t" style={{ borderColor: THEME_COLORS.border }}>
-                            <span style={{ color: THEME_COLORS.subtext }}>موجودی: </span>
-                            <span className="font-bold" style={{ color: parseFloat(account.account_balance) > 0 ? THEME_COLORS.green : THEME_COLORS.red }}>
+                            <span style={{ color: THEME_COLORS.subtext }}>بدهی: </span>
+                            <span className="font-bold" style={{ color: parseFloat(account.account_balance) > 0 ? THEME_COLORS.red : THEME_COLORS.green }}>
                               {formatPersianMoney(parseFloat(account.account_balance))}
                             </span>
                           </div>
