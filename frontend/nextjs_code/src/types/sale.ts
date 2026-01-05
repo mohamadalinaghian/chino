@@ -277,6 +277,102 @@ export interface ISaleDetailResponse {
   tax_amount: number;
   total_amount: number;
   payment_status: PaymentStatus;
+  total_paid?: number;
+  balance_due?: number;
+  is_fully_paid?: boolean;
   opened_at: string;
   opened_by_name: string;
+}
+
+/**
+ * Payment method enum
+ */
+export enum PaymentMethod {
+  CASH = 'CASH',
+  POS = 'POS',
+  CARD_TRANSFER = 'CARD_TRANSFER',
+}
+
+/**
+ * Tax/Discount type enum
+ */
+export enum TaxDiscountType {
+  FIXED = 'fixed',
+  PERCENTAGE = 'percentage',
+}
+
+/**
+ * Tax or discount input
+ */
+export interface ITaxDiscountInput {
+  type: TaxDiscountType;
+  value: number;
+}
+
+/**
+ * Bank account for payment
+ */
+export interface IBankAccount {
+  id: number;
+  card_number: string;
+  bank_name: string | null;
+  account_owner: string;
+  account_balance: string;
+}
+
+/**
+ * Single payment input
+ */
+export interface IAddPaymentInput {
+  method: PaymentMethod;
+  amount_applied: number;
+  tip_amount?: number;
+  destination_account_id?: number | null;
+  selected_item_ids?: number[];
+  tax?: ITaxDiscountInput | null;
+  discount?: ITaxDiscountInput | null;
+}
+
+/**
+ * Add payments request
+ */
+export interface IAddPaymentsRequest {
+  payments: IAddPaymentInput[];
+}
+
+/**
+ * Payment detail (extended)
+ */
+export interface IPaymentDetail {
+  id: number;
+  method: string;
+  amount_total: number;
+  amount_applied: number;
+  tip_amount: number;
+  destination_account_id?: number | null;
+  destination_card_number?: string | null;
+  destination_account_owner?: string | null;
+  destination_bank_name?: string | null;
+  received_by_name: string;
+  received_at: string;
+  status: string;
+  covered_item_ids: number[];
+}
+
+/**
+ * Add payments response
+ */
+export interface IAddPaymentsResponse {
+  sale_id: number;
+  state: SaleState;
+  payment_status: PaymentStatus;
+  subtotal_amount: number;
+  discount_amount: number;
+  tax_amount: number;
+  total_amount: number;
+  total_paid: number;
+  balance_due: number;
+  is_fully_paid: boolean;
+  payments: IPaymentDetail[];
+  was_auto_closed: boolean;
 }

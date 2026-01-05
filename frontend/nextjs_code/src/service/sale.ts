@@ -13,6 +13,10 @@ import {
   IMenuGroup,
   IExtraItem,
   IDashboardResponse,
+  IAddPaymentsRequest,
+  IAddPaymentsResponse,
+  IBankAccount,
+  IPaymentDetail,
 } from '@/types/sale';
 
 /**
@@ -219,5 +223,64 @@ export async function fetchDashboard(): Promise<IDashboardResponse> {
   } catch (error) {
     console.error('Error fetching dashboard:', error);
     throw new Error('خطا در دریافت داشبورد');
+  }
+}
+
+/**
+ * Fetches bank accounts for payment target selection
+ */
+export async function fetchBankAccounts(): Promise<IBankAccount[]> {
+  try {
+    const response = await authenticatedFetchJSON<IBankAccount[]>(
+      `${CS_API_URL}${API_ENDPOINTS.BANK_ACCOUNTS}`
+    );
+    return response;
+  } catch (error) {
+    console.error('Error fetching bank accounts:', error);
+    throw new Error('خطا در دریافت حساب‌های بانکی');
+  }
+}
+
+/**
+ * Fetches payment history for a sale
+ */
+export async function fetchSalePayments(saleId: number): Promise<IPaymentDetail[]> {
+  try {
+    // Fetch sale details which includes all payments
+    const sale = await fetchSaleDetails(saleId);
+    // For now, we'll need to add a dedicated endpoint later if payments aren't in sale details
+    // Return empty array as placeholder
+    return [];
+  } catch (error) {
+    console.error(`Error fetching payments for sale ${saleId}:`, error);
+    throw new Error('خطا در دریافت تاریخچه پرداخت‌ها');
+  }
+}
+
+/**
+ * Adds one or more payments to a sale
+ */
+export async function addPaymentsToSale(
+  saleId: number,
+  paymentsData: IAddPaymentsRequest
+): Promise<IAddPaymentsResponse> {
+  try {
+    const response = await authenticatedFetchJSON<IAddPaymentsResponse>(
+      `${CS_API_URL}${API_ENDPOINTS.SALE_ADD_PAYMENT(saleId)}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentsData),
+      }
+    );
+    return response;
+  } catch (error) {
+    console.error(`Error adding payments to sale ${saleId}:`, error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('خطا در افزودن پرداخت');
   }
 }

@@ -104,6 +104,7 @@ export const API_ENDPOINTS = {
   SALE_SYNC: (saleId: number) => `/sale/${saleId}/sync`,
   SALE_CLOSE: (saleId: number) => `/sale/${saleId}/close`,
   SALE_CANCEL: (saleId: number) => `/sale/${saleId}/cancel`,
+  SALE_ADD_PAYMENT: (saleId: number) => `/sale/${saleId}/payment`,
 
   // Table endpoints
   TABLES_ALL: '/table/',
@@ -116,6 +117,7 @@ export const API_ENDPOINTS = {
 
   // User endpoints
   USER_LIST: '/user/',
+  BANK_ACCOUNTS: '/user/bank-accounts/',
 } as const;
 
 /**
@@ -178,8 +180,40 @@ export const UI_TEXT = {
   TAB_FOOD: '🍽️ غذا',
   TAB_DRINKS: '🍹 نوشیدنی',
 
+  // Payment
+  PAYMENT_METHOD_CASH: 'نقدی',
+  PAYMENT_METHOD_POS: 'کارتخوان',
+  PAYMENT_METHOD_CARD_TRANSFER: 'کارت به کارت',
+  LABEL_PAYMENT_METHOD: 'روش پرداخت',
+  LABEL_AMOUNT: 'مبلغ',
+  LABEL_TIP: 'انعام',
+  LABEL_SELECT_ACCOUNT: 'انتخاب حساب مقصد',
+  LABEL_SELECT_ITEMS: 'انتخاب اقلام',
+  LABEL_ALL_ITEMS: 'همه اقلام',
+  LABEL_SELECTED_ITEMS: 'اقلام انتخاب شده',
+  LABEL_TAX_DISCOUNT: 'مالیات و تخفیف',
+  LABEL_TAX_TYPE: 'نوع مالیات',
+  LABEL_DISCOUNT_TYPE: 'نوع تخفیف',
+  LABEL_FIXED_AMOUNT: 'مبلغ ثابت',
+  LABEL_PERCENTAGE: 'درصد',
+  LABEL_PAYMENT_HISTORY: 'تاریخچه پرداخت‌ها',
+  LABEL_TOTAL_PAID: 'مجموع پرداخت شده',
+  LABEL_REMAINING: 'مانده',
+  BTN_ADD_PAYMENT: 'افزودن پرداخت',
+  BTN_SUBMIT_PAYMENT: 'ثبت پرداخت',
+  BTN_ADD_ANOTHER_PAYMENT: 'افزودن پرداخت دیگر',
+  MSG_PAYMENT_SUCCESS: 'پرداخت با موفقیت ثبت شد',
+  MSG_SALE_AUTO_CLOSED: 'فروش به صورت خودکار بسته شد',
+  ERROR_ADDING_PAYMENT: 'خطا در افزودن پرداخت',
+  ERROR_LOADING_BANK_ACCOUNTS: 'خطا در بارگذاری حساب‌های بانکی',
+  VALIDATION_SELECT_PAYMENT_METHOD: 'لطفاً روش پرداخت را انتخاب کنید',
+  VALIDATION_ENTER_AMOUNT: 'لطفاً مبلغ را وارد کنید',
+  VALIDATION_SELECT_ACCOUNT: 'لطفاً حساب مقصد را انتخاب کنید',
+  VALIDATION_AMOUNT_GREATER_THAN_ZERO: 'مبلغ باید بیشتر از صفر باشد',
+
   // Other
   ITEMS_COUNT: (count: number) => `${count} مورد`,
   CAPACITY: (capacity: number) => `${capacity} نفر`,
   PAGE_TITLE: 'فروش جدید',
+  PAYMENT_PAGE_TITLE: 'پرداخت فروش',
 } as const;

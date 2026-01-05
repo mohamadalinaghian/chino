@@ -10,6 +10,9 @@
 from typing import Dict, List, Set
 
 from api.schemas.sale_schemas import (
+    AddPaymentInputSchema,
+    AddPaymentsRequest,
+    AddPaymentsResponse,
     CancelSaleRequest,
     CancelSaleResponse,
     CloseSaleRequest,
@@ -18,6 +21,7 @@ from api.schemas.sale_schemas import (
     ExtraDetailSchema,
     OpenSaleRequest,
     OpenSaleResponse,
+    PaymentDetailExtendedSchema,
     SaleDashboardItemSchema,
     SaleDashboardResponse,
     SaleDetailResponse,
@@ -464,6 +468,130 @@ def close_sale_endpoint(request, sale_id: int, payload: CloseSaleRequest):
         balance_due=closed_sale.balance_due,
         is_fully_paid=closed_sale.is_fully_paid,
         payments=payment_details,
+    )
+
+
+@router.post(
+    "/{sale_id}/payment", response={200: AddPaymentsResponse, 422: ErrorResponse}
+)
+def add_payments_endpoint(request, sale_id: int, payload: AddPaymentsRequest):
+    """
+    Add one or more payments to a sale (OPEN or CLOSED).
+
+    Features:
+        - Supports partial payments (select specific items)
+        - Supports multiple payment methods in one request
+        - Handles tax/discount (fixed amount or percentage)
+        - Auto-closes sale when fully paid
+
+    Workflow:
+        1. Validate sale is not CANCELED
+        2. Process all payments
+        3. Update payment status
+        4. Auto-close if total_paid >= total_amount (for OPEN sales)
+    """
+    from apps.sale.services.payment.payment_service import (
+        EnhancedPaymentInput,
+        PaymentService,
+        TaxDiscountInput,
+    )
+
+    sale = get_object_or_404(Sale, id=sale_id)
+
+    try:
+        # Convert schema payments to service DTOs
+        enhanced_payment_inputs = []
+        for p in payload.payments:
+            # Convert tax/discount if present
+            tax_input = None
+            if p.tax:
+                tax_input = TaxDiscountInput(type=p.tax.type, value=p.tax.value)
+
+            discount_input = None
+            if p.discount:
+                discount_input = TaxDiscountInput(
+                    type=p.discount.type, value=p.discount.value
+                )
+
+            enhanced_payment_inputs.append(
+                EnhancedPaymentInput(
+                    method=p.method.value,
+                    amount_applied=p.amount_applied,
+                    tip_amount=p.tip_amount,
+                    destination_account_id=p.destination_account_id,
+                    selected_item_ids=p.selected_item_ids,
+                    tax=tax_input,
+                    discount=discount_input,
+                )
+            )
+
+        # Process payments
+        updated_sale, created_payments, was_auto_closed = (
+            PaymentService.add_payments_to_sale(
+                sale=sale, payments=enhanced_payment_inputs, performer=request.auth
+            )
+        )
+    except ValidationError as e:
+        return 422, {"detail": str(e)}
+
+    # Build payment details for response
+    payment_details = []
+    for payment in created_payments:
+        # Get covered item IDs
+        covered_item_ids = list(
+            payment.sale_items.values_list("id", flat=True)
+        ) if payment.sale_items.exists() else []
+
+        payment_details.append(
+            PaymentDetailExtendedSchema(
+                id=payment.pk,
+                method=payment.method,
+                amount_total=payment.amount_total,
+                amount_applied=payment.amount_applied,
+                tip_amount=payment.tip_amount,
+                destination_account_id=(
+                    payment.destination_account.pk
+                    if payment.destination_account
+                    else None
+                ),
+                destination_card_number=(
+                    payment.destination_account.card_number
+                    if payment.destination_account
+                    else None
+                ),
+                destination_account_owner=(
+                    payment.destination_account.account_owner
+                    if payment.destination_account
+                    else None
+                ),
+                destination_bank_name=(
+                    payment.destination_account.bank_name
+                    if payment.destination_account
+                    else None
+                ),
+                received_by_name=(
+                    payment.received_by.get_full_name()
+                    or payment.received_by.username
+                ),
+                received_at=payment.received_at,
+                status=payment.status,
+                covered_item_ids=covered_item_ids,
+            )
+        )
+
+    return AddPaymentsResponse(
+        sale_id=updated_sale.pk,
+        state=updated_sale.state,
+        payment_status=updated_sale.payment_status,
+        subtotal_amount=updated_sale.subtotal_amount,
+        discount_amount=updated_sale.discount_amount,
+        tax_amount=updated_sale.tax_amount,
+        total_amount=updated_sale.total_amount,
+        total_paid=updated_sale.total_paid,
+        balance_due=updated_sale.balance_due,
+        is_fully_paid=updated_sale.is_fully_paid,
+        payments=payment_details,
+        was_auto_closed=was_auto_closed,
     )
 
 

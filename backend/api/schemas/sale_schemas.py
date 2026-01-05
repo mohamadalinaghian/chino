@@ -259,6 +259,88 @@ class CancelSaleResponse(Schema):
     cancel_reason: str
 
 
+# ==================== Add Payment Schemas ====================
+
+
+class TaxDiscountInput(Schema):
+    """Tax or discount input - can be fixed amount or percentage"""
+
+    type: str = Field(..., description="'fixed' or 'percentage'")
+    value: Decimal = Field(..., ge=0, description="Amount or percentage value")
+
+
+class AddPaymentInputSchema(Schema):
+    """Schema for adding a single payment to a sale"""
+
+    method: PaymentMethodEnum
+    amount_applied: Decimal = Field(..., gt=0, description="Amount applied to sale")
+    tip_amount: Decimal = Field(default=Decimal("0"), ge=0, description="Optional tip")
+    destination_account_id: Optional[int] = Field(
+        default=None, description="Required for POS and CARD_TRANSFER"
+    )
+    # Item selection for partial payments
+    selected_item_ids: List[int] = Field(
+        default_factory=list,
+        description="SaleItem IDs for partial payment (empty = all items)",
+    )
+    # Tax and discount for this payment
+    tax: Optional[TaxDiscountInput] = Field(
+        default=None, description="Tax to apply to this payment"
+    )
+    discount: Optional[TaxDiscountInput] = Field(
+        default=None, description="Discount to apply to this payment"
+    )
+
+
+class AddPaymentsRequest(Schema):
+    """Request to add one or more payments to a sale"""
+
+    payments: List[AddPaymentInputSchema] = Field(
+        ..., min_length=1, description="At least one payment required"
+    )
+
+
+class PaymentDetailExtendedSchema(Schema):
+    """Extended payment details including related items and staff"""
+
+    id: int
+    method: str
+    amount_total: Decimal
+    amount_applied: Decimal
+    tip_amount: Decimal
+    destination_account_id: Optional[int] = None
+    destination_card_number: Optional[str] = None
+    destination_account_owner: Optional[str] = None
+    destination_bank_name: Optional[str] = None
+    received_by_name: str
+    received_at: datetime
+    status: str
+    # Related items for partial payments
+    covered_item_ids: List[int] = Field(
+        default_factory=list, description="SaleItem IDs covered by this payment"
+    )
+
+
+class AddPaymentsResponse(Schema):
+    """Response after adding payments to a sale"""
+
+    sale_id: int
+    state: str
+    payment_status: str
+    subtotal_amount: Decimal
+    discount_amount: Decimal
+    tax_amount: Decimal
+    total_amount: Decimal
+    total_paid: Decimal
+    balance_due: Decimal
+    is_fully_paid: bool
+    payments: List[PaymentDetailExtendedSchema]
+    # Auto-close info
+    was_auto_closed: bool = Field(
+        default=False, description="True if sale was auto-closed due to full payment"
+    )
+
+
 # ==================== Error Schemas ====================
 
 
