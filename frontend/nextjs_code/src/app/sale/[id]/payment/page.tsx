@@ -653,13 +653,14 @@ export default function SalePaymentPage() {
                   className="w-full px-2 py-1.5 rounded border mb-2 text-xs"
                   style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border, color: THEME_COLORS.text }}
                 />
-                <div className="space-y-1 max-h-32 overflow-y-auto">
+                <div className="space-y-1 max-h-48 overflow-y-auto">
                   {filteredBankAccounts.map((account) => (
                     <label
                       key={account.id}
-                      className="flex items-center gap-2 p-2 rounded cursor-pointer text-xs"
+                      className="flex items-center gap-2 p-2 rounded cursor-pointer border text-xs"
                       style={{
                         backgroundColor: selectedAccountId === account.id ? THEME_COLORS.hover : THEME_COLORS.bgSecondary,
+                        borderColor: selectedAccountId === account.id ? THEME_COLORS.accent : THEME_COLORS.border,
                       }}
                     >
                       <input
@@ -669,9 +670,34 @@ export default function SalePaymentPage() {
                         onChange={() => setSelectedAccountId(account.id)}
                         className="w-4 h-4"
                       />
-                      <div className="flex-1">
-                        <div style={{ color: THEME_COLORS.text }}>{account.account_owner}</div>
-                        <div style={{ color: THEME_COLORS.subtext }}>{account.card_number}</div>
+                      <div className="flex-1 space-y-1">
+                        {/* User name */}
+                        <div className="font-bold" style={{ color: THEME_COLORS.text }}>
+                          👤 {account.related_user_name}
+                        </div>
+                        {/* Account owner */}
+                        <div style={{ color: THEME_COLORS.text }}>
+                          صاحب حساب: {account.account_owner}
+                        </div>
+                        {/* Card number */}
+                        <div style={{ color: THEME_COLORS.subtext }}>
+                          💳 {account.card_number}
+                        </div>
+                        {/* Bank name (optional) */}
+                        {account.bank_name && (
+                          <div style={{ color: THEME_COLORS.subtext }}>
+                            🏦 {account.bank_name}
+                          </div>
+                        )}
+                        {/* Balance (if has permission) */}
+                        {account.account_balance !== null && (
+                          <div className="pt-1 border-t" style={{ borderColor: THEME_COLORS.border }}>
+                            <span style={{ color: THEME_COLORS.subtext }}>موجودی: </span>
+                            <span className="font-bold" style={{ color: parseFloat(account.account_balance) > 0 ? THEME_COLORS.green : THEME_COLORS.red }}>
+                              {formatPersianMoney(parseFloat(account.account_balance))}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </label>
                   ))}

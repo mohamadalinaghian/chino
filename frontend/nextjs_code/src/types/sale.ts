@@ -318,7 +318,8 @@ export interface IBankAccount {
   card_number: string;
   bank_name: string | null;
   account_owner: string;
-  account_balance: string;
+  related_user_name: string;
+  account_balance: string | null; // Null if user doesn't have permission
 }
 
 /**

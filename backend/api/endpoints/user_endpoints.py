@@ -22,7 +22,8 @@ class BankAccountSchema(Schema):
     card_number: str
     bank_name: str | None
     account_owner: str
-    account_balance: str  # Decimal as string for JSON
+    related_user_name: str  # User's full name or username
+    account_balance: str | None  # Decimal as string for JSON, None if no permission
 
 
 @router.get("/bank-accounts/", response={200: List[BankAccountSchema]})
@@ -37,11 +38,13 @@ def get_bank_accounts(request):
         - Prioritizes accounts with debt (best payment targets)
         - Always includes staff accounts for internal transfers
         - Sorted by balance descending for easy selection
+        - Balance only visible to superusers
 
     Returns:
         List[BankAccountSchema]: Bank accounts with calculated balances
     """
     accounts_data = BankAccountService.get_accounts_for_payment_target()
+    can_view_balance = request.auth.is_superuser
 
     return [
         BankAccountSchema(
@@ -49,7 +52,11 @@ def get_bank_accounts(request):
             card_number=item["account"].card_number,
             bank_name=item["account"].bank_name,
             account_owner=item["account"].account_owner,
-            account_balance=str(item["balance"]),
+            related_user_name=(
+                item["account"].related_user.get_full_name()
+                or item["account"].related_user.username
+            ),
+            account_balance=str(item["balance"]) if can_view_balance else None,
         )
         for item in accounts_data
     ]
