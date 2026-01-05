@@ -555,61 +555,160 @@ export default function SalePaymentPage() {
               </div>
             )}
 
-            {/* Unpaid Item Selection - Compact */}
-            <div className="p-2 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-bold" style={{ color: THEME_COLORS.text }}>
-                  {paidItems.length > 0 ? 'اقلام پرداخت نشده' : 'اقلام'}
-                </h3>
-                <label className="flex items-center gap-1 cursor-pointer text-xs">
-                  <input
-                    type="checkbox"
-                    checked={selectAllItems}
-                    onChange={handleSelectAllToggle}
-                    className="w-4 h-4"
-                  />
-                  <span style={{ color: THEME_COLORS.text }}>همه</span>
-                </label>
+            {/* Unpaid Item Selection - Modern */}
+            <div className="p-3 rounded-lg border" style={{ backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.border }}>
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h3 className="text-sm font-bold" style={{ color: THEME_COLORS.text }}>
+                    {paidItems.length > 0 ? '🛒 اقلام پرداخت نشده' : '🛒 اقلام'}
+                  </h3>
+                  {!selectAllItems && unpaidItems.length > 0 && (
+                    <div className="text-xs mt-1" style={{ color: THEME_COLORS.subtext }}>
+                      {selectedItems.filter(s => s.quantity > 0).length} از {unpaidItems.length} مورد انتخاب شده
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={handleSelectAllToggle}
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all"
+                  style={{
+                    backgroundColor: selectAllItems ? THEME_COLORS.accent : 'transparent',
+                    borderColor: selectAllItems ? THEME_COLORS.accent : THEME_COLORS.border,
+                    color: selectAllItems ? '#fff' : THEME_COLORS.text,
+                  }}
+                >
+                  {selectAllItems ? '✓ همه موارد' : 'انتخاب همه'}
+                </button>
               </div>
 
-              <div className="space-y-1 max-h-48 overflow-y-auto">
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                 {unpaidItems.length > 0 ? (
                   unpaidItems.map((item) => {
                   const selection = selectedItems.find((s) => s.itemId === item.id);
-                  const selectedQty = selection?.quantity || 0;
+                  const selectedQty = selectAllItems ? item.quantity : (selection?.quantity || 0);
+                  const isSelected = selectAllItems || selectedQty > 0;
+                  const itemTotal = selectedQty * item.unit_price;
 
                   return (
                     <div
                       key={item.id}
-                      className="p-2 rounded text-xs"
+                      className="p-3 rounded-lg border-2 transition-all"
                       style={{
-                        backgroundColor: selectAllItems || selectedQty > 0 ? THEME_COLORS.hover : THEME_COLORS.bgSecondary,
+                        backgroundColor: isSelected ? `${THEME_COLORS.accent}15` : THEME_COLORS.bgSecondary,
+                        borderColor: isSelected ? THEME_COLORS.accent : THEME_COLORS.border,
                       }}
                     >
-                      <div className="flex items-center justify-between">
+                      {/* Item Header */}
+                      <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
-                          <div style={{ color: THEME_COLORS.text }}>{item.product_name}</div>
-                          <div style={{ color: THEME_COLORS.subtext }}>
-                            {item.quantity} × {formatPersianMoney(item.unit_price)}
+                          <div className="flex items-center gap-2 mb-1">
+                            {!selectAllItems && (
+                              <input
+                                type="checkbox"
+                                checked={selectedQty > 0}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    handleItemQuantityChange(item.id, item.quantity);
+                                  } else {
+                                    handleItemQuantityChange(item.id, 0);
+                                  }
+                                }}
+                                className="w-4 h-4 cursor-pointer"
+                              />
+                            )}
+                            <div className="text-sm font-bold" style={{ color: THEME_COLORS.text }}>
+                              {item.product_name}
+                            </div>
+                          </div>
+                          <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>
+                            قیمت واحد: {formatPersianMoney(item.unit_price)}
                           </div>
                         </div>
-                        {!selectAllItems && (
-                          <input
-                            type="number"
-                            min="0"
-                            max={item.quantity}
-                            value={selectedQty}
-                            onChange={(e) => handleItemQuantityChange(item.id, parseInt(e.target.value) || 0)}
-                            className="w-16 px-1 py-0.5 rounded border text-center text-xs"
-                            style={{ backgroundColor: THEME_COLORS.bgPrimary, borderColor: THEME_COLORS.border, color: THEME_COLORS.text }}
-                          />
+                        {isSelected && (
+                          <div className="text-right">
+                            <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>جمع:</div>
+                            <div className="text-sm font-bold" style={{ color: THEME_COLORS.green }}>
+                              {formatPersianMoney(itemTotal)}
+                            </div>
+                          </div>
                         )}
                       </div>
+
+                      {/* Quantity Controls */}
+                      {!selectAllItems ? (
+                        <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: THEME_COLORS.border }}>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleItemQuantityChange(item.id, Math.max(0, selectedQty - 1))}
+                              disabled={selectedQty === 0}
+                              className="w-8 h-8 rounded-lg font-bold text-lg flex items-center justify-center transition-all disabled:opacity-30"
+                              style={{
+                                backgroundColor: THEME_COLORS.red,
+                                color: '#fff',
+                              }}
+                            >
+                              −
+                            </button>
+                            <div className="w-16 text-center">
+                              <div className="text-lg font-bold" style={{ color: THEME_COLORS.text }}>
+                                {selectedQty}
+                              </div>
+                              <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>
+                                از {item.quantity}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleItemQuantityChange(item.id, Math.min(item.quantity, selectedQty + 1))}
+                              disabled={selectedQty >= item.quantity}
+                              className="w-8 h-8 rounded-lg font-bold text-lg flex items-center justify-center transition-all disabled:opacity-30"
+                              style={{
+                                backgroundColor: THEME_COLORS.green,
+                                color: '#fff',
+                              }}
+                            >
+                              +
+                            </button>
+                          </div>
+                          <button
+                            onClick={() => handleItemQuantityChange(item.id, item.quantity)}
+                            disabled={selectedQty === item.quantity}
+                            className="px-3 py-1 rounded text-xs font-bold transition-all disabled:opacity-50"
+                            style={{
+                              backgroundColor: THEME_COLORS.blue,
+                              color: '#fff',
+                            }}
+                          >
+                            همه ({item.quantity})
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="pt-2 border-t text-center" style={{ borderColor: THEME_COLORS.border }}>
+                          <div className="text-xs" style={{ color: THEME_COLORS.accent }}>
+                            ✓ {item.quantity} عدد انتخاب شده
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Extras Display */}
+                      {item.extras && item.extras.length > 0 && (
+                        <div className="mt-2 pt-2 border-t" style={{ borderColor: THEME_COLORS.border }}>
+                          <div className="text-xs font-bold mb-1" style={{ color: THEME_COLORS.subtext }}>
+                            ➕ افزودنی‌ها:
+                          </div>
+                          {item.extras.map((extra) => (
+                            <div key={extra.id} className="flex justify-between text-xs pr-4" style={{ color: THEME_COLORS.subtext }}>
+                              <span>• {extra.product_name} (×{extra.quantity})</span>
+                              <span>{formatPersianMoney(extra.total)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })
                 ) : (
-                  <div className="text-center py-4 text-xs" style={{ color: THEME_COLORS.subtext }}>
+                  <div className="text-center py-8 text-sm" style={{ color: THEME_COLORS.subtext }}>
+                    <div className="text-4xl mb-2">✓</div>
                     همه اقلام پرداخت شده است
                   </div>
                 )}
