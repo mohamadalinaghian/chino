@@ -35,9 +35,6 @@ interface IPOSAccount {
   account_owner: string | null;
 }
 
-// Convert Rial to thousands of Toman for formatPersianMoney
-const toThousandsToman = (rial: number) => rial / 10000;
-
 export default function SalePaymentPage() {
   const router = useRouter();
   const params = useParams();
@@ -73,16 +70,17 @@ export default function SalePaymentPage() {
     loadUserPermissions();
   }, [saleId]);
 
-  // Auto-update amount when selection or tax/discount changes
+  // Auto-update amount when selection, tax/discount, or tip changes
   useEffect(() => {
     if (sale) {
       const baseAmount = calculateSelectedItemsTotal();
       const taxAmt = calculateTaxAmount(baseAmount);
       const discountAmt = calculateDiscountAmount(baseAmount);
-      const finalAmount = baseAmount + taxAmt - discountAmt;
+      const tip = parseFloat(tipAmount) || 0;
+      const finalAmount = baseAmount + taxAmt - discountAmt + tip;
       setAmount(finalAmount.toString());
     }
-  }, [selectedItems, selectAllItems, taxValue, taxType, discountValue, discountType, sale]);
+  }, [selectedItems, selectAllItems, taxValue, taxType, discountValue, discountType, tipAmount, sale]);
 
   const loadSaleData = async () => {
     try {
@@ -355,7 +353,8 @@ export default function SalePaymentPage() {
   const selectedTotal = calculateSelectedItemsTotal();
   const taxAmount = calculateTaxAmount(selectedTotal);
   const discountAmount = calculateDiscountAmount(selectedTotal);
-  const finalAmount = selectedTotal + taxAmount - discountAmount;
+  const tipAmountValue = parseFloat(tipAmount) || 0;
+  const finalAmount = selectedTotal + taxAmount - discountAmount + tipAmountValue;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: THEME_COLORS.bgPrimary }}>
@@ -395,19 +394,19 @@ export default function SalePaymentPage() {
                 <div>
                   <div style={{ color: THEME_COLORS.subtext }}>مجموع:</div>
                   <div className="font-bold" style={{ color: THEME_COLORS.text }}>
-                    {formatPersianMoney(toThousandsToman(sale.total_amount))}
+                    {formatPersianMoney(sale.total_amount)}
                   </div>
                 </div>
                 <div>
                   <div style={{ color: THEME_COLORS.subtext }}>پرداخت شده:</div>
                   <div className="font-bold" style={{ color: THEME_COLORS.green }}>
-                    {formatPersianMoney(toThousandsToman(sale.total_paid || 0))}
+                    {formatPersianMoney(sale.total_paid || 0)}
                   </div>
                 </div>
                 <div>
                   <div style={{ color: THEME_COLORS.subtext }}>مانده:</div>
                   <div className="font-bold" style={{ color: THEME_COLORS.orange }}>
-                    {formatPersianMoney(toThousandsToman(sale.balance_due ?? sale.total_amount))}
+                    {formatPersianMoney(sale.balance_due ?? sale.total_amount)}
                   </div>
                 </div>
                 <div>
@@ -447,23 +446,29 @@ export default function SalePaymentPage() {
               <div className="mt-2 pt-2 border-t" style={{ borderColor: THEME_COLORS.border }}>
                 <div className="flex justify-between text-sm">
                   <span style={{ color: THEME_COLORS.subtext }}>انتخاب شده:</span>
-                  <span style={{ color: THEME_COLORS.text }}>{formatPersianMoney(toThousandsToman(selectedTotal))}</span>
+                  <span style={{ color: THEME_COLORS.text }}>{formatPersianMoney(selectedTotal)}</span>
                 </div>
                 {taxAmount > 0 && (
                   <div className="flex justify-between text-sm">
                     <span style={{ color: THEME_COLORS.subtext }}>مالیات:</span>
-                    <span style={{ color: THEME_COLORS.text }}>+{formatPersianMoney(toThousandsToman(taxAmount))}</span>
+                    <span style={{ color: THEME_COLORS.text }}>+{formatPersianMoney(taxAmount)}</span>
                   </div>
                 )}
                 {discountAmount > 0 && (
                   <div className="flex justify-between text-sm">
                     <span style={{ color: THEME_COLORS.subtext }}>تخفیف:</span>
-                    <span style={{ color: THEME_COLORS.red }}>-{formatPersianMoney(toThousandsToman(discountAmount))}</span>
+                    <span style={{ color: THEME_COLORS.red }}>-{formatPersianMoney(discountAmount)}</span>
+                  </div>
+                )}
+                {tipAmountValue > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span style={{ color: THEME_COLORS.subtext }}>انعام:</span>
+                    <span style={{ color: THEME_COLORS.text }}>+{formatPersianMoney(tipAmountValue)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-base font-bold mt-1 pt-1 border-t" style={{ borderColor: THEME_COLORS.border }}>
                   <span style={{ color: THEME_COLORS.text }}>جمع نهایی:</span>
-                  <span style={{ color: THEME_COLORS.accent }}>{formatPersianMoney(toThousandsToman(finalAmount))}</span>
+                  <span style={{ color: THEME_COLORS.accent }}>{formatPersianMoney(finalAmount)}</span>
                 </div>
               </div>
             </div>
@@ -483,7 +488,7 @@ export default function SalePaymentPage() {
                         <div className="flex-1">
                           <div style={{ color: THEME_COLORS.text }}>✓ {item.product_name}</div>
                           <div style={{ color: THEME_COLORS.subtext }}>
-                            {item.quantity} × {formatPersianMoney(toThousandsToman(item.unit_price))}
+                            {item.quantity} × {formatPersianMoney(item.unit_price)}
                           </div>
                         </div>
                         <div className="font-bold" style={{ color: THEME_COLORS.green }}>
@@ -531,7 +536,7 @@ export default function SalePaymentPage() {
                         <div className="flex-1">
                           <div style={{ color: THEME_COLORS.text }}>{item.product_name}</div>
                           <div style={{ color: THEME_COLORS.subtext }}>
-                            {item.quantity} × {formatPersianMoney(toThousandsToman(item.unit_price))}
+                            {item.quantity} × {formatPersianMoney(item.unit_price)}
                           </div>
                         </div>
                         {!selectAllItems && (
@@ -620,11 +625,11 @@ export default function SalePaymentPage() {
               </div>
             )}
 
-            {/* POS/Cash Account Display */}
-            {(paymentMethod === PaymentMethod.POS || paymentMethod === PaymentMethod.CASH) && posAccount?.id && (
+            {/* POS Account Display (Cash has no destination account) */}
+            {paymentMethod === PaymentMethod.POS && posAccount?.id && (
               <div className="p-2 rounded-lg border" style={{ backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.green }}>
                 <div className="text-xs font-bold mb-1" style={{ color: THEME_COLORS.green }}>
-                  حساب مقصد:
+                  حساب مقصد (کارتخوان):
                 </div>
                 <div className="text-xs" style={{ color: THEME_COLORS.text }}>
                   {posAccount.account_owner} - {posAccount.card_number}
@@ -761,21 +766,21 @@ export default function SalePaymentPage() {
                         <div className="flex justify-between">
                           <span>مبلغ:</span>
                           <span style={{ color: THEME_COLORS.text }}>
-                            {formatPersianMoney(toThousandsToman(payment.amount_applied))}
+                            {formatPersianMoney(payment.amount_applied)}
                           </span>
                         </div>
                         {payment.tip_amount > 0 && (
                           <div className="flex justify-between">
                             <span>انعام:</span>
                             <span style={{ color: THEME_COLORS.text }}>
-                              {formatPersianMoney(toThousandsToman(payment.tip_amount))}
+                              {formatPersianMoney(payment.tip_amount)}
                             </span>
                           </div>
                         )}
                         <div className="flex justify-between font-bold">
                           <span>جمع:</span>
                           <span style={{ color: THEME_COLORS.accent }}>
-                            {formatPersianMoney(toThousandsToman(payment.amount_total))}
+                            {formatPersianMoney(payment.amount_total)}
                           </span>
                         </div>
                       </div>
