@@ -652,3 +652,93 @@ def cancel_sale_endpoint(request, sale_id: int, payload: CancelSaleRequest):
         ),
         cancel_reason=canceled_sale.cancel_reason,
     )
+
+
+@router.delete(
+    "/{sale_id}/payment/{payment_id}",
+    response={200: AddPaymentsResponse, 422: ErrorResponse},
+)
+def void_payment_endpoint(request, sale_id: int, payment_id: int):
+    """
+    Void a payment by setting its status to VOID.
+    Only superusers can void payments.
+    Updates the sale's payment status accordingly.
+    """
+    from apps.sale.models import SalePayment
+    from apps.sale.services.payment.payment_service import PaymentService
+    from django.core.exceptions import PermissionDenied
+
+    # Permission check - only superusers can void payments
+    if not request.auth.is_superuser:
+        raise PermissionDenied("Only superusers can void payments")
+
+    # Get the sale
+    sale = get_object_or_404(Sale, id=sale_id)
+
+    # Void the payment
+    try:
+        voided_payment = PaymentService.void_payment(
+            payment_id=payment_id, performer=request.auth
+        )
+    except ValidationError as e:
+        return 422, {"detail": str(e)}
+
+    # Verify the payment belongs to this sale
+    if voided_payment.sale_id != sale_id:
+        return 422, {"detail": "Payment does not belong to this sale"}
+
+    # Refresh sale data
+    sale.refresh_from_db()
+
+    # Build payment details
+    payment_details = []
+    for payment in sale.payments.all():
+        # Get covered item IDs from many-to-many relationship
+        covered_ids = list(payment.sale_items.values_list("id", flat=True))
+
+        payment_detail = PaymentDetailExtendedSchema(
+            id=payment.pk,
+            method=payment.method,
+            amount_total=payment.amount_total,
+            amount_applied=payment.amount_applied,
+            tip_amount=payment.tip_amount,
+            destination_account_id=(
+                payment.destination_account.pk if payment.destination_account else None
+            ),
+            destination_card_number=(
+                payment.destination_account.card_number
+                if payment.destination_account
+                else None
+            ),
+            destination_account_owner=(
+                payment.destination_account.account_owner
+                if payment.destination_account
+                else None
+            ),
+            destination_bank_name=(
+                payment.destination_account.bank_name
+                if payment.destination_account
+                else None
+            ),
+            received_by_name=payment.received_by.get_full_name()
+            or payment.received_by.username,
+            received_at=payment.received_at,
+            status=payment.status,
+            covered_item_ids=covered_ids,
+        )
+        payment_details.append(payment_detail)
+
+    return AddPaymentsResponse(
+        sale_id=sale.pk,
+        state=sale.state,
+        payment_status=sale.payment_status,
+        subtotal_amount=sale.subtotal_amount,
+        discount_amount=sale.discount_amount,
+        tax_amount=sale.tax_amount,
+        total_amount=sale.total_amount,
+        total_paid=sale.total_paid,
+        balance_due=sale.balance_due,
+        is_fully_paid=sale.is_fully_paid,
+        payments=payment_details,
+        was_auto_closed=False,
+    )

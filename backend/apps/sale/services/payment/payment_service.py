@@ -392,3 +392,45 @@ class PaymentService:
                 _("Invalid tax/discount type: %(type)s. Must be 'fixed' or 'percentage'")
                 % {"type": input_data.type}
             )
+
+    @staticmethod
+    @transaction.atomic
+    def void_payment(*, payment_id: int, performer: User) -> SalePayment:
+        """
+        Void a payment by setting its status to VOID.
+        Updates the sale's payment status accordingly.
+
+        Args:
+            payment_id: ID of the payment to void
+            performer: User voiding the payment
+
+        Returns:
+            Voided SalePayment instance
+
+        Raises:
+            ValidationError: If payment is already voided or doesn't exist
+        """
+        try:
+            payment = SalePayment.objects.select_related("sale").get(pk=payment_id)
+        except SalePayment.DoesNotExist:
+            raise ValidationError(_("Payment not found"))
+
+        if payment.status == SalePayment.PaymentStatus.VOID:
+            raise ValidationError(_("Payment is already voided"))
+
+        # Void the payment
+        payment.status = SalePayment.PaymentStatus.VOID
+        payment.save()
+
+        # Update sale payment status
+        PaymentService._update_sale_payment_status(payment.sale)
+
+        # If sale was auto-closed and is now not fully paid, reopen it
+        sale = payment.sale
+        sale.refresh_from_db()
+        if sale.state == Sale.SaleState.CLOSED and not sale.is_fully_paid:
+            # Only reopen if there are no other business rules preventing it
+            # For now, we'll leave it closed but with PARTIALLY_PAID status
+            pass
+
+        return payment
