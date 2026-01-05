@@ -438,9 +438,7 @@ export default function SalePaymentPage() {
                   <div style={{ color: THEME_COLORS.subtext }}>وضعیت:</div>
                   <div className="font-bold" style={{ color: THEME_COLORS.cyan }}>
                     {sale.payment_status === 'PAID' ? 'پرداخت شده' :
-                     sale.payment_status === 'PARTIALLY_PAID' ? 'پرداخت جزئی' : 'پرداخت نشد
-
-ه'}
+                      sale.payment_status === 'PARTIALLY_PAID' ? 'پرداخت جزئی' : 'پرداخت نشده'}
                   </div>
                 </div>
               </div>
