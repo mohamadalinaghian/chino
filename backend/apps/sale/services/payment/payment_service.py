@@ -9,6 +9,7 @@ from apps.user.models import BankAccount
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 User = get_user_model()
@@ -236,17 +237,11 @@ class PaymentService:
         was_auto_closed = False
         sale.refresh_from_db()
         if sale.state == Sale.SaleState.OPEN and sale.is_fully_paid:
-            # Import here to avoid circular imports
-            from apps.sale.services.sale.close_sale import CloseSaleService
-
-            # Close without additional payments (already processed above)
-            sale, _ = CloseSaleService.finalize_and_pay(
-                sale=sale,
-                performer=performer,
-                tax_amount=sale.tax_amount,
-                discount_amount=sale.discount_amount,
-                payments=[],  # No additional payments
-            )
+            # Auto-close the sale (change state to CLOSED)
+            sale.state = Sale.SaleState.CLOSED
+            sale.closed_by = performer
+            sale.closed_at = timezone.now()
+            sale.save(skip_validation=True)
             was_auto_closed = True
 
         return sale, created_payments, was_auto_closed

@@ -5,9 +5,10 @@ Provides access to user-related data including bank accounts.
 Separated from core_setting endpoints for clear responsibility boundaries.
 """
 
-from typing import List
+from typing import List, Optional
 
 from api.security.auth import jwt_auth
+from apps.core_setting.models import SiteSettings
 from apps.user.services.bank_account_service import BankAccountService
 from ninja import Router, Schema
 
@@ -52,3 +53,33 @@ def get_bank_accounts(request):
         )
         for item in accounts_data
     ]
+
+
+class POSAccountSchema(Schema):
+    """POS terminal account schema."""
+
+    id: Optional[int] = None
+    card_number: Optional[str] = None
+    bank_name: Optional[str] = None
+    account_owner: Optional[str] = None
+
+
+@router.get("/pos-account/", response={200: POSAccountSchema})
+def get_pos_account(request):
+    """
+    Get the default POS terminal account from settings.
+
+    Returns:
+        POSAccountSchema: POS terminal account if configured, empty if not
+    """
+    settings = SiteSettings.get()
+
+    if settings.default_pos_account:
+        return POSAccountSchema(
+            id=settings.default_pos_account.pk,
+            card_number=settings.default_pos_account.card_number,
+            bank_name=settings.default_pos_account.bank_name,
+            account_owner=settings.default_pos_account.account_owner,
+        )
+
+    return POSAccountSchema()

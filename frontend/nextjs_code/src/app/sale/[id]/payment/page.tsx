@@ -9,6 +9,7 @@ import {
   IAddPaymentInput,
   IBankAccount,
   IPaymentDetail,
+  ISaleItemDetail,
 } from '@/types/sale';
 import {
   fetchSaleDetails,
@@ -17,12 +18,29 @@ import {
 } from '@/service/sale';
 import { useToast } from '@/components/common/Toast';
 import { LoadingOverlay } from '@/components/common/LoadingOverlay';
-import { THEME_COLORS, UI_TEXT } from '@/libs/constants';
-import { formatCurrency } from '@/utils/currencyUtils';
+import { THEME_COLORS, UI_TEXT, API_ENDPOINTS, CS_API_URL } from '@/libs/constants';
+import { formatPersianMoney } from '@/utils/persianUtils';
 import { formatJalaliDateTime } from '@/utils/persianUtils';
 import { IUserPermissions } from '@/types/sale';
 import { authenticatedFetchJSON } from '@/libs/auth/authFetch';
-import { CS_API_URL, API_ENDPOINTS } from '@/libs/constants';
+
+/**
+ * Item quantity selection for partial payment
+ */
+interface IItemSelection {
+  itemId: number;
+  quantity: number; // Selected quantity (can be less than total)
+}
+
+/**
+ * POS terminal account
+ */
+interface IPOSAccount {
+  id: number | null;
+  card_number: string | null;
+  bank_name: string | null;
+  account_owner: string | null;
+}
 
 export default function SalePaymentPage() {
   const router = useRouter();
@@ -37,6 +55,7 @@ export default function SalePaymentPage() {
 
   // Bank accounts
   const [bankAccounts, setBankAccounts] = useState<IBankAccount[]>([]);
+  const [posAccount, setPosAccount] = useState<IPOSAccount | null>(null);
   const [loadingAccounts, setLoadingAccounts] = useState(false);
 
   // User permissions
@@ -47,7 +66,7 @@ export default function SalePaymentPage() {
   const [amount, setAmount] = useState<string>('');
   const [tipAmount, setTipAmount] = useState<string>('0');
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
-  const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
+  const [selectedItems, setSelectedItems] = useState<IItemSelection[]>([]);
   const [accountSearchQuery, setAccountSearchQuery] = useState('');
 
   // Tax and discount state
@@ -62,22 +81,24 @@ export default function SalePaymentPage() {
   useEffect(() => {
     loadSaleData();
     loadBankAccounts();
+    loadPOSAccount();
     loadUserPermissions();
   }, [saleId]);
 
   useEffect(() => {
-    // Auto-fill remaining amount when user selects items
-    if (sale && selectedItemIds.length > 0 && !amount) {
+    // Auto-fill amount when selection changes
+    if (sale && selectedItems.length > 0 && !amount) {
       const selectedTotal = calculateSelectedItemsTotal();
       setAmount(selectedTotal.toString());
     }
-  }, [selectedItemIds, sale]);
+  }, [selectedItems, sale]);
 
   useEffect(() => {
-    // When select all is toggled, update selected items
+    // When select all is toggled
     if (sale && selectAllItems) {
-      setSelectedItemIds([]);
-      setAmount(sale.balance_due?.toString() || sale.total_amount.toString());
+      setSelectedItems([]);
+      const unpaidTotal = calculateUnpaidTotal();
+      setAmount(unpaidTotal.toString());
     }
   }, [selectAllItems, sale]);
 
@@ -87,12 +108,9 @@ export default function SalePaymentPage() {
       const saleData = await fetchSaleDetails(saleId);
       setSale(saleData);
 
-      // Set initial amount to balance due
-      if (saleData.balance_due !== undefined) {
-        setAmount(saleData.balance_due.toString());
-      } else {
-        setAmount(saleData.total_amount.toString());
-      }
+      // Set initial amount to unpaid balance
+      const unpaidBalance = calculateUnpaidBalanceForSale(saleData);
+      setAmount(unpaidBalance.toString());
     } catch (err) {
       showToast(
         err instanceof Error ? err.message : 'خطا در بارگذاری اطلاعات فروش',
@@ -108,15 +126,26 @@ export default function SalePaymentPage() {
       setLoadingAccounts(true);
       const accounts = await fetchBankAccounts();
       setBankAccounts(accounts);
-
-      // Auto-select first account for card transfer
-      if (accounts.length > 0 && paymentMethod !== PaymentMethod.CASH) {
-        setSelectedAccountId(accounts[0].id);
-      }
     } catch (err) {
       showToast(UI_TEXT.ERROR_LOADING_BANK_ACCOUNTS, 'error');
     } finally {
       setLoadingAccounts(false);
+    }
+  };
+
+  const loadPOSAccount = async () => {
+    try {
+      const account = await authenticatedFetchJSON<IPOSAccount>(
+        `${CS_API_URL}${API_ENDPOINTS.POS_ACCOUNT}`
+      );
+      setPosAccount(account);
+
+      // Auto-select POS account if method is POS
+      if (account?.id && paymentMethod === PaymentMethod.POS) {
+        setSelectedAccountId(account.id);
+      }
+    } catch (err) {
+      console.error('Error loading POS account:', err);
     }
   };
 
@@ -139,16 +168,52 @@ export default function SalePaymentPage() {
     return userPermissions?.is_superuser || false;
   }, [userPermissions]);
 
+  /**
+   * Calculate unpaid balance for a sale
+   */
+  const calculateUnpaidBalanceForSale = (saleData: ISaleDetailResponse): number => {
+    return saleData.balance_due ?? saleData.total_amount;
+  };
+
+  /**
+   * Calculate unpaid total
+   */
+  const calculateUnpaidTotal = (): number => {
+    if (!sale) return 0;
+    return sale.balance_due ?? sale.total_amount;
+  };
+
+  /**
+   * Calculate selected items total
+   */
   const calculateSelectedItemsTotal = (): number => {
     if (!sale) return 0;
-    if (selectAllItems || selectedItemIds.length === 0) {
-      return sale.balance_due ?? sale.total_amount;
+    if (selectAllItems || selectedItems.length === 0) {
+      return calculateUnpaidTotal();
     }
 
-    return sale.items
-      .filter((item) => selectedItemIds.includes(item.id))
-      .reduce((sum, item) => sum + Number(item.total), 0);
+    return selectedItems.reduce((sum, selection) => {
+      const item = sale.items.find((i) => i.id === selection.itemId);
+      if (!item) return sum;
+
+      const unitPrice = Number(item.unit_price);
+      return sum + unitPrice * selection.quantity;
+    }, 0);
   };
+
+  /**
+   * Separate paid and unpaid items
+   */
+  const { paidItems, unpaidItems } = useMemo(() => {
+    if (!sale) return { paidItems: [], unpaidItems: [] };
+
+    // For now, all items are unpaid (we'll enhance this when we add payment history)
+    // In future: check each item against payment history to determine paid quantities
+    return {
+      paidItems: [] as ISaleItemDetail[],
+      unpaidItems: sale.items,
+    };
+  }, [sale]);
 
   const filteredBankAccounts = useMemo(() => {
     if (!accountSearchQuery.trim()) return bankAccounts;
@@ -165,27 +230,40 @@ export default function SalePaymentPage() {
   const handlePaymentMethodChange = (method: PaymentMethod) => {
     setPaymentMethod(method);
 
-    // Auto-select first account for non-cash methods
-    if (method !== PaymentMethod.CASH && bankAccounts.length > 0) {
+    // Auto-select appropriate account
+    if (method === PaymentMethod.POS && posAccount?.id) {
+      setSelectedAccountId(posAccount.id);
+    } else if (method === PaymentMethod.CARD_TRANSFER && bankAccounts.length > 0) {
       setSelectedAccountId(bankAccounts[0].id);
     } else if (method === PaymentMethod.CASH) {
       setSelectedAccountId(null);
     }
   };
 
-  const handleItemToggle = (itemId: number) => {
+  const handleItemQuantityChange = (itemId: number, quantity: number) => {
     setSelectAllItems(false);
-    setSelectedItemIds((prev) =>
-      prev.includes(itemId)
-        ? prev.filter((id) => id !== itemId)
-        : [...prev, itemId]
-    );
+
+    if (quantity === 0) {
+      // Remove item
+      setSelectedItems((prev) => prev.filter((s) => s.itemId !== itemId));
+    } else {
+      setSelectedItems((prev) => {
+        const existing = prev.find((s) => s.itemId === itemId);
+        if (existing) {
+          return prev.map((s) =>
+            s.itemId === itemId ? { ...s, quantity } : s
+          );
+        } else {
+          return [...prev, { itemId, quantity }];
+        }
+      });
+    }
   };
 
   const handleSelectAllToggle = () => {
     setSelectAllItems(!selectAllItems);
     if (!selectAllItems) {
-      setSelectedItemIds([]);
+      setSelectedItems([]);
     }
   };
 
@@ -215,12 +293,17 @@ export default function SalePaymentPage() {
     try {
       setSubmitting(true);
 
+      // Build selected item IDs (for partial payment)
+      const selectedItemIds = selectAllItems
+        ? []
+        : selectedItems.map((s) => s.itemId);
+
       const payment: IAddPaymentInput = {
         method: paymentMethod,
         amount_applied: parseFloat(amount),
         tip_amount: parseFloat(tipAmount) || 0,
         destination_account_id: selectedAccountId,
-        selected_item_ids: selectAllItems ? [] : selectedItemIds,
+        selected_item_ids: selectedItemIds,
       };
 
       // Add tax if specified
@@ -336,26 +419,28 @@ export default function SalePaymentPage() {
                 <div>
                   <div style={{ color: THEME_COLORS.subtext }}>مجموع:</div>
                   <div className="font-bold" style={{ color: THEME_COLORS.text }}>
-                    {formatCurrency(sale.total_amount)}
+                    {formatPersianMoney(sale.total_amount / 1000)}
                   </div>
                 </div>
                 <div>
                   <div style={{ color: THEME_COLORS.subtext }}>پرداخت شده:</div>
                   <div className="font-bold" style={{ color: THEME_COLORS.green }}>
-                    {formatCurrency(sale.total_paid || 0)}
+                    {formatPersianMoney((sale.total_paid || 0) / 1000)}
                   </div>
                 </div>
                 <div>
                   <div style={{ color: THEME_COLORS.subtext }}>مانده:</div>
                   <div className="font-bold" style={{ color: THEME_COLORS.orange }}>
-                    {formatCurrency(sale.balance_due ?? sale.total_amount)}
+                    {formatPersianMoney((sale.balance_due ?? sale.total_amount) / 1000)}
                   </div>
                 </div>
                 <div>
                   <div style={{ color: THEME_COLORS.subtext }}>وضعیت:</div>
                   <div className="font-bold" style={{ color: THEME_COLORS.cyan }}>
                     {sale.payment_status === 'PAID' ? 'پرداخت شده' :
-                     sale.payment_status === 'PARTIALLY_PAID' ? 'پرداخت جزئی' : 'پرداخت نشده'}
+                     sale.payment_status === 'PARTIALLY_PAID' ? 'پرداخت جزئی' : 'پرداخت نشد
+
+ه'}
                   </div>
                 </div>
               </div>
@@ -381,34 +466,93 @@ export default function SalePaymentPage() {
                 </label>
               </div>
 
-              {!selectAllItems && (
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {sale.items.map((item) => (
-                    <label
+              {/* Unpaid Items */}
+              {unpaidItems.length > 0 && (
+                <div className="space-y-2 mb-3">
+                  <div className="text-sm font-bold" style={{ color: THEME_COLORS.accent }}>
+                    اقلام پرداخت نشده:
+                  </div>
+                  {unpaidItems.map((item) => {
+                    const selection = selectedItems.find((s) => s.itemId === item.id);
+                    const selectedQty = selection?.quantity || 0;
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="p-3 rounded-lg"
+                        style={{
+                          backgroundColor: selectAllItems || selectedQty > 0
+                            ? THEME_COLORS.hover
+                            : THEME_COLORS.bgSecondary,
+                        }}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex-1">
+                            <div style={{ color: THEME_COLORS.text }}>{item.product_name}</div>
+                            <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
+                              موجود: {item.quantity} × {formatPersianMoney(item.unit_price / 1000)}
+                            </div>
+                          </div>
+                          <div className="font-bold" style={{ color: THEME_COLORS.accent }}>
+                            {formatPersianMoney(item.total / 1000)}
+                          </div>
+                        </div>
+
+                        {!selectAllItems && (
+                          <div className="flex items-center gap-2">
+                            <label className="text-sm" style={{ color: THEME_COLORS.text }}>
+                              تعداد برای پرداخت:
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              max={item.quantity}
+                              value={selectedQty}
+                              onChange={(e) =>
+                                handleItemQuantityChange(item.id, parseInt(e.target.value) || 0)
+                              }
+                              className="w-20 px-2 py-1 rounded border text-center"
+                              style={{
+                                backgroundColor: THEME_COLORS.bgPrimary,
+                                borderColor: THEME_COLORS.border,
+                                color: THEME_COLORS.text,
+                              }}
+                            />
+                            <span className="text-sm" style={{ color: THEME_COLORS.subtext }}>
+                              از {item.quantity}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Paid Items (if any) */}
+              {paidItems.length > 0 && (
+                <div className="space-y-2 pt-3 border-t" style={{ borderColor: THEME_COLORS.border }}>
+                  <div className="text-sm font-bold" style={{ color: THEME_COLORS.green }}>
+                    اقلام پرداخت شده:
+                  </div>
+                  {paidItems.map((item) => (
+                    <div
                       key={item.id}
-                      className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:opacity-90 transition-all"
-                      style={{
-                        backgroundColor: selectedItemIds.includes(item.id)
-                          ? THEME_COLORS.hover
-                          : THEME_COLORS.bgSecondary,
-                      }}
+                      className="p-3 rounded-lg opacity-60"
+                      style={{ backgroundColor: THEME_COLORS.bgSecondary }}
                     >
-                      <input
-                        type="checkbox"
-                        checked={selectedItemIds.includes(item.id)}
-                        onChange={() => handleItemToggle(item.id)}
-                        className="w-5 h-5"
-                      />
-                      <div className="flex-1">
-                        <div style={{ color: THEME_COLORS.text }}>{item.product_name}</div>
-                        <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
-                          تعداد: {item.quantity} × {formatCurrency(item.unit_price)}
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div style={{ color: THEME_COLORS.text }}>{item.product_name}</div>
+                          <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
+                            تعداد: {item.quantity} × {formatPersianMoney(item.unit_price / 1000)}
+                          </div>
+                        </div>
+                        <div className="font-bold" style={{ color: THEME_COLORS.green }}>
+                          ✓ پرداخت شده
                         </div>
                       </div>
-                      <div className="font-bold" style={{ color: THEME_COLORS.accent }}>
-                        {formatCurrency(item.total)}
-                      </div>
-                    </label>
+                    </div>
                   ))}
                 </div>
               )}
@@ -419,7 +563,7 @@ export default function SalePaymentPage() {
                     جمع انتخاب شده:
                   </span>
                   <span className="text-xl font-bold" style={{ color: THEME_COLORS.accent }}>
-                    {formatCurrency(selectedTotal)}
+                    {formatPersianMoney(selectedTotal / 1000)}
                   </span>
                 </div>
               </div>
@@ -463,6 +607,11 @@ export default function SalePaymentPage() {
               >
                 <h2 className="text-lg font-bold mb-3" style={{ color: THEME_COLORS.text }}>
                   {UI_TEXT.LABEL_SELECT_ACCOUNT}
+                  {paymentMethod === PaymentMethod.POS && posAccount?.id && (
+                    <span className="text-sm font-normal mr-2" style={{ color: THEME_COLORS.green }}>
+                      (حساب پایانه خودکار انتخاب شد)
+                    </span>
+                  )}
                 </h2>
 
                 <input
@@ -510,7 +659,7 @@ export default function SalePaymentPage() {
                         </div>
                         {canSeeAccountBalance && (
                           <div className="font-bold" style={{ color: THEME_COLORS.accent }}>
-                            {formatCurrency(parseFloat(account.account_balance))}
+                            {formatPersianMoney(parseFloat(account.account_balance) / 1000)}
                           </div>
                         )}
                       </label>
@@ -686,7 +835,7 @@ export default function SalePaymentPage() {
                 {UI_TEXT.LABEL_PAYMENT_HISTORY}
               </h2>
 
-              {/* This would show previous payments - placeholder for now */}
+              {/* Placeholder for payment history */}
               <div className="text-center py-8" style={{ color: THEME_COLORS.subtext }}>
                 پرداخت قبلی وجود ندارد
               </div>

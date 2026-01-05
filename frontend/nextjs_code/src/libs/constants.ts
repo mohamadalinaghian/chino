@@ -118,6 +118,7 @@ export const API_ENDPOINTS = {
   // User endpoints
   USER_LIST: '/user/',
   BANK_ACCOUNTS: '/user/bank-accounts/',
+  POS_ACCOUNT: '/user/pos-account/',
 } as const;
 
 /**
