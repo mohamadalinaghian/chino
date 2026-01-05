@@ -480,13 +480,13 @@ export default function SalePaymentPage() {
                   <button
                     onClick={() => {
                       const remaining = sale.balance_due ?? sale.total_amount;
-                      setAmount(remaining.toFixed(0));
+                      setAmount(Number(remaining).toFixed(0));
                     }}
                     className="py-1 rounded text-xs border font-bold"
                     style={{
-                      backgroundColor: amount === (sale.balance_due ?? sale.total_amount).toFixed(0) ? THEME_COLORS.green : THEME_COLORS.surface,
+                      backgroundColor: amount === Number(sale.balance_due ?? sale.total_amount).toFixed(0) ? THEME_COLORS.green : THEME_COLORS.surface,
                       borderColor: THEME_COLORS.green,
-                      color: amount === (sale.balance_due ?? sale.total_amount).toFixed(0) ? '#fff' : THEME_COLORS.text
+                      color: amount === Number(sale.balance_due ?? sale.total_amount).toFixed(0) ? '#fff' : THEME_COLORS.text
                     }}
                   >
                     همه
@@ -494,13 +494,13 @@ export default function SalePaymentPage() {
                   <button
                     onClick={() => {
                       const remaining = sale.balance_due ?? sale.total_amount;
-                      setAmount((remaining / 2).toFixed(0));
+                      setAmount((Number(remaining) / 2).toFixed(0));
                     }}
                     className="py-1 rounded text-xs border"
                     style={{
-                      backgroundColor: amount === ((sale.balance_due ?? sale.total_amount) / 2).toFixed(0) ? THEME_COLORS.blue : THEME_COLORS.surface,
+                      backgroundColor: amount === (Number(sale.balance_due ?? sale.total_amount) / 2).toFixed(0) ? THEME_COLORS.blue : THEME_COLORS.surface,
                       borderColor: THEME_COLORS.border,
-                      color: amount === ((sale.balance_due ?? sale.total_amount) / 2).toFixed(0) ? '#fff' : THEME_COLORS.text
+                      color: amount === (Number(sale.balance_due ?? sale.total_amount) / 2).toFixed(0) ? '#fff' : THEME_COLORS.text
                     }}
                   >
                     نصف
@@ -515,7 +515,7 @@ export default function SalePaymentPage() {
                       onBlur={() => {
                         const divisor = parseInt(customDivisor) || 3;
                         const remaining = sale.balance_due ?? sale.total_amount;
-                        setAmount((remaining / divisor).toFixed(0));
+                        setAmount((Number(remaining) / divisor).toFixed(0));
                       }}
                       className="w-full px-1 py-1 rounded border text-xs text-center"
                       style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border, color: THEME_COLORS.text }}
