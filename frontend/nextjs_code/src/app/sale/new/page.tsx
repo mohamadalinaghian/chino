@@ -398,6 +398,48 @@ export default function NewSalePage() {
     }
   };
 
+  const handleSaveAndPay = async () => {
+    if (saleType === SaleType.DINE_IN && !selectedTableId) {
+      showToast(UI_TEXT.VALIDATION_SELECT_TABLE, 'warning');
+      return;
+    }
+    if (cartItems.length === 0) {
+      showToast(UI_TEXT.VALIDATION_EMPTY_CART, 'warning');
+      return;
+    }
+    try {
+      setSubmitting(true);
+      const saleData = {
+        sale_type: saleType,
+        table_id: saleType === SaleType.DINE_IN ? selectedTableId : null,
+        guest_id: selectedGuestId,
+        guest_count: guestCount,
+        note: null,
+        items: cartItems.map((cartItem) => ({
+          menu_id: cartItem.menu_id,
+          quantity: cartItem.quantity,
+          extras: cartItem.extras.map((extra) => ({
+            product_id: extra.product_id,
+            quantity: extra.quantity,
+          })),
+        })),
+      };
+      const sale = await saveAsOpenSale(saleData);
+      showToast(UI_TEXT.SUCCESS_OPEN_SALE_SAVED, 'success');
+
+      setTimeout(() => {
+        router.push(`/sale/${sale.id}/payment`);
+      }, 500);
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : UI_TEXT.ERROR_CREATING_SALE,
+        'error'
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleSaveAndPrintAll = async () => {
     if (saleType === SaleType.DINE_IN && !selectedTableId) {
       showToast(UI_TEXT.VALIDATION_SELECT_TABLE, 'warning');
@@ -681,6 +723,7 @@ export default function NewSalePage() {
                 onEditExtras={handleEditCartItemExtras}
                 onSaveSilent={handleProceedToPayment}
                 onSaveAndPrintAll={handleSaveAndPrintAll}
+                onSaveAndPay={handleSaveAndPay}
                 onCancel={handleCancel}
                 isEditMode={false}
                 isSubmitting={submitting}

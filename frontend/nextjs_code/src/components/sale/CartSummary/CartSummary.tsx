@@ -14,6 +14,7 @@ interface CartSummaryProps {
   onSaveSilent: () => void; // Save without print
   onSaveAndPrintAll: () => void; // Save and print everything
   onSaveAndPrintChanges?: () => void; // Save and print only changes (edit mode only)
+  onSaveAndPay?: () => void; // Save and go to payment (new sale mode only)
   onCancel: () => void; // Cancel button
 
   isEditMode?: boolean; // To show/hide print changes button
@@ -30,6 +31,7 @@ export const CartSummary = forwardRef<HTMLDivElement, CartSummaryProps>(function
     onSaveSilent,
     onSaveAndPrintAll,
     onSaveAndPrintChanges,
+    onSaveAndPay,
     onCancel,
     isEditMode = false,
     isSubmitting = false,
@@ -225,6 +227,22 @@ export const CartSummary = forwardRef<HTMLDivElement, CartSummaryProps>(function
         >
           {isSubmitting ? 'در حال ذخیره و چاپ...' : '🖨️ ذخیره و چاپ همه'}
         </button>
+
+        {/* Save and Go to Payment (New Sale Mode Only) */}
+        {!isEditMode && onSaveAndPay && (
+          <button
+            onClick={onSaveAndPay}
+            disabled={isSubmitting}
+            className="w-full py-3 rounded-lg font-bold transition-all hover:opacity-90 active:scale-95"
+            style={{
+              backgroundColor: isSubmitting ? THEME_COLORS.surface : THEME_COLORS.blue,
+              color: '#fff',
+              opacity: isSubmitting ? 0.6 : 1,
+            }}
+          >
+            {isSubmitting ? 'در حال ذخیره...' : '💳 ذخیره و پرداخت'}
+          </button>
+        )}
 
         {/* Cancel Button */}
         <button
