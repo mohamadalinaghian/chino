@@ -229,7 +229,7 @@ export default function EditSalePage() {
       originalCartItems.forEach((originalItem) => {
         const currentItem = cartItems.find(
           (ci) => ci.menu_id === originalItem.menu_id &&
-                  JSON.stringify(ci.extras) === JSON.stringify(originalItem.extras)
+            JSON.stringify(ci.extras) === JSON.stringify(originalItem.extras)
         );
 
         if (!currentItem) {
@@ -283,7 +283,7 @@ export default function EditSalePage() {
       cartItems.forEach((currentItem) => {
         const wasOriginal = originalCartItems.some(
           (oi) => oi.menu_id === currentItem.menu_id &&
-                  JSON.stringify(oi.extras) === JSON.stringify(currentItem.extras)
+            JSON.stringify(oi.extras) === JSON.stringify(currentItem.extras)
         );
 
         if (!wasOriginal) {
@@ -376,7 +376,7 @@ export default function EditSalePage() {
         sale_id: saleId,
         sale_type: saleType,
         table_name: tableName,
-        guest_count: guestCount,
+        guest_count: guestCount || 0,
         items: cartItems.map((item) => ({
           name: item.name,
           quantity: item.quantity,
