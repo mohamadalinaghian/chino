@@ -594,7 +594,7 @@ export default function EditSalePage() {
         sale_type: saleType,
         table_id: saleType === SaleType.DINE_IN ? selectedTableId : null,
         guest_id: selectedGuestId,
-        guest_count: guestCount,
+        guest_count: guestCount || 0,
       });
 
       showToast('تغییرات با موفقیت ذخیره شد', 'success');
