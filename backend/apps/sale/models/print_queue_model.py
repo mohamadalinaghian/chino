@@ -99,7 +99,7 @@ class PrintQueue(models.Model):
         verbose_name_plural = _("Print Queue")
 
     def __str__(self):
-        return f"Print Job {self.id} - {self.print_type} ({self.status})"
+        return f"Print Job {self.pk} - {self.print_type} ({self.status})"
 
     def mark_as_printed(self):
         """Mark this print job as successfully printed."""

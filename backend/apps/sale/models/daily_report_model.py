@@ -219,7 +219,7 @@ class DailyReport(models.Model):
         """
 
         cash_methods = self.payment_methods.filter(
-            payment_method=DailyReportPaymentMethod.PaymentMethodType.CASH
+            payment_method=DailyReportPaymentMethod.Pay
         )
         return cash_methods.aggregate(total=models.Sum("expected_amount"))[
             "total"
