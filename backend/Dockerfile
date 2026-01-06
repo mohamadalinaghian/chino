@@ -1,7 +1,7 @@
 # -----------------------------
 # Base image
 # -----------------------------
-FROM python:3.12-slim AS base
+FROM python:slim AS base
 
 ENV PYTHONUNBUFFERED=1 \
   PYTHONDONTWRITEBYTECODE=1 \
