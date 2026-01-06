@@ -6,6 +6,7 @@
 import { authenticatedFetchJSON } from '@/libs/auth/authFetch';
 import { CS_API_URL, API_ENDPOINTS, UI_TEXT } from '@/libs/constants';
 import {
+  SaleType,
   IOpenSaleRequest,
   ISaleResponse,
   ISaleDetailResponse,

@@ -276,8 +276,8 @@ export function ExtrasModal({ item, isOpen, onClose, onConfirm }: ExtrasModalPro
                     style={{
                       backgroundColor: isSelected ? THEME_COLORS.surface : THEME_COLORS.bgSecondary,
                       borderColor: isSelected ? THEME_COLORS.accent : THEME_COLORS.border,
-                      ringColor: isSelected ? THEME_COLORS.accent : 'transparent',
-                      ringOffsetColor: THEME_COLORS.bgPrimary,
+                      // ringColor: isSelected ? THEME_COLORS.accent : 'transparent',
+                      // ringOffsetColor: THEME_COLORS.bgPrimary,
                     }}
                   >
                     {/* Toggle Header */}
@@ -332,7 +332,7 @@ export function ExtrasModal({ item, isOpen, onClose, onConfirm }: ExtrasModalPro
                                   style={{
                                     backgroundColor: quantity === q ? THEME_COLORS.accent : THEME_COLORS.surface,
                                     color: quantity === q ? '#fff' : THEME_COLORS.text,
-                                    ringColor: THEME_COLORS.accent,
+                                    // ringColor: THEME_COLORS.accent,
                                   }}
                                 >
                                   {toPersianDigits(q)}

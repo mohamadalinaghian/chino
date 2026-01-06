@@ -257,6 +257,7 @@ export interface ISaleItemDetail {
   unit_price: number;
   total: number;
   extras: IExtraDetail[];
+  is_paid: boolean;
 }
 
 /**

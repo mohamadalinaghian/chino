@@ -6,7 +6,7 @@
 
 import { CS_API_URL } from '@/libs/constants';
 import { authenticatedFetchJSON } from '@/libs/auth/authFetch';
-import type { MenuSaleResponse, ProductExtra } from '@/types/newSaleTypes';
+import type { ISaleItemResponse, IExtraItem } from '@/types/sale';
 
 /**
  * Base URL for menu endpoints
@@ -24,9 +24,9 @@ export class MenuApiClient {
    * @returns Menu items grouped by BAR and FOOD categories
    * @throws Error if request fails
    */
-  static async getSaleMenu(): Promise<MenuSaleResponse> {
+  static async getSaleMenu(): Promise<ISaleItemResponse> {
     try {
-      return await authenticatedFetchJSON<MenuSaleResponse>(
+      return await authenticatedFetchJSON<ISaleItemResponse>(
         `${MENU_BASE_URL}/sale/menu`
       );
     } catch (error) {
@@ -46,9 +46,9 @@ export class MenuApiClient {
    * @returns List of available extra products
    * @throws Error if request fails
    */
-  static async getExtras(): Promise<ProductExtra[]> {
+  static async getExtras(): Promise<IExtraItem[]> {
     try {
-      return await authenticatedFetchJSON<ProductExtra[]>(
+      return await authenticatedFetchJSON<IExtraItem[]>(
         `${MENU_BASE_URL}/sale/extras`
       );
     } catch (error) {
