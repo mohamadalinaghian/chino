@@ -4,9 +4,11 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
+
     default: "کافه چینو | منوی آنلاین",
     template: "%s | کافه چینو",
   },
+  metadataBase: new URL('https://chinocafe.ir'),
   description:
     "منوی دیجیتال کافه چینو - تجربه سفارش آنلاین نوشیدنیها و غذاهای ویژه",
   keywords: ["کافه", "چینو", "منوی آنلاین", "قهوه", "نوشیدنی", "کافه شاهرود"],
@@ -36,6 +38,10 @@ export const metadata: Metadata = {
     shortcut: "/favicon-16x16.png",
     apple: "/apple-touch-icon.png",
   },
+};
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
   themeColor: "#1e293b",
 };
 

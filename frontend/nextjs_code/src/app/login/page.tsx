@@ -11,10 +11,12 @@
 
 import { Suspense } from 'react';
 import LoginForm from './LoginForm';
+import { Metadata } from 'next';
 
 // Recommended: Set your production domain here to fix the metadataBase warning
-export const metadata = {
-  metadataBase: new URL('https://your-domain.com'), // ← Change to your real domain
+export const metadata: Metadata = {
+
+  metadataBase: new URL('https://chinocafe.ir'), // ← Change to your real domain
 };
 
 // Fix for the themeColor warning (if you had it in metadata before)

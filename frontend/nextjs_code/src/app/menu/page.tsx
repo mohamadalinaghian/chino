@@ -1,14 +1,17 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Cafe Chino Menu | Coffee & Food",
+
+  metadataBase: new URL('https://chinocafe.ir'),
   description:
     "Browse Cafe Chino’s full menu of coffee, drinks, and freshly prepared food.",
 };
 
 import { fetchCategories, fetchMenuItems } from "@/service/menu";
 import MenuPageClient from "@/components/menu/MenuPageClient";
+import { Metadata } from "next";
 
 export default async function MenuPage() {
   const [categories, menuItems] = await Promise.all([
