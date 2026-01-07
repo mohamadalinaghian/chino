@@ -14,7 +14,7 @@ SECRET_KEY = env("DJANGO_SECRET_KEY", default="unsecure")
 DEBUG = env("DJANGO_DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["127.0.0.1"])
 AUTH_USER_MODEL = env("DJANGO_AUTH_USER_MODEL", default="user.Account")
-
+CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS", "")
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
