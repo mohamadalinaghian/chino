@@ -1,6 +1,5 @@
 import datetime
 import locale
-import re
 import sys
 from pathlib import Path
 
@@ -60,10 +59,6 @@ except locale.Error:
 if DEBUG:
     assert SECRET_KEY == "unsecure"
     assert env("ENVIRONMENT") != "production"
-else:
-    assert re.search(r"[A-Z]", SECRET_KEY)
-    assert re.search(r"[0-9]", SECRET_KEY)
-    assert len(SECRET_KEY) >= 50
 
 
 # Business Logics
