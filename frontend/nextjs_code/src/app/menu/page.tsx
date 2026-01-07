@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic';
+// export const dynamic = 'force-dynamic';
 import { fetchCategories, fetchMenuItems } from "@/service/menu";
 import { IMenuCategory, IMenuItem } from "@/types/menu";
 import MenuPageClient from "@/components/menu/MenuPageClient";
@@ -8,7 +8,7 @@ import MenuPageClient from "@/components/menu/MenuPageClient";
  * - dynamic: 'auto' lets Next.js decide between static and dynamic rendering
  * - revalidate: Enables ISR (Incremental Static Regeneration) every hour
  */
-// export const dynamic = "auto";
+export const dynamic = "auto";
 export const revalidate = 3600; // ISR: Rebuild every 1 hour
 
 /**
