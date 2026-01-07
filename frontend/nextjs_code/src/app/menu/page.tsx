@@ -1,6 +1,19 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+export const metadata = {
+  title: "Cafe Chino Menu | Coffee & Food",
+  description:
+    "Browse Cafe Chino’s full menu of coffee, drinks, and freshly prepared food.",
+  openGraph: {
+    title: "Cafe Chino Menu",
+    description: "Coffee, drinks, and food at Cafe Chino",
+    url: "https://chinocafe.ir/menu",
+    siteName: "Cafe Chino",
+    type: "website",
+  },
+};
+
 import { fetchCategories, fetchMenuItems } from "@/service/menu";
 import MenuPageClient from "@/components/menu/MenuPageClient";
 
@@ -12,7 +25,7 @@ export default async function MenuPage() {
 
   return (
     <main className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl text-center font-bold mb-8">
+      <h1 className="text-2xl font-bold text-center mb-8">
         Cafe Chino Menu
       </h1>
       <MenuPageClient categories={categories} items={menuItems} />
