@@ -1,26 +1,28 @@
 import { SS_API_URL } from "@/libs/constants";
 import { IMenuCategory, IMenuItem } from "@/types/menu";
 
-export async function fetchCategories(): Promise<IMenuCategory[]> {
-  const res = await fetch(`${SS_API_URL}/menu/categories/`, {
-    cache: "no-store",
-  });
+async function safeFetch<T>(url: string): Promise<T[]> {
+  try {
+    const res = await fetch(url, {
+      cache: "no-store",
+    });
 
-  if (!res.ok) {
-    throw new Error(`Failed to fetch categories (${res.status})`);
+    if (!res.ok) {
+      console.error("Menu fetch failed:", res.status, url);
+      return [];
+    }
+
+    return await res.json();
+  } catch (err) {
+    console.error("Menu fetch exception:", url, err);
+    return [];
   }
-
-  return res.json();
 }
 
-export async function fetchMenuItems(): Promise<IMenuItem[]> {
-  const res = await fetch(`${SS_API_URL}/menu/items/`, {
-    cache: "no-store",
-  });
+export function fetchCategories(): Promise<IMenuCategory[]> {
+  return safeFetch(`${SS_API_URL}/menu/categories/`);
+}
 
-  if (!res.ok) {
-    throw new Error(`Failed to fetch menu items (${res.status})`);
-  }
-
-  return res.json();
+export function fetchMenuItems(): Promise<IMenuItem[]> {
+  return safeFetch(`${SS_API_URL}/menu/items/`);
 }

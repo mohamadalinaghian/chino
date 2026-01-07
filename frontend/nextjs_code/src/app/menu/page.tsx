@@ -5,13 +5,6 @@ export const metadata = {
   title: "Cafe Chino Menu | Coffee & Food",
   description:
     "Browse Cafe Chino’s full menu of coffee, drinks, and freshly prepared food.",
-  openGraph: {
-    title: "Cafe Chino Menu",
-    description: "Coffee, drinks, and food at Cafe Chino",
-    url: "https://chinocafe.ir/menu",
-    siteName: "Cafe Chino",
-    type: "website",
-  },
 };
 
 import { fetchCategories, fetchMenuItems } from "@/service/menu";
@@ -28,7 +21,14 @@ export default async function MenuPage() {
       <h1 className="text-2xl font-bold text-center mb-8">
         Cafe Chino Menu
       </h1>
-      <MenuPageClient categories={categories} items={menuItems} />
+
+      {categories.length === 0 && menuItems.length === 0 ? (
+        <p className="text-center opacity-70">
+          Menu is temporarily unavailable.
+        </p>
+      ) : (
+        <MenuPageClient categories={categories} items={menuItems} />
+      )}
     </main>
   );
 }
