@@ -7,10 +7,17 @@ ENV NEXT_PUBLIC_SERVER_SIDE_API_URL="https://chinocafe.ir/api"
 ENV NEXT_PUBLIC_MEDIA_DOMAIN="https://chinocafe.ir"
 ENV NEXT_PUBLIC_SITE_DOMAIN="https://chinocafe.ir"
 
+# Copy package files first (cache layer)
 COPY ./nextjs_code/package.json ./package.json
 COPY ./nextjs_code/package-lock.json ./package-lock.json
-RUN npm install
 
+# Install dependencies inside the container
+RUN npm ci
+
+# Force rebuild of lightningcss for this platform
+RUN npm rebuild lightningcss
+
+# Copy other project files
 COPY ./nextjs_code/tsconfig.json ./
 COPY ./nextjs_code/postcss.config.mjs ./
 COPY ./nextjs_code/tailwind.config.ts ./
@@ -18,7 +25,10 @@ COPY ./nextjs_code/next.config.ts ./
 COPY ./nextjs_code/public ./public
 COPY ./nextjs_code/src ./src
 
+# Build Next.js app
 RUN npm run build
+
+# Cleanup
 RUN rm -rf .next/cache && find . -type f -name '*.map' -delete
 RUN npm prune --production
 
