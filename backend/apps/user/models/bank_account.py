@@ -25,7 +25,7 @@ class BankAccount(models.Model):
     )
     account_owner = models.CharField(
         _("Account owner"),
-        max_length=32,
+        max_length=64,
     )
 
     # Method
