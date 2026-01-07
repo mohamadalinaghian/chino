@@ -10,13 +10,12 @@ from .recipe_component import RecipeComponent
 from .stock import Stock
 from .supplier import Supplier
 from .supplier_product import SupplierProduct
-
-# from .table import Table
+from .table import Table
 from .visitor import Visitor
 
 __all__ = (
     "Product",
-    # "Table",
+    "Table",
     "Supplier",
     "SupplierProduct",
     "PurchaseInvoice",

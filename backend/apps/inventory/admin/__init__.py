@@ -10,8 +10,7 @@ from .recipe_component import RecipeComponentInline
 from .stock import Stock
 from .supplier import SupplierAdmin
 from .supplier_product import SupplierProductAdmin, SupplierProductInline
-
-# from .table import TableAdmin
+from .table import TableAdmin
 from .visitor import Visitor, VisitorInline
 
 __all__ = (
@@ -30,5 +29,5 @@ __all__ = (
     "VisitorInline",
     "ProductAdjustmentReportInline",
     "AdjustmentReportSessionAdmin",
-    # "TableAdmin",
+    "TableAdmin",
 )
