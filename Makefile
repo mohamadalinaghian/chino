@@ -72,25 +72,21 @@ BACKUP_DIR := /home/mohamad/backups
 
 backup_db:
 	@set -eu; \
-	BD="$(BACKUP_DIR)"; \
-	mkdir -p "$$BD"; \
-	E_NOW="$$(TZ=Asia/Tehran date +%s)"; \
-	E_Y="$$(expr $$E_NOW - 86400)"; \
-	DATE="$$(TZ=Asia/Tehran jdate -d "%s;$$E_Y" +%d-%b-%Y)"; \
-	DEST="$$BD/db_$$DATE.sql.gz"; \
+	mkdir -p "$(BACKUP_DIR)"; \
+	DATE="$$(TZ=Asia/Tehran date -d '1 day ago' +%d-%b-%Y)"; \
+	DEST="$(BACKUP_DIR)/db_$$DATE.sql.gz"; \
 	echo "==> writing $$DEST"; \
-	docker compose -f /home/mohamad/chino/compose.prod.yml exec -T db sh -c 'pg_dump -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"' \
+	docker compose -f $(COMPOSE_FILE) exec -T db sh -c 'pg_dump -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"' \
 	| gzip -c > "$$DEST"; \
 	echo "==> done: $$DEST"
 
 backup_clean:
 	@set -eu; \
-	BD="$(BACKUP_DIR)"; \
-	if [ ! -d "$$BD" ]; then \
-		echo "✖ No backup directory found at $$BD"; exit 0; \
+	if [ ! -d "$(BACKUP_DIR)" ]; then \
+		echo "✖ No backup directory found at $(BACKUP_DIR)"; exit 0; \
 	fi; \
-	echo "==> Removing backup files older than 7 days in $$BD"; \
-	find "$$BD" -type f -name 'db_*.sql.gz' -mtime +7 -print -delete || true; \
+	echo "==> Removing backup files older than 7 days in $(BACKUP_DIR)"; \
+	find "$(BACKUP_DIR)" -type f -name 'db_*.sql.gz' -mtime +7 -print -delete; \
 	echo "==> Cleanup complete"
 
 backup_push:
