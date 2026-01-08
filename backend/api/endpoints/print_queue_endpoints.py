@@ -65,7 +65,7 @@ def get_pending_print_jobs(request):
     This endpoint is polled by the cafe PC to check for new print jobs.
     Returns jobs in order of creation (oldest first).
     """
-    printer_only(request.auth)
+    printer_only(request.user)
     pending_jobs = PrintQueue.objects.filter(
         status=PrintQueue.PrintStatus.PENDING
     ).order_by("created_at")
