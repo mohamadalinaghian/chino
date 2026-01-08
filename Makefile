@@ -2,7 +2,6 @@ SHELL := /bin/bash
 include .env.make
 DOCKER := docker compose -f compose.$(ENV).yml
 PODMAN := podman-compose -f compose.$(ENV).yml
-BACKUP_DIR ?= ~/backup
 
 update:
 	git pull && make full_down && make up
@@ -69,8 +68,42 @@ git_reset:
 	git pull && make reset
 
 
+BACKUP_DIR := /home/mohamad/backups
 
 backup_db:
+	@set -eu; \
+	BD="$(BACKUP_DIR)"; \
+	mkdir -p "$$BD"; \
+	E_NOW="$$(TZ=Asia/Tehran date +%s)"; \
+	E_Y="$$(expr $$E_NOW - 86400)"; \
+	DATE="$$(TZ=Asia/Tehran jdate -d "%s;$$E_Y" +%d-%b-%Y)"; \
+	DEST="$$BD/db_$$DATE.sql.gz"; \
+	echo "==> writing $$DEST"; \
+	docker compose -f /home/mohamad/chino/compose.prod.yml exec -T db sh -c 'pg_dump -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"' \
+	| gzip -c > "$$DEST"; \
+	echo "==> done: $$DEST"
+
+backup_clean:
+	@set -eu; \
+	BD="$(BACKUP_DIR)"; \
+	if [ ! -d "$$BD" ]; then \
+		echo "✖ No backup directory found at $$BD"; exit 0; \
+	fi; \
+	echo "==> Removing backup files older than 7 days in $$BD"; \
+	find "$$BD" -type f -name 'db_*.sql.gz' -mtime +7 -print -delete || true; \
+	echo "==> Cleanup complete"
+
+backup_push:
+	@set -eu; \
+	cd $(BACKUP_DIR); \
+	git add .; \
+	GIT_COMMIT_MSG="Backup: $$(date +'%Y-%m-%d_%H-%M-%S')"; \
+	git commit -m "$$GIT_COMMIT_MSG" || echo "No changes to commit"; \
+	git push origin main
+
+
+
+backup_db2:
 	@set -eu; \
 	BD="$(BACKUP_DIR)"; \
 	case "$$BD" in \
@@ -88,7 +121,7 @@ backup_db:
 	echo "==> done: $$DEST"
 
 
-backup_clean:
+backup_clean2:
 	@set -eu; \
 	BD="$(BACKUP_DIR)"; \
 	case "$$BD" in "~") BD="$$HOME";; "~/"*) BD="$$HOME/$${BD#\~/}";; esac; \
