@@ -48,8 +48,7 @@ class PrintQueue(models.Model):
     )
 
     audience = models.CharField(
-        max_length=10,
-        choices=Audience.choices,
+        max_length=10, choices=Audience.choices, default=Audience.STAFF
     )
 
     # Related sale (optional - for tracking)
