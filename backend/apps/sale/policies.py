@@ -315,3 +315,8 @@ def can_view_daily_report(user) -> None:
     """
     _require_authenticated(user)
     _require_perm(user, "sale.view_dailyreport")
+
+
+def printer_only(request):
+    if not request.auth.has_perm("sale.can_print"):
+        raise PermissionDenied()

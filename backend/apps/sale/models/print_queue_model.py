@@ -98,6 +98,10 @@ class PrintQueue(models.Model):
         verbose_name = _("Print Queue")
         verbose_name_plural = _("Print Queue")
 
+        permissions = [
+            ("can_print", "Can fetch and print receipts"),
+        ]
+
     def __str__(self):
         return f"Print Job {self.pk} - {self.print_type} ({self.status})"
 

@@ -1,12 +1,12 @@
 """
 Print Queue API Endpoints
 
-Provides endpoints for managing the print queue:
-- POST /print-queue/ - Add a print job to the queue
-- GET /print-queue/pending/ - Get pending print jobs (for cafe PC monitoring)
+Provides endpoints for managing the print queue
+- POST /print-queue/ - Add a print job to the queue.
+- GET /print-queue/pending/ - Get pending print jobs (for cafe PC monitoring).
 - PUT /print-queue/{id}/printed/ - Mark a print job as printed
 - PUT /print-queue/{id}/failed/ - Mark a print job as failed
-- DELETE /print-queue/{id}/ - Delete a print job
+- DELETE /print-queue/{id}/ - Delete a print job.
 """
 
 from typing import List
@@ -19,6 +19,7 @@ from api.schemas.print_queue_schemas import (
 )
 from api.security.auth import jwt_auth
 from apps.sale.models import PrintQueue, Sale
+from apps.sale.policies import printer_only
 from django.shortcuts import get_object_or_404
 from ninja import Router
 
@@ -64,9 +65,10 @@ def get_pending_print_jobs(request):
     This endpoint is polled by the cafe PC to check for new print jobs.
     Returns jobs in order of creation (oldest first).
     """
-    pending_jobs = PrintQueue.objects.filter(status=PrintQueue.PrintStatus.PENDING).order_by(
-        "created_at"
-    )
+    printer_only(request)
+    pending_jobs = PrintQueue.objects.filter(
+        status=PrintQueue.PrintStatus.PENDING
+    ).order_by("created_at")
 
     return 200, [
         {
@@ -82,7 +84,9 @@ def get_pending_print_jobs(request):
     ]
 
 
-@router.put("/{job_id}/printed/", response={200: PrintJobUpdateResponse, 404: ErrorResponse})
+@router.put(
+    "/{job_id}/printed/", response={200: PrintJobUpdateResponse, 404: ErrorResponse}
+)
 def mark_as_printed(request, job_id: int):
     """
     Mark a print job as successfully printed.
@@ -99,7 +103,9 @@ def mark_as_printed(request, job_id: int):
     }
 
 
-@router.put("/{job_id}/failed/", response={200: PrintJobUpdateResponse, 404: ErrorResponse})
+@router.put(
+    "/{job_id}/failed/", response={200: PrintJobUpdateResponse, 404: ErrorResponse}
+)
 def mark_as_failed(request, job_id: int, error_message: str = ""):
     """
     Mark a print job as failed.
