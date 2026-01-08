@@ -317,6 +317,10 @@ def can_view_daily_report(user) -> None:
     _require_perm(user, "sale.view_dailyreport")
 
 
-def printer_only(user):
-    _require_authenticated(user)
-    _require_perm(user, "sale.can_print")
+def require_printer(user, printer: str):
+    if not user or not user.is_authenticated:
+        raise PermissionDenied("Authentication required")
+
+    perm = f"sale.can_print_{printer.lower()}"
+    if not user.has_perm(perm):
+        raise PermissionDenied(f"Missing permission: {perm}")

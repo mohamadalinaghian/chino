@@ -33,6 +33,25 @@ class PrintQueue(models.Model):
         STANDARD = "STANDARD", _("Standard Receipt")
         EDIT_DIFF = "EDIT_DIFF", _("Edit Diff Receipt")
 
+    class PrinterTarget(models.TextChoices):
+        BAR = "BAR", "Bar Printer"
+        KITCHEN = "KITCHEN", "Kitchen Printer"
+
+    class Audience(models.TextChoices):
+        STAFF = "STAFF", "Staff Order"
+        GUEST = "GUEST", "Guest Invoice"
+
+    printer_target = models.CharField(
+        max_length=10,
+        choices=PrinterTarget.choices,
+        db_index=True,
+    )
+
+    audience = models.CharField(
+        max_length=10,
+        choices=Audience.choices,
+    )
+
     # Related sale (optional - for tracking)
     sale = models.ForeignKey(
         "sale.Sale",
@@ -97,10 +116,6 @@ class PrintQueue(models.Model):
         ]
         verbose_name = _("Print Queue")
         verbose_name_plural = _("Print Queue")
-
-        permissions = [
-            ("can_print", "Can fetch and print receipts"),
-        ]
 
     def __str__(self):
         return f"Print Job {self.pk} - {self.print_type} ({self.status})"

@@ -19,6 +19,7 @@ from api.schemas.print_queue_schemas import (
 )
 from api.security.auth import jwt_auth
 from apps.sale.models import PrintQueue, Sale
+from apps.sale.policies import require_printer
 from django.shortcuts import get_object_or_404
 from ninja import Router
 
@@ -56,31 +57,28 @@ def create_print_job(request, payload: PrintJobCreateRequest):
     }
 
 
-@router.get("/pending/", response={200: List[PrintJobResponse]})
-def get_pending_print_jobs(request):
-    """
-    Get all pending print jobs.
+@router.get("/pending/bar/", response=List[PrintJobResponse])
+def get_bar_jobs(request):
+    require_printer(request.auth, "bar")
 
-    This endpoint is polled by the cafe PC to check for new print jobs.
-    Returns jobs in order of creation (oldest first).
-    """
-    # printer_only(request.user)
-    pending_jobs = PrintQueue.objects.filter(
-        status=PrintQueue.PrintStatus.PENDING
+    jobs = PrintQueue.objects.filter(
+        status=PrintQueue.PrintStatus.PENDING,
+        printer_target=PrintQueue.PrinterTarget.BAR,
     ).order_by("created_at")
 
-    return 200, [
-        {
-            "id": job.id,
-            "sale_id": job.sale_id,
-            "print_type": job.print_type,
-            "print_data": job.print_data,
-            "status": job.status,
-            "created_at": job.created_at,
-            "printed_at": job.printed_at,
-        }
-        for job in pending_jobs
-    ]
+    return jobs
+
+
+@router.get("/pending/kitchen/", response=List[PrintJobResponse])
+def get_kitchen_jobs(request):
+    require_printer(request.auth, "kitchen")
+
+    jobs = PrintQueue.objects.filter(
+        status=PrintQueue.PrintStatus.PENDING,
+        printer_target=PrintQueue.PrinterTarget.KITCHEN,
+    ).order_by("created_at")
+
+    return jobs
 
 
 @router.put(
