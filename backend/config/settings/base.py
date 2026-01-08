@@ -1,6 +1,7 @@
 import datetime
 import locale
 import sys
+from datetime import timedelta
 from pathlib import Path
 
 import environ
@@ -39,6 +40,13 @@ JWT_ALGORITHM = "HS256"
 JWT_ACCESS_TTL = datetime.timedelta(minutes=10)
 JWT_REFRESH_TTL = datetime.timedelta(hours=7)
 JWT_REQUIRE_SECURE = not DEBUG  # only in production
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=365),  # 1 YEAR
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=365),
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": False,
+}
 
 # Authentication Backends
 # -----------------------
