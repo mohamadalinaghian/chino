@@ -148,7 +148,8 @@ class CloseSaleService:
             product = item.product
 
             try:
-                # Calculate production cost for this item
+                # Calculate production cost for this item and consume from product
+                # TODO: cosume from stock is dublicated here and payment service.
                 item_cost = ItemProductionService.get_production_total_cost(
                     recipe=product.active_recipe, used_qt=item.quantity
                 )

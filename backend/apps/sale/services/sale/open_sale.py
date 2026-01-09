@@ -66,6 +66,21 @@ class OpenSaleService:
         if guest_count is not None and guest_count <= 0:
             raise ValidationError(_("Guest count must be positive"))
 
+        # check for availability in stock
+        # TODO: check for n+1 query and optimize them
+
+        from apps.inventory.services import ItemProductionService
+        from apps.inventory.services import StockService as SS
+
+        for item in items:
+            product = item.menu.name_id
+            act_recipe = Product.objects.get(id=product).active_recipe
+            com_rao = ItemProductionService._get_components_and_ratio(act_recipe)
+            for p, r in com_rao:
+                qt = item.quantity * r
+                if not SS.is_enough(p, qt):
+                    raise ValidationError(f"Not enough {p.name}")
+
         # Create Header
         sale = Sale.objects.create(
             opened_by=opened_by,

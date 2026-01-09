@@ -243,6 +243,7 @@ class PaymentService:
             # Reserve stock for sale.
             from ..sale.close_sale import CloseSaleService
 
+            # TODO: this part must be unified with close service
             CloseSaleService._calculate_cogs(sale)
             sale.save(skip_validation=True)
             was_auto_closed = True

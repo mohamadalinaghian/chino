@@ -83,13 +83,8 @@ class ItemProductionService:
         total_cost = Decimal("0")
 
         # Get components: List[(Product, ratio_per_unit_output)]
-        components: list[Tuple[Product, Decimal]] = [
-            (comp.consume_product, ratio)
-            for comp in recipe.components.all()
-            for ratio in [ItemProductionService._get_exact_ratio(comp.quantity)]
-        ]
-
-        for product, ratio in components:
+        com_rao = ItemProductionService._get_components_and_ratio(recipe)
+        for product, ratio in com_rao:
             required_qty = ratio * multiplier
 
             if product.is_stock_traceable:
@@ -129,3 +124,14 @@ class ItemProductionService:
         if num and den:
             return Decimal(num) / Decimal(den)
         return Decimal(raw)
+
+    @staticmethod
+    def _get_components_and_ratio(recipe: Recipe) -> list[Tuple[Product, Decimal]]:
+        """
+        Get components: List[(Product, ratio_per_unit_output)]
+        """
+        return [
+            (comp.consume_product, ratio)
+            for comp in recipe.components.all()
+            for ratio in [ItemProductionService._get_exact_ratio(comp.quantity)]
+        ]

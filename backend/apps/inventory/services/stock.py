@@ -4,6 +4,7 @@ from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Sum
 from django.utils.translation import gettext_lazy as _
 
 from ..models import Product, Stock
@@ -101,3 +102,14 @@ class StockService:
                 _(f"Not enough stock for {product}: short by {remaining}")
             )
         return total_cost
+
+    @staticmethod
+    def is_enough(product: Product, qty: Decimal) -> bool:
+        """Check if there is enough material for this product"""
+        all_left = (
+            Stock.objects.filter(stored_product=product).aggregate(
+                all_left=Sum("remaining_quantity")
+            )["all_left"]
+            or 0
+        )
+        return True if all_left >= qty else False
