@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-20 12:07+0330\n"
+"POT-Creation-Date: 2026-01-08 18:42+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,31 +22,51 @@ msgstr ""
 msgid "Jalali update date"
 msgstr "تاریخ جلالی به روزرسانی"
 
-#: apps/core_setting/models.py:19
+#: apps/core_setting/models.py:20
 msgid "Singleton key"
 msgstr "کلید یگانگی"
 
-#: apps/core_setting/models.py:24
+#: apps/core_setting/models.py:25
 msgid "Profit margin"
 msgstr "حاشیه سود"
 
-#: apps/core_setting/models.py:29
+#: apps/core_setting/models.py:30
 msgid "Tax rate"
 msgstr "درصد مالیات"
 
-#: apps/core_setting/models.py:35
+#: apps/core_setting/models.py:36
 msgid "Overhead bar value"
 msgstr "هزینه بالا دستی بار"
 
-#: apps/core_setting/models.py:41
+#: apps/core_setting/models.py:43
 msgid "Overhead food value"
 msgstr "هزینه بالا دستی غذا"
 
-#: apps/core_setting/models.py:47
+#: apps/core_setting/models.py:50
 msgid "Purchase valid change ratio"
 msgstr "تلورانس مجاز قیمت خرید"
 
-#: apps/core_setting/models.py:61 apps/core_setting/models.py:62
+#: apps/core_setting/models.py:54
+msgid "Thumbnail quality"
+msgstr "کیفیت تصویر بند انگشتی"
+
+#: apps/core_setting/models.py:59
+msgid "Thumbnail max width"
+msgstr "حداکثر عرض تصویر یند انگشتی"
+
+#: apps/core_setting/models.py:62
+msgid "Thumbnail max height"
+msgstr " حداکثر ارتفاع بند انگشتی"
+
+#: apps/core_setting/models.py:71
+msgid "Default POS terminal account"
+msgstr "حساب پیش فرض دستگاه پوز"
+
+#: apps/core_setting/models.py:72
+msgid "Default bank account for POS terminal payments"
+msgstr "حساب بانکی پیش فرض متصل به دستگاه پوز"
+
+#: apps/core_setting/models.py:87 apps/core_setting/models.py:88
 msgid "Site Settings"
 msgstr "تنظیمات سایت"
 
@@ -83,14 +103,15 @@ msgstr "درصد تخفیف"
 msgid "Amount of discount on purchasing this item"
 msgstr "مقدار تخفیف روی خرید این آیتم"
 
-#: apps/inventory/forms/purchase_item.py:34 apps/inventory/models/stock.py:29
+#: apps/inventory/forms/purchase_item.py:34 apps/inventory/models/stock.py:31
+#: apps/sale/models/sale_item.py:37
 msgid "Unit price"
 msgstr "قیمت واحد"
 
 #: apps/inventory/forms/purchase_item.py:37
 #: apps/inventory/models/purchase_item.py:30
 #: apps/inventory/models/recipe_component.py:25
-#: apps/sale/models/sale_item.py:28
+#: apps/sale/models/sale_item.py:33
 msgid "Quantity"
 msgstr "مقدار"
 
@@ -151,7 +172,6 @@ msgstr "تاریخ گزارش"
 
 #: apps/inventory/models/adjustment_report_session.py:18
 #: apps/inventory/models/purchase_invoice.py:21
-#: apps/sale/models/sale_invoice.py:21
 msgid "Staff"
 msgstr "کارمند"
 
@@ -197,6 +217,8 @@ msgstr "تولید کننده گان"
 
 #: apps/inventory/models/item_production.py:34
 #: apps/inventory/models/visitor.py:30
+#: apps/sale/models/daily_report_model.py:118
+#: apps/sale/models/daily_report_payment_method_model.py:63
 msgid "Notes"
 msgstr "توضیحات"
 
@@ -234,7 +256,7 @@ msgstr "جانبی"
 
 #: apps/inventory/models/product.py:30 apps/inventory/models/recipe.py:17
 #: apps/inventory/models/visitor.py:26 apps/menu/models/item.py:21
-#: apps/user/models.py:65
+#: apps/user/models/account.py:65 apps/user/models/bank_account.py:19
 msgid "Name"
 msgstr "نام"
 
@@ -258,7 +280,7 @@ msgstr "قابل انبارگردانی"
 msgid "Is Active Product"
 msgstr "آیا کالا فعال است؟"
 
-#: apps/inventory/models/product.py:46
+#: apps/inventory/models/product.py:46 apps/sale/models/sale.py:214
 msgid "Note"
 msgstr "توضیح"
 
@@ -271,7 +293,7 @@ msgid "Last price"
 msgstr "آخرین قیمت"
 
 #: apps/inventory/models/product.py:66
-#: apps/inventory/models/product_adjustment_report.py:17
+#: apps/inventory/models/product_adjustment_report.py:19
 #: apps/inventory/models/supplier_product.py:23
 msgid "Product"
 msgstr "کالا"
@@ -280,36 +302,35 @@ msgstr "کالا"
 msgid "Products"
 msgstr "کالاها"
 
-#: apps/inventory/models/product_adjustment_report.py:21
+#: apps/inventory/models/product_adjustment_report.py:23
 msgid "Session"
 msgstr "جلسه"
 
-#: apps/inventory/models/product_adjustment_report.py:24
+#: apps/inventory/models/product_adjustment_report.py:26
 msgid "Previous quantity"
 msgstr "مقدار قبلی"
 
-#: apps/inventory/models/product_adjustment_report.py:27
+#: apps/inventory/models/product_adjustment_report.py:29
 msgid "Current quantity"
 msgstr "مقدار فعلی"
 
-#: apps/inventory/models/product_adjustment_report.py:30
+#: apps/inventory/models/product_adjustment_report.py:32
 msgid "Cost"
 msgstr "بها"
 
-#: apps/inventory/models/product_adjustment_report.py:40
+#: apps/inventory/models/product_adjustment_report.py:42
 msgid "No change no report!"
 msgstr "تغیراتی صورت نگرفته، گزارش ثبت نخواهد شد"
 
-#: apps/inventory/models/product_adjustment_report.py:44
+#: apps/inventory/models/product_adjustment_report.py:46
 msgid "Product Adjustment Report"
 msgstr "گزارش تغییرات کالا"
 
-#: apps/inventory/models/product_adjustment_report.py:45
+#: apps/inventory/models/product_adjustment_report.py:47
 msgid "Products Adjustment Report"
 msgstr "گزارشات تغیرات کالا"
 
 #: apps/inventory/models/purchase_invoice.py:15
-#: apps/sale/models/sale_invoice.py:15
 msgid "Issue date"
 msgstr "تاریخ فاکتور"
 
@@ -324,7 +345,6 @@ msgid "Supplier"
 msgstr "تأمین کننده"
 
 #: apps/inventory/models/purchase_invoice.py:58
-#: apps/sale/models/sale_invoice.py:57
 msgid "Chosen staff must be a staff member."
 msgstr "شخص مشخص شده باید از پرسنل کافه باشد"
 
@@ -402,23 +422,24 @@ msgstr "مقدار مصرف شده از کالا در مقدار واحد رسپ
 msgid "Recipe components"
 msgstr "اجزای رسپی"
 
-#: apps/inventory/models/stock.py:19
+#: apps/inventory/models/stock.py:21
 msgid "Stored porduct"
 msgstr "کالا انبار شده"
 
-#: apps/inventory/models/stock.py:23
+#: apps/inventory/models/stock.py:25
 msgid "Initial quantity"
 msgstr "مقدار اولیه"
 
-#: apps/inventory/models/stock.py:26
+#: apps/inventory/models/stock.py:28
 msgid "Remaining quantity"
 msgstr "مقدار باقی مانده"
 
-#: apps/inventory/models/stock.py:32
+#: apps/inventory/models/stock.py:34 apps/sale/models/daily_report_model.py:146
+#: apps/sale/models/sale.py:248 apps/sale/models/sale_item.py:41
 msgid "Created at"
 msgstr "ساخته شده در"
 
-#: apps/inventory/models/stock.py:44
+#: apps/inventory/models/stock.py:51
 msgid "Stock"
 msgstr "انبار"
 
@@ -454,11 +475,23 @@ msgstr "کالا مرتبط با تأمین کننده"
 msgid "Supplier Related Products"
 msgstr "کالاهای مرتبط با تأمین کننده"
 
+#: apps/inventory/models/table.py:13
+msgid "Human-readable table identifier"
+msgstr "مشخصات میز"
+
+#: apps/inventory/models/table.py:17
+msgid "Maximum number of guests"
+msgstr "حداکثر ظرفیت پذیرایی"
+
+#: apps/inventory/models/table.py:22
+msgid "Inactive tables cannot be assigned to sales"
+msgstr "میز غیر فعال نمیتواند برای ثبت سفارش استفاده شود"
+
 #: apps/inventory/models/visitor.py:14
 msgid "Phone number must be in the format 0XXXXXXXXXX"
 msgstr "شماره تلفن باید در قالب '0XXXXXXXXXX' باشد"
 
-#: apps/inventory/models/visitor.py:19 apps/user/models.py:59
+#: apps/inventory/models/visitor.py:19 apps/user/models/account.py:59
 msgid "Mobile"
 msgstr "موبایل"
 
@@ -474,107 +507,223 @@ msgstr "ویزیتور"
 msgid "Visitors"
 msgstr "ویزیتورها"
 
-#: apps/inventory/services/expiry_purchase_item.py:22
-msgid "This is not a valid purchase, product is expired"
-msgstr "کالا از قبل فاسد شده است، این خرید مجاز نیست"
+#: apps/inventory/services/expiry_purchase_item.py:20
+msgid "Product is already expired"
+msgstr "کالا وجود ندارد"
 
-#: apps/inventory/services/expiry_purchase_item.py:30
-msgid "This product is not expiry traceable"
+#: apps/inventory/services/expiry_purchase_item.py:32
+msgid "This product is not expiry-traceable"
 msgstr "این کالا فساد پذیر نیست"
 
-#: apps/inventory/services/item_production.py:20
-#: apps/inventory/services/stock.py:49
+#: apps/inventory/services/item_production.py:44
+#: apps/inventory/services/stock.py:76
 msgid "Requested quantity must be greater than zero."
 msgstr "مقدار کل باید مثبت باشد"
 
-#: apps/inventory/services/product.py:17
-msgid "Product is not exists."
+#: apps/inventory/services/item_production.py:79
+msgid "Recipe cycle detected."
+msgstr "حلقه رسپی شناسایی شد"
+
+#: apps/inventory/services/product.py:20
+msgid "Product does not exist."
 msgstr "کالا وجود ندارد"
 
-#: apps/inventory/services/product_adjustment_report.py:55
+#: apps/inventory/services/product_adjustment_report.py:56
 msgid "There is no price history for this product"
 msgstr "برای این کالا هیچ سابقه قیمتی وجود ندارد"
 
-#: apps/inventory/services/purchase_item.py:30
-msgid "Quantity can't be Zero"
+#: apps/inventory/services/purchase_item.py:23
+msgid "Quantity can't be zero"
 msgstr "مقدار نمیتواند صفر باشد"
 
-#: apps/inventory/services/purchase_item.py:41
-msgid "Can not assign both quantity styles"
+#: apps/inventory/services/purchase_item.py:38
+msgid "Cannot assign both quantity styles"
 msgstr "نمیتوانید هر دو روش مقدار دهی را پر کنید"
 
-#: apps/inventory/services/purchase_item.py:47
-msgid "Package quantity and package count must assigned together"
+#: apps/inventory/services/purchase_item.py:43
+msgid "Package quantity and package count must be assigned together"
 msgstr "مقدار هر بسته و تعداد بسته با هم باید مشخص شود"
 
-#: apps/inventory/services/purchase_item.py:88
-msgid "Enter total cost or unit price not both"
+#: apps/inventory/services/purchase_item.py:79
+msgid "Enter total cost **or** unit price, not both"
 msgstr "یا قیمت واحد یا کل هزینه را وارد کنید، نه هردو"
 
-#: apps/inventory/services/purchase_item.py:95
-msgid "You must assign unit price or total price"
+#: apps/inventory/services/purchase_item.py:82
+msgid "You must provide unit price or total cost"
 msgstr "قیمت واحد یا کل هزینه باید مقدار دهی شود."
 
-#: apps/inventory/services/recipe.py:23
-msgid "You can not write recipe for this type of product"
+#: apps/inventory/services/recipe.py:32
+msgid "You can not write a recipe for this type of product"
 msgstr "برای این نوع از کالا نمیتوانید رسپی بنویسید"
 
-#: apps/inventory/services/recipe_component.py:24
-msgid "Recipe does not exist"
-msgstr "رسپی وجود ندارد"
-
-#: apps/inventory/services/recipe_component.py:31
+#: apps/inventory/services/recipe_component.py:25
 msgid "Total quantity must be greater than zero."
 msgstr "مقدار کل باید مثبت باشد"
 
-#: apps/inventory/services/stock.py:22
+#: apps/inventory/services/stock.py:31
 msgid "Product is not stock traceable"
 msgstr "کالا قابل انبارگردانی نیست"
 
-#: apps/inventory/services/supplier_product.py:35
-msgid "Product is not in supplier provided list. Check agian or add it first"
+#: apps/inventory/services/supplier_product.py:45
+msgid "Product is not in the supplier’s list. Add it first or check again."
 msgstr ""
 "این کالا در لیست کالاهای تأمین کننده نیست. مجدد بررسی کنید یا ابتدا آن را "
 "اضافه کنید به لیست."
 
-#: apps/menu/admin.py:31
+#: apps/menu/admin.py:32
 msgid "Suggested price"
 msgstr "قیمت پیشنهادی"
 
-#: apps/menu/admin.py:35
+#: apps/menu/admin.py:36 apps/sale/models/sale_item.py:39
 msgid "Material cost"
 msgstr "هزینه مواد"
 
-#: apps/menu/models/category.py:10
+#: apps/menu/models/analytics.py:31
+msgid "Menu Item"
+msgstr "دسته بندی منو"
+
+#: apps/menu/models/analytics.py:32
+msgid "The menu item being tracked"
+msgstr "آیتم منو مورد بررسی قرار گرفت"
+
+#: apps/menu/models/analytics.py:37 apps/menu/models/analytics.py:156
+msgid "Selections Today"
+msgstr "انتخاب های روز"
+
+#: apps/menu/models/analytics.py:40
+msgid "Number of times selected today (resets daily)"
+msgstr "تعداد دفعات انتخاب روز(به صورت روزانه بررسی میشود)"
+
+#: apps/menu/models/analytics.py:43 apps/menu/models/analytics.py:162
+msgid "Selections This Week"
+msgstr "انتخاب های این هفته"
+
+#: apps/menu/models/analytics.py:46
+msgid "Number of times selected this week (resets weekly)"
+msgstr "تعداد دفعات انتخاب این هفته"
+
+#: apps/menu/models/analytics.py:49 apps/menu/models/analytics.py:168
+msgid "Selections This Month"
+msgstr "انتخاب های این ماه"
+
+#: apps/menu/models/analytics.py:51
+msgid "Number of times selected this month (resets monthly)"
+msgstr "تعداد دفعات انتخاب این ماه"
+
+#: apps/menu/models/analytics.py:54
+msgid "All-Time Selections"
+msgstr "تعداد دفعات انتخاب کل"
+
+#: apps/menu/models/analytics.py:56
+msgid "Total number of times selected (never resets)"
+msgstr "مجموع دفعات انتخاب آیتم"
+
+#: apps/menu/models/analytics.py:61
+msgid "Last Selected At"
+msgstr "آهرین تاریه انتخاب"
+
+#: apps/menu/models/analytics.py:64
+msgid "When this item was last added to a sale"
+msgstr "آخرین تاریخی که این آیتم به خرید اضافه شد"
+
+#: apps/menu/models/analytics.py:70
+msgid "Today's Rank"
+msgstr "رنک امروز"
+
+#: apps/menu/models/analytics.py:73
+msgid "Ranking within category based on today's selections"
+msgstr "رتبه در گروه بر اساس فروش روز"
+
+#: apps/menu/models/analytics.py:76
+msgid "Week's Rank"
+msgstr "رتبه هفتگی"
+
+#: apps/menu/models/analytics.py:79
+msgid "Ranking within category based on this week's selections"
+msgstr "رتبه در گروه بر اساس فروش هفته"
+
+#: apps/menu/models/analytics.py:82
+msgid "Month's Rank"
+msgstr "رتبه ماهانه"
+
+#: apps/menu/models/analytics.py:84
+msgid "Ranking within category based on this month's selections"
+msgstr "رتبه در گروه بر اساس فروش ماهانه"
+
+#: apps/menu/models/analytics.py:88 apps/menu/models/analytics.py:183
+msgid "Created At"
+msgstr "ساخته شده در"
+
+#: apps/menu/models/analytics.py:89 apps/menu/models/analytics.py:184
+msgid "Updated At"
+msgstr "تاریخ به روزرسانی"
+
+#: apps/menu/models/analytics.py:92 apps/menu/models/analytics.py:93
+msgid "Menu Item Analytics"
+msgstr "آنالیزیتم نو "
+
+#: apps/menu/models/analytics.py:150 apps/menu/models/item.py:43
+msgid "Category"
+msgstr "دسته بندی"
+
+#: apps/menu/models/analytics.py:151
+msgid "The category being tracked"
+msgstr "گروه مورد بررسی قرار گرفت"
+
+#: apps/menu/models/analytics.py:159
+msgid "Total selections of items in this category today"
+msgstr "تعداد دفعات فروش آیتم های این گروه"
+
+#: apps/menu/models/analytics.py:165
+msgid "Total selections of items in this category this week"
+msgstr "تعداد فروش آیتم های این گروه در هفته"
+
+#: apps/menu/models/analytics.py:170
+msgid "Total selections of items in this category this month"
+msgstr "تعداد فروش ماهانه آیتم های این گروه"
+
+#: apps/menu/models/analytics.py:176
+msgid "Category Rank"
+msgstr "دسته بندی"
+
+#: apps/menu/models/analytics.py:179
+msgid "Overall ranking based on selection frequency"
+msgstr "رتبه کلی بر اساس تعداد انتخاب آیتم"
+
+#: apps/menu/models/analytics.py:187 apps/menu/models/analytics.py:188
+msgid "Category Analytics"
+msgstr "دسته بندی"
+
+#: apps/menu/models/category.py:13
 msgid "Bar item"
 msgstr "بار آیتم"
 
-#: apps/menu/models/category.py:11
+#: apps/menu/models/category.py:14
 msgid "Food"
 msgstr "غذا"
 
-#: apps/menu/models/category.py:14
+#: apps/menu/models/category.py:17
 msgid "Parent group"
 msgstr "گروه اصلی"
 
-#: apps/menu/models/category.py:17 apps/utils/models.py:24
+#: apps/menu/models/category.py:20 apps/utils/models.py:24
 msgid "Title"
 msgstr "عنوان"
 
-#: apps/menu/models/category.py:20 apps/menu/models/item.py:31
-#: apps/user/models.py:69
+#: apps/menu/models/category.py:23 apps/menu/models/item.py:32
+#: apps/user/models/account.py:69
 msgid "Slug"
 msgstr "اسلاگ"
 
-#: apps/menu/models/category.py:23 apps/menu/models/item.py:28
+#: apps/menu/models/category.py:26 apps/menu/models/item.py:29
 msgid "Description"
 msgstr "توضیحات"
 
-#: apps/menu/models/category.py:33
+#: apps/menu/models/category.py:36
 msgid "Menu Category"
 msgstr "دسته بندی منو"
 
-#: apps/menu/models/category.py:34
+#: apps/menu/models/category.py:37
 msgid "Menu Categories"
 msgstr "دسته بندی های منو"
 
@@ -582,173 +731,1059 @@ msgstr "دسته بندی های منو"
 msgid "Price"
 msgstr "قیمت"
 
-#: apps/menu/models/item.py:37
-msgid "Category"
-msgstr "دسته بندی"
+#: apps/menu/models/item.py:26
+msgid "Showable in menu"
+msgstr "قابل نمایش در منو"
 
-#: apps/menu/models/item.py:41
+#: apps/menu/models/item.py:47
 msgid "Thumbnail"
 msgstr "بند انگشتی"
 
-#: apps/menu/models/item.py:48
+#: apps/menu/models/item.py:54
 msgid "Extra Images"
 msgstr "عکس های بیشتر"
 
-#: apps/menu/models/item.py:51
+#: apps/menu/models/item.py:57
 msgid "Is Available"
 msgstr "آیا فعال است؟"
 
-#: apps/menu/models/item.py:126
+#: apps/menu/models/item.py:144
 msgid "Menu"
 msgstr "منو"
 
-#: apps/menu/models/item.py:127
+#: apps/menu/models/item.py:145
 msgid "Menus"
 msgstr "منو ها"
 
-#: apps/menu/services/menu.py:16
+#: apps/menu/services/menu.py:23
 msgid "Site settings not configured"
 msgstr "تنظیمات سایت به درستی اعمال نشده است"
 
-#: apps/menu/services/menu.py:55
+#: apps/menu/services/menu.py:57
 msgid "Set active recipe first"
 msgstr "ابتدا رسپی مورد استفاده را مشخص کنید"
 
 #: apps/menu/services/menu.py:77
-msgid "For this item no parent group submited"
+msgid "For this item no parent group submitted"
 msgstr "برای گروه این آیتم دسته بندی اصلی مشخص نشده است"
 
-#: apps/menu/services/menu.py:107
+#: apps/menu/services/menu.py:108
 msgid "There is no price record for this product"
 msgstr "برای این کالا هیچ سابقه قیمتی وجود ندارد"
 
-#: apps/sale/models/sale_invoice.py:23
-msgid "Person who sales products"
-msgstr "مسئول فروش"
+#: apps/menu/services/menu.py:114
+msgid "No price record for this product"
+msgstr "برای این کالا هیچ سابقه قیمتی وجود ندارد"
 
-#: apps/sale/models/sale_invoice.py:29
-msgid "Gest of cafe who buy products"
-msgstr "میهمان کافه که خرید را انجام داده"
+#: apps/menu/services/menu.py:130
+msgid "Menu item not found"
+msgstr "آیتم منو یافت نشد"
 
-#: apps/sale/models/sale_invoice.py:63
-msgid "Sale Invoice"
-msgstr "فاکتور فروش"
+#: apps/menu/services/menu.py:146
+msgid "Quantity must be positive"
+msgstr "مقدار نمیتواند صفر باشد"
 
-#: apps/sale/models/sale_invoice.py:64
-msgid "Sale Invoices"
-msgstr "فاکتور های فروش"
+#: apps/menu/services/menu.py:151
+msgid "Product not found"
+msgstr "اطلاعات کالا"
 
-#: apps/sale/models/sale_item.py:17
-msgid "Sale invoice"
-msgstr "فاکتور فروش"
+#: apps/sale/models/daily_report_model.py:42
+msgid "Draft"
+msgstr "پیشنویش"
 
-#: apps/sale/models/sale_item.py:24
-msgid "Sold product"
-msgstr "کالا فروحته شده"
+#: apps/sale/models/daily_report_model.py:43
+msgid "Approved"
+msgstr "تایید شده"
 
-#: apps/sale/models/sale_item.py:30
-msgid "Sold unit price"
-msgstr "قیمت واحد فروش"
+#: apps/sale/models/daily_report_model.py:47
+msgid "Report date"
+msgstr "تاریخ گزارش"
 
-#: apps/sale/models/sale_item.py:44
-msgid "Sale item"
+#: apps/sale/models/daily_report_model.py:50
+msgid "Business date for this report (cutoff at 2 AM next day)"
+msgstr "زمان کاری برای گزارش روزانه فروش"
+
+#: apps/sale/models/daily_report_model.py:54
+#: apps/sale/models/sale_payment_model.py:91
+#: apps/sale/models/sale_refund_model.py:61
+msgid "Status"
+msgstr "وضعیت"
+
+#: apps/sale/models/daily_report_model.py:63
+msgid "Opening float"
+msgstr "موجودی زمان بازگشایی"
+
+#: apps/sale/models/daily_report_model.py:65
+msgid "Cash in drawer at start of business day"
+msgstr "پول نقد موحود در زمان شروع روز کاری"
+
+#: apps/sale/models/daily_report_model.py:69
+msgid "Closing cash counted"
+msgstr "پول نقد پایان روز کاری"
+
+#: apps/sale/models/daily_report_model.py:71
+msgid "Actual cash counted at end of day"
+msgstr "کل پول شمارش شده تا پایان روز کاری"
+
+#: apps/sale/models/daily_report_model.py:76
+msgid "Expected total sales"
+msgstr "مجموع فروش قابل انتظار"
+
+#: apps/sale/models/daily_report_model.py:77
+msgid "Sum of all invoice totals for the day"
+msgstr "مجموع تام فاکتور های فروش روز"
+
+#: apps/sale/models/daily_report_model.py:81
+msgid "Expected total refunds"
+msgstr "مجموع مبلغ مرجوعی قابل انتظار"
+
+#: apps/sale/models/daily_report_model.py:83
+msgid "Sum of all refunds issued"
+msgstr "مجموع تمام مبلغ مرحوعی ثبت شده"
+
+#: apps/sale/models/daily_report_model.py:87
+msgid "Expected total discounts"
+msgstr "مجموع تخفیف مورد انتظار"
+
+#: apps/sale/models/daily_report_model.py:90
+msgid "Sum of all discounts applied"
+msgstr "محوع تمام تخفیف های اعمال شده"
+
+#: apps/sale/models/daily_report_model.py:94
+msgid "Expected total tax"
+msgstr "مجموع مالیات قابل انتظار"
+
+#: apps/sale/models/daily_report_model.py:97
+msgid "Sum of all tax collected"
+msgstr "مجموع تمام مالیات های دریافت شده"
+
+#: apps/sale/models/daily_report_model.py:102
+msgid "Cost of goods sold"
+msgstr "هزینه کالاهای فروخته شده"
+
+#: apps/sale/models/daily_report_model.py:105
+msgid "COGS from inventory system"
+msgstr "هزینه کالاهای فروخته شده از سیستم انبار"
+
+#: apps/sale/models/daily_report_model.py:109
+msgid "Total expences"
+msgstr "کل هزینه"
+
+#: apps/sale/models/daily_report_model.py:112
+msgid "Total expences in report date"
+msgstr "مجموع هزینه های روز گزارش"
+
+#: apps/sale/models/daily_report_model.py:122
+msgid "Additional notes or observations"
+msgstr "نکات اضافی"
+
+#: apps/sale/models/daily_report_model.py:130
+msgid "Created by"
+msgstr "ساخته شده در"
+
+#: apps/sale/models/daily_report_model.py:131
+msgid "Accountant who created this report"
+msgstr "حسابدار سازنده این گزارش"
+
+#: apps/sale/models/daily_report_model.py:138
+msgid "Approved by"
+msgstr "تایید شده توسط"
+
+#: apps/sale/models/daily_report_model.py:141
+msgid "Manager who approved this report"
+msgstr "مدیر تایید کننده این گزارش"
+
+#: apps/sale/models/daily_report_model.py:152
+msgid "Approved at"
+msgstr "تایید شده در "
+
+#: apps/sale/models/daily_report_model.py:161
+#: apps/sale/models/daily_report_payment_method_model.py:25
+msgid "Daily report"
+msgstr "گزارش روزانه"
+
+#: apps/sale/models/daily_report_model.py:162
+msgid "Daily reports"
+msgstr "گزارشات روزانه"
+
+#: apps/sale/models/daily_report_model.py:176
+msgid "Approved date cannot be before created date"
+msgstr "تاریخ تایید نباید قبل از تاریخ ساخت باشد"
+
+#: apps/sale/models/daily_report_model.py:185
+msgid "Cannot edit report after submission."
+msgstr "بعد از تایید نمیتوانید گزارش را تغییر دهید"
+
+#: apps/sale/models/daily_report_payment_method_model.py:29
+#: apps/sale/models/sale_payment_model.py:41
+msgid "Payment method"
+msgstr "روش پرداخت"
+
+#: apps/sale/models/daily_report_payment_method_model.py:37
+msgid "Expected amount"
+msgstr "مبلغ مورد انتظار"
+
+#: apps/sale/models/daily_report_payment_method_model.py:41
+msgid "Amount calculated from system records"
+msgstr "مبلغ محاسبه شده با رکورد های سیستم"
+
+#: apps/sale/models/daily_report_payment_method_model.py:45
+msgid "Actual amount"
+msgstr "مبلغ واقعی"
+
+#: apps/sale/models/daily_report_payment_method_model.py:50
+msgid "Amount entered by accountant (cash counted, POS report, bank confirmed)"
+msgstr "مبلغ وارد شده توسط حسابدار (نقدو گزارش پوز، و انتقال های تایید شده)"
+
+#: apps/sale/models/daily_report_payment_method_model.py:55
+msgid "Variance"
+msgstr "اختلاف"
+
+#: apps/sale/models/daily_report_payment_method_model.py:59
+msgid "Difference between actual and expected (actual - expected)"
+msgstr "اختلاف بین مبلغ مورد انتظار و واقعی"
+
+#: apps/sale/models/daily_report_payment_method_model.py:65
+msgid "Additional notes for this payment method"
+msgstr "نکات اضافی برای این خرید"
+
+#: apps/sale/models/daily_report_payment_method_model.py:72
+msgid "Daily report payment method"
+msgstr "گزارش روزانه روش پرداخت"
+
+#: apps/sale/models/daily_report_payment_method_model.py:73
+msgid "Daily report payment methods"
+msgstr "گزارش روزانه روش های پرداخت"
+
+#: apps/sale/models/daily_report_payment_method_model.py:90
+msgid "Cannot modify payment methods for non-draft reports"
+msgstr "روش پرداخت گزارش های تایید شده را نمیتوان تغییر داد"
+
+#: apps/sale/models/print_queue_model.py:28
+msgid "Pending"
+msgstr "در صف"
+
+#: apps/sale/models/print_queue_model.py:29
+msgid "Printed"
+msgstr "چاپ شده"
+
+#: apps/sale/models/print_queue_model.py:30
+msgid "Failed"
+msgstr "عدم موفقیت"
+
+#: apps/sale/models/print_queue_model.py:33
+msgid "Standard Receipt"
+msgstr "رسید استاندارد"
+
+#: apps/sale/models/print_queue_model.py:34
+msgid "Edit Diff Receipt"
+msgstr ""
+
+#: apps/sale/models/print_queue_model.py:116
+#: apps/sale/models/print_queue_model.py:117
+msgid "Print Queue"
+msgstr "صف پرینت"
+
+#: apps/sale/models/sale.py:42
+msgid "Open"
+msgstr "باز"
+
+#: apps/sale/models/sale.py:43
+msgid "Closed"
+msgstr "بسته"
+
+#: apps/sale/models/sale.py:44
+msgid "Canceled"
+msgstr "لغو شده"
+
+#: apps/sale/models/sale.py:47
+msgid "Dine in"
+msgstr "در سالن"
+
+#: apps/sale/models/sale.py:48
+msgid "Takeaway"
+msgstr "بیرون بر"
+
+#: apps/sale/models/sale.py:53
+msgid "Unpaid"
+msgstr "پرداخت نشده"
+
+#: apps/sale/models/sale.py:54
+msgid "Partially paid"
+msgstr "بخشی پرداخت شده"
+
+#: apps/sale/models/sale.py:55
+msgid "Paid"
+msgstr "پرداخت شده"
+
+#: apps/sale/models/sale.py:60
+msgid "State"
+msgstr "وضعیت"
+
+#: apps/sale/models/sale.py:65
+msgid "Current lifecycle state of the sale"
+msgstr "چرخه وضعیت فعلی فورش"
+
+#: apps/sale/models/sale.py:69
+msgid "Sale type"
 msgstr "فروش آیتم"
 
-#: apps/sale/models/sale_item.py:45
+#: apps/sale/models/sale.py:72
+msgid "Service method: dine-in or takeaway"
+msgstr "نوع خدمات: حضوری یا بیرون بر"
+
+#: apps/sale/models/sale.py:79
+msgid "Table"
+msgstr "میز"
+
+#: apps/sale/models/sale.py:83
+msgid "Table for dine-in sales"
+msgstr "میز برای پذیرایی در سالن"
+
+#: apps/sale/models/sale.py:87
+msgid "Guest count"
+msgstr "تعداد مهمان های"
+
+#: apps/sale/models/sale.py:90
+msgid "Number of guests at table"
+msgstr "تعداد همهان های یز"
+
+#: apps/sale/models/sale.py:95
+msgid "Registered guest"
+msgstr "مهمان ثبت نام شده"
+
+#: apps/sale/models/sale.py:100
+msgid "Link to registered customer account"
+msgstr "اتصال به حساب مهمان ثبت نام شده"
+
+#: apps/sale/models/sale.py:107
+msgid "Opened by"
+msgstr "باز شده توسط"
+
+#: apps/sale/models/sale.py:109
+msgid "Staff member who created this sale"
+msgstr "پرسنل سئول ساخت این فروش"
+
+#: apps/sale/models/sale.py:114
+msgid "Last modified by"
+msgstr "آخرین ویرایش توسط"
+
+#: apps/sale/models/sale.py:119
+msgid "Staff member who last modified items (while OPEN)"
+msgstr "پرسنلی که آخرین تغییرات را روی آیتم ها زمان باز بودن فروش انجام داد"
+
+#: apps/sale/models/sale.py:124
+msgid "Closed by"
+msgstr "بسته شده توسط"
+
+#: apps/sale/models/sale.py:129
+msgid "Staff member who finalized and invoiced the sale"
+msgstr "پرسنلی که فروش را تایید و فاکتور ایجاد کرد"
+
+#: apps/sale/models/sale.py:134
+msgid "Canceled by"
+msgstr "لغو شده توسط"
+
+#: apps/sale/models/sale.py:139
+msgid "Staff member who canceled the sale"
+msgstr "پرسنلی که فروش را لغو کرد"
+
+#: apps/sale/models/sale.py:144
+msgid "Subtotal"
+msgstr "مبلغ کل"
+
+#: apps/sale/models/sale.py:148
+msgid "Sum of all items before discounts and tax"
+msgstr "جمع کل قبل از اعمال تخفیف و مالیات"
+
+#: apps/sale/models/sale.py:152
+msgid "Discount"
+msgstr "درصد تخفیف"
+
+#: apps/sale/models/sale.py:156
+msgid "Total discount applied"
+msgstr "مجموع تخفیف های اعمال شده"
+
+#: apps/sale/models/sale.py:160
+msgid "Tax"
+msgstr "مالیات"
+
+#: apps/sale/models/sale.py:164
+msgid "Sales tax (if applicable)"
+msgstr "مالیات قروش"
+
+#: apps/sale/models/sale.py:168
+msgid "Total amount"
+msgstr "قدار کل"
+
+#: apps/sale/models/sale.py:172
+msgid "Final payable amount (subtotal - discount + tax)"
+msgstr "خالص دریافتی"
+
+#: apps/sale/models/sale.py:178
+msgid "Total cost (COGS)"
+msgstr "کل هزینه"
+
+#: apps/sale/models/sale.py:182
+msgid "Cost of goods sold (calculated from inventory)"
+msgstr "هزینه کالاهای فروخته شده"
+
+#: apps/sale/models/sale.py:186
+msgid "Gross profit"
+msgstr "سود حالص"
+
+#: apps/sale/models/sale.py:190
+msgid "Revenue - COGS (total_amount - total_cost)"
+msgstr "درآمد - هزینه"
+
+#: apps/sale/models/sale.py:194
+msgid "Gross margin %"
+msgstr "درصد سود"
+
+#: apps/sale/models/sale.py:198
+msgid "(gross_profit / total_amount) * 100"
+msgstr "(سود / مجموع) * 100"
+
+#: apps/sale/models/sale.py:204
+msgid "Payment status"
+msgstr "وضعیت پرداخت"
+
+#: apps/sale/models/sale.py:209
+msgid "Payment completion status (only for CLOSED sales)"
+msgstr "وضعیت کلی پرداخت(فقط برای فروش بسته شده)"
+
+#: apps/sale/models/sale.py:217
+msgid "General notes about the sale"
+msgstr "توضیح کلی برای فروش"
+
+#: apps/sale/models/sale.py:221
+msgid "Cancel reason"
+msgstr "دلیل لغو سفارش"
+
+#: apps/sale/models/sale.py:224
+msgid "Required reason for cancellation"
+msgstr "برای لغو توضیح لازم است"
+
+#: apps/sale/models/sale.py:230
+msgid "Opened at"
+msgstr "ساخته شده در"
+
+#: apps/sale/models/sale.py:236
+msgid "Closed at"
+msgstr "بسته شده در"
+
+#: apps/sale/models/sale.py:243
+msgid "Canceled at"
+msgstr "لغو شده در"
+
+#: apps/sale/models/sale.py:249
+msgid "Updated at"
+msgstr "تاریخ به روزرسانی"
+
+#: apps/sale/models/sale.py:256 apps/sale/models/sale_payment_model.py:36
+msgid "Sale"
+msgstr "فروش"
+
+#: apps/sale/models/sale.py:257
+msgid "Sales"
+msgstr "فروش ها"
+
+#: apps/sale/models/sale.py:326
+msgid "Closed sales must have closed_by set"
+msgstr "برای فروش های بسته شده باید مسئول مشخص شود"
+
+#: apps/sale/models/sale.py:328
+msgid "Closed sales must have closed_at set"
+msgstr "فروش بسته شده باید زمان بسته شدن داشته باشد"
+
+#: apps/sale/models/sale.py:332
+msgid "Canceled sales must have canceled_by set"
+msgstr "فروش لغو شده باید مسدول لغو داشته باشد"
+
+#: apps/sale/models/sale.py:334
+msgid "Canceled sales must have canceled_at set"
+msgstr "فروش لغو شده باید زمان داشته باشد"
+
+#: apps/sale/models/sale.py:337
+msgid "Canceled sales must have a cancellation reason"
+msgstr "فروش لغو شده باید دلیل لغو داشته باشد"
+
+#: apps/sale/models/sale.py:342
+msgid "Subtotal cannot be negative"
+msgstr "مجموع نمیتواند منفی باشد"
+
+#: apps/sale/models/sale.py:345
+msgid "Discount cannot be negative"
+msgstr "تخفیف نمیتواند منفی باشد"
+
+#: apps/sale/models/sale.py:348
+msgid "Tax cannot be negative"
+msgstr "مالیات نمیتواند منفی باشد"
+
+#: apps/sale/models/sale.py:355
+#, python-format
+msgid ""
+"Total amount (%(total)s) doesn't match calculation: %(subtotal)s - "
+"%(discount)s + %(tax)s = %(expected)s"
+msgstr ""
+
+#: apps/sale/models/sale.py:369
+msgid "Dine-in sales must have a table assigned"
+msgstr "برای فروش در سالن باید میز مشخص شود"
+
+#: apps/sale/models/sale.py:373
+msgid "Total cost cannot be negative"
+msgstr "مجموع هزینه نمیتواند منفی باشد"
+
+#: apps/sale/models/sale.py:379
+#, python-format
+msgid ""
+"Gross profit calculation mismatch: expected %(expected)s, got %(actual)s"
+msgstr ""
+
+#: apps/sale/models/sale_discount_model.py:19
+msgid "Percentage"
+msgstr "درصد"
+
+#: apps/sale/models/sale_discount_model.py:20
+msgid "Fixed amount"
+msgstr "مقدار ثابت"
+
+#: apps/sale/models/sale_discount_model.py:26
+msgid "sale"
+msgstr "فروش"
+
+#: apps/sale/models/sale_discount_model.py:28
+msgid ""
+"The sale to which this discount is applied. If the sale is deleted, related "
+"discounts will also be removed."
+msgstr "فروشی که این تخفیف به آن اختصاص داده شده است، اگر فروش حذف شود این تخفیف هم حذف خواهد شد"
+
+#: apps/sale/models/sale_discount_model.py:36
+msgid "discount type"
+msgstr "نوع تخفیف"
+
+#: apps/sale/models/sale_discount_model.py:38
+msgid ""
+"Determines how the discount value is applied. Percentage discounts are "
+"calculated relative to the sale total, while fixed discounts are absolute "
+"monetary amounts."
+msgstr "مشخض میکند مقدار تخفیف چگونه اعمال شده است. تخفیف درصدی با توجه به مجموع فروش محاسبه میشود در حالی که مقدار ثابت بدون تغییر است"
+
+#: apps/sale/models/sale_discount_model.py:47
+msgid "discount value"
+msgstr "مبلغ تخفیف"
+
+#: apps/sale/models/sale_discount_model.py:49
+msgid ""
+"The numeric value of the discount. For percentage discounts, this represents "
+"the percentage value (e.g. 10 for 10%). For fixed discounts, this represents "
+"a monetary amount."
+msgstr "مقدار عددی تخفیف. برای تخفیف درصدی نشان دهنده درصد تخفیف و برای تخفیف ثابت نشان دهنده مبلغ تخفیف است"
+
+#: apps/sale/models/sale_discount_model.py:57
+msgid "reason"
+msgstr "دلیل"
+
+#: apps/sale/models/sale_discount_model.py:59
+msgid ""
+"Human-readable explanation for why this discount was applied (e.g. "
+"promotion, compensation, staff authorization)."
+msgstr "دلیل ثبت این تخفیف"
+
+#: apps/sale/models/sale_discount_model.py:68
+msgid "applied by"
+msgstr "اعمال شده توسط"
+
+#: apps/sale/models/sale_discount_model.py:70
+msgid ""
+"The user who applied or approved this discount. Users referenced here cannot "
+"be deleted."
+msgstr "کاربری که این تخفیف را اعمال یا تایید کرد. کاربری که اینجا ثبت میشود نمیتواند پاک شود"
+
+#: apps/sale/models/sale_discount_model.py:76
+msgid "sale discount"
+msgstr "تخفیف فروش"
+
+#: apps/sale/models/sale_discount_model.py:77
+msgid "sale discounts"
+msgstr "تخفیف های فروش"
+
+#: apps/sale/models/sale_item.py:30
+msgid "If set, this item is an extra attached to the parent"
+msgstr "درصورت وجود این یک افزودنی است برای آیتم اصلی"
+
+#: apps/sale/models/sale_item.py:37
+msgid "Price at moment of sale"
+msgstr "قیمت در زمان فروش"
+
+#: apps/sale/models/sale_payment_model.py:24
+msgid "Cash"
+msgstr "نقد"
+
+#: apps/sale/models/sale_payment_model.py:25
+msgid "POS"
+msgstr "کارتخوان"
+
+#: apps/sale/models/sale_payment_model.py:26
+msgid "Card to card"
+msgstr "کارت به کارت"
+
+#: apps/sale/models/sale_payment_model.py:29
+#: apps/sale/models/sale_refund_model.py:26
+msgid "Completed"
+msgstr "تکمیل شده"
+
+#: apps/sale/models/sale_payment_model.py:30
+#: apps/sale/models/sale_refund_model.py:27
+msgid "Voided"
+msgstr "مرجوع شده"
+
+#: apps/sale/models/sale_payment_model.py:37
+msgid "Sale this payment is applied to (must be CLOSED state)"
+msgstr "فروشی که این پرداخت به آن متصل است"
+
+#: apps/sale/models/sale_payment_model.py:49
+msgid "Total received"
+msgstr "مجموع دریافتی"
+
+#: apps/sale/models/sale_payment_model.py:52
+msgid "Total money received from customer"
+msgstr "مجموع پول دریافتی از میهمان"
+
+#: apps/sale/models/sale_payment_model.py:56
+msgid "Applied to invoice"
+msgstr "اعمال شده در فاکتور"
+
+#: apps/sale/models/sale_payment_model.py:59
+msgid "Amount applied to invoice balance"
+msgstr "مقدار اعمال شده در مبلغ نهایی فاکتور"
+
+#: apps/sale/models/sale_payment_model.py:63
+msgid "Tip amount"
+msgstr "مقدار انعام"
+
+#: apps/sale/models/sale_payment_model.py:67
+msgid "Optional tip (never refundable)"
+msgstr "انعام اختیاری"
+
+#: apps/sale/models/sale_payment_model.py:77
+msgid "Destination account"
+msgstr "حساب قصد"
+
+#: apps/sale/models/sale_payment_model.py:78
+msgid "Required for POS and card-to-card payments"
+msgstr "برای کارت به کارت و کارتخوان ضروری است"
+
+#: apps/sale/models/sale_payment_model.py:85
+msgid "Received by"
+msgstr "دریافت شده توسط"
+
+#: apps/sale/models/sale_payment_model.py:88
+msgid "Received at"
+msgstr "دریافت شده در تاریخ"
+
+#: apps/sale/models/sale_payment_model.py:103
 msgid "Sale items"
 msgstr "فروش آیتم ها"
 
-#: apps/user/admin.py:12
+#: apps/sale/models/sale_payment_model.py:104
+msgid "Specific items this payment covers (empty means all items)"
+msgstr "آیتم هایی که این پرداخت پوشش میدهد(حالی به معنی تمام آیتم ها است)"
+
+#: apps/sale/models/sale_payment_model.py:112
+msgid "Sale payment"
+msgstr "پرداخت فروش"
+
+#: apps/sale/models/sale_payment_model.py:113
+msgid "Sale payments"
+msgstr "پرداخت های فروش"
+
+#: apps/sale/models/sale_payment_model.py:133
+#, python-format
+msgid ""
+"amount_total (%(total)s) must equal amount_applied (%(applied)s) + "
+"tip_amount (%(tip)s)"
+msgstr ""
+
+#: apps/sale/models/sale_payment_model.py:143
+msgid "Applied amount must be positive"
+msgstr "مقدار اعمال شده باید مثبت باشد"
+
+#: apps/sale/models/sale_payment_model.py:146
+#: apps/sale/services/payment/payment_service.py:129
+#: apps/sale/services/payment/payment_service.py:279
+msgid "Tip amount cannot be negative"
+msgstr "مقدار انعام نمیتواند منفی باشد"
+
+#: apps/sale/models/sale_payment_model.py:150
+#: apps/sale/services/payment/payment_service.py:148
+#: apps/sale/services/payment/payment_service.py:298
+msgid "Cash payments must not have destination account"
+msgstr "پرداخت های نقد نمیتوانند حساب مقصد داشته باشند"
+
+#: apps/sale/models/sale_payment_model.py:157
+msgid "This payment method requires a destination account"
+msgstr "این روش پرداخت نیازمند حساب مقصد است"
+
+#: apps/sale/models/sale_refund_model.py:33
+msgid "Original payment"
+msgstr "پرداخت اصلی"
+
+#: apps/sale/models/sale_refund_model.py:37
+msgid "Refund amount"
+msgstr "مقدار بازگشت"
+
+#: apps/sale/models/sale_refund_model.py:38
+msgid "Refunded amount (excluding tip)"
+msgstr "مبلغ برگشتی (منهای انعام)"
+
+#: apps/sale/models/sale_refund_model.py:42
+msgid "Refund method"
+msgstr "روش بازگشت پول"
+
+#: apps/sale/models/sale_refund_model.py:49
+msgid "Processed by"
+msgstr "مسئول"
+
+#: apps/sale/models/sale_refund_model.py:52
+msgid "Processed at"
+msgstr "تاریخ اجرا"
+
+#: apps/sale/models/sale_refund_model.py:55
+msgid "Reason"
+msgstr "دلیل"
+
+#: apps/sale/models/sale_refund_model.py:73
+msgid "Sale refund"
+msgstr "مرجوعی فروش"
+
+#: apps/sale/models/sale_refund_model.py:74
+msgid "Sale refunds"
+msgstr "مرجوعی فروش"
+
+#: apps/sale/models/sale_refund_model.py:83
+msgid "Refund amount must be positive"
+msgstr "مبلغ بازگشتی باید مثبت باشد"
+
+#: apps/sale/models/sale_refund_model.py:98
+#, python-format
+msgid ""
+"Total refunds (%(existing)s + %(new)s) exceed payment amount (%(payment)s)"
+msgstr ""
+
+#: apps/sale/policies.py:22
+msgid "Authentication required"
+msgstr "نیازمند احراز هویت"
+
+#: apps/sale/policies.py:27
+#, python-format
+msgid "Missing permission: %(perm)s"
+msgstr ""
+
+#: apps/sale/policies.py:50
+msgid "You are not allowed to open a sale"
+msgstr "شما مجاز به باز کردن فروش نیستید"
+
+#: apps/sale/policies.py:66
+msgid "You are not allowed to view the sales list"
+msgstr "شما اجازه مشاهده لیست فروش را ندارید"
+
+#: apps/sale/policies.py:82
+msgid "You are not allowed to view sale details"
+msgstr "شما اجازه مشاهده جزئیات فروش را ندارید"
+
+#: apps/sale/policies.py:101
+msgid "Only OPEN sales can be modified"
+msgstr "فقط فروش های باز یتواند ویرایش شود"
+
+#: apps/sale/policies.py:104
+msgid "You are not allowed to modify sales"
+msgstr "شما اجازه ویرایش فروش را ندارید"
+
+#: apps/sale/policies.py:123
+msgid "Missing permission: sale.close_sale"
+msgstr "اجازه بستن فروش برای شما وجود ندارد"
+
+#: apps/sale/policies.py:127
+msgid "Only open sales can be closed"
+msgstr "فقط فروش های باز میتوانند بسته شوند"
+
+#: apps/sale/policies.py:131
+msgid "Cannot close an empty sale"
+msgstr "نمیتوانید یک فروش بدون آیتم را ببندید"
+
+#: apps/sale/policies.py:150
+msgid "Only OPEN sales can be canceled"
+msgstr "فقط فروش باز میتواند لغو شود"
+
+#: apps/sale/policies.py:154 apps/sale/policies.py:177
+msgid "You are not allowed to cancel sales"
+msgstr "شما اجازه لغو فروش ها را ندارید"
+
+#: apps/sale/policies.py:173
+msgid "Only CLOSED sales can be canceled"
+msgstr "فقط فروش های بسته شده میتوانند لغو شوند"
+
+#: apps/sale/policies.py:198
+#, python-format
+msgid "Daily report already exists for %(date)s"
+msgstr ""
+
+#: apps/sale/policies.py:216
+#, python-format
+msgid "Only DRAFT reports can be edited. Current status: %(status)s"
+msgstr ""
+
+#: apps/sale/policies.py:235
+#, python-format
+msgid "Only DRAFT reports can be submitted. Current status: %(status)s"
+msgstr ""
+
+#: apps/sale/policies.py:259
+#, python-format
+msgid ""
+"Only SUBMITTED or DISPUTED reports can be approved. Current status: "
+"%(status)s"
+msgstr ""
+
+#: apps/sale/policies.py:266
+msgid "You cannot approve your own report"
+msgstr "شما نمیتوانید گزارش خودتان را تایید کنید"
+
+#: apps/sale/policies.py:283
+#, python-format
+msgid "Only SUBMITTED reports can be disputed. Current status: %(status)s"
+msgstr ""
+
+#: apps/sale/policies.py:302
+#, python-format
+msgid "Only APPROVED reports can be closed. Current status: %(status)s"
+msgstr ""
+
+#: apps/sale/services/payment/payment_service.py:81
+msgid "Payments can only be processed for CLOSED sales"
+msgstr "فقط برای فروش های بسته شده میتوانید پرداخت انجام دهید"
+
+#: apps/sale/services/payment/payment_service.py:85
+#: apps/sale/services/payment/payment_service.py:223
+msgid "At least one payment is required"
+msgstr "حداقل یک پرداخت لازم است"
+
+#: apps/sale/services/payment/payment_service.py:121
+#: apps/sale/services/payment/payment_service.py:270
+#, python-format
+msgid "Invalid payment method: %(method)s"
+msgstr ""
+
+#: apps/sale/services/payment/payment_service.py:126
+#: apps/sale/services/payment/payment_service.py:276
+msgid "Payment amount must be positive"
+msgstr "مقدار پرداخت باید مثبت باشد"
+
+#: apps/sale/services/payment/payment_service.py:140
+#: apps/sale/services/payment/payment_service.py:290
+#, python-format
+msgid "Invalid destination account ID: %(id)s"
+msgstr ""
+
+#: apps/sale/services/payment/payment_service.py:156
+#: apps/sale/services/payment/payment_service.py:306
+#, python-format
+msgid "%(method)s requires a destination account"
+msgstr ""
+
+#: apps/sale/services/payment/payment_service.py:220
+msgid "Cannot add payments to a CANCELED sale"
+msgstr "نمیتوانید به فروش لغو شده پرداخت اضافه کنید"
+
+#: apps/sale/services/payment/payment_service.py:320
+msgid "Some selected items do not belong to this sale"
+msgstr "تعدادی از آیتم های انتخاب شده متعلق به این فروش نیستند"
+
+#: apps/sale/services/payment/payment_service.py:392
+#, python-format
+msgid "Invalid tax/discount type: %(type)s. Must be 'fixed' or 'percentage'"
+msgstr ""
+
+#: apps/sale/services/payment/payment_service.py:416
+msgid "Payment not found"
+msgstr "پرداخت یافت نشد"
+
+#: apps/sale/services/payment/payment_service.py:419
+msgid "Payment is already voided"
+msgstr "پرداخت لغو شده است"
+
+#: apps/sale/services/sale/cancel_sale.py:42
+#: apps/sale/services/sale/cancel_sale.py:78
+msgid "Cancellation reason is required"
+msgstr "دلیل لغو لازم است"
+
+#: apps/sale/services/sale/close_sale.py:160
+msgid "Cannot calculate COGS."
+msgstr "نمیتوان هزینه مواد را محاسبه کرد"
+
+#: apps/sale/services/sale/modify_sale.py:71
+#, python-format
+msgid "Invalid Menu IDs: %(ids)s"
+msgstr ""
+
+#: apps/sale/services/sale/modify_sale.py:77
+#, python-format
+msgid "Invalid Product IDs: %(ids)s"
+msgstr ""
+
+#: apps/sale/services/sale/open_sale.py:63
+msgid "Sale must contain items"
+msgstr "فروش باید شامل آیتم باشد"
+
+#: apps/sale/services/sale/open_sale.py:65
+msgid "Table is required for dine-in sale"
+msgstr "برای فروش حضوری ثبت میز لازم است"
+
+#: apps/sale/services/sale/open_sale.py:67
+msgid "Guest count must be positive"
+msgstr "تعداد میهمان ها باید مثبت باشد"
+
+#: apps/sale/services/sale/open_sale.py:98
+msgid "Item quantity must be positive"
+msgstr "تعداد آیتم باید مثبت باشد"
+
+#: apps/sale/services/sale/open_sale.py:100
+msgid "Menu item has no price"
+msgstr "آیتم هیچ قیمتی ندارد"
+
+#: apps/sale/services/sale/open_sale.py:137
+msgid "Extra quantity must be positive"
+msgstr "مقدار کل باید مثبت باشد"
+
+#: apps/user/admin/account.py:12
 msgid "Password"
 msgstr "گذرواژه"
 
-#: apps/user/admin.py:13
+#: apps/user/admin/account.py:13
 msgid "Confirm password"
 msgstr "تأیید گذرواژه"
 
-#: apps/user/admin.py:68
+#: apps/user/admin/account.py:51
 msgid "Personal info"
 msgstr "اطلاعات شخصی"
 
-#: apps/user/admin.py:70
+#: apps/user/admin/account.py:53
 msgid "Permissions"
 msgstr "دسترسی ها"
 
-#: apps/user/admin.py:81
+#: apps/user/admin/account.py:64
 msgid "Important dates"
 msgstr "تاریخ های مهم"
 
-#: apps/user/models.py:21
+#: apps/user/models/account.py:21
 msgid "The given mobile must be set"
 msgstr "شماره موبایل حتما باید وارد شود"
 
-#: apps/user/models.py:33
+#: apps/user/models/account.py:33
 msgid "A superuser must also be staff."
 msgstr "مدیر باید از کارکنان باشد"
 
-#: apps/user/models.py:54
+#: apps/user/models/account.py:54
 msgid "Mobile number must be in the format 09XXXXXXXXX"
 msgstr "شماره تلفن باید در قالب '0XXXXXXXXXX' باشد"
 
-#: apps/user/models.py:74
+#: apps/user/models/account.py:74
 msgid "Is Active?"
 msgstr "آیا فعال است؟"
 
-#: apps/user/models.py:75
+#: apps/user/models/account.py:75
 msgid "Is Superuser?"
 msgstr "آیا مدیر است؟"
 
-#: apps/user/models.py:76
+#: apps/user/models/account.py:76
 msgid "Is Staff?"
 msgstr "آیا کارمند است؟"
 
-#: apps/user/models.py:99
+#: apps/user/models/account.py:99
 msgid "User Account"
 msgstr "حساب کاربری"
 
-#: apps/user/models.py:100
+#: apps/user/models/account.py:100
 msgid "User Accounts"
 msgstr "حساب کاربرها"
 
-#: apps/user/models.py:119
+#: apps/user/models/bank_account.py:16
+msgid "Related user"
+msgstr "کاربر مرتبط"
+
+#: apps/user/models/bank_account.py:21
+msgid "Card number"
+msgstr "شماره کارت"
+
+#: apps/user/models/bank_account.py:27
+msgid "Account owner"
+msgstr "صاحب حساب"
+
+#: apps/user/models/bank_account.py:37
+msgid "Bank account"
+msgstr "حساب بانکی"
+
+#: apps/user/models/bank_account.py:38
+msgid "Bank accounts"
+msgstr "حساب کاربرها"
+
+#: apps/user/models/profile.py:14
 msgid "Profile"
 msgstr "پرفایل"
 
-#: apps/user/models.py:120
+#: apps/user/models/profile.py:15
 msgid "Profiles"
 msgstr "پرفایل ها"
 
-#: apps/user/models.py:122 apps/user/tests/test_profile.py:84
+#: apps/user/models/profile.py:17
 msgid "Male"
 msgstr "آقا"
 
-#: apps/user/models.py:122 apps/user/tests/test_profile.py:84
+#: apps/user/models/profile.py:17
 msgid "Female"
 msgstr "خانم"
 
-#: apps/user/models.py:126
+#: apps/user/models/profile.py:21
 msgid "User"
 msgstr "کاربر"
 
-#: apps/user/models.py:131
+#: apps/user/models/profile.py:26
 msgid "Email"
 msgstr "ایمیل"
 
-#: apps/user/models.py:134
+#: apps/user/models/profile.py:29
 msgid "Is Email Verified?"
 msgstr "آیا ایمیل تأیید شده است؟"
 
-#: apps/user/models.py:137
+#: apps/user/models/profile.py:32
 msgid "Address"
 msgstr "آدرس"
 
-#: apps/user/models.py:140
+#: apps/user/models/profile.py:35
 msgid "Birth Day"
 msgstr "تاریخ تولد"
 
-#: apps/user/models.py:143
+#: apps/user/models/profile.py:38
 msgid "Sex"
 msgstr "جنسیت"
+
+#: apps/user/models/profile.py:45
+msgid "Total Debt"
+msgstr "کل بدهی"
+
+#: apps/user/models/profile.py:49
+msgid "Total amount owed by this user"
+msgstr "مقدار کل بستانکاری این کاربر"
+
+#: apps/user/models/profile.py:52
+msgid "Total Payment"
+msgstr "کل پرداخت"
+
+#: apps/user/models/profile.py:56
+msgid "Total amount paid by this user"
+msgstr "کل بلغ پرداخت شده توسط این کاربر"
 
 #: apps/utils/jalali_date_list_filter.py:15
 msgid "Jalali date"
@@ -802,6 +1837,18 @@ msgstr "تاریخ ساخت"
 msgid "Images"
 msgstr "عکس ها"
 
+#: apps/utils/validators.py:17 apps/utils/validators.py:25
+msgid "Card number cannot be empty."
+msgstr "شماره کارت نمیتواند خالی باشد"
+
+#: apps/utils/validators.py:29
+msgid "Card number must contain exactly 16 digits."
+msgstr "شماره کارت باید 16 رقمی باشد"
+
+#: apps/utils/validators.py:33
+msgid "Invalid Iranian card number."
+msgstr "شماره کارت نامعتبر"
+
 #: config/urls.py:13
 msgid "Chino Admin Panel"
 msgstr "پنل مدیریتی چینو"
@@ -809,6 +1856,33 @@ msgstr "پنل مدیریتی چینو"
 #: config/urls.py:14 config/urls.py:15
 msgid "Chino Admin"
 msgstr "مدیر چینو"
+
+#~ msgid "This is not a valid purchase, product is expired"
+#~ msgstr "کالا از قبل فاسد شده است، این خرید مجاز نیست"
+
+#~ msgid "Recipe does not exist"
+#~ msgstr "رسپی وجود ندارد"
+
+#~ msgid "Person who sales products"
+#~ msgstr "مسئول فروش"
+
+#~ msgid "Gest of cafe who buy products"
+#~ msgstr "میهمان کافه که خرید را انجام داده"
+
+#~ msgid "Sale Invoice"
+#~ msgstr "فاکتور فروش"
+
+#~ msgid "Sale Invoices"
+#~ msgstr "فاکتور های فروش"
+
+#~ msgid "Sale invoice"
+#~ msgstr "فاکتور فروش"
+
+#~ msgid "Sold product"
+#~ msgstr "کالا فروحته شده"
+
+#~ msgid "Sold unit price"
+#~ msgstr "قیمت واحد فروش"
 
 #~ msgid "Cost per unit of finished product"
 #~ msgstr "قیمت واحد کالا نهایی"
