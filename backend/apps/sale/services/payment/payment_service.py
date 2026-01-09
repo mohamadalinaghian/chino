@@ -77,9 +77,7 @@ class PaymentService:
             ValidationError: If sale state is invalid or payment data is invalid
         """
         if sale.state != Sale.SaleState.CLOSED:
-            raise ValidationError(
-                _("Payments can only be processed for CLOSED sales")
-            )
+            raise ValidationError(_("Payments can only be processed for CLOSED sales"))
 
         if not payments:
             raise ValidationError(_("At least one payment is required"))
@@ -118,7 +116,8 @@ class PaymentService:
         # Validate payment method
         if payment_input.method not in dict(SalePayment.PaymentMethod.choices):
             raise ValidationError(
-                _("Invalid payment method: %(method)s") % {"method": payment_input.method}
+                _("Invalid payment method: %(method)s")
+                % {"method": payment_input.method}
             )
 
         # Validate amounts
@@ -241,6 +240,10 @@ class PaymentService:
             sale.state = Sale.SaleState.CLOSED
             sale.closed_by = performer
             sale.closed_at = timezone.now()
+            # Reserve stock for sale.
+            from ..sale.close_sale import CloseSaleService
+
+            CloseSaleService._calculate_cogs(sale)
             sale.save(skip_validation=True)
             was_auto_closed = True
 
@@ -320,20 +323,6 @@ class PaymentService:
                     _("Some selected items do not belong to this sale")
                 )
 
-        # Calculate tax and discount based on selected items
-        tax_amount = Decimal("0")
-        discount_amount = Decimal("0")
-
-        if payment_input.tax:
-            tax_amount = PaymentService._calculate_tax_discount(
-                payment_input.tax, sale, selected_items
-            )
-
-        if payment_input.discount:
-            discount_amount = PaymentService._calculate_tax_discount(
-                payment_input.discount, sale, selected_items
-            )
-
         # Calculate total
         amount_total = payment_input.amount_applied + payment_input.tip_amount
 
@@ -389,7 +378,9 @@ class PaymentService:
             )
         else:
             raise ValidationError(
-                _("Invalid tax/discount type: %(type)s. Must be 'fixed' or 'percentage'")
+                _(
+                    "Invalid tax/discount type: %(type)s. Must be 'fixed' or 'percentage'"
+                )
                 % {"type": input_data.type}
             )
 

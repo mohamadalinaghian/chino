@@ -34,7 +34,9 @@ router_guest = Router(tags=["Guest Management"])
     response={200: GuestResponse, 404: dict},
     summary="Search guest by mobile number",
 )
-def search_guest_by_mobile(request, mobile: str = Query(..., min_length=11, max_length=11)):
+def search_guest_by_mobile(
+    request, mobile: str = Query(..., min_length=11, max_length=11)
+):
     """
     Search for a guest by their mobile number.
 
@@ -226,9 +228,9 @@ def list_guests(
 
     # Apply search filter
     if search:
-        queryset = queryset.filter(
-            mobile__icontains=search
-        ) | queryset.filter(name__icontains=search)
+        queryset = queryset.filter(mobile__icontains=search) | queryset.filter(
+            name__icontains=search
+        )
 
     total_count = queryset.count()
 

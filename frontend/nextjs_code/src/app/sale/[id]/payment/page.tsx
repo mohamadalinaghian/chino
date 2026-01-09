@@ -8,7 +8,6 @@ import {
   ISaleDetailResponse,
   IAddPaymentInput,
   IBankAccount,
-  ISaleItemDetail,
 } from '@/types/sale';
 import {
   fetchSaleDetails,
@@ -20,7 +19,6 @@ import { useToast } from '@/components/common/Toast';
 import { LoadingOverlay } from '@/components/common/LoadingOverlay';
 import { THEME_COLORS, UI_TEXT, API_ENDPOINTS, CS_API_URL } from '@/libs/constants';
 import { formatPersianMoney } from '@/utils/persianUtils';
-import { formatJalaliDateTime } from '@/utils/persianUtils';
 import { IUserPermissions } from '@/types/sale';
 import { authenticatedFetchJSON } from '@/libs/auth/authFetch';
 
@@ -47,8 +45,8 @@ export default function SalePaymentPage() {
   const [submitting, setSubmitting] = useState(false);
   const [bankAccounts, setBankAccounts] = useState<IBankAccount[]>([]);
   const [posAccount, setPosAccount] = useState<IPOSAccount | null>(null);
-  const [loadingAccounts, setLoadingAccounts] = useState(false);
-  const [userPermissions, setUserPermissions] = useState<IUserPermissions | null>(null);
+  const [setLoadingAccounts] = useState(false);
+  const [setUserPermissions] = useState<IUserPermissions | null>(null);
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.CASH);
   const [amount, setAmount] = useState<string>('');
@@ -69,7 +67,7 @@ export default function SalePaymentPage() {
     loadSaleData();
     loadBankAccounts();
     loadPOSAccount();
-    loadUserPermissions();
+    // loadUserPermissions();
   }, [saleId]);
 
   const loadSaleData = async () => {
@@ -86,13 +84,13 @@ export default function SalePaymentPage() {
 
   const loadBankAccounts = async () => {
     try {
-      setLoadingAccounts(true);
+      setLoadingAccounts;
       const accounts = await fetchBankAccounts();
       setBankAccounts(accounts);
     } catch (err) {
       console.error('Error loading bank accounts:', err);
     } finally {
-      setLoadingAccounts(false);
+      setLoadingAccounts;
     }
   };
 
@@ -107,16 +105,16 @@ export default function SalePaymentPage() {
     }
   };
 
-  const loadUserPermissions = async () => {
-    try {
-      const response = await authenticatedFetchJSON<IUserPermissions>(
-        `${CS_API_URL}${API_ENDPOINTS.USER_PERMISSIONS}`
-      );
-      setUserPermissions(response);
-    } catch (err) {
-      console.error('Error loading user permissions:', err);
-    }
-  };
+  // const loadUserPermissions = async () => {
+  //   try {
+  //     const response = await authenticatedFetchJSON<IUserPermissions>(
+  //       `${CS_API_URL}${API_ENDPOINTS.USER_PERMISSIONS}`
+  //     );
+  //     setUserPermissions;
+  //   } catch (err) {
+  //     console.error('Error loading user permissions:', err);
+  //   }
+  // };
 
   const calculateUnpaidTotal = useCallback((): number => {
     if (!sale) return 0;

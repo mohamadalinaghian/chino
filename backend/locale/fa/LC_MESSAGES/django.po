@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-08 18:42+0000\n"
+"POT-Creation-Date: 2026-01-09 07:21+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -255,8 +255,9 @@ msgid "Consumable"
 msgstr "جانبی"
 
 #: apps/inventory/models/product.py:30 apps/inventory/models/recipe.py:17
-#: apps/inventory/models/visitor.py:26 apps/menu/models/item.py:21
-#: apps/user/models/account.py:65 apps/user/models/bank_account.py:19
+#: apps/inventory/models/table.py:11 apps/inventory/models/visitor.py:26
+#: apps/menu/models/item.py:21 apps/user/models/account.py:65
+#: apps/user/models/bank_account.py:19
 msgid "Name"
 msgstr "نام"
 
@@ -475,17 +476,33 @@ msgstr "کالا مرتبط با تأمین کننده"
 msgid "Supplier Related Products"
 msgstr "کالاهای مرتبط با تأمین کننده"
 
-#: apps/inventory/models/table.py:13
+#: apps/inventory/models/table.py:14
 msgid "Human-readable table identifier"
 msgstr "مشخصات میز"
 
-#: apps/inventory/models/table.py:17
+#: apps/inventory/models/table.py:18
+msgid "Capacity"
+msgstr "ظرفیت"
+
+#: apps/inventory/models/table.py:19
 msgid "Maximum number of guests"
 msgstr "حداکثر ظرفیت پذیرایی"
 
-#: apps/inventory/models/table.py:22
+#: apps/inventory/models/table.py:23
+msgid "Is active"
+msgstr "آیا فعال است؟"
+
+#: apps/inventory/models/table.py:25
 msgid "Inactive tables cannot be assigned to sales"
 msgstr "میز غیر فعال نمیتواند برای ثبت سفارش استفاده شود"
+
+#: apps/inventory/models/table.py:30 apps/sale/models/sale.py:79
+msgid "Table"
+msgstr "میز"
+
+#: apps/inventory/models/table.py:31
+msgid "Tables"
+msgstr "میز"
 
 #: apps/inventory/models/visitor.py:14
 msgid "Phone number must be in the format 0XXXXXXXXXX"
@@ -578,122 +595,6 @@ msgstr "قیمت پیشنهادی"
 msgid "Material cost"
 msgstr "هزینه مواد"
 
-#: apps/menu/models/analytics.py:31
-msgid "Menu Item"
-msgstr "دسته بندی منو"
-
-#: apps/menu/models/analytics.py:32
-msgid "The menu item being tracked"
-msgstr "آیتم منو مورد بررسی قرار گرفت"
-
-#: apps/menu/models/analytics.py:37 apps/menu/models/analytics.py:156
-msgid "Selections Today"
-msgstr "انتخاب های روز"
-
-#: apps/menu/models/analytics.py:40
-msgid "Number of times selected today (resets daily)"
-msgstr "تعداد دفعات انتخاب روز(به صورت روزانه بررسی میشود)"
-
-#: apps/menu/models/analytics.py:43 apps/menu/models/analytics.py:162
-msgid "Selections This Week"
-msgstr "انتخاب های این هفته"
-
-#: apps/menu/models/analytics.py:46
-msgid "Number of times selected this week (resets weekly)"
-msgstr "تعداد دفعات انتخاب این هفته"
-
-#: apps/menu/models/analytics.py:49 apps/menu/models/analytics.py:168
-msgid "Selections This Month"
-msgstr "انتخاب های این ماه"
-
-#: apps/menu/models/analytics.py:51
-msgid "Number of times selected this month (resets monthly)"
-msgstr "تعداد دفعات انتخاب این ماه"
-
-#: apps/menu/models/analytics.py:54
-msgid "All-Time Selections"
-msgstr "تعداد دفعات انتخاب کل"
-
-#: apps/menu/models/analytics.py:56
-msgid "Total number of times selected (never resets)"
-msgstr "مجموع دفعات انتخاب آیتم"
-
-#: apps/menu/models/analytics.py:61
-msgid "Last Selected At"
-msgstr "آهرین تاریه انتخاب"
-
-#: apps/menu/models/analytics.py:64
-msgid "When this item was last added to a sale"
-msgstr "آخرین تاریخی که این آیتم به خرید اضافه شد"
-
-#: apps/menu/models/analytics.py:70
-msgid "Today's Rank"
-msgstr "رنک امروز"
-
-#: apps/menu/models/analytics.py:73
-msgid "Ranking within category based on today's selections"
-msgstr "رتبه در گروه بر اساس فروش روز"
-
-#: apps/menu/models/analytics.py:76
-msgid "Week's Rank"
-msgstr "رتبه هفتگی"
-
-#: apps/menu/models/analytics.py:79
-msgid "Ranking within category based on this week's selections"
-msgstr "رتبه در گروه بر اساس فروش هفته"
-
-#: apps/menu/models/analytics.py:82
-msgid "Month's Rank"
-msgstr "رتبه ماهانه"
-
-#: apps/menu/models/analytics.py:84
-msgid "Ranking within category based on this month's selections"
-msgstr "رتبه در گروه بر اساس فروش ماهانه"
-
-#: apps/menu/models/analytics.py:88 apps/menu/models/analytics.py:183
-msgid "Created At"
-msgstr "ساخته شده در"
-
-#: apps/menu/models/analytics.py:89 apps/menu/models/analytics.py:184
-msgid "Updated At"
-msgstr "تاریخ به روزرسانی"
-
-#: apps/menu/models/analytics.py:92 apps/menu/models/analytics.py:93
-msgid "Menu Item Analytics"
-msgstr "آنالیزیتم نو "
-
-#: apps/menu/models/analytics.py:150 apps/menu/models/item.py:43
-msgid "Category"
-msgstr "دسته بندی"
-
-#: apps/menu/models/analytics.py:151
-msgid "The category being tracked"
-msgstr "گروه مورد بررسی قرار گرفت"
-
-#: apps/menu/models/analytics.py:159
-msgid "Total selections of items in this category today"
-msgstr "تعداد دفعات فروش آیتم های این گروه"
-
-#: apps/menu/models/analytics.py:165
-msgid "Total selections of items in this category this week"
-msgstr "تعداد فروش آیتم های این گروه در هفته"
-
-#: apps/menu/models/analytics.py:170
-msgid "Total selections of items in this category this month"
-msgstr "تعداد فروش ماهانه آیتم های این گروه"
-
-#: apps/menu/models/analytics.py:176
-msgid "Category Rank"
-msgstr "دسته بندی"
-
-#: apps/menu/models/analytics.py:179
-msgid "Overall ranking based on selection frequency"
-msgstr "رتبه کلی بر اساس تعداد انتخاب آیتم"
-
-#: apps/menu/models/analytics.py:187 apps/menu/models/analytics.py:188
-msgid "Category Analytics"
-msgstr "دسته بندی"
-
 #: apps/menu/models/category.py:13
 msgid "Bar item"
 msgstr "بار آیتم"
@@ -734,6 +635,10 @@ msgstr "قیمت"
 #: apps/menu/models/item.py:26
 msgid "Showable in menu"
 msgstr "قابل نمایش در منو"
+
+#: apps/menu/models/item.py:43
+msgid "Category"
+msgstr "دسته بندی"
 
 #: apps/menu/models/item.py:47
 msgid "Thumbnail"
@@ -1032,10 +937,6 @@ msgstr "فروش آیتم"
 msgid "Service method: dine-in or takeaway"
 msgstr "نوع خدمات: حضوری یا بیرون بر"
 
-#: apps/sale/models/sale.py:79
-msgid "Table"
-msgstr "میز"
-
 #: apps/sale/models/sale.py:83
 msgid "Table for dine-in sales"
 msgstr "میز برای پذیرایی در سالن"
@@ -1257,7 +1158,9 @@ msgstr "فروش"
 msgid ""
 "The sale to which this discount is applied. If the sale is deleted, related "
 "discounts will also be removed."
-msgstr "فروشی که این تخفیف به آن اختصاص داده شده است، اگر فروش حذف شود این تخفیف هم حذف خواهد شد"
+msgstr ""
+"فروشی که این تخفیف به آن اختصاص داده شده است، اگر فروش حذف شود این تخفیف هم "
+"حذف خواهد شد"
 
 #: apps/sale/models/sale_discount_model.py:36
 msgid "discount type"
@@ -1268,7 +1171,9 @@ msgid ""
 "Determines how the discount value is applied. Percentage discounts are "
 "calculated relative to the sale total, while fixed discounts are absolute "
 "monetary amounts."
-msgstr "مشخض میکند مقدار تخفیف چگونه اعمال شده است. تخفیف درصدی با توجه به مجموع فروش محاسبه میشود در حالی که مقدار ثابت بدون تغییر است"
+msgstr ""
+"مشخض میکند مقدار تخفیف چگونه اعمال شده است. تخفیف درصدی با توجه به مجموع "
+"فروش محاسبه میشود در حالی که مقدار ثابت بدون تغییر است"
 
 #: apps/sale/models/sale_discount_model.py:47
 msgid "discount value"
@@ -1279,7 +1184,9 @@ msgid ""
 "The numeric value of the discount. For percentage discounts, this represents "
 "the percentage value (e.g. 10 for 10%). For fixed discounts, this represents "
 "a monetary amount."
-msgstr "مقدار عددی تخفیف. برای تخفیف درصدی نشان دهنده درصد تخفیف و برای تخفیف ثابت نشان دهنده مبلغ تخفیف است"
+msgstr ""
+"مقدار عددی تخفیف. برای تخفیف درصدی نشان دهنده درصد تخفیف و برای تخفیف ثابت "
+"نشان دهنده مبلغ تخفیف است"
 
 #: apps/sale/models/sale_discount_model.py:57
 msgid "reason"
@@ -1299,7 +1206,9 @@ msgstr "اعمال شده توسط"
 msgid ""
 "The user who applied or approved this discount. Users referenced here cannot "
 "be deleted."
-msgstr "کاربری که این تخفیف را اعمال یا تایید کرد. کاربری که اینجا ثبت میشود نمیتواند پاک شود"
+msgstr ""
+"کاربری که این تخفیف را اعمال یا تایید کرد. کاربری که اینجا ثبت میشود "
+"نمیتواند پاک شود"
 
 #: apps/sale/models/sale_discount_model.py:76
 msgid "sale discount"
@@ -1653,7 +1562,7 @@ msgstr "تعداد آیتم باید مثبت باشد"
 msgid "Menu item has no price"
 msgstr "آیتم هیچ قیمتی ندارد"
 
-#: apps/sale/services/sale/open_sale.py:137
+#: apps/sale/services/sale/open_sale.py:120
 msgid "Extra quantity must be positive"
 msgstr "مقدار کل باید مثبت باشد"
 
@@ -1856,6 +1765,90 @@ msgstr "پنل مدیریتی چینو"
 #: config/urls.py:14 config/urls.py:15
 msgid "Chino Admin"
 msgstr "مدیر چینو"
+
+#~ msgid "Menu Item"
+#~ msgstr "دسته بندی منو"
+
+#~ msgid "The menu item being tracked"
+#~ msgstr "آیتم منو مورد بررسی قرار گرفت"
+
+#~ msgid "Selections Today"
+#~ msgstr "انتخاب های روز"
+
+#~ msgid "Number of times selected today (resets daily)"
+#~ msgstr "تعداد دفعات انتخاب روز(به صورت روزانه بررسی میشود)"
+
+#~ msgid "Selections This Week"
+#~ msgstr "انتخاب های این هفته"
+
+#~ msgid "Number of times selected this week (resets weekly)"
+#~ msgstr "تعداد دفعات انتخاب این هفته"
+
+#~ msgid "Selections This Month"
+#~ msgstr "انتخاب های این ماه"
+
+#~ msgid "Number of times selected this month (resets monthly)"
+#~ msgstr "تعداد دفعات انتخاب این ماه"
+
+#~ msgid "All-Time Selections"
+#~ msgstr "تعداد دفعات انتخاب کل"
+
+#~ msgid "Total number of times selected (never resets)"
+#~ msgstr "مجموع دفعات انتخاب آیتم"
+
+#~ msgid "Last Selected At"
+#~ msgstr "آهرین تاریه انتخاب"
+
+#~ msgid "When this item was last added to a sale"
+#~ msgstr "آخرین تاریخی که این آیتم به خرید اضافه شد"
+
+#~ msgid "Today's Rank"
+#~ msgstr "رنک امروز"
+
+#~ msgid "Ranking within category based on today's selections"
+#~ msgstr "رتبه در گروه بر اساس فروش روز"
+
+#~ msgid "Week's Rank"
+#~ msgstr "رتبه هفتگی"
+
+#~ msgid "Ranking within category based on this week's selections"
+#~ msgstr "رتبه در گروه بر اساس فروش هفته"
+
+#~ msgid "Month's Rank"
+#~ msgstr "رتبه ماهانه"
+
+#~ msgid "Ranking within category based on this month's selections"
+#~ msgstr "رتبه در گروه بر اساس فروش ماهانه"
+
+#~ msgid "Created At"
+#~ msgstr "ساخته شده در"
+
+#~ msgid "Updated At"
+#~ msgstr "تاریخ به روزرسانی"
+
+#~ msgid "Menu Item Analytics"
+#~ msgstr "آنالیزیتم نو "
+
+#~ msgid "The category being tracked"
+#~ msgstr "گروه مورد بررسی قرار گرفت"
+
+#~ msgid "Total selections of items in this category today"
+#~ msgstr "تعداد دفعات فروش آیتم های این گروه"
+
+#~ msgid "Total selections of items in this category this week"
+#~ msgstr "تعداد فروش آیتم های این گروه در هفته"
+
+#~ msgid "Total selections of items in this category this month"
+#~ msgstr "تعداد فروش ماهانه آیتم های این گروه"
+
+#~ msgid "Category Rank"
+#~ msgstr "دسته بندی"
+
+#~ msgid "Overall ranking based on selection frequency"
+#~ msgstr "رتبه کلی بر اساس تعداد انتخاب آیتم"
+
+#~ msgid "Category Analytics"
+#~ msgstr "دسته بندی"
 
 #~ msgid "This is not a valid purchase, product is expired"
 #~ msgstr "کالا از قبل فاسد شده است، این خرید مجاز نیست"

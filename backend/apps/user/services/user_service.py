@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from django.db.models import F
 
 from ..models import Account, Profile
@@ -21,8 +19,7 @@ class UserService:
 
         # Calculate balance and return as list of tuples
         return [
-            (profile.user_id, profile.account_balance)
-            for profile in creditor_profiles
+            (profile.user_id, profile.account_balance) for profile in creditor_profiles
         ]
 
     @staticmethod

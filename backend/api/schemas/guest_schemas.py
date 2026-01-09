@@ -49,9 +49,7 @@ class GuestQuickCreateRequest(Schema):
         max_length=11,
         description="Mobile number in format 09XXXXXXXXX",
     )
-    name: str = Field(
-        ..., min_length=2, max_length=50, description="Guest's full name"
-    )
+    name: str = Field(..., min_length=2, max_length=50, description="Guest's full name")
 
     @validator("mobile")
     def validate_mobile_format(cls, v):

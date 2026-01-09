@@ -5,7 +5,7 @@ from decimal import Decimal
 from typing import Iterable, List, Optional
 
 from apps.inventory.models import Product, Table
-from apps.menu.models import CategoryAnalytics, Menu, MenuItemAnalytics
+from apps.menu.models import Menu
 from apps.menu.services.menu import MenuItemService
 from apps.sale.models import Sale, SaleItem
 from apps.sale.policies import can_open_sale
@@ -107,23 +107,6 @@ class OpenSaleService:
             unit_price=item.menu.price,
             material_cost=item.menu.material_cost,
         )
-
-        # Increment Analytics (Smart Sorting Support)
-        # Track this menu item selection for popularity-based sorting
-        try:
-            item_analytics, _ = MenuItemAnalytics.objects.get_or_create(
-                menu_item=item.menu
-            )
-            item_analytics.increment_selections()
-
-            # Also increment category analytics
-            category_analytics, _ = CategoryAnalytics.objects.get_or_create(
-                category=item.menu.category
-            )
-            category_analytics.increment_selections()
-        except Exception:
-            # Non-critical - don't fail sale creation if analytics fails
-            pass
 
         # Create Children (Extras)
         for extra in item.extras:

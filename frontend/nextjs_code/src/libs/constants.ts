@@ -115,7 +115,7 @@ export const API_ENDPOINTS = {
   AUTH_LOGIN: '/auth/login',
   AUTH_REFRESH: '/auth/refresh',
   AUTH_ME: '/auth/me',
-  USER_PERMISSIONS: '',
+  // USER_PERMISSIONS: '',
   // User endpoints
   USER_LIST: '/user/',
   BANK_ACCOUNTS: '/user/bank-accounts/',

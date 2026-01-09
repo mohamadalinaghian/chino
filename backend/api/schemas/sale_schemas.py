@@ -227,7 +227,6 @@ class CloseSaleResponse(Schema):
     """Response after finalizing a sale"""
 
     sale_id: int
-    invoice_number: str
     state: str
     payment_status: str
     subtotal_amount: Decimal

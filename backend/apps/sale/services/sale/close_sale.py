@@ -93,9 +93,6 @@ class CloseSaleService:
         # 1. Policy Check
         can_close_sale(performer, sale)
 
-        # 2. Generate invoice number
-        sale.invoice_number = generate_invoice_number()
-
         # 3. Calculate COGS (Cost of Goods Sold)
         total_cost = CloseSaleService._calculate_cogs(sale)
 
@@ -150,43 +147,18 @@ class CloseSaleService:
         for item in items:
             product = item.product
 
-            # Get active recipe for this product
-            if not product.is_stock_traceable:
-                # Phantom product - must have a recipe
-                if not hasattr(product, "active_recipe") or not product.active_recipe:
-                    raise ValidationError(
-                        _(
-                            f"Product '{product.name}' has no active recipe. "
-                            "Cannot calculate COGS."
-                        )
+            try:
+                # Calculate production cost for this item
+                item_cost = ItemProductionService.get_production_total_cost(
+                    recipe=product.active_recipe, used_qt=item.quantity
+                )
+                total_cost += item_cost
+            except Exception as e:
+                raise ValidationError(
+                    _(
+                        f"Failed to calculate COGS for '{
+                      product.name}': {str(e)}"
                     )
-
-                try:
-                    # Calculate production cost for this item
-                    item_cost = ItemProductionService.get_production_total_cost(
-                        recipe=product.active_recipe, used_qt=item.quantity
-                    )
-                    total_cost += item_cost
-                except Exception as e:
-                    raise ValidationError(
-                        _(
-                            f"Failed to calculate COGS for '{
-                          product.name}': {str(e)}"
-                        )
-                    )
-            else:
-                # Stock-traceable product - get FIFO cost directly
-                from apps.inventory.services.stock import StockService
-
-                try:
-                    item_cost = StockService.reserve_fifo(product, item.quantity)
-                    total_cost += item_cost
-                except Exception as e:
-                    raise ValidationError(
-                        _(
-                            f"Failed to reserve stock for '{
-                          product.name}': {str(e)}"
-                        )
-                    )
+                )
 
         return total_cost

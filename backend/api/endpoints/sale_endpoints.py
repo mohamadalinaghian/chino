@@ -10,7 +10,6 @@
 from typing import Dict, List, Set
 
 from api.schemas.sale_schemas import (
-    AddPaymentInputSchema,
     AddPaymentsRequest,
     AddPaymentsResponse,
     CancelSaleRequest,
@@ -155,7 +154,9 @@ def sync_sale_items(request, sale_id: int, payload: SyncSaleRequest):
                 table = get_object_or_404(Table, id=payload.table_id)
                 sale.table = table
                 metadata_updated = True
-        elif hasattr(payload, 'table_id') and payload.table_id is None and sale.table_id:
+        elif (
+            hasattr(payload, "table_id") and payload.table_id is None and sale.table_id
+        ):
             # Explicitly set to None (for TAKEAWAY)
             sale.table = None
             metadata_updated = True
@@ -167,7 +168,9 @@ def sync_sale_items(request, sale_id: int, payload: SyncSaleRequest):
                     return 422, {"detail": "Guest cannot be the sale creator"}
                 sale.guest = guest
                 metadata_updated = True
-        elif hasattr(payload, 'guest_id') and payload.guest_id is None and sale.guest_id:
+        elif (
+            hasattr(payload, "guest_id") and payload.guest_id is None and sale.guest_id
+        ):
             # Explicitly set to None
             sale.guest = None
             metadata_updated = True
@@ -292,11 +295,26 @@ def get_sale_detail(request, sale_id: int):
             amount_total=payment.amount_total,
             amount_applied=payment.amount_applied,
             tip_amount=payment.tip_amount,
-            destination_account_id=payment.destination_account.pk if payment.destination_account else None,
-            destination_card_number=payment.destination_account.card_number if payment.destination_account else None,
-            destination_account_owner=payment.destination_account.account_owner if payment.destination_account else None,
-            destination_bank_name=payment.destination_account.bank_name if payment.destination_account else None,
-            received_by_name=payment.received_by.get_full_name() or payment.received_by.username,
+            destination_account_id=(
+                payment.destination_account.pk if payment.destination_account else None
+            ),
+            destination_card_number=(
+                payment.destination_account.card_number
+                if payment.destination_account
+                else None
+            ),
+            destination_account_owner=(
+                payment.destination_account.account_owner
+                if payment.destination_account
+                else None
+            ),
+            destination_bank_name=(
+                payment.destination_account.bank_name
+                if payment.destination_account
+                else None
+            ),
+            received_by_name=payment.received_by.get_full_name()
+            or payment.received_by.username,
             received_at=payment.received_at,
             status=payment.status,
             covered_item_ids=covered_item_ids,
@@ -426,7 +444,6 @@ def close_sale_endpoint(request, sale_id: int, payload: CloseSaleRequest):
     Finalizes sale: generates invoice, calculates COGS, and processes payments.
 
     Workflow:
-        1. Generate invoice number
         2. Calculate COGS from inventory
         3. Apply tax and discount
         4. Close the sale
@@ -482,7 +499,6 @@ def close_sale_endpoint(request, sale_id: int, payload: CloseSaleRequest):
 
     return CloseSaleResponse(
         sale_id=closed_sale.pk,
-        invoice_number=closed_sale.invoice_number,
         state=closed_sale.state,
         payment_status=closed_sale.payment_status,
         subtotal_amount=closed_sale.subtotal_amount,
@@ -566,9 +582,11 @@ def add_payments_endpoint(request, sale_id: int, payload: AddPaymentsRequest):
     payment_details = []
     for payment in created_payments:
         # Get covered item IDs
-        covered_item_ids = list(
-            payment.sale_items.values_list("id", flat=True)
-        ) if payment.sale_items.exists() else []
+        covered_item_ids = (
+            list(payment.sale_items.values_list("id", flat=True))
+            if payment.sale_items.exists()
+            else []
+        )
 
         payment_details.append(
             PaymentDetailExtendedSchema(
@@ -598,8 +616,7 @@ def add_payments_endpoint(request, sale_id: int, payload: AddPaymentsRequest):
                     else None
                 ),
                 received_by_name=(
-                    payment.received_by.get_full_name()
-                    or payment.received_by.username
+                    payment.received_by.get_full_name() or payment.received_by.username
                 ),
                 received_at=payment.received_at,
                 status=payment.status,
@@ -664,7 +681,6 @@ def void_payment_endpoint(request, sale_id: int, payment_id: int):
     Only superusers can void payments.
     Updates the sale's payment status accordingly.
     """
-    from apps.sale.models import SalePayment
     from apps.sale.services.payment.payment_service import PaymentService
     from django.core.exceptions import PermissionDenied
 

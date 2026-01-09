@@ -1,4 +1,4 @@
-from apps.menu.models import CategoryAnalytics, Menu, MenuCategory, MenuItemAnalytics
+from apps.menu.models import Menu, MenuCategory
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from ordered_model.admin import OrderedModelAdmin
@@ -36,39 +36,3 @@ class MenuAdmin(OrderedModelAdmin):
     @admin.display(description=_("Material cost"))
     def material_cost_dis(self, obj):
         return obj.material_cost
-
-
-@admin.register(MenuItemAnalytics)
-class MenuItemAnalyticsAdmin(admin.ModelAdmin):
-    list_display = (
-        "menu_item",
-        "selection_count_today",
-        "selection_count_week",
-        "selection_count_month",
-        "selection_count_all_time",
-        "rank_today",
-        "rank_week",
-        "last_selected_at",
-    )
-    list_filter = ("last_selected_at",)
-    search_fields = ("menu_item__name__name",)
-    readonly_fields = (
-        "created_at",
-        "updated_at",
-        "last_selected_at",
-    )
-    ordering = ("rank_week", "rank_today")
-
-
-@admin.register(CategoryAnalytics)
-class CategoryAnalyticsAdmin(admin.ModelAdmin):
-    list_display = (
-        "category",
-        "selection_count_today",
-        "selection_count_week",
-        "selection_count_month",
-        "rank",
-    )
-    search_fields = ("category__title",)
-    readonly_fields = ("created_at", "updated_at")
-    ordering = ("rank",)
