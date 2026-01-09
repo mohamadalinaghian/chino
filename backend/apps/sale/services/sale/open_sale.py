@@ -81,6 +81,11 @@ class OpenSaleService:
                 if not SS.is_enough(p, qt):
                     raise ValidationError(f"Not enough {p.name}")
 
+            if item.extras:
+                for i in item.extras:
+                    if not SS.is_enough(i.product, Decimal(i.quantity)):
+                        raise ValidationError(f"Not enough {i.product.name}")
+
         # Create Header
         sale = Sale.objects.create(
             opened_by=opened_by,
