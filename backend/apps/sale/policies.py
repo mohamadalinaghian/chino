@@ -324,3 +324,13 @@ def require_printer(user, printer: str):
     perm = f"sale.can_print_{printer.lower()}"
     if not user.has_perm(perm):
         raise PermissionDenied(f"Missing permission: {perm}")
+
+
+def can_modify_report(user, report: DailyReport):
+    """
+    Only  writer of the report can modify it just in DRAFT state.
+    """
+    _require_authenticated(user)
+    _require_perm(user, "sale.modify_dailyreport")
+    if report.status != DailyReport.ReportStatus.DRAFT or report.created_by != user:
+        raise PermissionDenied(_("Report must be DRAFT and created by your self"))
