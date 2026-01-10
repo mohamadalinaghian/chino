@@ -7,8 +7,6 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from simple_history.models import HistoricalRecords
 
-from .daily_report_payment_method_model import DailyReportPaymentMethod
-
 User = get_user_model()
 
 
@@ -217,13 +215,13 @@ class DailyReport(models.Model):
         Expected cash from payments.
         Calculated from payment_methods where method=CASH.
         """
+        from .sale_payment_model import SalePayment
 
-        cash_methods = self.payment_methods.filter(
-            payment_method=DailyReportPaymentMethod.Pay
+        return (
+            self.payment_methods.select_related("daily_report")
+            .get(payment_method=SalePayment.PaymentMethod.CASH)
+            .expected_amount
         )
-        return cash_methods.aggregate(total=models.Sum("expected_amount"))[
-            "total"
-        ] or Decimal("0.0000")
 
     @property
     def cash_variance(self) -> Decimal:
@@ -241,8 +239,3 @@ class DailyReport(models.Model):
     def is_editable(self) -> bool:
         """Check if report can be edited."""
         return self.status == DailyReport.ReportStatus.DRAFT
-
-    @property
-    def is_finalized(self) -> bool:
-        """Check if report is finalized (closed)."""
-        return self.status == DailyReport.ReportStatus.APPROVED
