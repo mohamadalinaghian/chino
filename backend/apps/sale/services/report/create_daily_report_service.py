@@ -40,8 +40,6 @@ class CreateDailyReportService:
         created_by,
         report_date: date,
         opening_float: int = 0,
-        cost_of_goods_sold: Decimal,
-        total_expenses: Decimal,
         notes: str = "",
     ) -> DailyReport:
         """
@@ -51,8 +49,6 @@ class CreateDailyReportService:
             created_by: User creating the report (accountant)
             report_date: Business date for this report
             opening_float: Cash in drawer at start of day
-            cost_of_goods_sold: COGS from inventory system
-            total_expenses: Report day expenses
             notes: Additional notes
 
         Returns:

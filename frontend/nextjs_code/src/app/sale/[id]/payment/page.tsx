@@ -332,19 +332,19 @@ export default function SalePaymentPage() {
         </div>
       </header>
 
-      {/* Main 2-Column Layout */}
-      <div className="flex-1 grid grid-cols-12 gap-0 overflow-hidden">
+      {/* Main 3-Column Layout */}
+      <div className="flex-5 grid grid-cols-12 gap-4 overflow-hidden">
 
         {/* LEFT COLUMN - Scrollable Items List (65%) */}
-        <div className="col-span-8 flex flex-col overflow-hidden border-l" style={{ borderColor: THEME_COLORS.border }}>
+        <div className="col-span-3 flex flex-col overflow-hidden border-l" style={{ borderColor: THEME_COLORS.border }}>
 
           {/* Quick Select Bar */}
-          <div className="flex-shrink-0 px-4 py-3 border-b flex items-center justify-between" style={{ backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.border }}>
+          <div className="flex-shrink-0 px-2 py-1 border-b flex items-center justify-between" style={{ backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.border }}>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => {
                   setSelectAllItems(true);
-                  setSelectedItems([]);
+                  // setSelectedItems([]);
                 }}
                 className="px-4 py-2 rounded font-bold text-sm border-2 transition-all"
                 style={{
@@ -362,8 +362,8 @@ export default function SalePaymentPage() {
           </div>
 
           {/* Scrollable Items List */}
-          <div className="flex-1 overflow-y-auto px-4 py-2">
-            <div className="space-y-1">
+          <div className="flex-3 overflow-y-auto px-4 py-2">
+            <div className="space-y-2">
               {/* Unpaid Items */}
               {unpaidItems.map((item) => {
                 const selection = selectedItems.find((s) => s.itemId === item.id);
@@ -380,7 +380,7 @@ export default function SalePaymentPage() {
                       borderColor: isSelected ? THEME_COLORS.accent : THEME_COLORS.border,
                     }}
                   >
-                    {!selectAllItems && (
+                    {selectAllItems && (
                       <input
                         type="checkbox"
                         checked={selectedQty > 0}
@@ -402,8 +402,8 @@ export default function SalePaymentPage() {
                         {formatPersianMoney(item.unit_price)} × {item.quantity}
                       </div>
                     </div>
-                    {!selectAllItems && selectedQty > 0 && (
-                      <div className="flex items-center gap-2">
+                    {selection && selectedQty > 0 && (
+                      <div className="flex items-center gap-3">
                         <button
                           onClick={() => handleItemQuantityChange(item.id, Math.max(0, selectedQty - 1))}
                           className="w-8 h-8 rounded font-bold flex items-center justify-center"
