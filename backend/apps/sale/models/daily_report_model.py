@@ -105,11 +105,11 @@ class DailyReport(models.Model):
         help_text=_("COGS from inventory system"),
     )
 
-    total_expences = models.DecimalField(
-        _("Total expences"),
+    total_expenses = models.DecimalField(
+        _("Total expenses"),
         max_digits=12,
         decimal_places=4,
-        help_text=_("Total expences in report date"),
+        help_text=_("Total expenses in report date"),
     )
 
     # ---- Notes ----
@@ -204,7 +204,7 @@ class DailyReport(models.Model):
     @property
     def actual_income(self) -> Decimal:
         """All money income from sales - purchases."""
-        return self.total_revenue - self.total_expences
+        return self.total_revenue - self.total_expenses
 
     @property
     def net_cash_received(self) -> Decimal:

@@ -51,6 +51,7 @@ class SalePayment(models.Model):
         decimal_places=4,
         help_text=_("Total money received from customer"),
     )
+    confirmed = models.BooleanField(_("Is confirmed"), default=False)
 
     amount_applied = models.DecimalField(
         _("Applied to invoice"),

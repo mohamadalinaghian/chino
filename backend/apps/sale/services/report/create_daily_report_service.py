@@ -40,6 +40,8 @@ class CreateDailyReportService:
         created_by,
         report_date: date,
         opening_float: int = 0,
+        closing_cash_counted: int,
+        pos_total_report: Decimal,
         notes: str = "",
     ) -> DailyReport:
         """
@@ -67,6 +69,7 @@ class CreateDailyReportService:
             report_date=report_date,
             created_by=created_by,
             opening_float=opening_float,
+            closing_cash_counted=closing_cash_counted,
             status=DailyReport.ReportStatus.DRAFT,
             # Revenue (auto-calculated)
             expected_total_sales=expected_data["total_sales"],
@@ -76,12 +79,21 @@ class CreateDailyReportService:
             cost_of_goods_sold=expected_data["cogs"],
             total_expenses=expected_data["expenses"],
             notes=notes,
-            # Closing cash will be entered later by accountant
-            closing_cash_counted=Decimal("0.0000"),
         )
 
+        total_cash: int = closing_cash_counted - opening_float
+        card_transfer_total: int = cls._card_transfer_confirmed_total(
+            day_start, day_end
+        )
+        # User entries
+        user_approved_payments = {
+            SalePayment.PaymentMethod.CASH: total_cash,
+            SalePayment.PaymentMethod.CARD_TRANSFER: card_transfer_total,
+            SalePayment.PaymentMethod.POS: pos_total_report,
+        }
         # Create payment method breakdown
         cls._create_payment_method_breakdown(report, expected_data["payment_methods"])
+        cls._add_user_manual_data(report, user_approved_payments)
 
         return report
 
@@ -124,9 +136,9 @@ class CreateDailyReportService:
         invoices = Sale.objects.filter(
             created_at__gte=day_start,
             created_at__lt=day_end,
-            status=Sale.SaleState.CLOSED,
+            state=Sale.SaleState.CLOSED,
         )
-        sold_items = SaleItem.objects.filter(sale_in=invoices)
+        sold_items = SaleItem.objects.filter(sale__in=invoices)
 
         # Query payments for the day
         payments = SalePayment.objects.filter(
@@ -142,9 +154,12 @@ class CreateDailyReportService:
             status=SaleRefund.Status.COMPLETED,
         )
 
-        expenses = PurchaseInvoice.objects.filter(
+        expenses = Decimal("0")
+
+        for i in PurchaseInvoice.objects.filter(
             issue_date__gte=day_start, issue_date__lt=day_end
-        )
+        ):
+            expenses += i.total_cost
 
         # Calculate revenue totals
         total_sales = invoices.aggregate(total=models.Sum("total_amount"))[
@@ -152,7 +167,7 @@ class CreateDailyReportService:
         ] or Decimal("0.0000")
 
         cogs = sold_items.aggregate(
-            cogs=models.F("material_cost") * models.F("quantity")
+            cogs=models.Sum("material_cost") * models.Sum("quantity")
         )["cogs"] or Decimal("0")
 
         total_discounts = invoices.aggregate(total=models.Sum("discount_amount"))[
@@ -225,7 +240,8 @@ class CreateDailyReportService:
 
     @staticmethod
     def _create_payment_method_breakdown(
-        report: DailyReport, payment_methods: dict[str, Decimal]
+        report: DailyReport,
+        payment_methods: dict[str, Decimal],
     ) -> None:
         """
         Create DailyReportPaymentMethod records for each payment method.
@@ -242,3 +258,31 @@ class CreateDailyReportService:
                 actual_amount=Decimal("0.0000"),  # To be filled by accountant
                 variance=Decimal("0.0000"),
             )
+
+    @staticmethod
+    def _add_user_manual_data(
+        report: DailyReport, data: dict[SalePayment.PaymentMethod, int | Decimal]
+    ) -> None:
+        """
+        Any user manual information will update report like cash and pos report.
+        """
+        reports = DailyReportPaymentMethod.objects.filter(daily_report=report)
+        for method, value in data.items():
+            reports.filter(payment_method=method).update(actual_amount=value)
+
+    @staticmethod
+    def _card_transfer_confirmed_total(day_start: datetime, day_end: datetime) -> int:
+        """
+        Total card transfers which approved by accountant.
+        """
+
+        # Query payments for the day
+        payments = SalePayment.objects.filter(
+            received_at__gte=day_start,
+            received_at__lt=day_end,
+            method=SalePayment.PaymentMethod.CARD_TRANSFER,
+            status=SalePayment.PaymentStatus.COMPLETED,
+            confirmed=True,
+        )
+
+        return payments.aggregate(total=models.Sum("amount_total"))["total"] or 0
