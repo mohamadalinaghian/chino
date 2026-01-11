@@ -142,7 +142,7 @@ class OpenSaleService:
         # Calculate Price for Extra
         total_price, total_cost = MenuItemService.extra_req_cost(
             product_id=extra.product.pk,
-            quantity=Decimal(extra.quantity),
+            quantity=extra.quantity,
         )
         unit_price = total_price / extra.quantity
 

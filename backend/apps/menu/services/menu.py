@@ -137,7 +137,7 @@ class MenuItemService:
         return cls._round_int(raw_price), cls._round_int(unit_cost)
 
     @classmethod
-    def extra_req_cost(cls, product_id: int, quantity: Decimal) -> tuple[int, Decimal]:
+    def extra_req_cost(cls, product_id: int, quantity: int) -> Tuple[int, Decimal]:
         """
         Calculate final price (not cost) of extra request in order.
         Skips tax and overhead intentionally.
@@ -145,6 +145,11 @@ class MenuItemService:
         if quantity <= 0:
             raise ValidationError(_("Quantity must be positive"))
 
+        unit_price, unit_cost = cls.extra_req_price(product_id)
+        return unit_price * quantity, unit_cost * quantity
+
+    @classmethod
+    def extra_req_price(cls, product_id) -> Tuple[int, Decimal]:
         try:
             product = Product.objects.get(id=product_id)
         except ObjectDoesNotExist:
@@ -152,5 +157,4 @@ class MenuItemService:
 
         unit_cost = cls._calculate_unit_cost(product)
         unit_price = unit_cost * (Q0 + cls._profit_margin_frac())
-        final_price = unit_price * quantity
-        return cls._round_int(final_price), unit_cost
+        return cls._round_int(unit_price), unit_cost

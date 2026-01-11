@@ -53,7 +53,7 @@ router = Router(tags=["Sales"], auth=jwt_auth)
 
 
 @router.post("/open", response={200: OpenSaleResponse, 422: ErrorResponse})
-@ratelimit(key="user", rate="2/m", method="POST")
+@ratelimit(key="user", rate="3/m", method="POST")
 def open_sale(request, payload: OpenSaleRequest):
     """
     Creates a new Sale in OPEN state.

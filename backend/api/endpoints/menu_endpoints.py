@@ -4,10 +4,8 @@ from typing import List
 
 from apps.inventory.models import Product
 from apps.menu.models import Menu, MenuCategory
-from apps.menu.services.get_sale_menu_grouped import (
-    get_sale_menu_grouped,
-    get_sale_menu_grouped_smart,
-)
+from apps.menu.services.get_sale_menu_grouped import get_sale_menu_grouped
+from apps.menu.services.menu import MenuItemService
 from ninja import Router
 
 from ..schemas.menu_schemas import (
@@ -101,31 +99,6 @@ def get_sale_menu(request):
 
 
 @router_menu_display.get(
-    "/sale/menu/smart",
-    response=List[MenuGroupOut],
-    summary="Get menu items with smart sorting (analytics-based)",
-)
-def get_sale_menu_smart(request):
-    """
-    Sale page endpoint with smart sorting based on popularity analytics.
-
-    Smart Sorting Features:
-    - Most frequently ordered items appear first
-    - Categories sorted by popularity
-    - Based on weekly selection counts with daily tiebreaker
-    - Helps staff find popular items faster
-    - Falls back to manual order when analytics unavailable
-
-    Returns:
-    - Grouped by parent_group (BAR/FOOD)
-    - Categories ordered by selection frequency
-    - Items ordered by popularity
-    - Read-only, stateless
-    """
-    return get_sale_menu_grouped_smart()
-
-
-@router_menu_display.get(
     "/sale/extras",
     response=list[ProductExtraSchema],
     summary="Get available extra products (RAW/PROCESSED ingredients)",
@@ -163,7 +136,7 @@ def get_extra_products(request):
         ProductExtraSchema(
             id=extra["id"],
             name=extra["name"],
-            price=int(extra["last_purchased_price"]),
+            price=MenuItemService.extra_req_price(extra["id"])[0],
         )
         for extra in extras
     ]
