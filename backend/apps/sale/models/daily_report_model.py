@@ -4,7 +4,9 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
+from persiantools.jdatetime import JalaliDate
 from simple_history.models import HistoricalRecords
 
 User = get_user_model()
@@ -164,7 +166,7 @@ class DailyReport(models.Model):
         ]
 
     def __str__(self):
-        return f"Daily Report {self.report_date}"
+        return self.jalali_report_date
 
     def clean(self):
         """Validate report data."""
@@ -183,6 +185,9 @@ class DailyReport(models.Model):
                 raise ValidationError(_("Cannot edit report after submission."))
 
     # ---- Computed Properties ----
+    @cached_property
+    def jalali_report_date(self):
+        return JalaliDate(self.report_date).strftime("%c", locale="fa")
 
     @property
     def total_revenue(self) -> Decimal:

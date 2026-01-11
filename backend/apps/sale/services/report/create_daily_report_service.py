@@ -1,5 +1,6 @@
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
+from typing import Optional
 
 from apps.inventory.models import PurchaseInvoice
 from apps.sale.models import (
@@ -42,7 +43,7 @@ class CreateDailyReportService:
         opening_float: int = 0,
         closing_cash_counted: int,
         pos_total_report: Decimal,
-        notes: str = "",
+        notes: Optional[str],
     ) -> DailyReport:
         """
         Create a new daily report.
