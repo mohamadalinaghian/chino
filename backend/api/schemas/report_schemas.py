@@ -32,7 +32,6 @@ class ReportDetailsResponse(Schema):
     status: str
     opening_float: int
     closing_cash_counted: int
-    # --------- Auto-calculated -----
     expected_total_sales: int
     expected_total_refunds: int
     expected_total_discount: Decimal
@@ -41,12 +40,26 @@ class ReportDetailsResponse(Schema):
     cogs: Decimal
     total_expenses: Decimal
     notes: str
-    approved_by: str
+    approved_by: Optional[str]
     total_revenue: Decimal
     net_profit: Decimal
     actual_income: Decimal
+    actual_pos_total: Decimal
     net_cash_received: int
     cash_variance: int
     pos_variance: Decimal
     card_transfer_variance: int
     total_variance: Decimal
+
+
+class SyncDailyReportRequest(Schema):
+    """
+    Modify DRAFT report.
+    """
+
+    id: int
+    report_date: date
+    open_floating_cash: int
+    closing_cash_counted: int
+    pos_report: Decimal
+    note: Optional[str]

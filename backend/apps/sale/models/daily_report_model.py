@@ -230,6 +230,14 @@ class DailyReport(models.Model):
         )
 
     @property
+    def actual_pos_total(self) -> Decimal:
+        return (
+            self.payment_methods.select_related("daily_report")
+            .get(payment_method=SalePayment.PaymentMethod.POS)
+            .actual_amount
+        )
+
+    @property
     def pos_variance(self) -> Decimal:
         return (
             self.payment_methods.select_related("daily_report")
