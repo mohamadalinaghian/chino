@@ -2,6 +2,9 @@ from typing import Optional
 
 from apps.sale.models.daily_report_model import DailyReport
 from apps.sale.policies import can_view_daily_report
+from apps.sale.services.report.approve_daily_report_service import (
+    ApproveDailyReportService,
+)
 from apps.sale.services.report.modify_daily_report_service import (
     ModifyDailyReportService,
 )
@@ -97,6 +100,40 @@ def modify_daily_report(request, report_id: int, payload: SyncDailyReportRequest
         payload.closing_cash_counted,
         payload.pos_report,
     )
+
+    return ReportDetailsResponse(
+        report_date=report.jalali_report_date,
+        creator=report.created_by.name,
+        status=report.status,
+        opening_float=report.opening_float,
+        closing_cash_counted=report.closing_cash_counted,
+        expected_total_sales=report.expected_total_sales,
+        expected_total_refunds=report.expected_total_refunds,
+        expected_total_discount=report.expected_total_discounts,
+        expected_total_tax=report.expected_total_tax,
+        expected_cash_total=report.expected_cash_total,
+        cogs=report.cost_of_goods_sold,
+        total_expenses=report.total_expenses,
+        notes=report.notes,
+        approved_by=report.approved_by.name if report.approved_by else None,
+        total_revenue=report.total_revenue,
+        net_profit=report.net_profit,
+        actual_income=report.actual_income,
+        actual_pos_total=report.actual_pos_total,
+        net_cash_received=report.net_cash_received,
+        cash_variance=report.cash_variance,
+        pos_variance=report.pos_variance,
+        card_transfer_variance=report.card_transfer_variance,
+        total_variance=report.total_variance,
+    )
+
+
+@router.post("/{report_id}/approved", response={200: ReportDetailsResponse})
+def approved_daily_report(request, report_id: int):
+    report = get_object_or_404(
+        DailyReport.objects.filter(status=DailyReport.ReportStatus.DRAFT), id=report_id
+    )
+    report = ApproveDailyReportService.execute(report=report, approved_by=request.auth)
 
     return ReportDetailsResponse(
         report_date=report.jalali_report_date,

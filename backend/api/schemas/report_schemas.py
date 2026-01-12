@@ -63,3 +63,7 @@ class SyncDailyReportRequest(Schema):
     closing_cash_counted: int
     pos_report: Decimal
     note: Optional[str]
+
+
+class ApproveReportRequest(Schema):
+    id: int

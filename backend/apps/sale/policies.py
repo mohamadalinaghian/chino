@@ -250,10 +250,7 @@ def can_approve_daily_report(user, report: DailyReport) -> None:
     """
     _require_authenticated(user)
 
-    if report.status not in [
-        DailyReport.ReportStatus.SUBMITTED,
-        DailyReport.ReportStatus.DISPUTED,
-    ]:
+    if report.status != DailyReport.ReportStatus.DRAFT:
         raise PermissionDenied(
             _(
                 "Only SUBMITTED or DISPUTED reports can be approved. Current status: %(status)s"

@@ -166,6 +166,9 @@ class DailyReport(models.Model):
         indexes = [
             models.Index(fields=["-report_date", "status"]),
         ]
+        permissions = [
+            ("approve_dailyreport", "Can approve reports"),
+        ]
 
     def __str__(self):
         return self.jalali_report_date
