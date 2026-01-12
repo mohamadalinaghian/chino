@@ -1,6 +1,15 @@
+from typing import Optional
+
+from apps.sale.models.daily_report_model import DailyReport
+from apps.sale.policies import can_view_daily_report
+from django.shortcuts import get_object_or_404
 from ninja import Router
 
-from ..schemas.report_schemas import CreateReportRequest, CreateReportResponse
+from ..schemas.report_schemas import (
+    CreateReportRequest,
+    CreateReportResponse,
+    ReportDetailsResponse,
+)
 from ..security.auth import jwt_auth
 
 router = Router(tags=["Sales"], auth=jwt_auth)
@@ -30,3 +39,37 @@ def create_report(request, payload: CreateReportRequest):
     )
 
     return CreateReportResponse(id=report.pk, state=report.status)
+
+
+@router.get("/{report_id}/details", response={200: ReportDetailsResponse})
+def get_report_details(request, report_id: int):
+    can_view_daily_report(request.auth)
+
+    report: Optional[DailyReport] = get_object_or_404(
+        DailyReport.objects.select_related("created_by", "approved_by"),
+        id=report_id,
+    )
+    return ReportDetailsResponse(
+        report_date=str(report.jalali_report_date),
+        creator=report.created_by.name,
+        status=str(report.status),
+        opening_float=report.opening_float,
+        closing_cash_counted=report.closing_cash_counted,
+        expected_total_sales=report.expected_total_sales,
+        expected_total_refunds=report.expected_total_refunds,
+        expected_total_discount=report.expected_total_discounts,
+        expected_total_tax=report.expected_total_tax,
+        expected_cash_total=report.expected_cash_total,
+        cogs=report.cost_of_goods_sold,
+        total_expenses=report.total_expenses,
+        notes=report.notes,
+        approved_by=report.approved_by,
+        total_revenue=report.total_revenue,
+        net_profit=report.net_profit,
+        actual_income=report.actual_income,
+        net_cash_received=report.net_cash_received,
+        cash_variance=report.cash_variance,
+        pos_variance=report.pos_variance,
+        card_transfer_variance=report.card_transfer_variance,
+        total_variance=report.total_variance,
+    )

@@ -9,6 +9,8 @@ from django.utils.translation import gettext_lazy as _
 from persiantools.jdatetime import JalaliDate
 from simple_history.models import HistoricalRecords
 
+from .sale_payment_model import SalePayment
+
 User = get_user_model()
 
 
@@ -210,17 +212,16 @@ class DailyReport(models.Model):
         return self.total_revenue - self.total_expenses
 
     @property
-    def net_cash_received(self) -> Decimal:
+    def net_cash_received(self) -> int:
         """Net cash = closing cash - opening float."""
         return self.closing_cash_counted - self.opening_float
 
     @property
-    def expected_cash_total(self) -> Decimal:
+    def expected_cash_total(self) -> int:
         """
         Expected cash from payments.
         Calculated from payment_methods where method=CASH.
         """
-        from .sale_payment_model import SalePayment
 
         return (
             self.payment_methods.select_related("daily_report")
@@ -229,7 +230,23 @@ class DailyReport(models.Model):
         )
 
     @property
-    def cash_variance(self) -> Decimal:
+    def pos_variance(self) -> Decimal:
+        return (
+            self.payment_methods.select_related("daily_report")
+            .get(payment_method=SalePayment.PaymentMethod.POS)
+            .variance
+        )
+
+    @property
+    def card_transfer_variance(self) -> int:
+        return (
+            self.payment_methods.select_related("daily_report")
+            .get(payment_method=SalePayment.PaymentMethod.CARD_TRANSFER)
+            .variance
+        )
+
+    @property
+    def cash_variance(self) -> int:
         """Cash variance = (closing - opening) - expected cash."""
         return self.net_cash_received - self.expected_cash_total
 
