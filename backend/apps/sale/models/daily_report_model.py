@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -191,6 +192,7 @@ class DailyReport(models.Model):
 
     # ---- Computed Properties ----
     @cached_property
+    @admin.display(description=_("Jalali report date"))
     def jalali_report_date(self):
         return JalaliDate(self.report_date).strftime("%c", locale="fa")
 
