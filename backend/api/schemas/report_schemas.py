@@ -39,7 +39,7 @@ class ReportDetailsResponse(Schema):
     expected_cash_total: int
     cogs: Decimal
     total_expenses: Decimal
-    notes: str
+    notes: Optional[str]
     approved_by: Optional[str]
     total_revenue: Decimal
     net_profit: Decimal

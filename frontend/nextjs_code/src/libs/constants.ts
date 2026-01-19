@@ -111,6 +111,9 @@ export const API_ENDPOINTS = {
   TABLES_ALL: '/table/',
   TABLES_EMPTY: '/table/empty/',
 
+  // Report endpoints
+  REPORT_DETAILS: (reportId: number) => `/report/${reportId}/details`,
+
   // Auth endpoints
   AUTH_LOGIN: '/auth/login',
   AUTH_REFRESH: '/auth/refresh',

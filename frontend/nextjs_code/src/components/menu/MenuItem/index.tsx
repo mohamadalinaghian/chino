@@ -4,11 +4,11 @@ import { ItemThumbnail } from "./ItemThumbnail";
 import ItemDescription from "./ItemDescription";
 
 interface MenuItemProps {
-	name: string;
-	description: string;
-	price: number;
-	thumbnail: string | null;
-	index?: number;
+  name: string;
+  description: string;
+  price: number;
+  thumbnail: string | null;
+  index?: number;
 }
 
 /**
@@ -19,15 +19,15 @@ interface MenuItemProps {
  * - Light hover interaction
  */
 export default function MenuItem({
-	name,
-	description,
-	price,
-	thumbnail,
-	index = 0,
+  name,
+  description,
+  price,
+  thumbnail,
+  index = 0,
 }: MenuItemProps) {
-	return (
-		<article
-			className={`
+  return (
+    <article
+      className={`
         flex items-start gap-4
         bg-white dark:bg-gray-800
         p-5 rounded-2xl shadow-md
@@ -37,18 +37,18 @@ export default function MenuItem({
         hover:bg-gray-50 dark:hover:bg-gray-700
         opacity-0 animate-fade-in-up scroll-animate
       `}
-			style={{
-				animationDelay: `${Math.min(index * 50, 300)}ms`,
-				animationFillMode: "forwards",
-			}}
-		>
-			{thumbnail && <ItemThumbnail src={thumbnail} alt={name} />}
+      style={{
+        animationDelay: `${Math.min(index * 50, 300)}ms`,
+        animationFillMode: "forwards",
+      }}
+    >
+      {thumbnail && <ItemThumbnail src={thumbnail} alt={name} />}
 
-			<div className="flex-1 min-w-0">
-				<ItemTitle>{name}</ItemTitle>
-				{price > 0 && <ItemPrice price={price} />}
-				<ItemDescription text={description} />
-			</div>
-		</article>
-	);
+      <div className="flex-1 min-w-0">
+        <ItemTitle>{name}</ItemTitle>
+        {price > 0 && <ItemPrice price={price} />}
+        <ItemDescription text={description} />
+      </div>
+    </article>
+  );
 }

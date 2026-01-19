@@ -1,7 +1,6 @@
 from typing import Optional
 
 from apps.sale.models.daily_report_model import DailyReport
-from apps.sale.policies import can_view_daily_report
 from apps.sale.services.report.approve_daily_report_service import (
     ApproveDailyReportService,
 )
@@ -17,9 +16,10 @@ from ..schemas.report_schemas import (
     ReportDetailsResponse,
     SyncDailyReportRequest,
 )
-from ..security.auth import jwt_auth
 
-router = Router(tags=["Report"], auth=jwt_auth)
+router = Router(
+    tags=["Report"],
+)
 
 
 @router.post(
@@ -50,7 +50,7 @@ def create_report(request, payload: CreateReportRequest):
 
 @router.get("/{report_id}/details", response={200: ReportDetailsResponse})
 def get_report_details(request, report_id: int):
-    can_view_daily_report(request.auth)
+    # can_view_daily_report(request.auth)
 
     report: Optional[DailyReport] = get_object_or_404(
         DailyReport.objects.select_related("created_by", "approved_by"),
@@ -69,7 +69,7 @@ def get_report_details(request, report_id: int):
         expected_cash_total=report.expected_cash_total,
         cogs=report.cost_of_goods_sold,
         total_expenses=report.total_expenses,
-        notes=report.notes,
+        notes=report.notes or None,
         approved_by=report.approved_by.name if report.approved_by else None,
         total_revenue=report.total_revenue,
         net_profit=report.net_profit,

@@ -1,6 +1,5 @@
 import re
 from datetime import timedelta
-from decimal import Decimal
 from typing import Any
 
 from django import forms
@@ -33,7 +32,12 @@ class DailyReportForm(forms.ModelForm):
             "report_date": AdminJalaliDateWidget,
         }
 
-    pos_report = forms.DecimalField(label=_("Pos report"), initial=Decimal("0"))
+    # def get_pos_report(self, obj):
+    #     return obj.actual_pos_total
+
+    pos_report = forms.DecimalField(
+        label=_("Pos report"),
+    )
 
 
 @admin.register(DailyReport)
@@ -41,15 +45,15 @@ class DailyReportAdmin(
     ModelAdminJalaliMixin,
     admin.ModelAdmin,
 ):
-    list_display = ("jalali_report_date", "status", "total_revenue")
+    list_display = (
+        "jalali_report_date",
+        "status",
+        "total_revenue",
+    )
     form = DailyReportForm
 
     readonly_fields = ("status",)
     list_filter = (JalaliDateFieldListFilter,)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.pos_report = self.actual_pos_report or Decimal("0")
 
     def save_form(self, request: HttpRequest, form: Any, change: Any) -> Any:
         super().save_form(request, form, change)
