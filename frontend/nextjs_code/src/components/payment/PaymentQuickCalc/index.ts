@@ -1,0 +1,1 @@
+export { PaymentQuickCalc } from './PaymentQuickCalc';

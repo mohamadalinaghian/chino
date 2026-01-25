@@ -180,6 +180,7 @@ export const UI_TEXT = {
   ERROR_LOADING_TABLES: 'خطا در دریافت لیست میزها',
   ERROR_LOADING_EXTRAS: 'خطا در بارگذاری افزودنی‌ها',
   ERROR_CREATING_SALE: 'خطا در ایجاد فروش',
+  ERROR_LOADING_REPORT: 'خطا در بارگذاری گزارش',
 
   // Tabs
   TAB_FOOD: '🍽️ غذا',

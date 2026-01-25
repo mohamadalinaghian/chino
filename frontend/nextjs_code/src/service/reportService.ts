@@ -9,7 +9,7 @@ export async function fetchReportDetails(reportId: number): Promise<IReportDetai
     return report;
   }
   catch (error) {
-    console.error('Error fetching tables:', error);
-    throw new Error(UI_TEXT.ERROR_LOADING_TABLES);
+    console.error('Error fetching report details:', error);
+    throw new Error(UI_TEXT.ERROR_LOADING_REPORT);
   }
 }
