@@ -35,37 +35,36 @@ interface UsePaymentOptions {
 }
 
 export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
-  // Sale data
+  // ── Core sale data ────────────────────────────────────────────────
   const [sale, setSale] = useState<ISaleDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // Bank/POS accounts
+  // ── Accounts ──────────────────────────────────────────────────────
   const [bankAccounts, setBankAccounts] = useState<IBankAccount[]>([]);
   const [posAccount, setPosAccount] = useState<IPOSAccount | null>(null);
-  const [loadingAccounts, setLoadingAccounts] = useState(false);
 
-  // Payment form state
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.CASH);
+  // ── Payment form state ────────────────────────────────────────────
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.CARD_TRANSFER);
   const [amount, setAmount] = useState<string>('');
   const [tipAmount, setTipAmount] = useState<string>('0');
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
 
-  // Item selection state
+  // ── Item selection ────────────────────────────────────────────────
   const [selectedItems, setSelectedItems] = useState<IItemSelection[]>([]);
   const [selectAllItems, setSelectAllItems] = useState(true);
 
-  // Tax/Discount state
+  // ── Tax / Discount / Tip ──────────────────────────────────────────
   const [taxType, setTaxType] = useState<TaxDiscountType>(TaxDiscountType.PERCENTAGE);
   const [taxValue, setTaxValue] = useState<string>('0');
   const [discountType, setDiscountType] = useState<TaxDiscountType>(TaxDiscountType.PERCENTAGE);
   const [discountValue, setDiscountValue] = useState<string>('0');
   const [showTaxDiscount, setShowTaxDiscount] = useState(false);
 
-  // Quick calculation
+  // ── Quick calc ────────────────────────────────────────────────────
   const [customDivisor, setCustomDivisor] = useState<string>('2');
 
-  // Load initial data
+  // ── Load data ─────────────────────────────────────────────────────
   useEffect(() => {
     loadSaleData();
     loadBankAccounts();
@@ -78,7 +77,7 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
       const saleData = await fetchSaleDetails(saleId);
       setSale(saleData);
     } catch (err) {
-      onError?.(err instanceof Error ? err.message : 'خطا در بارگذاری');
+      onError?.(err instanceof Error ? err.message : 'خطا در بارگذاری فروش');
     } finally {
       setLoading(false);
     }
@@ -86,13 +85,10 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
 
   const loadBankAccounts = async () => {
     try {
-      setLoadingAccounts(true);
       const accounts = await fetchBankAccounts();
       setBankAccounts(accounts);
     } catch (err) {
       console.error('Error loading bank accounts:', err);
-    } finally {
-      setLoadingAccounts(false);
     }
   };
 
@@ -107,26 +103,26 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
     }
   };
 
-  // Memoized item lists
-  const unpaidItems = useMemo(() => {
-    return sale?.items.filter((item) => !item.is_paid) || [];
-  }, [sale]);
+  // ── Derived lists ─────────────────────────────────────────────────
+  const unpaidItems = useMemo(
+    () => sale?.items.filter((item) => !item.is_paid) ?? [],
+    [sale]
+  );
 
-  const paidItems = useMemo(() => {
-    return sale?.items.filter((item) => item.is_paid) || [];
-  }, [sale]);
+  const paidItems = useMemo(
+    () => sale?.items.filter((item) => item.is_paid) ?? [],
+    [sale]
+  );
 
-  // Calculate totals
+  // ── Totals calculation ────────────────────────────────────────────
   const calculateUnpaidTotal = useCallback((): number => {
     if (!sale) return 0;
     return sale.items
       .filter((item) => !item.is_paid)
       .reduce((sum, item) => {
         const itemTotal = Number(item.unit_price) * item.quantity;
-        const extrasTotal = item.extras?.reduce(
-          (extSum, ext) => extSum + Number(ext.unit_price) * ext.quantity,
-          0
-        ) || 0;
+        const extrasTotal =
+          item.extras?.reduce((s, e) => s + Number(e.unit_price) * e.quantity, 0) ?? 0;
         return sum + itemTotal + extrasTotal;
       }, 0);
   }, [sale]);
@@ -136,78 +132,86 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
     if (selectAllItems || selectedItems.length === 0) {
       return calculateUnpaidTotal();
     }
-
-    return selectedItems.reduce((sum, selection) => {
-      const item = sale.items.find((i) => i.id === selection.itemId);
+    return selectedItems.reduce((sum, sel) => {
+      const item = sale.items.find((i) => i.id === sel.itemId);
       if (!item) return sum;
-      const itemTotal = Number(item.unit_price) * selection.quantity;
-      const extrasTotal = item.extras?.reduce(
-        (extSum, ext) => extSum + Number(ext.unit_price) * ext.quantity,
-        0
-      ) || 0;
+      const itemTotal = Number(item.unit_price) * sel.quantity;
+      const extrasTotal =
+        item.extras?.reduce((s, e) => s + Number(e.unit_price) * e.quantity, 0) ?? 0;
       return sum + itemTotal + extrasTotal;
     }, 0);
   }, [sale, selectAllItems, selectedItems, calculateUnpaidTotal]);
 
-  const calculateTaxAmount = useCallback((baseAmount: number): number => {
-    const val = parseFloat(taxValue);
-    if (!val || val <= 0) return 0;
+  const calculateTaxAmount = useCallback(
+    (base: number) => {
+      const val = Number(taxValue);
+      if (!val) return 0;
+      return taxType === TaxDiscountType.FIXED ? val : (base * val) / 100;
+    },
+    [taxValue, taxType]
+  );
 
-    if (taxType === TaxDiscountType.FIXED) {
-      return val;
-    }
-    return (baseAmount * val) / 100;
-  }, [taxValue, taxType]);
+  const calculateDiscountAmount = useCallback(
+    (base: number) => {
+      const val = Number(discountValue);
+      if (!val) return 0;
+      return discountType === TaxDiscountType.FIXED ? val : (base * val) / 100;
+    },
+    [discountValue, discountType]
+  );
 
-  const calculateDiscountAmount = useCallback((baseAmount: number): number => {
-    const val = parseFloat(discountValue);
-    if (!val || val <= 0) return 0;
-
-    if (discountType === TaxDiscountType.FIXED) {
-      return val;
-    }
-    return (baseAmount * val) / 100;
-  }, [discountValue, discountType]);
-
-  // Calculated values
   const selectedTotal = calculateSelectedItemsTotal();
   const taxAmount = calculateTaxAmount(selectedTotal);
   const discountAmount = calculateDiscountAmount(selectedTotal);
-  const tipAmountValue = parseFloat(tipAmount) || 0;
+  const tipAmountValue = Number(tipAmount) || 0;
   const finalAmount = selectedTotal + taxAmount - discountAmount + tipAmountValue;
 
-  // Item selection handlers
-  const handleItemSelectionChange = (itemId: number, quantity: number, maxQuantity: number) => {
-    if (selectAllItems && quantity === 0) {
-      const otherItems = unpaidItems
-        .filter((item) => item.id !== itemId)
-        .map((item) => ({ itemId: item.id, quantity: item.quantity }));
-      setSelectedItems(otherItems);
-      setSelectAllItems(false);
-      return;
+  // ── Auto-update amount when selection changes ─────────────────────
+  const [prevFinal, setPrevFinal] = useState(finalAmount);
+
+  useEffect(() => {
+    if (finalAmount === prevFinal) return;
+
+    const currentNum = Number(amount);
+    const shouldAutoFill =
+      !amount ||
+      isNaN(currentNum) ||
+      currentNum === 0 ||
+      currentNum === prevFinal;
+
+    if (shouldAutoFill) {
+      setAmount(finalAmount.toFixed(0));
     }
 
-    if (selectAllItems && quantity < maxQuantity) {
-      const allItems = unpaidItems.map((item) => ({
-        itemId: item.id,
-        quantity: item.id === itemId ? quantity : item.quantity,
-      }));
-      setSelectedItems(allItems);
-      setSelectAllItems(false);
-      return;
-    }
+    setPrevFinal(finalAmount);
+  }, [finalAmount, amount]);
 
+  // ── Item selection handlers ───────────────────────────────────────
+  const toggleItemFull = useCallback((itemId: number, maxQty: number) => {
+    setSelectAllItems(false);
     setSelectedItems((prev) => {
-      const existing = prev.find((s) => s.itemId === itemId);
-      if (quantity === 0) {
+      const exists = prev.find((s) => s.itemId === itemId);
+      if (exists && exists.quantity === maxQty) {
         return prev.filter((s) => s.itemId !== itemId);
       }
-      if (existing) {
-        return prev.map((s) => (s.itemId === itemId ? { ...s, quantity } : s));
-      }
-      return [...prev, { itemId, quantity }];
+      return [...prev.filter((s) => s.itemId !== itemId), { itemId, quantity: maxQty }];
     });
-  };
+  }, []);
+
+  const changeItemQuantity = useCallback((itemId: number, newQty: number, maxQty: number) => {
+    if (newQty <= 0) {
+      setSelectedItems((prev) => prev.filter((s) => s.itemId !== itemId));
+      return;
+    }
+    setSelectAllItems(false);
+    setSelectedItems((prev) => {
+      const exists = prev.find((s) => s.itemId === itemId);
+      if (exists) {
+        return prev.map((s) => (s.itemId === itemId ? { ...s, quantity: newQty } : s));
+      }
+      return [...prev, { itemId, quantity: newQty }];
+    });
+  }, []);
 
   const handleSelectAllToggle = () => {
     if (selectAllItems) {
@@ -219,7 +223,17 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
     }
   };
 
-  // Payment method handler
+  // ── Quick calculation (no full button) ────────────────────────────
+  const setAmountToHalf = () => {
+    setAmount((finalAmount / 2).toFixed(0));
+  };
+
+  const setAmountToDivided = (divisor: number) => {
+    if (divisor < 2) return;
+    setAmount((finalAmount / divisor).toFixed(0));
+  };
+
+  // ── Other handlers ────────────────────────────────────────────────
   const handlePaymentMethodChange = (method: PaymentMethod) => {
     setPaymentMethod(method);
     if (method === PaymentMethod.CASH) {
@@ -227,69 +241,45 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
     }
   };
 
-  // Quick calculation
-  const setAmountToFull = () => {
-    setAmount(finalAmount.toFixed(0));
-  };
-
-  const setAmountToHalf = () => {
-    setAmount((finalAmount / 2).toFixed(0));
-  };
-
-  const setAmountToDivided = (divisor: number) => {
-    setAmount((finalAmount / divisor).toFixed(0));
-  };
-
-  // Validation
   const validatePayment = (): boolean => {
     if (!paymentMethod) {
       onError?.(UI_TEXT.VALIDATION_SELECT_PAYMENT_METHOD);
       return false;
     }
-
-    const amountNum = parseFloat(amount);
-    if (!amount || isNaN(amountNum) || amountNum <= 0) {
+    const num = Number(amount);
+    if (!amount || isNaN(num) || num <= 0) {
       onError?.(UI_TEXT.VALIDATION_AMOUNT_GREATER_THAN_ZERO);
       return false;
     }
-
     if (paymentMethod !== PaymentMethod.CASH && !selectedAccountId) {
       onError?.(UI_TEXT.VALIDATION_SELECT_ACCOUNT);
       return false;
     }
-
     return true;
   };
 
-  // Submit payment
   const handleSubmitPayment = async () => {
     if (!validatePayment() || !sale) return;
 
+    setSubmitting(true);
     try {
-      setSubmitting(true);
-
       const selectedItemIds = selectAllItems ? [] : selectedItems.map((s) => s.itemId);
 
-      const payment: IAddPaymentInput = {
+      const paymentPayload: IAddPaymentInput = {
         method: paymentMethod,
-        amount_applied: parseFloat(amount),
-        tip_amount: parseFloat(tipAmount) || 0,
+        amount_applied: Number(amount),
+        tip_amount: tipAmountValue,
         destination_account_id: selectedAccountId,
         selected_item_ids: selectedItemIds,
       };
 
-      const taxVal = parseFloat(taxValue);
-      if (taxVal > 0) {
-        payment.tax = { type: taxType, value: taxVal };
-      }
+      const tv = Number(taxValue);
+      if (tv > 0) paymentPayload.tax = { type: taxType, value: tv };
 
-      const discountVal = parseFloat(discountValue);
-      if (discountVal > 0) {
-        payment.discount = { type: discountType, value: discountVal };
-      }
+      const dv = Number(discountValue);
+      if (dv > 0) paymentPayload.discount = { type: discountType, value: dv };
 
-      const response = await addPaymentsToSale(saleId, { payments: [payment] });
-
+      const response = await addPaymentsToSale(saleId, { payments: [paymentPayload] });
       await loadSaleData();
 
       // Reset form
@@ -301,12 +291,11 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
       setDiscountValue('0');
       setShowTaxDiscount(false);
 
-      const wasAutoClosed = response.was_auto_closed || response.is_fully_paid;
-      const message = wasAutoClosed
-        ? 'پرداخت ثبت شد و فروش بسته شد'
-        : UI_TEXT.MSG_PAYMENT_SUCCESS;
-
-      onSuccess?.(message, wasAutoClosed);
+      const autoClosed = response.was_auto_closed || response.is_fully_paid;
+      onSuccess?.(
+        autoClosed ? 'پرداخت ثبت شد و فروش بسته شد' : UI_TEXT.MSG_PAYMENT_SUCCESS,
+        autoClosed
+      );
     } catch (err) {
       onError?.(err instanceof Error ? err.message : UI_TEXT.ERROR_ADDING_PAYMENT);
     } finally {
@@ -314,34 +303,12 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
     }
   };
 
-  // Void payment
-  const handleVoidPayment = async (paymentId: number) => {
-    if (!sale) return;
-
-    try {
-      setSubmitting(true);
-      await voidPayment(saleId, paymentId);
-      await loadSaleData();
-      onSuccess?.('پرداخت با موفقیت لغو شد', false);
-    } catch (err) {
-      onError?.(err instanceof Error ? err.message : 'خطا در لغو پرداخت');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   return {
-    // Data
     sale,
     loading,
     submitting,
     bankAccounts,
     posAccount,
-    loadingAccounts,
-    unpaidItems,
-    paidItems,
-
-    // Form state
     paymentMethod,
     amount,
     tipAmount,
@@ -354,15 +321,13 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
     discountValue,
     showTaxDiscount,
     customDivisor,
-
-    // Calculated values
+    unpaidItems,
+    paidItems,
     selectedTotal,
     taxAmount,
     discountAmount,
     tipAmountValue,
     finalAmount,
-
-    // Setters
     setAmount,
     setTipAmount,
     setSelectedAccountId,
@@ -372,18 +337,13 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
     setDiscountValue,
     setShowTaxDiscount,
     setCustomDivisor,
-
-    // Handlers
-    handleItemSelectionChange,
+    handleItemToggleFull: toggleItemFull,
+    handleItemQuantityChange: changeItemQuantity,
     handleSelectAllToggle,
     handlePaymentMethodChange,
     handleSubmitPayment,
-    handleVoidPayment,
-    setAmountToFull,
     setAmountToHalf,
     setAmountToDivided,
-
-    // Utility
     loadSaleData,
   };
 }

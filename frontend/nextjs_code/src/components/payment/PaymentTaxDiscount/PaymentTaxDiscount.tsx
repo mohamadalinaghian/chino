@@ -4,7 +4,7 @@ import { THEME_COLORS } from '@/libs/constants';
 import { formatPersianMoney } from '@/utils/persianUtils';
 import { TaxDiscountType } from '@/types/sale';
 
-interface PaymentTaxDiscountProps {
+interface Props {
   showTaxDiscount: boolean;
   onToggleShow: () => void;
   taxType: TaxDiscountType;
@@ -12,12 +12,11 @@ interface PaymentTaxDiscountProps {
   discountType: TaxDiscountType;
   discountValue: string;
   tipAmount: string;
-  onTaxTypeChange: (type: TaxDiscountType) => void;
-  onTaxValueChange: (value: string) => void;
-  onDiscountTypeChange: (type: TaxDiscountType) => void;
-  onDiscountValueChange: (value: string) => void;
-  onTipAmountChange: (value: string) => void;
-  // Calculated values for summary
+  onTaxTypeChange: (t: TaxDiscountType) => void;
+  onTaxValueChange: (v: string) => void;
+  onDiscountTypeChange: (t: TaxDiscountType) => void;
+  onDiscountValueChange: (v: string) => void;
+  onTipAmountChange: (v: string) => void;
   selectedTotal: number;
   taxAmount: number;
   discountAmount: number;
@@ -43,160 +42,145 @@ export function PaymentTaxDiscount({
   discountAmount,
   tipAmountValue,
   finalAmount,
-}: PaymentTaxDiscountProps) {
+}: Props) {
   return (
-    <div>
+    <div className="rounded-lg overflow-hidden">
       <button
         onClick={onToggleShow}
-        className="w-full flex items-center justify-between py-2 px-3 rounded"
+        className="w-full flex items-center justify-between px-3 py-2.5 font-medium"
         style={{ backgroundColor: THEME_COLORS.surface }}
       >
-        <span className="font-bold" style={{ color: THEME_COLORS.text }}>
-          مالیات / تخفیف / انعام
-        </span>
-        <span style={{ color: THEME_COLORS.accent }}>
-          {showTaxDiscount ? '▼' : '◀'}
+        <span style={{ color: THEME_COLORS.text }}>مالیات / تخفیف / انعام</span>
+        <span style={{ color: THEME_COLORS.accent, fontSize: '1.1rem' }}>
+          {showTaxDiscount ? '▼' : '►'}
         </span>
       </button>
 
+      {/* Always-visible mini summary */}
+      <div
+        className="px-3 py-2 text-sm border-t grid grid-cols-4 gap-2"
+        style={{ backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.border }}
+      >
+        <div>
+          <div style={{ color: THEME_COLORS.subtext }}>انتخابی</div>
+          <div className="font-medium">{formatPersianMoney(selectedTotal)}</div>
+        </div>
+        <div>
+          <div style={{ color: THEME_COLORS.subtext }}>مالیات</div>
+          <div style={{ color: taxAmount > 0 ? THEME_COLORS.blue : THEME_COLORS.subtext }}>
+            {taxAmount > 0 ? `+${formatPersianMoney(taxAmount)}` : '—'}
+          </div>
+        </div>
+        <div>
+          <div style={{ color: THEME_COLORS.subtext }}>تخفیف</div>
+          <div style={{ color: discountAmount > 0 ? THEME_COLORS.red : THEME_COLORS.subtext }}>
+            {discountAmount > 0 ? `-${formatPersianMoney(discountAmount)}` : '—'}
+          </div>
+        </div>
+        <div className="text-right">
+          <div style={{ color: THEME_COLORS.subtext }}>جمع نهایی</div>
+          <div className="font-bold" style={{ color: THEME_COLORS.accent }}>
+            {formatPersianMoney(finalAmount)}
+          </div>
+        </div>
+      </div>
+
       {showTaxDiscount && (
-        <div className="mt-2 space-y-3 p-3 rounded" style={{ backgroundColor: THEME_COLORS.surface }}>
+        <div className="p-3 space-y-3 bg-opacity-70" style={{ backgroundColor: THEME_COLORS.surface }}>
           {/* Tax */}
-          <div>
-            <div className="text-sm font-bold mb-1" style={{ color: THEME_COLORS.blue }}>
+          <div className="space-y-1.5">
+            <div className="text-sm font-medium" style={{ color: THEME_COLORS.blue }}>
               مالیات
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               <button
                 onClick={() => onTaxTypeChange(TaxDiscountType.FIXED)}
-                className="flex-1 py-1 rounded text-sm"
+                className="px-3 py-1 text-sm rounded border flex-1"
                 style={{
+                  borderColor: THEME_COLORS.blue,
                   backgroundColor: taxType === TaxDiscountType.FIXED ? THEME_COLORS.blue : 'transparent',
-                  color: taxType === TaxDiscountType.FIXED ? '#fff' : THEME_COLORS.text,
-                  border: `1px solid ${THEME_COLORS.blue}`,
+                  color: taxType === TaxDiscountType.FIXED ? 'white' : THEME_COLORS.text,
                 }}
               >
                 ثابت
               </button>
               <button
                 onClick={() => onTaxTypeChange(TaxDiscountType.PERCENTAGE)}
-                className="flex-1 py-1 rounded text-sm"
+                className="px-3 py-1 text-sm rounded border flex-1"
                 style={{
+                  borderColor: THEME_COLORS.blue,
                   backgroundColor: taxType === TaxDiscountType.PERCENTAGE ? THEME_COLORS.blue : 'transparent',
-                  color: taxType === TaxDiscountType.PERCENTAGE ? '#fff' : THEME_COLORS.text,
-                  border: `1px solid ${THEME_COLORS.blue}`,
+                  color: taxType === TaxDiscountType.PERCENTAGE ? 'white' : THEME_COLORS.text,
                 }}
               >
                 درصد
               </button>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 value={taxValue}
-                onChange={(e) => onTaxValueChange(e.target.value)}
-                className="flex-1 px-2 py-1 rounded border text-center"
-                style={{
-                  backgroundColor: THEME_COLORS.bgSecondary,
-                  borderColor: THEME_COLORS.blue,
-                  color: THEME_COLORS.text,
-                }}
+                onChange={(e) => onTaxValueChange(e.target.value.replace(/[^0-9۰-۹.]/g, ''))}
+                className="w-20 px-2 py-1.5 text-center rounded border"
+                style={{ borderColor: THEME_COLORS.blue }}
                 placeholder="0"
               />
             </div>
           </div>
 
           {/* Discount */}
-          <div>
-            <div className="text-sm font-bold mb-1" style={{ color: THEME_COLORS.orange }}>
+          <div className="space-y-1.5">
+            <div className="text-sm font-medium" style={{ color: THEME_COLORS.orange }}>
               تخفیف
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               <button
                 onClick={() => onDiscountTypeChange(TaxDiscountType.FIXED)}
-                className="flex-1 py-1 rounded text-sm"
+                className="px-3 py-1 text-sm rounded border flex-1"
                 style={{
+                  borderColor: THEME_COLORS.orange,
                   backgroundColor: discountType === TaxDiscountType.FIXED ? THEME_COLORS.orange : 'transparent',
-                  color: discountType === TaxDiscountType.FIXED ? '#fff' : THEME_COLORS.text,
-                  border: `1px solid ${THEME_COLORS.orange}`,
+                  color: discountType === TaxDiscountType.FIXED ? 'white' : THEME_COLORS.text,
                 }}
               >
                 ثابت
               </button>
               <button
                 onClick={() => onDiscountTypeChange(TaxDiscountType.PERCENTAGE)}
-                className="flex-1 py-1 rounded text-sm"
+                className="px-3 py-1 text-sm rounded border flex-1"
                 style={{
+                  borderColor: THEME_COLORS.orange,
                   backgroundColor: discountType === TaxDiscountType.PERCENTAGE ? THEME_COLORS.orange : 'transparent',
-                  color: discountType === TaxDiscountType.PERCENTAGE ? '#fff' : THEME_COLORS.text,
-                  border: `1px solid ${THEME_COLORS.orange}`,
+                  color: discountType === TaxDiscountType.PERCENTAGE ? 'white' : THEME_COLORS.text,
                 }}
               >
                 درصد
               </button>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 value={discountValue}
-                onChange={(e) => onDiscountValueChange(e.target.value)}
-                className="flex-1 px-2 py-1 rounded border text-center"
-                style={{
-                  backgroundColor: THEME_COLORS.bgSecondary,
-                  borderColor: THEME_COLORS.orange,
-                  color: THEME_COLORS.text,
-                }}
+                onChange={(e) => onDiscountValueChange(e.target.value.replace(/[^0-9۰-۹.]/g, ''))}
+                className="w-20 px-2 py-1.5 text-center rounded border"
+                style={{ borderColor: THEME_COLORS.orange }}
                 placeholder="0"
               />
             </div>
           </div>
 
           {/* Tip */}
-          <div>
-            <div className="text-sm font-bold mb-1" style={{ color: THEME_COLORS.text }}>
+          <div className="space-y-1.5">
+            <div className="text-sm font-medium" style={{ color: THEME_COLORS.text }}>
               انعام
             </div>
             <input
-              type="number"
+              type="text"
+              inputMode="numeric"
               value={tipAmount}
-              onChange={(e) => onTipAmountChange(e.target.value)}
+              onChange={(e) => onTipAmountChange(e.target.value.replace(/[^0-9۰-۹.]/g, ''))}
               className="w-full px-3 py-2 rounded border"
-              style={{
-                backgroundColor: THEME_COLORS.bgSecondary,
-                borderColor: THEME_COLORS.border,
-                color: THEME_COLORS.text,
-              }}
-              placeholder="0"
-            />
-          </div>
-
-          {/* Summary */}
-          <div className="pt-2 border-t space-y-1" style={{ borderColor: THEME_COLORS.border }}>
-            <div className="flex justify-between text-sm">
-              <span style={{ color: THEME_COLORS.subtext }}>انتخاب شده:</span>
-              <span style={{ color: THEME_COLORS.text }}>{formatPersianMoney(selectedTotal)}</span>
-            </div>
-            {taxAmount > 0 && (
-              <div className="flex justify-between text-sm">
-                <span style={{ color: THEME_COLORS.subtext }}>مالیات:</span>
-                <span style={{ color: THEME_COLORS.text }}>+{formatPersianMoney(taxAmount)}</span>
-              </div>
-            )}
-            {discountAmount > 0 && (
-              <div className="flex justify-between text-sm">
-                <span style={{ color: THEME_COLORS.subtext }}>تخفیف:</span>
-                <span style={{ color: THEME_COLORS.red }}>-{formatPersianMoney(discountAmount)}</span>
-              </div>
-            )}
-            {tipAmountValue > 0 && (
-              <div className="flex justify-between text-sm">
-                <span style={{ color: THEME_COLORS.subtext }}>انعام:</span>
-                <span style={{ color: THEME_COLORS.text }}>+{formatPersianMoney(tipAmountValue)}</span>
-              </div>
-            )}
-            <div
-              className="flex justify-between text-base font-bold pt-1 border-t"
               style={{ borderColor: THEME_COLORS.border }}
-            >
-              <span style={{ color: THEME_COLORS.text }}>جمع:</span>
-              <span style={{ color: THEME_COLORS.accent }}>{formatPersianMoney(finalAmount)}</span>
-            </div>
+              placeholder="مبلغ انعام"
+            />
           </div>
         </div>
       )}

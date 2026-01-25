@@ -18,15 +18,21 @@ import {
 export default function SalePaymentPage() {
   const router = useRouter();
   const params = useParams();
-  const saleId = parseInt(params.id as string);
+
+  const rawId = params.id;
+  const saleId = typeof rawId === 'string' ? parseInt(rawId, 10) : NaN;
+
+  if (isNaN(saleId) || saleId <= 0) {
+    router.replace('/sale/dashboard');
+    return null;
+  }
+
   const { showToast, ToastContainer } = useToast();
 
   const handleSuccess = (message: string, wasAutoClosed: boolean) => {
     showToast(message, 'success');
     if (wasAutoClosed) {
-      setTimeout(() => {
-        router.push('/sale/dashboard');
-      }, 1500);
+      setTimeout(() => router.push('/sale/dashboard'), 1600);
     }
   };
 
@@ -51,7 +57,9 @@ export default function SalePaymentPage() {
         style={{ backgroundColor: THEME_COLORS.bgPrimary }}
       >
         <div className="text-center">
-          <div className="text-4xl mb-4" style={{ color: THEME_COLORS.red }}>⚠️</div>
+          <div className="text-5xl mb-4" style={{ color: THEME_COLORS.red }}>
+            ⚠️
+          </div>
           <p style={{ color: THEME_COLORS.text }}>فروش یافت نشد</p>
         </div>
       </div>
@@ -65,11 +73,12 @@ export default function SalePaymentPage() {
         className="px-4 py-3 border-b flex-shrink-0"
         style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border }}
       >
-        <div className="max-w-full flex justify-between items-center">
-          <div className="flex items-center gap-3">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-4">
             <button
               onClick={() => router.back()}
-              className="px-4 py-2 rounded font-bold text-sm"
+              aria-label="بازگشت"
+              className="px-5 py-2 rounded font-medium"
               style={{ backgroundColor: THEME_COLORS.surface, color: THEME_COLORS.text }}
             >
               ← بازگشت
@@ -81,70 +90,76 @@ export default function SalePaymentPage() {
         </div>
       </header>
 
-      {/* Main 3-Column Layout */}
-      <div className="flex-5 grid grid-cols-12 gap-4 overflow-hidden">
-        {/* LEFT COLUMN - Scrollable Items List */}
-        <PaymentItemList
-          unpaidItems={payment.unpaidItems}
-          paidItems={payment.paidItems}
-          selectedItems={payment.selectedItems}
-          selectAllItems={payment.selectAllItems}
-          onItemSelectionChange={payment.handleItemSelectionChange}
-          onSelectAllToggle={payment.handleSelectAllToggle}
-        />
+      {/* Main layout */}
+      <div className="flex-1 grid grid-cols-12 gap-4 p-4 overflow-hidden">
+        {/* Left - Items (7 columns) */}
+        <div className="col-span-7 flex flex-col overflow-hidden border-r" style={{ borderColor: THEME_COLORS.border }}>
+          <PaymentItemList
+            unpaidItems={payment.unpaidItems}
+            paidItems={payment.paidItems}
+            selectedItems={payment.selectedItems}
+            selectAllItems={payment.selectAllItems}
+            onItemToggleFull={payment.handleItemToggleFull}
+            onItemQuantityChange={payment.handleItemQuantityChange}
+            onSelectAllToggle={payment.handleSelectAllToggle}
+          />
+        </div>
 
-        {/* RIGHT COLUMN - Sticky Payment Panel */}
+        {/* Right - Payment panel (5 columns) */}
         <div
-          className="col-span-4 flex flex-col overflow-hidden"
+          className="col-span-5 flex flex-col overflow-hidden rounded-xl shadow-sm"
           style={{ backgroundColor: THEME_COLORS.bgSecondary }}
         >
-          {/* Summary Bar - Now shows selected items total */}
           <PaymentSummaryBar
             sale={payment.sale}
             selectedTotal={payment.selectedTotal}
             selectAllItems={payment.selectAllItems}
           />
 
-          {/* Payment Form */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-            {/* Amount Input */}
+          <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
+            {/* Amount input */}
             <div>
               <label
+                htmlFor="payment-amount"
                 className="block text-base font-bold mb-2"
                 style={{ color: THEME_COLORS.text }}
               >
                 مبلغ پرداخت
               </label>
               <input
-                type="number"
+                id="payment-amount"
+                type="text"
+                inputMode="numeric"
                 value={payment.amount}
-                onChange={(e) => payment.setAmount(e.target.value)}
-                className="w-full px-4 py-4 rounded text-2xl font-bold text-center border-2"
+                onChange={(e) => {
+                  const cleaned = e.target.value.replace(/[^0-9۰-۹]/g, '');
+                  payment.setAmount(cleaned);
+                }}
+                className="w-full px-5 py-6 text-4xl font-bold text-center rounded-xl border-2 focus:outline-none focus:border-2"
                 style={{
                   backgroundColor: THEME_COLORS.surface,
                   borderColor: THEME_COLORS.accent,
                   color: THEME_COLORS.text,
                 }}
-                placeholder="0"
+                placeholder="۰"
               />
             </div>
 
-            {/* Quick Calculation */}
+            {/* Quick calculation - half + custom divide only */}
             <PaymentQuickCalc
               customDivisor={payment.customDivisor}
               onSetCustomDivisor={payment.setCustomDivisor}
-              onSetFull={payment.setAmountToFull}
               onSetHalf={payment.setAmountToHalf}
               onSetDivided={payment.setAmountToDivided}
             />
 
-            {/* Payment Method */}
+            {/* Payment method */}
             <PaymentMethodSelector
               paymentMethod={payment.paymentMethod}
               onMethodChange={payment.handlePaymentMethodChange}
             />
 
-            {/* Account Selection */}
+            {/* Account selector */}
             <PaymentAccountSelector
               paymentMethod={payment.paymentMethod}
               bankAccounts={payment.bankAccounts}
@@ -153,7 +168,7 @@ export default function SalePaymentPage() {
               onAccountSelect={payment.setSelectedAccountId}
             />
 
-            {/* Tax/Discount/Tip */}
+            {/* Tax / Discount / Tip */}
             <PaymentTaxDiscount
               showTaxDiscount={payment.showTaxDiscount}
               onToggleShow={() => payment.setShowTaxDiscount(!payment.showTaxDiscount)}
@@ -175,26 +190,26 @@ export default function SalePaymentPage() {
             />
           </div>
 
-          {/* Submit Button */}
-          <div className="flex-shrink-0 p-4 border-t" style={{ borderColor: THEME_COLORS.border }}>
+          {/* Submit button */}
+          <div className="flex-shrink-0 p-5 border-t" style={{ borderColor: THEME_COLORS.border }}>
             <button
               onClick={payment.handleSubmitPayment}
-              disabled={payment.submitting}
-              className="w-full py-4 rounded-lg font-bold text-lg transition-all disabled:opacity-50"
+              disabled={payment.submitting || Number(payment.amount) <= 0}
+              className="w-full py-5 rounded-xl font-bold text-xl disabled:opacity-60 transition-all"
               style={{
                 backgroundColor: THEME_COLORS.green,
-                color: '#fff',
+                color: '#ffffff',
               }}
             >
               {payment.submitting
                 ? 'در حال ثبت...'
-                : `ثبت پرداخت ${formatPersianMoney(parseFloat(payment.amount) || 0)}`}
+                : `پرداخت ${formatPersianMoney(payment.finalAmount)}`}
             </button>
           </div>
         </div>
       </div>
 
-      {payment.submitting && <LoadingOverlay message="در حال ثبت..." />}
+      {payment.submitting && <LoadingOverlay message="در حال ثبت پرداخت..." />}
       <ToastContainer />
     </div>
   );

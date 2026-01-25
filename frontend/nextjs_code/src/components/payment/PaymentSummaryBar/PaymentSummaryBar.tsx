@@ -46,13 +46,6 @@ export function PaymentSummaryBar({
           {formatPersianMoney(sale.balance_due ?? sale.total_amount)}
         </div>
       </div>
-      <div>
-        <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>وضعیت</div>
-        <div className="font-bold text-sm" style={{ color: THEME_COLORS.cyan }}>
-          {sale.payment_status === 'PAID' ? '✓' :
-            sale.payment_status === 'PARTIALLY_PAID' ? 'جزئی' : 'بدون'}
-        </div>
-      </div>
     </div>
   );
 }
