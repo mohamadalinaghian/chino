@@ -88,23 +88,48 @@ export default function SalePaymentPage() {
             </h1>
           </div>
 
-          {/* Quick summary in header */}
-          <div className="flex items-center gap-4">
+          {/* Quick summary in header - synced with payment status */}
+          <div className="flex items-center gap-3">
+            {/* Payment Status Badge */}
+            <div
+              className="px-3 py-1.5 rounded-lg text-sm font-bold"
+              style={{
+                backgroundColor: payment.sale.payment_status === 'PAID' ? '#10B98120' :
+                                payment.sale.payment_status === 'PARTIALLY_PAID' ? `${THEME_COLORS.orange}20` :
+                                `${THEME_COLORS.red}20`,
+                color: payment.sale.payment_status === 'PAID' ? '#10B981' :
+                       payment.sale.payment_status === 'PARTIALLY_PAID' ? THEME_COLORS.orange :
+                       THEME_COLORS.red,
+              }}
+            >
+              {payment.sale.payment_status === 'PAID' ? '✓ تسویه شده' :
+               payment.sale.payment_status === 'PARTIALLY_PAID' ? '◐ پرداخت جزئی' :
+               '○ پرداخت نشده'}
+            </div>
+
+            <div className="h-8 w-px" style={{ backgroundColor: THEME_COLORS.border }} />
+
             <div className="text-center">
               <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>مجموع</div>
-              <div className="font-bold" style={{ color: THEME_COLORS.text }}>
+              <div className="font-bold" style={{ color: THEME_COLORS.text, direction: 'ltr' }}>
                 {formatPersianMoney(payment.sale.total_amount)}
               </div>
             </div>
             <div className="text-center">
               <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>پرداخت شده</div>
-              <div className="font-bold" style={{ color: THEME_COLORS.green }}>
+              <div className="font-bold" style={{ color: '#10B981', direction: 'ltr' }}>
                 {formatPersianMoney(payment.sale.total_paid || 0)}
               </div>
             </div>
             <div className="text-center">
               <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>مانده</div>
-              <div className="font-bold" style={{ color: THEME_COLORS.orange }}>
+              <div
+                className="font-bold"
+                style={{
+                  color: (payment.sale.balance_due ?? payment.sale.total_amount) > 0 ? THEME_COLORS.orange : '#10B981',
+                  direction: 'ltr'
+                }}
+              >
                 {formatPersianMoney(payment.sale.balance_due ?? payment.sale.total_amount)}
               </div>
             </div>
@@ -124,6 +149,7 @@ export default function SalePaymentPage() {
             paidItems={payment.paidItems}
             selectedItems={payment.selectedItems}
             selectAllItems={payment.selectAllItems}
+            payments={payment.sale?.payments || []}
             onItemToggleFull={payment.handleItemToggleFull}
             onItemQuantityChange={payment.handleItemQuantityChange}
             onSelectAllToggle={payment.handleSelectAllToggle}
@@ -203,7 +229,7 @@ export default function SalePaymentPage() {
                   {payment.isAmountManuallyOverridden && (
                     <span className="text-sm opacity-80">(دستی)</span>
                   )}
-                  <span>پرداخت {formatPersianMoney(currentAmount)}</span>
+                  <span>پرداخت <span style={{ direction: 'ltr', display: 'inline-block' }}>{formatPersianMoney(currentAmount)}</span></span>
                 </div>
               )}
             </button>
@@ -214,7 +240,7 @@ export default function SalePaymentPage() {
                 className="mt-2 text-center text-sm py-2 rounded-lg"
                 style={{ backgroundColor: `${THEME_COLORS.orange}15`, color: THEME_COLORS.orange }}
               >
-                تفاوت با فرمول: {formatPersianMoney(Math.abs(currentAmount - payment.finalAmount))}
+                تفاوت با فرمول: <span style={{ direction: 'ltr', display: 'inline-block' }}>{formatPersianMoney(Math.abs(currentAmount - payment.finalAmount))}</span>
                 {currentAmount > payment.finalAmount ? ' بیشتر' : ' کمتر'}
               </div>
             )}

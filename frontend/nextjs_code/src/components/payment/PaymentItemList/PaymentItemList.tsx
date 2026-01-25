@@ -2,7 +2,7 @@
 
 import { THEME_COLORS } from '@/libs/constants';
 import { formatPersianMoney } from '@/utils/persianUtils';
-import { ISaleItemDetail } from '@/types/sale';
+import { ISaleItemDetail, IPaymentDetail, PaymentMethod } from '@/types/sale';
 import { IItemSelection } from '@/hooks/usePayment';
 
 interface PaymentItemListProps {
@@ -10,16 +10,47 @@ interface PaymentItemListProps {
   paidItems: ISaleItemDetail[];
   selectedItems: IItemSelection[];
   selectAllItems: boolean;
+  payments?: IPaymentDetail[];
   onItemToggleFull: (itemId: number, maxQty: number) => void;
   onItemQuantityChange: (itemId: number, qty: number, maxQty: number) => void;
   onSelectAllToggle: () => void;
 }
+
+// Helper to format payment method in Persian
+const formatPaymentMethod = (method: string): string => {
+  switch (method) {
+    case PaymentMethod.CASH:
+      return 'نقدی';
+    case PaymentMethod.POS:
+      return 'کارتخوان';
+    case PaymentMethod.CARD_TRANSFER:
+      return 'کارت به کارت';
+    default:
+      return method;
+  }
+};
+
+// Helper to format date
+const formatPaymentDate = (dateStr: string): string => {
+  try {
+    const date = new Date(dateStr);
+    return new Intl.DateTimeFormat('fa-IR', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  } catch {
+    return dateStr;
+  }
+};
 
 export function PaymentItemList({
   unpaidItems,
   paidItems,
   selectedItems,
   selectAllItems,
+  payments = [],
   onItemToggleFull,
   onItemQuantityChange,
   onSelectAllToggle,
@@ -239,17 +270,21 @@ export function PaymentItemList({
           );
         })}
 
-        {/* Paid items section */}
+        {/* Paid items section - Enhanced styling */}
         {paidItems.length > 0 && (
-          <div className="mt-6 pt-4 border-t-2" style={{ borderColor: THEME_COLORS.green }}>
+          <div className="mt-6 pt-4 border-t-2" style={{ borderColor: '#10B981' }}>
             <div
               className="flex items-center gap-2 mb-3 px-2"
-              style={{ color: THEME_COLORS.green }}
             >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              <span className="font-bold">پرداخت شده ({paidItems.length})</span>
+              <div
+                className="w-7 h-7 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: '#10B981' }}
+              >
+                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <span className="font-bold" style={{ color: '#10B981' }}>اقلام پرداخت‌شده ({paidItems.length})</span>
             </div>
 
             {paidItems.map((item) => {
@@ -259,17 +294,25 @@ export function PaymentItemList({
               return (
                 <div
                   key={item.id}
-                  className="rounded-xl mb-2 overflow-hidden"
+                  className="rounded-xl mb-2 overflow-hidden relative"
                   style={{
-                    backgroundColor: `${THEME_COLORS.green}10`,
-                    border: `2px solid ${THEME_COLORS.green}40`,
+                    background: `linear-gradient(135deg, #10B98115 0%, #10B98108 100%)`,
+                    border: `2px solid #10B981`,
                   }}
                 >
+                  {/* Paid stamp diagonal ribbon */}
+                  <div
+                    className="absolute top-2 left-2 px-3 py-0.5 text-xs font-bold text-white rounded"
+                    style={{ backgroundColor: '#10B981' }}
+                  >
+                    ✓ تسویه شد
+                  </div>
+
                   <div className="flex items-center gap-3 px-4 py-3">
                     {/* Checkmark indicator */}
                     <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center"
-                      style={{ backgroundColor: THEME_COLORS.green, color: '#fff' }}
+                      className="w-10 h-10 rounded-full flex items-center justify-center shadow-md"
+                      style={{ backgroundColor: '#10B981', color: '#fff' }}
                     >
                       <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -286,11 +329,8 @@ export function PaymentItemList({
                     </div>
 
                     <div className="text-right">
-                      <div className="font-bold" style={{ color: THEME_COLORS.green }}>
+                      <div className="text-xl font-bold" style={{ color: '#10B981', direction: 'ltr' }}>
                         {formatPersianMoney(itemTotal)}
-                      </div>
-                      <div className="text-xs" style={{ color: THEME_COLORS.green }}>
-                        تسویه شده
                       </div>
                     </div>
                   </div>
@@ -299,12 +339,12 @@ export function PaymentItemList({
                   {item.extras?.length > 0 && (
                     <div
                       className="px-4 py-2 border-t text-sm"
-                      style={{ borderColor: `${THEME_COLORS.green}30` }}
+                      style={{ borderColor: '#10B98130' }}
                     >
                       {item.extras.map((ex) => (
                         <div key={ex.id} className="flex justify-between" style={{ color: THEME_COLORS.subtext }}>
                           <span>{ex.product_name} ×{ex.quantity}</span>
-                          <span>+{formatPersianMoney(ex.unit_price * ex.quantity)}</span>
+                          <span style={{ direction: 'ltr' }}>+{formatPersianMoney(ex.unit_price * ex.quantity)}</span>
                         </div>
                       ))}
                     </div>
@@ -312,6 +352,99 @@ export function PaymentItemList({
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Payment History Section */}
+        {payments.length > 0 && (
+          <div className="mt-6 pt-4 border-t-2" style={{ borderColor: THEME_COLORS.accent }}>
+            <div className="flex items-center gap-2 mb-3 px-2">
+              <div
+                className="w-7 h-7 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: THEME_COLORS.accent }}
+              >
+                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" />
+                </svg>
+              </div>
+              <span className="font-bold" style={{ color: THEME_COLORS.accent }}>
+                تاریخچه پرداخت‌ها ({payments.length})
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              {payments.map((payment, index) => (
+                <div
+                  key={payment.id}
+                  className="rounded-xl overflow-hidden"
+                  style={{
+                    backgroundColor: payment.status === 'VOID' ? `${THEME_COLORS.red}10` : `${THEME_COLORS.accent}08`,
+                    border: `1px solid ${payment.status === 'VOID' ? THEME_COLORS.red : THEME_COLORS.accent}40`,
+                  }}
+                >
+                  <div className="px-4 py-3">
+                    {/* Payment header row */}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+                          style={{ backgroundColor: THEME_COLORS.accent, color: '#fff' }}
+                        >
+                          {index + 1}
+                        </span>
+                        <span
+                          className="px-2 py-0.5 rounded text-xs font-bold"
+                          style={{
+                            backgroundColor: payment.method === 'CASH' ? `${THEME_COLORS.green}20` :
+                                           payment.method === 'POS' ? `${THEME_COLORS.blue}20` : `${THEME_COLORS.purple}20`,
+                            color: payment.method === 'CASH' ? THEME_COLORS.green :
+                                   payment.method === 'POS' ? THEME_COLORS.blue : THEME_COLORS.purple,
+                          }}
+                        >
+                          {formatPaymentMethod(payment.method)}
+                        </span>
+                        {payment.status === 'VOID' && (
+                          <span
+                            className="px-2 py-0.5 rounded text-xs font-bold"
+                            style={{ backgroundColor: `${THEME_COLORS.red}20`, color: THEME_COLORS.red }}
+                          >
+                            باطل شده
+                          </span>
+                        )}
+                      </div>
+                      <div
+                        className={`text-lg font-bold ${payment.status === 'VOID' ? 'line-through' : ''}`}
+                        style={{ color: payment.status === 'VOID' ? THEME_COLORS.red : '#10B981', direction: 'ltr' }}
+                      >
+                        {formatPersianMoney(payment.amount_applied)}
+                      </div>
+                    </div>
+
+                    {/* Payment details row */}
+                    <div className="flex items-center justify-between text-xs" style={{ color: THEME_COLORS.subtext }}>
+                      <div className="flex items-center gap-3">
+                        <span>توسط: {payment.received_by_name}</span>
+                        {payment.tip_amount > 0 && (
+                          <span style={{ color: THEME_COLORS.green }}>
+                            انعام: {formatPersianMoney(payment.tip_amount)}
+                          </span>
+                        )}
+                      </div>
+                      <span>{formatPaymentDate(payment.received_at)}</span>
+                    </div>
+
+                    {/* Account info for non-cash payments */}
+                    {payment.destination_card_number && (
+                      <div className="mt-2 pt-2 border-t text-xs" style={{ borderColor: THEME_COLORS.border }}>
+                        <span style={{ color: THEME_COLORS.subtext }}>
+                          {payment.destination_bank_name} - {payment.destination_card_number.slice(-4)}****
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
