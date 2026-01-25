@@ -112,11 +112,11 @@ export default function SalePaymentPage() {
         </div>
       </header>
 
-      {/* Main layout - 6-6 split for larger payment panel */}
+      {/* Main layout - 4-8 split for larger payment panel */}
       <div className="flex-1 grid grid-cols-12 gap-4 p-4 overflow-hidden">
-        {/* Left - Items (6 columns) */}
+        {/* Left - Items (4 columns) */}
         <div
-          className="col-span-6 flex flex-col overflow-hidden rounded-xl"
+          className="col-span-4 flex flex-col overflow-hidden rounded-xl"
           style={{ backgroundColor: THEME_COLORS.bgSecondary }}
         >
           <PaymentItemList
@@ -130,9 +130,9 @@ export default function SalePaymentPage() {
           />
         </div>
 
-        {/* Right - Payment panel (6 columns - larger) */}
+        {/* Right - Payment panel (8 columns - larger) */}
         <div
-          className="col-span-6 flex flex-col overflow-hidden rounded-xl shadow-lg"
+          className="col-span-8 flex flex-col overflow-hidden rounded-xl shadow-lg"
           style={{ backgroundColor: THEME_COLORS.bgSecondary }}
         >
           {/* Formula Calculator at top */}

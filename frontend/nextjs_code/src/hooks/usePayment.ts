@@ -136,9 +136,15 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
 
   const calculateSelectedItemsTotal = useCallback((): number => {
     if (!sale) return 0;
-    if (selectAllItems || selectedItems.length === 0) {
+    // When selectAllItems is true, use all unpaid items
+    if (selectAllItems) {
       return calculateUnpaidTotal();
     }
+    // When selectAllItems is false and no items selected, return 0
+    if (selectedItems.length === 0) {
+      return 0;
+    }
+    // Otherwise calculate sum of selected items
     return selectedItems.reduce((sum, sel) => {
       const item = sale.items.find((i) => i.id === sel.itemId);
       if (!item) return sum;
@@ -168,6 +174,7 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
       setTaxType(TaxDiscountType.PERCENTAGE);
       setTaxValue('10');
     }
+    setIsAmountManuallyOverridden(false);
   }, [taxEnabled]);
 
   const calculateDiscountAmount = useCallback(
@@ -190,36 +197,36 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
   // Final amount after division
   const finalAmount = divisor > 1 ? Math.round(preDivisionAmount / divisor) : preDivisionAmount;
 
-  // ── Auto-update amount when selection changes ─────────────────────
-  const [prevFinal, setPrevFinal] = useState(finalAmount);
-
+  // ── Auto-update amount when formula changes ─────────────────────
+  // Any change in formula parts should update the result
   useEffect(() => {
-    if (finalAmount === prevFinal) return;
-
-    const currentNum = Number(amount);
-    const shouldAutoFill =
-      !amount ||
-      isNaN(currentNum) ||
-      currentNum === 0 ||
-      currentNum === prevFinal;
-
-    if (shouldAutoFill) {
-      setAmount(finalAmount.toFixed(0));
-      setIsAmountManuallyOverridden(false);
-    }
-
-    setPrevFinal(finalAmount);
-  }, [finalAmount, amount]);
+    // Always sync amount to formula result when formula changes
+    setAmount(finalAmount.toFixed(0));
+    setIsAmountManuallyOverridden(false);
+  }, [finalAmount]);
 
   // ── Handle amount change with manual override detection ───────────
   const handleAmountChange = useCallback((newAmount: string) => {
-    const numericAmount = Number(newAmount);
     setAmount(newAmount);
-    // Check if user manually changed the amount to something different from formula
-    if (!isNaN(numericAmount) && numericAmount !== finalAmount && numericAmount !== 0) {
-      setIsAmountManuallyOverridden(true);
-    }
-  }, [finalAmount]);
+    // Mark as manually overridden when user types in the amount field
+    setIsAmountManuallyOverridden(true);
+  }, []);
+
+  // ── Formula-related value changes (should reset manual override) ───
+  const handleDiscountValueChange = useCallback((value: string) => {
+    setDiscountValue(value);
+    setIsAmountManuallyOverridden(false);
+  }, []);
+
+  const handleTipAmountChange = useCallback((value: string) => {
+    setTipAmount(value);
+    setIsAmountManuallyOverridden(false);
+  }, []);
+
+  const handleTaxValueChange = useCallback((value: string) => {
+    setTaxValue(value);
+    setIsAmountManuallyOverridden(false);
+  }, []);
 
   // ── Reset manual override when syncing to formula ─────────────────
   const syncAmountToFormula = useCallback(() => {
@@ -267,11 +274,13 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
       }
       return [...prev.filter((s) => s.itemId !== itemId), { itemId, quantity: maxQty }];
     });
+    setIsAmountManuallyOverridden(false);
   }, []);
 
   const changeItemQuantity = useCallback((itemId: number, newQty: number, maxQty: number) => {
     if (newQty <= 0) {
       setSelectedItems((prev) => prev.filter((s) => s.itemId !== itemId));
+      setIsAmountManuallyOverridden(false);
       return;
     }
     setSelectAllItems(false);
@@ -282,6 +291,7 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
       }
       return [...prev, { itemId, quantity: newQty }];
     });
+    setIsAmountManuallyOverridden(false);
   }, []);
 
   const handleSelectAllToggle = () => {
@@ -292,6 +302,7 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
       setSelectAllItems(true);
       setSelectedItems([]);
     }
+    setIsAmountManuallyOverridden(false);
   };
 
   // ── Quick calculation ────────────────────────────────────────────
@@ -414,16 +425,16 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
     setAmount,
     handleAmountChange,
     syncAmountToFormula,
-    setTipAmount,
+    setTipAmount: handleTipAmountChange,
     setSelectedAccountId,
     setTaxType,
-    setTaxValue,
+    setTaxValue: handleTaxValueChange,
     setTaxEnabled,
     toggleTax,
     incrementTaxValue,
     decrementTaxValue,
     setDiscountType,
-    setDiscountValue,
+    setDiscountValue: handleDiscountValueChange,
     setShowTaxDiscount,
     setCustomDivisor,
     setDivisor: handleDivisorChange,
