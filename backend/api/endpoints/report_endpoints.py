@@ -12,7 +12,6 @@ Endpoints:
 from typing import List, Optional
 
 from api.schemas.report_schemas import (
-    ApproveReportRequest,
     CreateReportRequest,
     CreateReportResponse,
     ReportDetailsResponse,
@@ -98,7 +97,9 @@ def create_daily_report(request, payload: CreateReportRequest):
 # ---------------------------------------------------------------------
 
 
-@router.get("/{report_id}", response={200: ReportDetailsResponse, 422: ErrorResponse})
+@router.get(
+    "/{report_id}/details", response={200: ReportDetailsResponse, 422: ErrorResponse}
+)
 def get_report_details(request, report_id: int):
     """
     Fetches the full details of a daily report.
@@ -193,7 +194,9 @@ def list_reports(request, status: Optional[str] = None, limit: int = 30):
 # ---------------------------------------------------------------------
 
 
-@router.post("/{report_id}/sync", response={200: CreateReportResponse, 422: ErrorResponse})
+@router.post(
+    "/{report_id}/sync", response={200: CreateReportResponse, 422: ErrorResponse}
+)
 def sync_daily_report(request, report_id: int, payload: SyncDailyReportRequest):
     """
     Modifies a DRAFT daily report.
@@ -229,7 +232,9 @@ def sync_daily_report(request, report_id: int, payload: SyncDailyReportRequest):
 # ---------------------------------------------------------------------
 
 
-@router.post("/{report_id}/approve", response={200: CreateReportResponse, 422: ErrorResponse})
+@router.post(
+    "/{report_id}/approve", response={200: CreateReportResponse, 422: ErrorResponse}
+)
 def approve_daily_report(request, report_id: int):
     """
     Approves a daily report.
