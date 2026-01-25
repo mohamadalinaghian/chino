@@ -19,7 +19,6 @@ import { useToast } from '@/components/common/Toast';
 import { LoadingOverlay } from '@/components/common/LoadingOverlay';
 import { THEME_COLORS, UI_TEXT, API_ENDPOINTS, CS_API_URL } from '@/libs/constants';
 import { formatPersianMoney } from '@/utils/persianUtils';
-import { IUserPermissions } from '@/types/sale';
 import { authenticatedFetchJSON } from '@/libs/auth/authFetch';
 
 interface IItemSelection {
@@ -45,8 +44,7 @@ export default function SalePaymentPage() {
   const [submitting, setSubmitting] = useState(false);
   const [bankAccounts, setBankAccounts] = useState<IBankAccount[]>([]);
   const [posAccount, setPosAccount] = useState<IPOSAccount | null>(null);
-  const [setLoadingAccounts] = useState(false);
-  const [setUserPermissions] = useState<IUserPermissions | null>(null);
+  const [loadingAccounts, setLoadingAccounts] = useState(false);
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.CASH);
   const [amount, setAmount] = useState<string>('');
@@ -84,13 +82,13 @@ export default function SalePaymentPage() {
 
   const loadBankAccounts = async () => {
     try {
-      setLoadingAccounts;
+      setLoadingAccounts(true);
       const accounts = await fetchBankAccounts();
       setBankAccounts(accounts);
     } catch (err) {
       console.error('Error loading bank accounts:', err);
     } finally {
-      setLoadingAccounts;
+      setLoadingAccounts(false);
     }
   };
 
@@ -105,16 +103,6 @@ export default function SalePaymentPage() {
     }
   };
 
-  // const loadUserPermissions = async () => {
-  //   try {
-  //     const response = await authenticatedFetchJSON<IUserPermissions>(
-  //       `${CS_API_URL}${API_ENDPOINTS.USER_PERMISSIONS}`
-  //     );
-  //     setUserPermissions;
-  //   } catch (err) {
-  //     console.error('Error loading user permissions:', err);
-  //   }
-  // };
 
   const calculateUnpaidTotal = useCallback((): number => {
     if (!sale) return 0;
@@ -164,7 +152,30 @@ export default function SalePaymentPage() {
     return sale?.items.filter((item) => item.is_paid) || [];
   }, [sale]);
 
-  const handleItemQuantityChange = (itemId: number, quantity: number) => {
+  const handleItemSelectionChange = (itemId: number, quantity: number, maxQuantity: number) => {
+    // If we're in "select all" mode and user is deselecting, switch to manual mode
+    if (selectAllItems && quantity === 0) {
+      // Switch to manual mode with all items except this one
+      const otherItems = unpaidItems
+        .filter((item) => item.id !== itemId)
+        .map((item) => ({ itemId: item.id, quantity: item.quantity }));
+      setSelectedItems(otherItems);
+      setSelectAllItems(false);
+      return;
+    }
+
+    // If we're in "select all" mode and user is changing quantity, switch to manual mode
+    if (selectAllItems && quantity < maxQuantity) {
+      const allItems = unpaidItems.map((item) => ({
+        itemId: item.id,
+        quantity: item.id === itemId ? quantity : item.quantity,
+      }));
+      setSelectedItems(allItems);
+      setSelectAllItems(false);
+      return;
+    }
+
+    // Normal manual mode updates
     setSelectedItems((prev) => {
       const existing = prev.find((s) => s.itemId === itemId);
       if (quantity === 0) {
@@ -178,8 +189,13 @@ export default function SalePaymentPage() {
   };
 
   const handleSelectAllToggle = () => {
-    setSelectAllItems(!selectAllItems);
-    if (!selectAllItems) {
+    if (selectAllItems) {
+      // Switching from all to none
+      setSelectedItems([]);
+      setSelectAllItems(false);
+    } else {
+      // Switching to select all
+      setSelectAllItems(true);
       setSelectedItems([]);
     }
   };
@@ -342,10 +358,7 @@ export default function SalePaymentPage() {
           <div className="flex-shrink-0 px-2 py-1 border-b flex items-center justify-between" style={{ backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.border }}>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => {
-                  setSelectAllItems(true);
-                  // setSelectedItems([]);
-                }}
+                onClick={handleSelectAllToggle}
                 className="px-4 py-2 rounded font-bold text-sm border-2 transition-all"
                 style={{
                   backgroundColor: selectAllItems ? THEME_COLORS.accent : 'transparent',
@@ -380,20 +393,18 @@ export default function SalePaymentPage() {
                       borderColor: isSelected ? THEME_COLORS.accent : THEME_COLORS.border,
                     }}
                   >
-                    {selectAllItems && (
-                      <input
-                        type="checkbox"
-                        checked={selectedQty > 0}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            handleItemQuantityChange(item.id, item.quantity);
-                          } else {
-                            handleItemQuantityChange(item.id, 0);
-                          }
-                        }}
-                        className="w-5 h-5"
-                      />
-                    )}
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          handleItemSelectionChange(item.id, item.quantity, item.quantity);
+                        } else {
+                          handleItemSelectionChange(item.id, 0, item.quantity);
+                        }
+                      }}
+                      className="w-5 h-5"
+                    />
                     <div className="flex-1">
                       <div className="font-bold" style={{ color: THEME_COLORS.text }}>
                         {item.product_name}
@@ -402,29 +413,30 @@ export default function SalePaymentPage() {
                         {formatPersianMoney(item.unit_price)} × {item.quantity}
                       </div>
                     </div>
-                    {selection && selectedQty > 0 && (
-                      <div className="flex items-center gap-3">
+                    {isSelected && item.quantity > 1 && (
+                      <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleItemQuantityChange(item.id, Math.max(0, selectedQty - 1))}
+                          onClick={() => handleItemSelectionChange(item.id, Math.max(0, selectedQty - 1), item.quantity)}
                           className="w-8 h-8 rounded font-bold flex items-center justify-center"
                           style={{ backgroundColor: THEME_COLORS.red, color: '#fff' }}
                         >
                           −
                         </button>
-                        <div className="w-12 text-center font-bold" style={{ color: THEME_COLORS.text }}>
+                        <div className="w-10 text-center font-bold" style={{ color: THEME_COLORS.text }}>
                           {selectedQty}
                         </div>
                         <button
-                          onClick={() => handleItemQuantityChange(item.id, Math.min(item.quantity, selectedQty + 1))}
+                          onClick={() => handleItemSelectionChange(item.id, Math.min(item.quantity, selectedQty + 1), item.quantity)}
                           className="w-8 h-8 rounded font-bold flex items-center justify-center"
                           style={{ backgroundColor: THEME_COLORS.green, color: '#fff' }}
+                          disabled={selectedQty >= item.quantity}
                         >
                           +
                         </button>
                       </div>
                     )}
                     {isSelected && (
-                      <div className="text-right">
+                      <div className="text-right min-w-20">
                         <div className="text-lg font-bold" style={{ color: THEME_COLORS.green }}>
                           {formatPersianMoney(itemTotal)}
                         </div>
