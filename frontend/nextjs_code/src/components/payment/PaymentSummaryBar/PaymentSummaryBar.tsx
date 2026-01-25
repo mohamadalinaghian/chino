@@ -29,14 +29,6 @@ export function PaymentSummaryBar({
         </div>
       </div>
       <div>
-        <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
-          {selectAllItems ? 'انتخاب شده' : 'اقلام انتخابی'}
-        </div>
-        <div className="font-bold text-base" style={{ color: THEME_COLORS.text }}>
-          {formatPersianMoney(selectedTotal)}
-        </div>
-      </div>
-      <div>
         <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>پرداخت شده</div>
         <div className="font-bold text-base" style={{ color: THEME_COLORS.green }}>
           {formatPersianMoney(sale.total_paid || 0)}
