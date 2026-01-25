@@ -56,7 +56,8 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
 
   // ── Tax / Discount / Tip ──────────────────────────────────────────
   const [taxType, setTaxType] = useState<TaxDiscountType>(TaxDiscountType.PERCENTAGE);
-  const [taxValue, setTaxValue] = useState<string>('0');
+  const [taxValue, setTaxValue] = useState<string>('10'); // Default 10% tax
+  const [taxEnabled, setTaxEnabled] = useState(true); // Toggle for quick 10% tax
   const [discountType, setDiscountType] = useState<TaxDiscountType>(TaxDiscountType.PERCENTAGE);
   const [discountValue, setDiscountValue] = useState<string>('0');
   const [showTaxDiscount, setShowTaxDiscount] = useState(false);
@@ -144,12 +145,24 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
 
   const calculateTaxAmount = useCallback(
     (base: number) => {
+      if (!taxEnabled) return 0;
       const val = Number(taxValue);
       if (!val) return 0;
       return taxType === TaxDiscountType.FIXED ? val : (base * val) / 100;
     },
-    [taxValue, taxType]
+    [taxValue, taxType, taxEnabled]
   );
+
+  // Toggle 10% tax on/off
+  const toggleTax = useCallback(() => {
+    if (taxEnabled) {
+      setTaxEnabled(false);
+    } else {
+      setTaxEnabled(true);
+      setTaxType(TaxDiscountType.PERCENTAGE);
+      setTaxValue('10');
+    }
+  }, [taxEnabled]);
 
   const calculateDiscountAmount = useCallback(
     (base: number) => {
@@ -223,7 +236,11 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
     }
   };
 
-  // ── Quick calculation (no full button) ────────────────────────────
+  // ── Quick calculation ────────────────────────────────────────────
+  const setAmountToFull = () => {
+    setAmount(finalAmount.toFixed(0));
+  };
+
   const setAmountToHalf = () => {
     setAmount((finalAmount / 2).toFixed(0));
   };
@@ -287,7 +304,8 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
       setTipAmount('0');
       setSelectedItems([]);
       setSelectAllItems(true);
-      setTaxValue('0');
+      setTaxValue('10'); // Reset to default 10%
+      setTaxEnabled(true); // Reset tax enabled
       setDiscountValue('0');
       setShowTaxDiscount(false);
 
@@ -317,6 +335,7 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
     selectAllItems,
     taxType,
     taxValue,
+    taxEnabled,
     discountType,
     discountValue,
     showTaxDiscount,
@@ -333,6 +352,8 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
     setSelectedAccountId,
     setTaxType,
     setTaxValue,
+    setTaxEnabled,
+    toggleTax,
     setDiscountType,
     setDiscountValue,
     setShowTaxDiscount,
@@ -342,6 +363,7 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
     handleSelectAllToggle,
     handlePaymentMethodChange,
     handleSubmitPayment,
+    setAmountToFull,
     setAmountToHalf,
     setAmountToDivided,
     loadSaleData,

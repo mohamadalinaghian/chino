@@ -8,12 +8,14 @@ interface PaymentSummaryBarProps {
   sale: ISaleDetailResponse;
   selectedTotal: number;
   selectAllItems: boolean;
+  finalAmount: number;
 }
 
 export function PaymentSummaryBar({
   sale,
   selectedTotal,
   selectAllItems,
+  finalAmount,
 }: PaymentSummaryBarProps) {
   return (
     <div
@@ -30,7 +32,7 @@ export function PaymentSummaryBar({
         <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
           {selectAllItems ? 'انتخاب شده' : 'اقلام انتخابی'}
         </div>
-        <div className="font-bold text-base" style={{ color: THEME_COLORS.accent }}>
+        <div className="font-bold text-base" style={{ color: THEME_COLORS.text }}>
           {formatPersianMoney(selectedTotal)}
         </div>
       </div>
@@ -44,6 +46,12 @@ export function PaymentSummaryBar({
         <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>مانده</div>
         <div className="font-bold text-base" style={{ color: THEME_COLORS.orange }}>
           {formatPersianMoney(sale.balance_due ?? sale.total_amount)}
+        </div>
+      </div>
+      <div>
+        <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>قابل پرداخت</div>
+        <div className="font-bold text-base" style={{ color: THEME_COLORS.accent }}>
+          {formatPersianMoney(finalAmount)}
         </div>
       </div>
     </div>

@@ -114,6 +114,7 @@ export default function SalePaymentPage() {
             sale={payment.sale}
             selectedTotal={payment.selectedTotal}
             selectAllItems={payment.selectAllItems}
+            finalAmount={payment.finalAmount}
           />
 
           <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
@@ -145,12 +146,14 @@ export default function SalePaymentPage() {
               />
             </div>
 
-            {/* Quick calculation - half + custom divide only */}
+            {/* Quick calculation with final amount card */}
             <PaymentQuickCalc
               customDivisor={payment.customDivisor}
               onSetCustomDivisor={payment.setCustomDivisor}
               onSetHalf={payment.setAmountToHalf}
               onSetDivided={payment.setAmountToDivided}
+              finalAmount={payment.finalAmount}
+              onSetFull={payment.setAmountToFull}
             />
 
             {/* Payment method */}
@@ -174,6 +177,8 @@ export default function SalePaymentPage() {
               onToggleShow={() => payment.setShowTaxDiscount(!payment.showTaxDiscount)}
               taxType={payment.taxType}
               taxValue={payment.taxValue}
+              taxEnabled={payment.taxEnabled}
+              onToggleTax={payment.toggleTax}
               discountType={payment.discountType}
               discountValue={payment.discountValue}
               tipAmount={payment.tipAmount}

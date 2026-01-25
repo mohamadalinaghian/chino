@@ -9,6 +9,8 @@ interface Props {
   onToggleShow: () => void;
   taxType: TaxDiscountType;
   taxValue: string;
+  taxEnabled: boolean;
+  onToggleTax: () => void;
   discountType: TaxDiscountType;
   discountValue: string;
   tipAmount: string;
@@ -29,6 +31,8 @@ export function PaymentTaxDiscount({
   onToggleShow,
   taxType,
   taxValue,
+  taxEnabled,
+  onToggleTax,
   discountType,
   discountValue,
   tipAmount,
@@ -45,6 +49,21 @@ export function PaymentTaxDiscount({
 }: Props) {
   return (
     <div className="rounded-lg overflow-hidden">
+      {/* Quick 10% Tax Toggle Button - Always visible */}
+      <div className="flex items-center gap-2 mb-2">
+        <button
+          onClick={onToggleTax}
+          className="flex-1 py-2.5 rounded-lg font-bold text-sm transition-all"
+          style={{
+            backgroundColor: taxEnabled ? THEME_COLORS.blue : THEME_COLORS.surface,
+            color: taxEnabled ? '#fff' : THEME_COLORS.text,
+            border: `2px solid ${taxEnabled ? THEME_COLORS.blue : THEME_COLORS.border}`,
+          }}
+        >
+          {taxEnabled ? '✓ مالیات ۱۰٪ فعال' : 'مالیات ۱۰٪ غیرفعال'}
+        </button>
+      </div>
+
       <button
         onClick={onToggleShow}
         className="w-full flex items-center justify-between px-3 py-2.5 font-medium"
@@ -90,7 +109,7 @@ export function PaymentTaxDiscount({
           {/* Tax */}
           <div className="space-y-1.5">
             <div className="text-sm font-medium" style={{ color: THEME_COLORS.blue }}>
-              مالیات
+              مالیات {taxEnabled ? '(فعال)' : '(غیرفعال)'}
             </div>
             <div className="flex gap-2 items-center">
               <button
@@ -100,7 +119,9 @@ export function PaymentTaxDiscount({
                   borderColor: THEME_COLORS.blue,
                   backgroundColor: taxType === TaxDiscountType.FIXED ? THEME_COLORS.blue : 'transparent',
                   color: taxType === TaxDiscountType.FIXED ? 'white' : THEME_COLORS.text,
+                  opacity: taxEnabled ? 1 : 0.5,
                 }}
+                disabled={!taxEnabled}
               >
                 ثابت
               </button>
@@ -111,7 +132,9 @@ export function PaymentTaxDiscount({
                   borderColor: THEME_COLORS.blue,
                   backgroundColor: taxType === TaxDiscountType.PERCENTAGE ? THEME_COLORS.blue : 'transparent',
                   color: taxType === TaxDiscountType.PERCENTAGE ? 'white' : THEME_COLORS.text,
+                  opacity: taxEnabled ? 1 : 0.5,
                 }}
+                disabled={!taxEnabled}
               >
                 درصد
               </button>
@@ -121,8 +144,12 @@ export function PaymentTaxDiscount({
                 value={taxValue}
                 onChange={(e) => onTaxValueChange(e.target.value.replace(/[^0-9۰-۹.]/g, ''))}
                 className="w-20 px-2 py-1.5 text-center rounded border"
-                style={{ borderColor: THEME_COLORS.blue }}
+                style={{
+                  borderColor: THEME_COLORS.blue,
+                  opacity: taxEnabled ? 1 : 0.5,
+                }}
                 placeholder="0"
+                disabled={!taxEnabled}
               />
             </div>
           </div>
