@@ -62,6 +62,12 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
   const [discountValue, setDiscountValue] = useState<string>('0');
   const [showTaxDiscount, setShowTaxDiscount] = useState(false);
 
+  // ── Formula divisor (for splitting payment) ───────────────────────
+  const [divisor, setDivisor] = useState<number>(1);
+
+  // ── Manual override tracking ──────────────────────────────────────
+  const [isAmountManuallyOverridden, setIsAmountManuallyOverridden] = useState(false);
+
   // ── Quick calc ────────────────────────────────────────────────────
   const [customDivisor, setCustomDivisor] = useState<string>('2');
 
@@ -177,7 +183,12 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
   const taxAmount = calculateTaxAmount(selectedTotal);
   const discountAmount = calculateDiscountAmount(selectedTotal);
   const tipAmountValue = Number(tipAmount) || 0;
-  const finalAmount = selectedTotal + taxAmount - discountAmount + tipAmountValue;
+
+  // Calculate pre-division amount (before dividing by divisor)
+  const preDivisionAmount = selectedTotal + taxAmount - discountAmount + tipAmountValue;
+
+  // Final amount after division
+  const finalAmount = divisor > 1 ? Math.round(preDivisionAmount / divisor) : preDivisionAmount;
 
   // ── Auto-update amount when selection changes ─────────────────────
   const [prevFinal, setPrevFinal] = useState(finalAmount);
@@ -194,10 +205,57 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
 
     if (shouldAutoFill) {
       setAmount(finalAmount.toFixed(0));
+      setIsAmountManuallyOverridden(false);
     }
 
     setPrevFinal(finalAmount);
   }, [finalAmount, amount]);
+
+  // ── Handle amount change with manual override detection ───────────
+  const handleAmountChange = useCallback((newAmount: string) => {
+    const numericAmount = Number(newAmount);
+    setAmount(newAmount);
+    // Check if user manually changed the amount to something different from formula
+    if (!isNaN(numericAmount) && numericAmount !== finalAmount && numericAmount !== 0) {
+      setIsAmountManuallyOverridden(true);
+    }
+  }, [finalAmount]);
+
+  // ── Reset manual override when syncing to formula ─────────────────
+  const syncAmountToFormula = useCallback(() => {
+    setAmount(finalAmount.toFixed(0));
+    setIsAmountManuallyOverridden(false);
+  }, [finalAmount]);
+
+  // ── Divisor handlers ──────────────────────────────────────────────
+  const handleDivisorChange = useCallback((newDivisor: number) => {
+    const validDivisor = Math.max(1, Math.min(10, newDivisor));
+    setDivisor(validDivisor);
+    setIsAmountManuallyOverridden(false);
+  }, []);
+
+  const incrementDivisor = useCallback(() => {
+    handleDivisorChange(divisor + 1);
+  }, [divisor, handleDivisorChange]);
+
+  const decrementDivisor = useCallback(() => {
+    handleDivisorChange(divisor - 1);
+  }, [divisor, handleDivisorChange]);
+
+  // ── Tax value handlers ────────────────────────────────────────────
+  const incrementTaxValue = useCallback(() => {
+    const current = Number(taxValue) || 0;
+    setTaxValue((current + 1).toString());
+    setIsAmountManuallyOverridden(false);
+  }, [taxValue]);
+
+  const decrementTaxValue = useCallback(() => {
+    const current = Number(taxValue) || 0;
+    if (current > 0) {
+      setTaxValue((current - 1).toString());
+      setIsAmountManuallyOverridden(false);
+    }
+  }, [taxValue]);
 
   // ── Item selection handlers ───────────────────────────────────────
   const toggleItemFull = useCallback((itemId: number, maxQty: number) => {
@@ -239,15 +297,18 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
   // ── Quick calculation ────────────────────────────────────────────
   const setAmountToFull = () => {
     setAmount(finalAmount.toFixed(0));
+    setIsAmountManuallyOverridden(false);
   };
 
   const setAmountToHalf = () => {
     setAmount((finalAmount / 2).toFixed(0));
+    setIsAmountManuallyOverridden(true); // Half is technically a manual choice
   };
 
-  const setAmountToDivided = (divisor: number) => {
-    if (divisor < 2) return;
-    setAmount((finalAmount / divisor).toFixed(0));
+  const setAmountToDivided = (div: number) => {
+    if (div < 2) return;
+    setAmount((finalAmount / div).toFixed(0));
+    setIsAmountManuallyOverridden(true); // Custom division is a manual choice
   };
 
   // ── Other handlers ────────────────────────────────────────────────
@@ -347,17 +408,27 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
     discountAmount,
     tipAmountValue,
     finalAmount,
+    preDivisionAmount,
+    divisor,
+    isAmountManuallyOverridden,
     setAmount,
+    handleAmountChange,
+    syncAmountToFormula,
     setTipAmount,
     setSelectedAccountId,
     setTaxType,
     setTaxValue,
     setTaxEnabled,
     toggleTax,
+    incrementTaxValue,
+    decrementTaxValue,
     setDiscountType,
     setDiscountValue,
     setShowTaxDiscount,
     setCustomDivisor,
+    setDivisor: handleDivisorChange,
+    incrementDivisor,
+    decrementDivisor,
     handleItemToggleFull: toggleItemFull,
     handleItemQuantityChange: changeItemQuantity,
     handleSelectAllToggle,
