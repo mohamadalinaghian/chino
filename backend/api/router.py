@@ -8,7 +8,6 @@ from .endpoints import (
     menu_endpoints,
     menu_pdf_endpoints,
     print_queue_endpoints,
-    report_endpoints,
     sale_endpoints,
     table_endpoints,
     user_endpoints,
@@ -32,4 +31,3 @@ api.add_router("/sale/", sale_endpoints.router)
 api.add_router("/settings/", core_setting_endpoints.router)
 api.add_router("/user/", user_endpoints.router)
 api.add_router("/table/", table_endpoints.router_table)
-api.add_router("/report/", report_endpoints.router)
