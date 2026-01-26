@@ -213,13 +213,16 @@ export async function cancelSale(saleId: number, reason: string): Promise<ISaleR
 }
 
 /**
- * Fetches dashboard data (list of open sales)
+ * Fetches dashboard data (list of sales filtered by state)
+ * @param state - Filter by sale state (OPEN, CLOSED, CANCELED, all). Default: OPEN
  */
-export async function fetchDashboard(): Promise<IDashboardResponse> {
+export async function fetchDashboard(state?: string): Promise<IDashboardResponse> {
   try {
-    const response = await authenticatedFetchJSON<IDashboardResponse>(
-      `${CS_API_URL}${API_ENDPOINTS.SALE_DASHBOARD}`
-    );
+    const url = new URL(`${CS_API_URL}${API_ENDPOINTS.SALE_DASHBOARD}`);
+    if (state) {
+      url.searchParams.append('state', state);
+    }
+    const response = await authenticatedFetchJSON<IDashboardResponse>(url.toString());
     return response;
   } catch (error) {
     console.error('Error fetching dashboard:', error);

@@ -222,12 +222,11 @@ class DailyReport(models.Model):
         return self.closing_cash_counted - self.opening_float
 
     @property
-    def expected_cash_total(self) -> int:
+    def expected_cash_total(self) -> Decimal:
         """
         Expected cash from payments.
         Calculated from payment_methods where method=CASH.
         """
-
         return (
             self.payment_methods.select_related("daily_report")
             .get(payment_method=SalePayment.PaymentMethod.CASH)
@@ -251,7 +250,7 @@ class DailyReport(models.Model):
         )
 
     @property
-    def card_transfer_variance(self) -> int:
+    def card_transfer_variance(self) -> Decimal:
         return (
             self.payment_methods.select_related("daily_report")
             .get(payment_method=SalePayment.PaymentMethod.CARD_TRANSFER)
@@ -259,9 +258,9 @@ class DailyReport(models.Model):
         )
 
     @property
-    def cash_variance(self) -> int:
+    def cash_variance(self) -> Decimal:
         """Cash variance = (closing - opening) - expected cash."""
-        return self.net_cash_received - self.expected_cash_total
+        return Decimal(self.net_cash_received) - self.expected_cash_total
 
     @property
     def total_variance(self) -> Decimal:

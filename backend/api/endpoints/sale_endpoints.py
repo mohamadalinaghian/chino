@@ -411,9 +411,13 @@ def get_sale_detail(request, sale_id: int):
 
 
 @router.get("/", response=SaleDashboardResponse)
-def sale_dashboard(request):
+def sale_dashboard(request, state: str = None):
     """
-    Operational Dashboard: Lists all currently OPEN sales.
+    Operational Dashboard: Lists sales filtered by state.
+
+    Query Parameters:
+        state: Filter by sale state (OPEN, CLOSED, CANCELED). Default: OPEN only.
+               Pass 'all' to see all states (requires permission).
 
     Performance:
     - O(1) Queries: Uses select_related to fetch Table and Staff info in 1 query.
@@ -421,13 +425,23 @@ def sale_dashboard(request):
     """
     can_see_sale_list(request.auth)
 
-    # 1. Base Query: Only Active (OPEN) sales
+    # 1. Base Query with optional state filter
     #    We need Table info and the Staff member who opened it.
-    qs = (
-        Sale.objects.filter(state=Sale.SaleState.OPEN)
-        .select_related("table", "guest", "opened_by")
-        .order_by("-opened_at")
-    )  # Newest orders first
+    qs = Sale.objects.select_related("table", "guest", "opened_by")
+
+    # Apply state filter
+    if state and state.upper() == "ALL":
+        # Show all states - only for superuser or users with special permission
+        if not request.auth.is_superuser:
+            # Non-superusers can only see OPEN and CLOSED, not CANCELED
+            qs = qs.exclude(state=Sale.SaleState.CANCELED)
+    elif state and state.upper() in [s[0] for s in Sale.SaleState.choices]:
+        qs = qs.filter(state=state.upper())
+    else:
+        # Default: only OPEN sales
+        qs = qs.filter(state=Sale.SaleState.OPEN)
+
+    qs = qs.order_by("-opened_at")  # Newest orders first
 
     # # 2. Aggregations (Optional, but very useful for Dashboards)
     # #    Calculates total pending revenue in database (faster than Python loop)

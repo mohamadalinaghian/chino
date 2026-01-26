@@ -83,6 +83,15 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
     loadPOSAccount();
   }, [saleId]);
 
+  // ── Auto-select account when accounts are loaded ────────────────────
+  useEffect(() => {
+    if (paymentMethod === PaymentMethod.POS && posAccount?.id && !selectedAccountId) {
+      setSelectedAccountId(posAccount.id);
+    } else if (paymentMethod === PaymentMethod.CARD_TRANSFER && bankAccounts.length === 1 && !selectedAccountId) {
+      setSelectedAccountId(bankAccounts[0].id);
+    }
+  }, [posAccount, bankAccounts, paymentMethod, selectedAccountId]);
+
   const loadSaleData = async () => {
     try {
       setLoading(true);
@@ -340,12 +349,18 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
   };
 
   // ── Other handlers ────────────────────────────────────────────────
-  const handlePaymentMethodChange = (method: PaymentMethod) => {
+  const handlePaymentMethodChange = useCallback((method: PaymentMethod) => {
     setPaymentMethod(method);
     if (method === PaymentMethod.CASH) {
       setSelectedAccountId(null);
+    } else if (method === PaymentMethod.POS && posAccount?.id) {
+      // Auto-select POS account when switching to POS method
+      setSelectedAccountId(posAccount.id);
+    } else if (method === PaymentMethod.CARD_TRANSFER && bankAccounts.length === 1) {
+      // Auto-select single bank account when switching to card transfer
+      setSelectedAccountId(bankAccounts[0].id);
     }
-  };
+  }, [posAccount, bankAccounts]);
 
   const validatePayment = (): boolean => {
     if (!paymentMethod) {

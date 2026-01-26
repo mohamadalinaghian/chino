@@ -5,9 +5,12 @@ import { authenticatedFetchJSON } from '@/libs/auth/authFetch';
 import { CS_API_URL } from '@/libs/constants';
 import jalaliMoment from 'jalali-moment';
 
+export type SaleStateFilter = 'OPEN' | 'CLOSED' | 'CANCELED' | 'all';
+
 export interface DashboardFilters {
   user: string;
   time: 'all' | 'today' | 'last_hour';
+  state: SaleStateFilter;
 }
 
 export function useDashboard() {
@@ -23,11 +26,12 @@ export function useDashboard() {
   const [filters, setFilters] = useState<DashboardFilters>({
     user: '',
     time: 'all',
+    state: 'OPEN',
   });
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [filters.state]); // Reload when state filter changes
 
   const loadData = async () => {
     try {
@@ -36,7 +40,7 @@ export function useDashboard() {
 
       // Fetch permissions and dashboard data in parallel
       const [dashboardData, userInfo] = await Promise.all([
-        fetchDashboard(),
+        fetchDashboard(filters.state),
         authenticatedFetchJSON<IUserPermissions>(`${CS_API_URL}/auth/me`),
       ]);
 
@@ -53,7 +57,7 @@ export function useDashboard() {
   const handleRefresh = async () => {
     try {
       setRefreshing(true);
-      const data = await fetchDashboard();
+      const data = await fetchDashboard(filters.state);
       setSales(data.active_sales);
       return true;
     } catch (err) {

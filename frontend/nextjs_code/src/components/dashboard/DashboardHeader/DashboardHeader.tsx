@@ -1,6 +1,7 @@
 import { useRouter } from 'next/navigation';
 import { THEME_COLORS } from '@/libs/constants';
 import { getCurrentJalaliDate } from '@/utils/persianUtils';
+import { SaleStateFilter } from '@/hooks/useDashboard';
 
 interface DashboardHeaderProps {
   onRefresh: () => void;
@@ -10,6 +11,9 @@ interface DashboardHeaderProps {
   onFilterUserChange: (value: string) => void;
   filterTime: 'all' | 'today' | 'last_hour';
   onFilterTimeChange: (value: 'all' | 'today' | 'last_hour') => void;
+  filterState: SaleStateFilter;
+  onFilterStateChange: (value: SaleStateFilter) => void;
+  isSuperuser: boolean;
 }
 
 export function DashboardHeader({
@@ -20,6 +24,9 @@ export function DashboardHeader({
   onFilterUserChange,
   filterTime,
   onFilterTimeChange,
+  filterState,
+  onFilterStateChange,
+  isSuperuser,
 }: DashboardHeaderProps) {
   const router = useRouter();
 
@@ -95,6 +102,23 @@ export function DashboardHeader({
             <option value="all">همه زمان‌ها</option>
             <option value="today">امروز</option>
             <option value="last_hour">یک ساعت اخیر</option>
+          </select>
+
+          {/* Sale State Filter - Only show for users who can see different states */}
+          <select
+            value={filterState}
+            onChange={(e) => onFilterStateChange(e.target.value as SaleStateFilter)}
+            className="px-4 py-2 rounded-lg border outline-none focus:ring-2 transition-all"
+            style={{
+              backgroundColor: THEME_COLORS.surface,
+              borderColor: THEME_COLORS.border,
+              color: THEME_COLORS.text,
+            }}
+          >
+            <option value="OPEN">باز</option>
+            <option value="CLOSED">بسته شده</option>
+            {isSuperuser && <option value="CANCELED">لغو شده</option>}
+            <option value="all">همه وضعیت‌ها</option>
           </select>
         </div>
       </div>

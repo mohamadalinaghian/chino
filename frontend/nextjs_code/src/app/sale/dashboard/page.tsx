@@ -65,6 +65,9 @@ export default function SaleDashboardPage() {
         onFilterUserChange={(value) => setFilters({ ...filters, user: value })}
         filterTime={filters.time}
         onFilterTimeChange={(value) => setFilters({ ...filters, time: value })}
+        filterState={filters.state}
+        onFilterStateChange={(value) => setFilters({ ...filters, state: value })}
+        isSuperuser={isSuperuser}
       />
 
       {/* Main Content */}

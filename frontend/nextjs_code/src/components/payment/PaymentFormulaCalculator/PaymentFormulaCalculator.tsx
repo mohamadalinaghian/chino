@@ -287,8 +287,8 @@ export function PaymentFormulaCalculator({
                 border: `3px solid ${isAmountManuallyOverridden ? THEME_COLORS.red : THEME_COLORS.green}`,
               }}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
+              <div className="flex items-center justify-center gap-3">
+                <div className="flex-1 text-center">
                   <div className="text-xs mb-1" style={{ color: THEME_COLORS.subtext }}>
                     مبلغ پرداخت
                   </div>
@@ -298,7 +298,7 @@ export function PaymentFormulaCalculator({
                     dir="ltr"
                     value={amount}
                     onChange={(e) => onAmountChange(e.target.value.replace(/[^0-9۰-۹]/g, ''))}
-                    className="w-full text-2xl font-bold bg-transparent outline-none"
+                    className="w-full text-2xl font-bold bg-transparent outline-none text-center"
                     style={{ color: isAmountManuallyOverridden ? THEME_COLORS.red : THEME_COLORS.green }}
                     placeholder="۰"
                   />

@@ -13,6 +13,8 @@ from apps.sale.models import (
 from apps.sale.models.sale_item import SaleItem
 from apps.sale.policies import can_create_daily_report
 from django.db import models, transaction
+from django.db.models import F, Sum
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 
@@ -167,9 +169,14 @@ class CreateDailyReportService:
             "total"
         ] or Decimal("0.0000")
 
+        # COGS = Sum of (quantity * material_cost) for each item
+        # Using F expressions to multiply per-row before summing
         cogs = sold_items.aggregate(
-            cogs=models.Sum("material_cost") * models.Sum("quantity")
-        )["cogs"] or Decimal("0")
+            cogs=Coalesce(
+                Sum(F("quantity") * F("material_cost")),
+                Decimal("0")
+            )
+        )["cogs"]
 
         total_discounts = invoices.aggregate(total=models.Sum("discount_amount"))[
             "total"
