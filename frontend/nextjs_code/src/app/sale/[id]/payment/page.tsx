@@ -111,23 +111,27 @@ export default function SalePaymentPage() {
 
             <div className="text-center">
               <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>مجموع</div>
-              <div className="font-bold" style={{ color: THEME_COLORS.text, direction: 'ltr' }}>
+              <div className="font-bold" style={{ color: THEME_COLORS.text }}>
                 {formatPersianMoney(payment.sale.total_amount)}
               </div>
             </div>
             <div className="text-center">
               <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>پرداخت شده</div>
-              <div className="font-bold" style={{ color: '#10B981', direction: 'ltr' }}>
+              <div className="font-bold" style={{ color: '#10B981' }}>
                 {formatPersianMoney(payment.sale.total_paid)}
               </div>
             </div>
-            <div className="text-center">
-              <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>مانده</div>
+            <div
+              className="text-center cursor-pointer hover:opacity-80 transition-opacity px-2 py-1 rounded-lg"
+              style={{ backgroundColor: `${THEME_COLORS.orange}15` }}
+              onClick={() => payment.handleAmountChange(payment.sale!.balance_due.toString())}
+              title="کلیک برای وارد کردن مبلغ مانده"
+            >
+              <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>مانده (کلیک کنید)</div>
               <div
                 className="font-bold"
                 style={{
                   color: payment.sale.balance_due > 0 ? THEME_COLORS.orange : '#10B981',
-                  direction: 'ltr'
                 }}
               >
                 {formatPersianMoney(payment.sale.balance_due)}
@@ -213,26 +217,74 @@ export default function SalePaymentPage() {
 
           {/* Submit button - Synced with formula amount */}
           <div className="flex-shrink-0 p-5 border-t" style={{ borderColor: THEME_COLORS.border }}>
-            <button
-              onClick={payment.handleSubmitPayment}
-              disabled={payment.submitting || currentAmount <= 0}
-              className="w-full py-5 rounded-xl font-bold text-xl disabled:opacity-60 transition-all relative overflow-hidden"
-              style={{
-                backgroundColor: payment.isAmountManuallyOverridden ? THEME_COLORS.orange : THEME_COLORS.green,
-                color: '#ffffff',
-              }}
-            >
-              {payment.submitting ? (
-                'در حال ثبت...'
-              ) : (
-                <div className="flex items-center justify-center gap-3">
-                  {payment.isAmountManuallyOverridden && (
-                    <span className="text-sm opacity-80">(دستی)</span>
-                  )}
-                  <span>پرداخت <span style={{ direction: 'ltr', display: 'inline-block' }}>{formatPersianMoney(currentAmount)}</span></span>
+            {payment.divisor > 1 ? (
+              // Split submit buttons for multiple persons
+              <div className="space-y-3">
+                <div className="text-center text-sm mb-2" style={{ color: THEME_COLORS.subtext }}>
+                  پرداخت {payment.divisor} نفره - هر نفر: {formatPersianMoney(payment.finalAmount)}
                 </div>
-              )}
-            </button>
+                <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(payment.divisor, 5)}, 1fr)` }}>
+                  {Array.from({ length: payment.divisor }, (_, index) => {
+                    const isPaid = payment.paidPersons.includes(index);
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => payment.handleSubmitPersonPayment(index)}
+                        disabled={payment.submitting || isPaid}
+                        className="py-4 rounded-xl font-bold text-base disabled:opacity-60 transition-all relative overflow-hidden"
+                        style={{
+                          backgroundColor: isPaid ? THEME_COLORS.green : THEME_COLORS.accent,
+                          color: '#ffffff',
+                        }}
+                      >
+                        {payment.submitting ? (
+                          '...'
+                        ) : isPaid ? (
+                          <div className="flex flex-col items-center">
+                            <span className="text-lg">✓</span>
+                            <span className="text-xs">نفر {index + 1}</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center">
+                            <span>نفر {index + 1}</span>
+                            <span className="text-xs opacity-80">{formatPersianMoney(payment.finalAmount)}</span>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                {/* Progress indicator */}
+                <div
+                  className="text-center text-sm py-2 rounded-lg"
+                  style={{ backgroundColor: `${THEME_COLORS.purple}10`, color: THEME_COLORS.purple }}
+                >
+                  {payment.paidPersons.length} از {payment.divisor} نفر پرداخت کرده‌اند
+                </div>
+              </div>
+            ) : (
+              // Single submit button
+              <button
+                onClick={payment.handleSubmitPayment}
+                disabled={payment.submitting || currentAmount <= 0}
+                className="w-full py-5 rounded-xl font-bold text-xl disabled:opacity-60 transition-all relative overflow-hidden"
+                style={{
+                  backgroundColor: payment.isAmountManuallyOverridden ? THEME_COLORS.orange : THEME_COLORS.green,
+                  color: '#ffffff',
+                }}
+              >
+                {payment.submitting ? (
+                  'در حال ثبت...'
+                ) : (
+                  <div className="flex items-center justify-center gap-3">
+                    {payment.isAmountManuallyOverridden && (
+                      <span className="text-sm opacity-80">(دستی)</span>
+                    )}
+                    <span>پرداخت {formatPersianMoney(currentAmount)}</span>
+                  </div>
+                )}
+              </button>
+            )}
 
             {/* Show difference from formula if manually overridden */}
             {payment.isAmountManuallyOverridden && currentAmount !== payment.finalAmount && (
@@ -240,7 +292,7 @@ export default function SalePaymentPage() {
                 className="mt-2 text-center text-sm py-2 rounded-lg"
                 style={{ backgroundColor: `${THEME_COLORS.orange}15`, color: THEME_COLORS.orange }}
               >
-                تفاوت با فرمول: <span style={{ direction: 'ltr', display: 'inline-block' }}>{formatPersianMoney(Math.abs(currentAmount - payment.finalAmount))}</span>
+                تفاوت با فرمول: {formatPersianMoney(Math.abs(currentAmount - payment.finalAmount))}
                 {currentAmount > payment.finalAmount ? ' بیشتر' : ' کمتر'}
               </div>
             )}

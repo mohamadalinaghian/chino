@@ -89,7 +89,7 @@ export function PaymentFormulaCalculator({
             <div className="text-xs mb-1" style={{ color: THEME_COLORS.subtext }}>
               مجموع اقلام
             </div>
-            <div className="text-lg font-bold" style={{ color: THEME_COLORS.accent, direction: 'ltr' }}>
+            <div className="text-lg font-bold" style={{ color: THEME_COLORS.accent }}>
               {formatPersianMoney(selectedTotal)}
             </div>
           </div>
@@ -119,7 +119,7 @@ export function PaymentFormulaCalculator({
             </div>
             <div
               className="text-lg font-bold"
-              style={{ color: taxEnabled ? THEME_COLORS.blue : THEME_COLORS.subtext, direction: 'ltr' }}
+              style={{ color: taxEnabled ? THEME_COLORS.blue : THEME_COLORS.subtext }}
             >
               {taxEnabled ? formatPersianMoney(taxAmount) : '۰'}
             </div>
@@ -324,7 +324,7 @@ export function PaymentFormulaCalculator({
           className="mt-3 px-4 py-2 rounded-xl text-center"
           style={{ backgroundColor: `${THEME_COLORS.purple}10`, color: THEME_COLORS.purple }}
         >
-          <span className="text-sm font-medium" style={{ direction: 'ltr', display: 'inline-block' }}>
+          <span className="text-sm font-medium">
             جمع کل: {formatPersianMoney(preDivisionAmount)} ÷ {divisor} نفر = {formatPersianMoney(finalAmount)} هر نفر
           </span>
         </div>

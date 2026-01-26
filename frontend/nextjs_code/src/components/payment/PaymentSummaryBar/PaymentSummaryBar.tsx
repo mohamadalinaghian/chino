@@ -9,6 +9,7 @@ interface PaymentSummaryBarProps {
   selectedTotal: number;
   selectAllItems: boolean;
   finalAmount: number;
+  onRemainingClick?: (amount: number) => void;
 }
 
 export function PaymentSummaryBar({
@@ -16,7 +17,10 @@ export function PaymentSummaryBar({
   selectedTotal,
   selectAllItems,
   finalAmount,
+  onRemainingClick,
 }: PaymentSummaryBarProps) {
+  const remainingAmount = sale.balance_due ?? sale.total_amount;
+
   return (
     <div
       className="flex-shrink-0 px-4 py-3 border-b grid grid-cols-5 gap-2 text-center"
@@ -34,11 +38,21 @@ export function PaymentSummaryBar({
           {formatPersianMoney(sale.total_paid || 0)}
         </div>
       </div>
-      <div>
+      <div
+        onClick={() => onRemainingClick?.(remainingAmount)}
+        className={onRemainingClick ? 'cursor-pointer hover:opacity-80 transition-opacity rounded-lg p-1 -m-1' : ''}
+        style={onRemainingClick ? { backgroundColor: `${THEME_COLORS.orange}10` } : {}}
+        title={onRemainingClick ? 'کلیک برای وارد کردن مبلغ مانده' : undefined}
+      >
         <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>مانده</div>
         <div className="font-bold text-base" style={{ color: THEME_COLORS.orange }}>
-          {formatPersianMoney(sale.balance_due ?? sale.total_amount)}
+          {formatPersianMoney(remainingAmount)}
         </div>
+        {onRemainingClick && (
+          <div className="text-xs mt-0.5" style={{ color: THEME_COLORS.subtext }}>
+            کلیک کنید
+          </div>
+        )}
       </div>
       <div>
         <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>قابل پرداخت</div>

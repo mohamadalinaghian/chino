@@ -66,6 +66,10 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
   // ── Formula divisor (for splitting payment) ───────────────────────
   const [divisor, setDivisor] = useState<number>(1);
 
+  // ── Track which persons have paid in split payment mode ──────────
+  // Array of person indices (0-based) who have paid
+  const [paidPersons, setPaidPersons] = useState<number[]>([]);
+
   // ── Manual override tracking ──────────────────────────────────────
   const [isAmountManuallyOverridden, setIsAmountManuallyOverridden] = useState(false);
 
@@ -250,6 +254,7 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
   const handleDivisorChange = useCallback((newDivisor: number) => {
     const validDivisor = Math.max(1, Math.min(10, newDivisor));
     setDivisor(validDivisor);
+    setPaidPersons([]); // Reset paid persons when divisor changes
     setIsAmountManuallyOverridden(false);
   }, []);
 
@@ -399,12 +404,92 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
       setTaxEnabled(true); // Reset tax enabled
       setDiscountValue('0');
       setShowTaxDiscount(false);
+      setPaidPersons([]); // Reset paid persons
+      setDivisor(1); // Reset divisor
 
       const autoClosed = response.was_auto_closed || response.is_fully_paid;
       onSuccess?.(
         autoClosed ? 'پرداخت ثبت شد و فروش بسته شد' : UI_TEXT.MSG_PAYMENT_SUCCESS,
         autoClosed
       );
+    } catch (err) {
+      onError?.(err instanceof Error ? err.message : UI_TEXT.ERROR_ADDING_PAYMENT);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // ── Submit payment for a specific person in split mode ─────────────
+  const handleSubmitPersonPayment = async (personIndex: number) => {
+    if (!sale) return;
+    if (paidPersons.includes(personIndex)) {
+      onError?.('این شخص قبلاً پرداخت کرده است');
+      return;
+    }
+
+    // Validate payment method and account
+    if (!paymentMethod) {
+      onError?.(UI_TEXT.VALIDATION_SELECT_PAYMENT_METHOD);
+      return;
+    }
+    if (paymentMethod !== PaymentMethod.CASH && !selectedAccountId) {
+      onError?.(UI_TEXT.VALIDATION_SELECT_ACCOUNT);
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      // Use the per-person amount (finalAmount which is already divided)
+      const personAmount = finalAmount;
+
+      // Only include tax/discount/tip for the first person to avoid double-counting
+      const isFirstPerson = paidPersons.length === 0;
+
+      const paymentPayload: IAddPaymentInput = {
+        method: paymentMethod,
+        amount_applied: personAmount,
+        tip_amount: isFirstPerson ? tipAmountValue : 0,
+        destination_account_id: selectedAccountId,
+      };
+
+      // Only apply tax/discount for first person
+      if (isFirstPerson) {
+        const tv = Number(taxValue);
+        if (tv > 0) paymentPayload.tax = { type: taxType, value: tv };
+
+        const dv = Number(discountValue);
+        if (dv > 0) paymentPayload.discount = { type: discountType, value: dv };
+      }
+
+      const response = await addPaymentsToSale(saleId, { payments: [paymentPayload] });
+      await loadSaleData();
+
+      // Mark this person as paid
+      setPaidPersons((prev) => [...prev, personIndex]);
+
+      // Check if all persons have paid
+      const allPaid = paidPersons.length + 1 >= divisor;
+
+      if (allPaid) {
+        // Reset form when all persons have paid
+        setAmount('');
+        setTipAmount('0');
+        setSelectedItems([]);
+        setSelectAllItems(true);
+        setTaxValue('10');
+        setTaxEnabled(true);
+        setDiscountValue('0');
+        setShowTaxDiscount(false);
+        setPaidPersons([]);
+        setDivisor(1);
+      }
+
+      const autoClosed = response.was_auto_closed || response.is_fully_paid;
+      const message = allPaid
+        ? (autoClosed ? 'همه پرداخت‌ها ثبت شد و فروش بسته شد' : 'همه پرداخت‌ها ثبت شد')
+        : `پرداخت نفر ${personIndex + 1} ثبت شد`;
+
+      onSuccess?.(message, autoClosed);
     } catch (err) {
       onError?.(err instanceof Error ? err.message : UI_TEXT.ERROR_ADDING_PAYMENT);
     } finally {
@@ -440,6 +525,7 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
     finalAmount,
     preDivisionAmount,
     divisor,
+    paidPersons,
     isAmountManuallyOverridden,
     setAmount,
     handleAmountChange,
@@ -464,6 +550,7 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
     handleSelectAllToggle,
     handlePaymentMethodChange,
     handleSubmitPayment,
+    handleSubmitPersonPayment,
     setAmountToFull,
     setAmountToHalf,
     setAmountToDivided,

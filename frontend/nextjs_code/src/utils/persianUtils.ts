@@ -2,34 +2,62 @@ import moment from 'jalali-moment';
 
 /**
  * Formats a number to Persian money representation
+ * The input number is in thousands (هزار تومان)
+ * Decimal parts represent sub-thousand amounts (tomans)
+ *
  * Examples:
- * 1 -> "1 هزار تومان"
- * 342 -> "342 هزار تومان"
- * 1547 -> "1 میلیون و 547 هزار تومان"
- * 2000000 -> "2 میلیارد تومان"
+ * 0 -> "۰ تومان"
+ * 17.5 -> "۱۷ هزار و ۵۰۰ تومان" (17.5 thousand = 17,500 tomans)
+ * 17 -> "۱۷ هزار تومان"
+ * 17000 -> "۱۷ میلیون تومان" (17000 thousand = 17 million)
+ * 17175 -> "۱۷ میلیون و ۱۷۵ هزار تومان"
+ * 17175.17 -> "۱۷ میلیون و ۱۷۵ هزار و ۱۷۰ تومان"
+ * 0.5 -> "۵۰۰ تومان" (just 500 tomans, no هزار)
  */
 export function formatPersianMoney(amount: number): string {
-  if (amount === 0) return '0 تومان';
+  if (amount === 0) return '۰ تومان';
 
-  const billion = Math.floor(amount / 1000000);
-  const million = Math.floor((amount % 1000000) / 1000);
-  const thousand = amount % 1000;
+  // Handle negative numbers
+  const isNegative = amount < 0;
+  const absAmount = Math.abs(amount);
+
+  const billion = Math.floor(absAmount / 1000000);
+  const afterBillion = absAmount % 1000000;
+  const million = Math.floor(afterBillion / 1000);
+  const afterMillion = afterBillion % 1000;
+  const thousand = Math.floor(afterMillion);
+
+  // Handle decimal part - represents tomans (sub-thousand amounts)
+  // Use toFixed to avoid floating point precision issues
+  const decimalPart = absAmount - Math.floor(absAmount);
+  const toman = Math.round(decimalPart * 1000);
 
   const parts: string[] = [];
+  const formatter = new Intl.NumberFormat('fa-IR');
 
   if (billion > 0) {
-    parts.push(`${new Intl.NumberFormat('fa-IR').format(billion)} میلیارد`);
+    parts.push(`${formatter.format(billion)} میلیارد`);
   }
 
   if (million > 0) {
-    parts.push(`${new Intl.NumberFormat('fa-IR').format(million)} میلیون`);
+    parts.push(`${formatter.format(million)} میلیون`);
   }
 
   if (thousand > 0) {
-    parts.push(`${new Intl.NumberFormat('fa-IR').format(thousand)} هزار`);
+    parts.push(`${formatter.format(thousand)} هزار`);
   }
 
-  return `${parts.join(' و ')} تومان`;
+  if (toman > 0) {
+    parts.push(`${formatter.format(toman)}`);
+  }
+
+  if (parts.length === 0) {
+    return '۰ تومان';
+  }
+
+  const result = parts.join(' و ');
+  const prefix = isNegative ? '- ' : '';
+  return `${prefix}${result} تومان`;
 }
 
 /**
