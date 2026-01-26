@@ -27,18 +27,22 @@ services:
       - 8.8.8.8
 
   frontend:
-    image: chino-frontend:prod
+    image: chino-frontend:dev
     build:
       context: ./frontend
+      dockerfile: Dockerfile.dev
     env_file: .env.dev
     volumes:
-      - ./frontend/nextjs_code:/app
-      - node_modules_cach:/app/node_modules
+      - ./frontend/nextjs_code/src:/app/src
+      - ./frontend/nextjs_code/public:/app/public
+      - ./frontend/nextjs_code/next.config.ts:/app/next.config.ts
+      - ./frontend/nextjs_code/tsconfig.json:/app/tsconfig.json
+      - ./frontend/nextjs_code/postcss.config.mjs:/app/postcss.config.mjs
+      - ./frontend/nextjs_code/tailwind.config.ts:/app/tailwind.config.ts
     ports:
       - "3000:3000"
     depends_on:
       - backend
-    command: sh -c "npm install && npm run dev"
 
   nginx:
     build:

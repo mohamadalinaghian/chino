@@ -8,7 +8,7 @@ from apps.sale.models import Sale, SaleItem, SalePayment, SalePaymentItem
 from apps.user.models import BankAccount
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.db import models, transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -49,7 +49,9 @@ class EnhancedPaymentInput:
     amount_applied: Decimal
     tip_amount: Decimal = Decimal("0")
     destination_account_id: Optional[int] = None
-    selected_items: List[SelectedItemQuantity] = None  # Items with quantities for partial payment
+    selected_items: List[SelectedItemQuantity] = (
+        None  # Items with quantities for partial payment
+    )
     tax: Optional[TaxDiscountInput] = None
     discount: Optional[TaxDiscountInput] = None
 
@@ -348,7 +350,9 @@ class PaymentService:
 
                 if selection.quantity > remaining:
                     raise ValidationError(
-                        _("Cannot pay for %(qty)s units of '%(item)s'. Only %(remaining)s remaining.")
+                        _(
+                            "Cannot pay for %(qty)s units of '%(item)s'. Only %(remaining)s remaining."
+                        )
                         % {
                             "qty": selection.quantity,
                             "item": item.product.name,
