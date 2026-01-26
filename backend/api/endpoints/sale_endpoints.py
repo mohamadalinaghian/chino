@@ -9,6 +9,8 @@
 
 from typing import Dict, List, Set
 
+from django.db.models import Sum
+
 from api.schemas.sale_schemas import (
     AddPaymentsRequest,
     AddPaymentsResponse,
@@ -30,7 +32,7 @@ from api.schemas.sale_schemas import (
 from api.security.auth import jwt_auth
 from apps.inventory.models import Product, Table
 from apps.menu.models import Menu
-from apps.sale.models import Sale, SaleItem
+from apps.sale.models import Sale, SaleItem, SalePaymentItem
 from apps.sale.policies import (
     can_cancel_sale,
     can_modify_sale,
@@ -222,16 +224,28 @@ def get_sale_detail(request, sale_id: int):
         ).prefetch_related(
             "items",
             "items__product",  # Fetch product details for names/prices
+            "items__payment_records",  # Fetch payment records for quantity tracking
+            "items__payment_records__payment",  # Fetch related payment for status check
             "payments",  # Fetch payments
             "payments__destination_account",  # Fetch payment account details
             "payments__received_by",  # Fetch payment received by staff
-            "payments__sale_items",  # Fetch covered items for partial payments
+            "payments__payment_items",  # Fetch through model for item quantities
         ),
         id=sale_id,
     )
 
     # 2. Separation of Concerns: Split Items into Parents and Children
     all_items: List[SaleItem] = list(sale.items.all())
+
+    # 2.5 Calculate paid quantities for each item
+    item_paid_quantities: Dict[int, int] = {}
+    for item in all_items:
+        paid_qty = sum(
+            pr.quantity_paid
+            for pr in item.payment_records.all()
+            if pr.payment.status == "COMPLETED"
+        )
+        item_paid_quantities[item.pk] = paid_qty
 
     parents: List[SaleItem] = [i for i in all_items if i.parent_item_id is None]
     children: List[SaleItem] = [i for i in all_items if i.parent_item_id is not None]
@@ -272,6 +286,10 @@ def get_sale_detail(request, sale_id: int):
         # Resolve the Menu ID
         linked_menu_id = product_to_menu_map.get(parent.product.id)
 
+        # Calculate paid quantities
+        qty_paid = item_paid_quantities.get(parent.pk, 0)
+        qty_remaining = parent.quantity - qty_paid
+
         response_items.append(
             SaleItemDetailSchema(
                 id=parent.pk,
@@ -281,13 +299,21 @@ def get_sale_detail(request, sale_id: int):
                 unit_price=parent.unit_price,
                 total=parent.quantity * parent.unit_price,
                 extras=my_extras,
+                quantity_paid=qty_paid,
+                quantity_remaining=qty_remaining,
             )
         )
 
     # 5. Build payment history with extended details
     payment_list = []
     for payment in sale.payments.all():
-        covered_item_ids = [item.id for item in payment.sale_items.all()]
+        # Get covered items with quantities from through model
+        covered_items = [
+            {"item_id": pi.sale_item_id, "quantity_paid": pi.quantity_paid}
+            for pi in payment.payment_items.all()
+        ]
+        # Keep covered_item_ids for backwards compatibility
+        covered_item_ids = [ci["item_id"] for ci in covered_items]
 
         payment_data = PaymentDetailExtendedSchema(
             id=payment.pk,
@@ -317,6 +343,7 @@ def get_sale_detail(request, sale_id: int):
             or payment.received_by.username,
             received_at=payment.received_at,
             status=payment.status,
+            covered_items=covered_items,
             covered_item_ids=covered_item_ids,
         )
         payment_list.append(payment_data)
@@ -358,10 +385,10 @@ def get_sale_detail(request, sale_id: int):
             if sale.closed_by
             else None
         ),
-        # ---- Payment Tracking (when CLOSED) ----
-        "total_paid": sale.total_paid if sale.is_closed else None,
-        "balance_due": sale.balance_due if sale.is_closed else None,
-        "is_fully_paid": sale.is_fully_paid if sale.is_closed else None,
+        # ---- Payment Tracking (always show - needed for payment page) ----
+        "total_paid": sale.total_paid,
+        "balance_due": sale.balance_due,
+        "is_fully_paid": sale.is_fully_paid,
         # ---- COGS & Revenue (only if has permission) ----
         "total_cost": sale.total_cost if can_view_revenue else None,
         "gross_profit": sale.gross_profit if can_view_revenue else None,
@@ -537,6 +564,7 @@ def add_payments_endpoint(request, sale_id: int, payload: AddPaymentsRequest):
     from apps.sale.services.payment.payment_service import (
         EnhancedPaymentInput,
         PaymentService,
+        SelectedItemQuantity,
         TaxDiscountInput,
     )
 
@@ -557,13 +585,21 @@ def add_payments_endpoint(request, sale_id: int, payload: AddPaymentsRequest):
                     type=p.discount.type, value=p.discount.value
                 )
 
+            # Convert selected items with quantities
+            selected_items = None
+            if p.selected_items:
+                selected_items = [
+                    SelectedItemQuantity(item_id=si.item_id, quantity=si.quantity)
+                    for si in p.selected_items
+                ]
+
             enhanced_payment_inputs.append(
                 EnhancedPaymentInput(
                     method=p.method.value,
                     amount_applied=p.amount_applied,
                     tip_amount=p.tip_amount,
                     destination_account_id=p.destination_account_id,
-                    selected_item_ids=p.selected_item_ids,
+                    selected_items=selected_items,
                     tax=tax_input,
                     discount=discount_input,
                 )
@@ -581,12 +617,13 @@ def add_payments_endpoint(request, sale_id: int, payload: AddPaymentsRequest):
     # Build payment details for response
     payment_details = []
     for payment in created_payments:
-        # Get covered item IDs
-        covered_item_ids = (
-            list(payment.sale_items.values_list("id", flat=True))
-            if payment.sale_items.exists()
-            else []
-        )
+        # Get covered items with quantities from through model
+        covered_items = [
+            {"item_id": pi.sale_item_id, "quantity_paid": pi.quantity_paid}
+            for pi in payment.payment_items.all()
+        ]
+        # Keep covered_item_ids for backwards compatibility
+        covered_item_ids = [ci["item_id"] for ci in covered_items]
 
         payment_details.append(
             PaymentDetailExtendedSchema(
@@ -620,6 +657,7 @@ def add_payments_endpoint(request, sale_id: int, payload: AddPaymentsRequest):
                 ),
                 received_at=payment.received_at,
                 status=payment.status,
+                covered_items=covered_items,
                 covered_item_ids=covered_item_ids,
             )
         )

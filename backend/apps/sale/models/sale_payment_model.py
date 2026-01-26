@@ -96,11 +96,11 @@ class SalePayment(models.Model):
         db_index=True,
     )
 
-    # Item tracking for split payments
+    # Item tracking for split payments (with quantity support)
     sale_items = models.ManyToManyField(
         "sale.SaleItem",
+        through="sale.SalePaymentItem",
         blank=True,
-        null=True,
         related_name="payments",
         verbose_name=_("Sale items"),
         help_text=_("Specific items this payment covers (empty means all items)"),
@@ -175,3 +175,43 @@ class SalePayment(models.Model):
 
     def __str__(self) -> str:
         return f"{self.get_method_display()} | {self.amount_total}"
+
+
+class SalePaymentItem(models.Model):
+    """
+    Through model for tracking paid quantities per item in a payment.
+
+    Allows partial quantity payments - e.g., paying for 2 out of 3 items.
+    """
+
+    payment = models.ForeignKey(
+        SalePayment,
+        on_delete=models.CASCADE,
+        related_name="payment_items",
+        verbose_name=_("Payment"),
+    )
+
+    sale_item = models.ForeignKey(
+        "sale.SaleItem",
+        on_delete=models.CASCADE,
+        related_name="payment_records",
+        verbose_name=_("Sale Item"),
+    )
+
+    quantity_paid = models.PositiveIntegerField(
+        _("Quantity paid"),
+        help_text=_("Number of units paid for in this payment"),
+    )
+
+    class Meta:
+        verbose_name = _("Sale payment item")
+        verbose_name_plural = _("Sale payment items")
+        unique_together = ("payment", "sale_item")
+
+    def clean(self):
+        """Validate quantity doesn't exceed item's available quantity"""
+        if self.quantity_paid <= 0:
+            raise ValidationError(_("Quantity paid must be positive"))
+
+    def __str__(self) -> str:
+        return f"Payment #{self.payment_id} - Item #{self.sale_item_id} x{self.quantity_paid}"

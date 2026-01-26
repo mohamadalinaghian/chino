@@ -6,6 +6,7 @@ import {
   IAddPaymentInput,
   IBankAccount,
   ISaleItemDetail,
+  ISelectedItemInput,
 } from '@/types/sale';
 import {
   fetchSaleDetails,
@@ -111,13 +112,15 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
   };
 
   // ── Derived lists ─────────────────────────────────────────────────
+  // Items with remaining quantity to pay
   const unpaidItems = useMemo(
-    () => sale?.items.filter((item) => !item.is_paid) ?? [],
+    () => sale?.items.filter((item) => item.quantity_remaining > 0) ?? [],
     [sale]
   );
 
+  // Items that are fully paid (no remaining quantity)
   const paidItems = useMemo(
-    () => sale?.items.filter((item) => item.is_paid) ?? [],
+    () => sale?.items.filter((item) => item.quantity_remaining === 0) ?? [],
     [sale]
   );
 
@@ -125,12 +128,17 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
   const calculateUnpaidTotal = useCallback((): number => {
     if (!sale) return 0;
     return sale.items
-      .filter((item) => !item.is_paid)
+      .filter((item) => item.quantity_remaining > 0)
       .reduce((sum, item) => {
-        const itemTotal = Number(item.unit_price) * item.quantity;
+        // Use remaining quantity for calculation
+        const itemTotal = Number(item.unit_price) * item.quantity_remaining;
+        // Extras are included proportionally based on remaining quantity ratio
         const extrasTotal =
           item.extras?.reduce((s, e) => s + Number(e.unit_price) * e.quantity, 0) ?? 0;
-        return sum + itemTotal + extrasTotal;
+        const extrasProportional = item.quantity > 0
+          ? extrasTotal * (item.quantity_remaining / item.quantity)
+          : 0;
+        return sum + itemTotal + extrasProportional;
       }, 0);
   }, [sale]);
 
@@ -144,14 +152,18 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
     if (selectedItems.length === 0) {
       return 0;
     }
-    // Otherwise calculate sum of selected items
+    // Otherwise calculate sum of selected items with proportional extras
     return selectedItems.reduce((sum, sel) => {
       const item = sale.items.find((i) => i.id === sel.itemId);
       if (!item) return sum;
       const itemTotal = Number(item.unit_price) * sel.quantity;
       const extrasTotal =
         item.extras?.reduce((s, e) => s + Number(e.unit_price) * e.quantity, 0) ?? 0;
-      return sum + itemTotal + extrasTotal;
+      // Extras proportional to selected quantity
+      const extrasProportional = item.quantity > 0
+        ? extrasTotal * (sel.quantity / item.quantity)
+        : 0;
+      return sum + itemTotal + extrasProportional;
     }, 0);
   }, [sale, selectAllItems, selectedItems, calculateUnpaidTotal]);
 
@@ -352,14 +364,21 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
 
     setSubmitting(true);
     try {
-      const selectedItemIds = selectAllItems ? [] : selectedItems.map((s) => s.itemId);
+      // Build selected_items with quantities
+      let selectedItemsPayload: ISelectedItemInput[] = [];
+      if (!selectAllItems && selectedItems.length > 0) {
+        selectedItemsPayload = selectedItems.map((s) => ({
+          item_id: s.itemId,
+          quantity: s.quantity,
+        }));
+      }
 
       const paymentPayload: IAddPaymentInput = {
         method: paymentMethod,
         amount_applied: Number(amount),
         tip_amount: tipAmountValue,
         destination_account_id: selectedAccountId,
-        selected_item_ids: selectedItemIds,
+        selected_items: selectedItemsPayload.length > 0 ? selectedItemsPayload : undefined,
       };
 
       const tv = Number(taxValue);

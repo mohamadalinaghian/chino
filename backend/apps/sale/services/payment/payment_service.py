@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import List, Optional
 
-from apps.sale.models import Sale, SaleItem, SalePayment
+from apps.sale.models import Sale, SaleItem, SalePayment, SalePaymentItem
 from apps.user.models import BankAccount
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -34,6 +34,14 @@ class TaxDiscountInput:
 
 
 @dataclass
+class SelectedItemQuantity:
+    """Data transfer object for item with quantity selection."""
+
+    item_id: int
+    quantity: int
+
+
+@dataclass
 class EnhancedPaymentInput:
     """Enhanced payment input with item selection and tax/discount."""
 
@@ -41,7 +49,7 @@ class EnhancedPaymentInput:
     amount_applied: Decimal
     tip_amount: Decimal = Decimal("0")
     destination_account_id: Optional[int] = None
-    selected_item_ids: List[int] = None  # SaleItem IDs for partial payment
+    selected_items: List[SelectedItemQuantity] = None  # Items with quantities for partial payment
     tax: Optional[TaxDiscountInput] = None
     discount: Optional[TaxDiscountInput] = None
 
@@ -312,16 +320,44 @@ class PaymentService:
                 )
 
         # Validate selected items if specified
-        selected_items = []
-        if payment_input.selected_item_ids:
-            selected_items = list(
-                SaleItem.objects.filter(
-                    id__in=payment_input.selected_item_ids, sale=sale
-                )
-            )
-            if len(selected_items) != len(payment_input.selected_item_ids):
+        selected_item_data = []
+        if payment_input.selected_items:
+            item_ids = [s.item_id for s in payment_input.selected_items]
+            items_by_id = {
+                item.id: item
+                for item in SaleItem.objects.filter(id__in=item_ids, sale=sale)
+            }
+
+            if len(items_by_id) != len(item_ids):
                 raise ValidationError(
                     _("Some selected items do not belong to this sale")
+                )
+
+            # Validate quantities and calculate remaining
+            for selection in payment_input.selected_items:
+                item = items_by_id[selection.item_id]
+                # Calculate already paid quantity for this item
+                already_paid = (
+                    SalePaymentItem.objects.filter(
+                        sale_item_id=selection.item_id,
+                        payment__status=SalePayment.PaymentStatus.COMPLETED,
+                    ).aggregate(total=models.Sum("quantity_paid"))["total"]
+                    or 0
+                )
+                remaining = item.quantity - already_paid
+
+                if selection.quantity > remaining:
+                    raise ValidationError(
+                        _("Cannot pay for %(qty)s units of '%(item)s'. Only %(remaining)s remaining.")
+                        % {
+                            "qty": selection.quantity,
+                            "item": item.product.name,
+                            "remaining": remaining,
+                        }
+                    )
+
+                selected_item_data.append(
+                    {"item": item, "quantity": selection.quantity}
                 )
 
         # Calculate total
@@ -339,9 +375,14 @@ class PaymentService:
             status=SalePayment.PaymentStatus.COMPLETED,
         )
 
-        # Link selected items if specified
-        if selected_items:
-            payment.sale_items.set(selected_items)
+        # Link selected items with quantities via through model
+        if selected_item_data:
+            for data in selected_item_data:
+                SalePaymentItem.objects.create(
+                    payment=payment,
+                    sale_item=data["item"],
+                    quantity_paid=data["quantity"],
+                )
 
         return payment
 

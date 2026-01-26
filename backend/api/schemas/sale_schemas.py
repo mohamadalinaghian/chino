@@ -92,6 +92,9 @@ class SaleItemDetailSchema(Schema):
     unit_price: Decimal
     total: Decimal
     extras: List[ExtraDetailSchema]  # Nested list of extras
+    # Payment tracking
+    quantity_paid: int = 0  # How many units have been paid for
+    quantity_remaining: int = 0  # How many units are still unpaid
 
 
 class SaleDetailResponse(Schema):
@@ -124,10 +127,10 @@ class SaleDetailResponse(Schema):
     closed_at: Optional[datetime] = None
     closed_by_name: Optional[str] = None
 
-    # ---- Payment Tracking (when CLOSED) ----
-    total_paid: Optional[Decimal] = None
-    balance_due: Optional[Decimal] = None
-    is_fully_paid: Optional[bool] = None
+    # ---- Payment Tracking (always available) ----
+    total_paid: Decimal = Decimal("0")
+    balance_due: Decimal = Decimal("0")
+    is_fully_paid: bool = False
 
     # ---- COGS & Revenue (when CLOSED, if has permission) ----
     total_cost: Optional[Decimal] = None
@@ -273,6 +276,13 @@ class TaxDiscountInput(Schema):
     value: Decimal = Field(..., ge=0, description="Amount or percentage value")
 
 
+class SelectedItemInput(Schema):
+    """Schema for selecting an item with quantity for payment"""
+
+    item_id: int = Field(..., description="SaleItem ID")
+    quantity: int = Field(..., gt=0, description="Quantity to pay for")
+
+
 class AddPaymentInputSchema(Schema):
     """Schema for adding a single payment to a sale"""
 
@@ -282,10 +292,10 @@ class AddPaymentInputSchema(Schema):
     destination_account_id: Optional[int] = Field(
         default=None, description="Required for POS and CARD_TRANSFER"
     )
-    # Item selection for partial payments
-    selected_item_ids: List[int] = Field(
+    # Item selection for partial payments (with quantity support)
+    selected_items: List[SelectedItemInput] = Field(
         default_factory=list,
-        description="SaleItem IDs for partial payment (empty = all items)",
+        description="Items and quantities for partial payment (empty = all items)",
     )
     # Tax and discount for this payment
     tax: Optional[TaxDiscountInput] = Field(
@@ -304,6 +314,13 @@ class AddPaymentsRequest(Schema):
     )
 
 
+class CoveredItemSchema(Schema):
+    """Schema for an item covered by a payment with quantity"""
+
+    item_id: int = Field(..., description="SaleItem ID")
+    quantity_paid: int = Field(..., description="Quantity paid in this payment")
+
+
 class PaymentDetailExtendedSchema(Schema):
     """Extended payment details including related items and staff"""
 
@@ -319,9 +336,13 @@ class PaymentDetailExtendedSchema(Schema):
     received_by_name: str
     received_at: datetime
     status: str
-    # Related items for partial payments
+    # Related items for partial payments (with quantities)
+    covered_items: List[CoveredItemSchema] = Field(
+        default_factory=list, description="Items and quantities covered by this payment"
+    )
+    # Keep covered_item_ids for backwards compatibility
     covered_item_ids: List[int] = Field(
-        default_factory=list, description="SaleItem IDs covered by this payment"
+        default_factory=list, description="SaleItem IDs covered by this payment (deprecated)"
     )
 
 

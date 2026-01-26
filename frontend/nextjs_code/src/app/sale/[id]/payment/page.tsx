@@ -118,7 +118,7 @@ export default function SalePaymentPage() {
             <div className="text-center">
               <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>پرداخت شده</div>
               <div className="font-bold" style={{ color: '#10B981', direction: 'ltr' }}>
-                {formatPersianMoney(payment.sale.total_paid || 0)}
+                {formatPersianMoney(payment.sale.total_paid)}
               </div>
             </div>
             <div className="text-center">
@@ -126,11 +126,11 @@ export default function SalePaymentPage() {
               <div
                 className="font-bold"
                 style={{
-                  color: (payment.sale.balance_due ?? payment.sale.total_amount) > 0 ? THEME_COLORS.orange : '#10B981',
+                  color: payment.sale.balance_due > 0 ? THEME_COLORS.orange : '#10B981',
                   direction: 'ltr'
                 }}
               >
-                {formatPersianMoney(payment.sale.balance_due ?? payment.sale.total_amount)}
+                {formatPersianMoney(payment.sale.balance_due)}
               </div>
             </div>
           </div>

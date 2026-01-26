@@ -100,22 +100,29 @@ export function PaymentItemList({
       {/* Scrollable items */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {unpaidItems.map((item) => {
+          // Use quantity_remaining as the max selectable quantity
+          const maxSelectableQty = item.quantity_remaining;
           const selection = selectedItems.find((s) => s.itemId === item.id);
-          const qty = selectAllItems ? item.quantity : (selection?.quantity ?? 0);
+          const qty = selectAllItems ? maxSelectableQty : (selection?.quantity ?? 0);
           const isSelected = qty > 0;
-          const isPartiallySelected = isSelected && qty < item.quantity;
-          const selectionPercent = getSelectionPercentage(item, qty);
+          const isPartiallySelected = isSelected && qty < maxSelectableQty;
+          const selectionPercent = getSelectionPercentage({ ...item, quantity: maxSelectableQty }, qty);
 
           const baseTotal = qty * Number(item.unit_price);
+          // Extras proportional to selected quantity
           const extrasTotal =
             item.extras?.reduce((sum, e) => sum + Number(e.unit_price) * e.quantity, 0) || 0;
-          const total = baseTotal + (isSelected ? extrasTotal : 0);
-          const fullItemTotal = item.quantity * Number(item.unit_price) + extrasTotal;
+          const extrasProportional = item.quantity > 0
+            ? (extrasTotal * qty / item.quantity)
+            : 0;
+          const total = baseTotal + (isSelected ? extrasProportional : 0);
+          const remainingItemTotal = maxSelectableQty * Number(item.unit_price) +
+            (item.quantity > 0 ? extrasTotal * maxSelectableQty / item.quantity : 0);
 
           return (
             <div
               key={item.id}
-              onClick={() => onItemToggleFull(item.id, item.quantity)}
+              onClick={() => onItemToggleFull(item.id, maxSelectableQty)}
               className="rounded-xl overflow-hidden cursor-pointer transition-all relative"
               style={{
                 border: `2px solid ${isSelected ? THEME_COLORS.accent : THEME_COLORS.border}`,
@@ -166,7 +173,15 @@ export function PaymentItemList({
                     <div className="flex items-center gap-2 text-sm" style={{ color: THEME_COLORS.subtext }}>
                       <span>{formatPersianMoney(item.unit_price)}</span>
                       <span>×</span>
-                      <span className="font-medium">{item.quantity}</span>
+                      <span className="font-medium">{maxSelectableQty}</span>
+                      {item.quantity_paid > 0 && (
+                        <span
+                          className="px-2 py-0.5 rounded text-xs font-bold"
+                          style={{ backgroundColor: `${THEME_COLORS.green}20`, color: THEME_COLORS.green }}
+                        >
+                          {item.quantity_paid} پرداخت شده
+                        </span>
+                      )}
                       {isPartiallySelected && (
                         <span
                           className="px-2 py-0.5 rounded text-xs font-bold"
@@ -179,12 +194,12 @@ export function PaymentItemList({
                   </div>
 
                   {/* Quantity controls for multi-quantity items */}
-                  {item.quantity > 1 && (
+                  {maxSelectableQty > 1 && (
                     <div className="flex items-center gap-2">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          onItemQuantityChange(item.id, Math.max(0, qty - 1), item.quantity);
+                          onItemQuantityChange(item.id, Math.max(0, qty - 1), maxSelectableQty);
                         }}
                         className="w-9 h-9 rounded-full flex items-center justify-center text-xl font-bold transition-all"
                         style={{
@@ -198,14 +213,14 @@ export function PaymentItemList({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          onItemQuantityChange(item.id, Math.min(item.quantity, qty + 1), item.quantity);
+                          onItemQuantityChange(item.id, Math.min(maxSelectableQty, qty + 1), maxSelectableQty);
                         }}
-                        disabled={qty >= item.quantity}
+                        disabled={qty >= maxSelectableQty}
                         className="w-9 h-9 rounded-full flex items-center justify-center text-xl font-bold transition-all disabled:opacity-50"
                         style={{
-                          backgroundColor: qty < item.quantity ? `${THEME_COLORS.green}25` : THEME_COLORS.bgSecondary,
-                          color: qty < item.quantity ? THEME_COLORS.green : THEME_COLORS.subtext,
-                          border: `2px solid ${qty < item.quantity ? THEME_COLORS.green : THEME_COLORS.border}`,
+                          backgroundColor: qty < maxSelectableQty ? `${THEME_COLORS.green}25` : THEME_COLORS.bgSecondary,
+                          color: qty < maxSelectableQty ? THEME_COLORS.green : THEME_COLORS.subtext,
+                          border: `2px solid ${qty < maxSelectableQty ? THEME_COLORS.green : THEME_COLORS.border}`,
                         }}
                       >
                         +
@@ -222,13 +237,13 @@ export function PaymentItemList({
                         </div>
                         {isPartiallySelected && (
                           <div className="text-xs line-through" style={{ color: THEME_COLORS.subtext }}>
-                            {formatPersianMoney(fullItemTotal)}
+                            {formatPersianMoney(remainingItemTotal)}
                           </div>
                         )}
                       </>
                     ) : (
                       <div className="text-lg" style={{ color: THEME_COLORS.subtext }}>
-                        {formatPersianMoney(fullItemTotal)}
+                        {formatPersianMoney(remainingItemTotal)}
                       </div>
                     )}
                   </div>
@@ -288,7 +303,8 @@ export function PaymentItemList({
             </div>
 
             {paidItems.map((item) => {
-              const itemTotal = item.quantity * Number(item.unit_price) +
+              // Show total for paid quantity
+              const itemTotal = item.quantity_paid * Number(item.unit_price) +
                 (item.extras?.reduce((sum, e) => sum + Number(e.unit_price) * e.quantity, 0) || 0);
 
               return (
@@ -324,7 +340,10 @@ export function PaymentItemList({
                         {item.product_name}
                       </div>
                       <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
-                        {formatPersianMoney(item.unit_price)} × {item.quantity}
+                        {formatPersianMoney(item.unit_price)} × {item.quantity_paid}
+                        {item.quantity > item.quantity_paid && (
+                          <span className="text-xs ml-2">(از {item.quantity})</span>
+                        )}
                       </div>
                     </div>
 

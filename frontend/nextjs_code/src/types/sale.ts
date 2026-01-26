@@ -257,7 +257,9 @@ export interface ISaleItemDetail {
   unit_price: number;
   total: number;
   extras: IExtraDetail[];
-  is_paid: boolean;
+  // Payment tracking
+  quantity_paid: number; // How many units have been paid for
+  quantity_remaining: number; // How many units are still unpaid
 }
 
 /**
@@ -278,9 +280,10 @@ export interface ISaleDetailResponse {
   tax_amount: number;
   total_amount: number;
   payment_status: PaymentStatus;
-  total_paid?: number;
-  balance_due?: number;
-  is_fully_paid?: boolean;
+  // Payment tracking (always available now)
+  total_paid: number;
+  balance_due: number;
+  is_fully_paid: boolean;
   opened_at: string;
   opened_by_name: string;
   payments: IPaymentDetail[];
@@ -324,6 +327,14 @@ export interface IBankAccount {
 }
 
 /**
+ * Selected item with quantity for payment
+ */
+export interface ISelectedItemInput {
+  item_id: number;
+  quantity: number;
+}
+
+/**
  * Single payment input
  */
 export interface IAddPaymentInput {
@@ -331,7 +342,7 @@ export interface IAddPaymentInput {
   amount_applied: number;
   tip_amount?: number;
   destination_account_id?: number | null;
-  selected_item_ids?: number[];
+  selected_items?: ISelectedItemInput[];
   tax?: ITaxDiscountInput | null;
   discount?: ITaxDiscountInput | null;
 }
@@ -341,6 +352,14 @@ export interface IAddPaymentInput {
  */
 export interface IAddPaymentsRequest {
   payments: IAddPaymentInput[];
+}
+
+/**
+ * Covered item with quantity in a payment
+ */
+export interface ICoveredItem {
+  item_id: number;
+  quantity_paid: number;
 }
 
 /**
@@ -359,7 +378,8 @@ export interface IPaymentDetail {
   received_by_name: string;
   received_at: string;
   status: string;
-  covered_item_ids: number[];
+  covered_items: ICoveredItem[];
+  covered_item_ids: number[]; // Kept for backwards compatibility
 }
 
 /**
