@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
-import { ICreateReportInput, IReportFormState } from '@/types/reportCreate';
+import { ICreateReportInput } from '@/types/reportCreate';
 import { createReport } from '@/service/reportService';
 
 // Get today's date in YYYY-MM-DD format
@@ -13,14 +13,13 @@ const getTodayDate = (): string => {
   return today.toISOString().split('T')[0];
 };
 
-// Initial form values
+// Initial form values - matches backend schema
 const INITIAL_VALUES: Partial<ICreateReportInput> = {
   report_date: getTodayDate(),
-  opening_float: 0,
+  open_floating_cash: 0,
   closing_cash_counted: 0,
-  actual_pos_total: 0,
-  actual_card_transfer_total: 0,
-  notes: '',
+  pos_report: 0,
+  note: '',
 };
 
 interface UseReportFormOptions {
@@ -35,8 +34,11 @@ export function useReportForm({ onSuccess, onError }: UseReportFormOptions = {})
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // State for confirmed card transfers total (calculated from card transfer widget)
+  const [confirmedCardTransferTotal, setConfirmedCardTransferTotal] = useState(0);
+
   // Update a single field value
-  const setValue = useCallback((name: keyof ICreateReportInput, value: string | number) => {
+  const setValue = useCallback((name: keyof ICreateReportInput, value: string | number | null) => {
     setValues((prev) => ({ ...prev, [name]: value }));
     // Clear error when user starts typing
     if (errors[name]) {
@@ -53,7 +55,7 @@ export function useReportForm({ onSuccess, onError }: UseReportFormOptions = {})
     setTouched((prev) => ({ ...prev, [name]: true }));
   }, []);
 
-  // Validate form
+  // Validate form - using correct field names that match backend
   const validate = useCallback((): Record<string, string> => {
     const newErrors: Record<string, string> = {};
 
@@ -61,20 +63,16 @@ export function useReportForm({ onSuccess, onError }: UseReportFormOptions = {})
       newErrors.report_date = 'تاریخ گزارش الزامی است';
     }
 
-    if (values.opening_float === undefined || values.opening_float < 0) {
-      newErrors.opening_float = 'موجودی اولیه صندوق باید صفر یا بیشتر باشد';
+    if (values.open_floating_cash === undefined || values.open_floating_cash < 0) {
+      newErrors.open_floating_cash = 'موجودی اولیه صندوق باید صفر یا بیشتر باشد';
     }
 
     if (values.closing_cash_counted === undefined || values.closing_cash_counted < 0) {
       newErrors.closing_cash_counted = 'نقدی شمارش شده باید صفر یا بیشتر باشد';
     }
 
-    if (values.actual_pos_total === undefined || values.actual_pos_total < 0) {
-      newErrors.actual_pos_total = 'جمع کارتخوان باید صفر یا بیشتر باشد';
-    }
-
-    if (values.actual_card_transfer_total === undefined || values.actual_card_transfer_total < 0) {
-      newErrors.actual_card_transfer_total = 'جمع کارت به کارت باید صفر یا بیشتر باشد';
+    if (values.pos_report === undefined || values.pos_report < 0) {
+      newErrors.pos_report = 'جمع کارتخوان باید صفر یا بیشتر باشد';
     }
 
     return newErrors;
@@ -106,7 +104,15 @@ export function useReportForm({ onSuccess, onError }: UseReportFormOptions = {})
 
     setIsSubmitting(true);
     try {
-      const response = await createReport(values as ICreateReportInput);
+      // Build request with correct field names
+      const requestData: ICreateReportInput = {
+        report_date: values.report_date!,
+        open_floating_cash: values.open_floating_cash ?? 0,
+        closing_cash_counted: values.closing_cash_counted ?? 0,
+        pos_report: values.pos_report ?? 0,
+        note: values.note || null,
+      };
+      const response = await createReport(requestData);
       onSuccess?.(response.id);
       return true;
     } catch (error) {
@@ -123,14 +129,15 @@ export function useReportForm({ onSuccess, onError }: UseReportFormOptions = {})
     setValues(INITIAL_VALUES);
     setErrors({});
     setTouched({});
+    setConfirmedCardTransferTotal(0);
   }, []);
 
   // Calculate totals for display
   const calculatedTotals = useMemo(() => {
-    const openingFloat = Number(values.opening_float) || 0;
+    const openingFloat = Number(values.open_floating_cash) || 0;
     const closingCash = Number(values.closing_cash_counted) || 0;
-    const posTotal = Number(values.actual_pos_total) || 0;
-    const cardTransferTotal = Number(values.actual_card_transfer_total) || 0;
+    const posTotal = Number(values.pos_report) || 0;
+    const cardTransferTotal = confirmedCardTransferTotal;
 
     const cashReceived = closingCash - openingFloat;
     const totalIncome = cashReceived + posTotal + cardTransferTotal;
@@ -143,7 +150,7 @@ export function useReportForm({ onSuccess, onError }: UseReportFormOptions = {})
       cashReceived,
       totalIncome,
     };
-  }, [values]);
+  }, [values, confirmedCardTransferTotal]);
 
   return {
     // Form state
@@ -158,6 +165,10 @@ export function useReportForm({ onSuccess, onError }: UseReportFormOptions = {})
     setFieldTouched,
     handleSubmit,
     resetForm,
+
+    // Card transfer total (from widget)
+    confirmedCardTransferTotal,
+    setConfirmedCardTransferTotal,
 
     // Calculated values
     calculatedTotals,

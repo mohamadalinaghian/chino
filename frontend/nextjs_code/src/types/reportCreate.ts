@@ -4,15 +4,14 @@
  */
 
 /**
- * Report creation input - data collected from the form
+ * Report creation input - matches backend CreateReportRequest schema
  */
 export interface ICreateReportInput {
   report_date: string; // ISO date string (YYYY-MM-DD)
-  opening_float: number;
+  open_floating_cash: number;
   closing_cash_counted: number;
-  actual_pos_total: number;
-  actual_card_transfer_total: number;
-  notes?: string;
+  pos_report: number;
+  note?: string | null;
 }
 
 /**
@@ -20,9 +19,33 @@ export interface ICreateReportInput {
  */
 export interface ICreateReportResponse {
   id: number;
-  report_date: string;
-  status: 'DRAFT';
-  message?: string;
+  state: string;
+}
+
+/**
+ * Card transfer item for confirmation widget
+ */
+export interface ICardTransferItem {
+  id: number;
+  sale_id: number;
+  amount: number;
+  destination_card_number: string;
+  destination_account_owner: string;
+  destination_bank_name: string | null;
+  received_by_name: string;
+  received_at: string;
+  confirmed: boolean;
+}
+
+/**
+ * Card transfers list response
+ */
+export interface ICardTransfersResponse {
+  transfers: ICardTransferItem[];
+  total_count: number;
+  confirmed_count: number;
+  unconfirmed_count: number;
+  total_confirmed_amount: number;
 }
 
 /**

@@ -66,6 +66,178 @@ export default function SalePaymentPage() {
 
   const currentAmount = Number(payment.amount) || 0;
 
+  // View-only mode for fully paid or canceled sales
+  if (payment.isViewOnly) {
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: THEME_COLORS.bgPrimary }}>
+        {/* Header */}
+        <header
+          className="px-4 py-4 border-b"
+          style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border }}
+        >
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => router.back()}
+                className="px-5 py-2 rounded-lg font-medium transition-all hover:opacity-80"
+                style={{ backgroundColor: THEME_COLORS.surface, color: THEME_COLORS.text }}
+              >
+                ← بازگشت
+              </button>
+              <h1 className="text-xl font-bold" style={{ color: THEME_COLORS.text }}>
+                جزئیات فروش #{saleId}
+              </h1>
+            </div>
+            <div
+              className="px-4 py-2 rounded-lg font-bold"
+              style={{
+                backgroundColor: payment.sale.state === 'CANCELED' ? `${THEME_COLORS.red}20` : `${THEME_COLORS.green}20`,
+                color: payment.sale.state === 'CANCELED' ? THEME_COLORS.red : THEME_COLORS.green,
+              }}
+            >
+              {payment.sale.state === 'CANCELED' ? '✕ لغو شده' : '✓ تسویه شده'}
+            </div>
+          </div>
+        </header>
+
+        {/* Summary */}
+        <div className="max-w-screen-lg mx-auto p-6">
+          {/* Financial Summary */}
+          <div
+            className="p-6 rounded-xl mb-6"
+            style={{ backgroundColor: THEME_COLORS.bgSecondary }}
+          >
+            <h2 className="text-lg font-bold mb-4" style={{ color: THEME_COLORS.text }}>
+              خلاصه مالی
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center p-4 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
+                <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>جمع فروش</div>
+                <div className="text-xl font-bold" style={{ color: THEME_COLORS.text }}>
+                  {formatPersianMoney(payment.sale.total_amount)}
+                </div>
+              </div>
+              <div className="text-center p-4 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
+                <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>پرداخت شده</div>
+                <div className="text-xl font-bold" style={{ color: THEME_COLORS.green }}>
+                  {formatPersianMoney(payment.sale.total_paid)}
+                </div>
+              </div>
+              <div className="text-center p-4 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
+                <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>مالیات</div>
+                <div className="text-xl font-bold" style={{ color: THEME_COLORS.blue }}>
+                  {formatPersianMoney(payment.sale.tax_amount)}
+                </div>
+              </div>
+              <div className="text-center p-4 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
+                <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>تخفیف</div>
+                <div className="text-xl font-bold" style={{ color: THEME_COLORS.orange }}>
+                  {formatPersianMoney(payment.sale.discount_amount)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Items List */}
+          <div
+            className="p-6 rounded-xl mb-6"
+            style={{ backgroundColor: THEME_COLORS.bgSecondary }}
+          >
+            <h2 className="text-lg font-bold mb-4" style={{ color: THEME_COLORS.text }}>
+              اقلام فروش ({payment.sale.items.length})
+            </h2>
+            <div className="space-y-3">
+              {payment.sale.items.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex justify-between items-center p-3 rounded-lg"
+                  style={{ backgroundColor: THEME_COLORS.surface }}
+                >
+                  <div>
+                    <div className="font-medium" style={{ color: THEME_COLORS.text }}>
+                      {item.product_name}
+                    </div>
+                    <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
+                      {item.quantity} × {formatPersianMoney(item.unit_price)}
+                    </div>
+                  </div>
+                  <div className="font-bold" style={{ color: THEME_COLORS.green }}>
+                    {formatPersianMoney(item.total)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Payment History */}
+          {payment.sale.payments && payment.sale.payments.length > 0 && (
+            <div
+              className="p-6 rounded-xl"
+              style={{ backgroundColor: THEME_COLORS.bgSecondary }}
+            >
+              <h2 className="text-lg font-bold mb-4" style={{ color: THEME_COLORS.text }}>
+                تاریخچه پرداخت‌ها ({payment.sale.payments.length})
+              </h2>
+              <div className="space-y-3">
+                {payment.sale.payments.map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex justify-between items-center p-4 rounded-lg"
+                    style={{
+                      backgroundColor: p.status === 'VOID' ? `${THEME_COLORS.red}10` : THEME_COLORS.surface,
+                      opacity: p.status === 'VOID' ? 0.6 : 1,
+                    }}
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold" style={{ color: THEME_COLORS.text }}>
+                          {formatPersianMoney(p.amount_applied)}
+                        </span>
+                        <span
+                          className="px-2 py-0.5 rounded text-xs"
+                          style={{
+                            backgroundColor:
+                              p.method === 'CARD_TRANSFER' ? `${THEME_COLORS.accent}20` :
+                              p.method === 'CASH' ? `${THEME_COLORS.green}20` :
+                              `${THEME_COLORS.purple}20`,
+                            color:
+                              p.method === 'CARD_TRANSFER' ? THEME_COLORS.accent :
+                              p.method === 'CASH' ? THEME_COLORS.green :
+                              THEME_COLORS.purple,
+                          }}
+                        >
+                          {p.method === 'CARD_TRANSFER' ? 'کارت به کارت' :
+                           p.method === 'CASH' ? 'نقدی' : 'کارتخوان'}
+                        </span>
+                        {p.status === 'VOID' && (
+                          <span
+                            className="px-2 py-0.5 rounded text-xs font-bold"
+                            style={{ backgroundColor: `${THEME_COLORS.red}20`, color: THEME_COLORS.red }}
+                          >
+                            لغو شده
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-sm mt-1" style={{ color: THEME_COLORS.subtext }}>
+                        {p.received_by_name} - {new Date(p.received_at).toLocaleString('fa-IR')}
+                      </div>
+                    </div>
+                    {p.tip_amount > 0 && (
+                      <div className="text-sm" style={{ color: THEME_COLORS.green }}>
+                        انعام: {formatPersianMoney(p.tip_amount)}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <ToastContainer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: THEME_COLORS.bgPrimary }}>
       {/* Header */}

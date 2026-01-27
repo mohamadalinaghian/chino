@@ -8,7 +8,8 @@ import { useReportForm } from '@/hooks/useReportForm';
 import { ReportFormSection } from '@/components/report/ReportFormSection';
 import { ReportFormField } from '@/components/report/ReportFormField';
 import { ReportFormSummary } from '@/components/report/ReportFormSummary';
-import { ICreateReportInput } from '@/types/reportCreate';
+import { JalaliDatePicker } from '@/components/report/JalaliDatePicker';
+import { CardTransferWidget } from '@/components/report/CardTransferWidget';
 
 /**
  * ReportCreatePage
@@ -39,6 +40,7 @@ export default function ReportCreatePage() {
     setFieldTouched,
     handleSubmit,
     resetForm,
+    setConfirmedCardTransferTotal,
     calculatedTotals,
   } = useReportForm({
     onSuccess: handleSuccess,
@@ -103,27 +105,23 @@ export default function ReportCreatePage() {
               description="تاریخ و اطلاعات اولیه گزارش"
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ReportFormField
-                  label="تاریخ گزارش"
-                  name="report_date"
-                  type="date"
+                <JalaliDatePicker
                   value={values.report_date || ''}
-                  onChange={(v) => setValue('report_date', v as string)}
-                  onBlur={() => setFieldTouched('report_date')}
+                  onChange={(v) => setValue('report_date', v)}
+                  label="تاریخ گزارش"
                   error={errors.report_date}
                   touched={touched.report_date}
                   required
-                  helpText="تاریخ روزی که گزارش برای آن تنظیم می‌شود"
                 />
                 <ReportFormField
                   label="موجودی اولیه صندوق"
-                  name="opening_float"
+                  name="open_floating_cash"
                   type="number"
-                  value={values.opening_float ?? 0}
-                  onChange={(v) => setValue('opening_float', v as number)}
-                  onBlur={() => setFieldTouched('opening_float')}
-                  error={errors.opening_float}
-                  touched={touched.opening_float}
+                  value={values.open_floating_cash ?? 0}
+                  onChange={(v) => setValue('open_floating_cash', v as number)}
+                  onBlur={() => setFieldTouched('open_floating_cash')}
+                  error={errors.open_floating_cash}
+                  touched={touched.open_floating_cash}
                   required
                   icon="💰"
                   helpText="مبلغ نقدی موجود در صندوق در ابتدای روز"
@@ -152,41 +150,32 @@ export default function ReportCreatePage() {
               />
             </ReportFormSection>
 
-            {/* Electronic Payments Section */}
+            {/* POS Section */}
             <ReportFormSection
-              title="پرداخت‌های الکترونیکی"
-              icon="💳"
-              description="اطلاعات کارتخوان و کارت به کارت"
+              title="کارتخوان"
+              icon="🏧"
+              description="گزارش دستگاه کارتخوان"
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ReportFormField
-                  label="مجموع کارتخوان"
-                  name="actual_pos_total"
-                  type="number"
-                  value={values.actual_pos_total ?? 0}
-                  onChange={(v) => setValue('actual_pos_total', v as number)}
-                  onBlur={() => setFieldTouched('actual_pos_total')}
-                  error={errors.actual_pos_total}
-                  touched={touched.actual_pos_total}
-                  required
-                  icon="🏧"
-                  helpText="مجموع تراکنش‌های کارتخوان"
-                />
-                <ReportFormField
-                  label="مجموع کارت به کارت"
-                  name="actual_card_transfer_total"
-                  type="number"
-                  value={values.actual_card_transfer_total ?? 0}
-                  onChange={(v) => setValue('actual_card_transfer_total', v as number)}
-                  onBlur={() => setFieldTouched('actual_card_transfer_total')}
-                  error={errors.actual_card_transfer_total}
-                  touched={touched.actual_card_transfer_total}
-                  required
-                  icon="📱"
-                  helpText="مجموع واریزهای کارت به کارت تایید شده"
-                />
-              </div>
+              <ReportFormField
+                label="مجموع گزارش کارتخوان"
+                name="pos_report"
+                type="number"
+                value={values.pos_report ?? 0}
+                onChange={(v) => setValue('pos_report', v as number)}
+                onBlur={() => setFieldTouched('pos_report')}
+                error={errors.pos_report}
+                touched={touched.pos_report}
+                required
+                icon="💳"
+                helpText="مجموع فروش از گزارش دستگاه کارتخوان"
+              />
             </ReportFormSection>
+
+            {/* Card Transfers Section */}
+            <CardTransferWidget
+              onTotalChange={setConfirmedCardTransferTotal}
+              reportDate={values.report_date}
+            />
 
             {/* Notes Section */}
             <ReportFormSection
@@ -196,11 +185,11 @@ export default function ReportCreatePage() {
             >
               <ReportFormField
                 label="یادداشت"
-                name="notes"
+                name="note"
                 type="textarea"
-                value={values.notes || ''}
-                onChange={(v) => setValue('notes', v as string)}
-                onBlur={() => setFieldTouched('notes')}
+                value={values.note || ''}
+                onChange={(v) => setValue('note', v as string)}
+                onBlur={() => setFieldTouched('note')}
                 placeholder="توضیحات یا نکات مهم روز را اینجا بنویسید..."
                 helpText="این فیلد اختیاری است"
               />

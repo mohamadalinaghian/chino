@@ -570,11 +570,24 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
     try {
       // Build selected_items payload
       let selectedItemsPayload: ISelectedItemInput[] = [];
-      if (paymentMode === PaymentMode.FROM_ITEMS && !selectAllItems && selectedItems.length > 0) {
-        selectedItemsPayload = selectedItems.map((s) => ({
-          item_id: s.itemId,
-          quantity: s.quantity,
-        }));
+
+      if (paymentMode === PaymentMode.FROM_ITEMS) {
+        if (selectAllItems) {
+          // When selectAll is true, include ALL unpaid items with their remaining quantities
+          // This ensures the backend properly tracks which items are being paid
+          selectedItemsPayload = sale.items
+            .filter((item) => item.quantity_remaining > 0)
+            .map((item) => ({
+              item_id: item.id,
+              quantity: item.quantity_remaining,
+            }));
+        } else if (selectedItems.length > 0) {
+          // When specific items are selected
+          selectedItemsPayload = selectedItems.map((s) => ({
+            item_id: s.itemId,
+            quantity: s.quantity,
+          }));
+        }
       }
 
       const paymentPayload: IAddPaymentInput = {
@@ -688,6 +701,25 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
   };
 
   // ═════════════════════════════════════════════════════════════════
+  // VIEW-ONLY MODE - For closed/fully paid sales
+  // ═════════════════════════════════════════════════════════════════
+
+  // View-only mode: sale is CLOSED and fully paid, or CANCELED
+  const isViewOnly = useMemo(() => {
+    if (!sale) return false;
+    // Sale is fully paid - no more payments needed
+    if (sale.is_fully_paid) return true;
+    // Sale is canceled - cannot accept payments
+    if (sale.state === 'CANCELED') return true;
+    return false;
+  }, [sale]);
+
+  // Check if sale is closed (still allows partial payments)
+  const isSaleClosed = useMemo(() => {
+    return sale?.state === 'CLOSED';
+  }, [sale]);
+
+  // ═════════════════════════════════════════════════════════════════
   // RETURN
   // ═════════════════════════════════════════════════════════════════
 
@@ -698,6 +730,8 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
     submitting,
     bankAccounts,
     posAccount,
+    isViewOnly,
+    isSaleClosed,
 
     // Flow state
     paymentMode,
