@@ -216,7 +216,6 @@ export default function SalePaymentPage() {
               paidItems={payment.paidItems}
               selectedItems={payment.selectedItems}
               selectAllItems={payment.selectAllItems}
-              payments={payment.sale?.payments || []}
               onItemToggleFull={payment.handleItemToggleFull}
               onItemQuantityChange={payment.handleItemQuantityChange}
               onSelectAllToggle={payment.handleSelectAllToggle}

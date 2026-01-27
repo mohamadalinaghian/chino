@@ -233,12 +233,30 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
     }, 0);
   }, [sale]);
 
+  // ── REMAINING ITEMS TOTAL: Sum of only UNPAID items (quantity_remaining > 0) ────
+  // This is used for calculating the correct remaining amount
+  const remainingItemsBase = useMemo((): number => {
+    if (!sale) return 0;
+    return sale.items
+      .filter((item) => item.quantity_remaining > 0)
+      .reduce((sum, item) => {
+        const itemTotal = Number(item.unit_price) * item.quantity_remaining;
+        const extrasTotal =
+          item.extras?.reduce((s, e) => s + Number(e.unit_price) * e.quantity, 0) ?? 0;
+        // Prorate extras based on remaining quantity
+        const extrasProportional = item.quantity > 0
+          ? extrasTotal * (item.quantity_remaining / item.quantity)
+          : 0;
+        return sum + itemTotal + extrasProportional;
+      }, 0);
+  }, [sale]);
+
   // ── INITIAL TOTAL WITH DEFAULT TAX: Maximum sale total (items + 10% tax) ────
   const initialTotalWithDefaultTax = useMemo((): number => {
     return initialItemsTotal * 1.1; // 10% default tax
   }, [initialItemsTotal]);
 
-  // ── Tax & Discount Calculations ───────────────────────────────────
+  // ── Tax & Discount Calculations (based on selected items) ───────────────────────────────────
   const taxAmount = useMemo(() => {
     if (!taxEnabled) return 0;
     const val = Number(taxValue);
@@ -257,8 +275,8 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
   // ── Pre-division amount (before splitting) ────────────────────────
   const preDivisionAmount = baseAmount + taxAmount - discountAmount + tipAmountValue;
 
-  // ── CALCULATED TOTAL: Current total based on user's tax/discount choices ────
-  // This updates dynamically when user changes tax settings
+  // ── CALCULATED TOTAL: Total for SELECTED items with tax/discount ────
+  // This is what will be paid for the current selection
   const calculatedTotal = useMemo((): number => {
     return baseAmount + taxAmount - discountAmount;
   }, [baseAmount, taxAmount, discountAmount]);
@@ -269,12 +287,24 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
     return initialTotalWithDefaultTax + tipAmountValue;
   }, [initialTotalWithDefaultTax, tipAmountValue]);
 
-  // ── DYNAMIC REMAINING: How much is left to pay based on current calculations ────
+  // ── DYNAMIC REMAINING: Total for all REMAINING (unpaid) items with current tax ────
+  // This shows what needs to be paid to complete all unpaid items
+  // NOT calculated as "total - paid" because previous payments may have different tax settings
   const dynamicRemaining = useMemo((): number => {
-    const totalPaid = sale?.total_paid ?? 0;
-    // Remaining is calculated total minus what's already paid
-    return Math.max(0, calculatedTotal - totalPaid);
-  }, [calculatedTotal, sale?.total_paid]);
+    if (!sale) return 0;
+
+    // Calculate tax on remaining items only
+    const taxOnRemaining = taxEnabled
+      ? (taxType === TaxDiscountType.FIXED ? Number(taxValue) : (remainingItemsBase * Number(taxValue) / 100))
+      : 0;
+
+    // Calculate discount on remaining items only
+    const discountOnRemaining = Number(discountValue) > 0
+      ? (discountType === TaxDiscountType.FIXED ? Number(discountValue) : (remainingItemsBase * Number(discountValue) / 100))
+      : 0;
+
+    return Math.max(0, remainingItemsBase + taxOnRemaining - discountOnRemaining);
+  }, [sale, remainingItemsBase, taxEnabled, taxType, taxValue, discountValue, discountType]);
 
   // ── Final amount per person (after splitting) ─────────────────────
   const finalAmount = useMemo(() => {
@@ -726,6 +756,7 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
     // Summary card values (dynamic calculations)
     initialItemsTotal,
     initialTotalWithDefaultTax,
+    remainingItemsBase,
     calculatedTotal,
     maximumTotal,
     dynamicRemaining,

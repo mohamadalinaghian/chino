@@ -1,5 +1,5 @@
 import { useRouter } from 'next/navigation';
-import { IDashboardSaleItem } from '@/types/sale';
+import { IDashboardSaleItem, SaleState } from '@/types/sale';
 import { THEME_COLORS } from '@/libs/constants';
 import { toPersianDigits, formatPersianMoney } from '@/utils/persianUtils';
 import jalaliMoment from 'jalali-moment';
@@ -20,6 +20,12 @@ export function SaleCard({
   isLoading = false,
 }: SaleCardProps) {
   const router = useRouter();
+
+  // Check if sale is in a final state (CLOSED or CANCELED)
+  const isOpen = sale.state === SaleState.OPEN || sale.state === 'OPEN';
+  const isClosed = sale.state === SaleState.CLOSED || sale.state === 'CLOSED';
+  const isCanceled = sale.state === SaleState.CANCELED || sale.state === 'CANCELED';
+  const isFinalState = isClosed || isCanceled;
 
   return (
     <div
@@ -83,27 +89,32 @@ export function SaleCard({
 
       {/* Action Buttons */}
       <div className="grid grid-cols-2 gap-2">
-        <button
-          onClick={() => router.push(`/sale/${sale.id}/edit`)}
-          className="py-2 px-3 rounded-lg text-sm font-bold transition-all hover:opacity-90"
-          style={{
-            backgroundColor: THEME_COLORS.surface,
-            color: THEME_COLORS.text,
-          }}
-        >
-          ✏️ ویرایش
-        </button>
+        {/* Edit button - only for OPEN sales */}
+        {isOpen && (
+          <button
+            onClick={() => router.push(`/sale/${sale.id}/edit`)}
+            className="py-2 px-3 rounded-lg text-sm font-bold transition-all hover:opacity-90"
+            style={{
+              backgroundColor: THEME_COLORS.surface,
+              color: THEME_COLORS.text,
+            }}
+          >
+            ✏️ ویرایش
+          </button>
+        )}
+        {/* Payment button - label changes based on state */}
         <button
           onClick={() => router.push(`/sale/${sale.id}/payment`)}
-          className="py-2 px-3 rounded-lg text-sm font-bold transition-all hover:opacity-90"
+          className={`py-2 px-3 rounded-lg text-sm font-bold transition-all hover:opacity-90 ${!isOpen ? 'col-span-2' : ''}`}
           style={{
-            backgroundColor: THEME_COLORS.accent,
-            color: '#fff',
+            backgroundColor: isFinalState ? THEME_COLORS.surface : THEME_COLORS.accent,
+            color: isFinalState ? THEME_COLORS.text : '#fff',
           }}
         >
-          💳 پرداخت
+          {isFinalState ? '📋 مشاهده' : '💳 پرداخت'}
         </button>
-        {canCancelSale && (
+        {/* Cancel button - only for OPEN sales with permission */}
+        {isOpen && canCancelSale && (
           <button
             onClick={() => onCancel(sale.id)}
             disabled={isLoading}

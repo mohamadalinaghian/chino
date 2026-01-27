@@ -2,7 +2,7 @@
 
 import { THEME_COLORS } from '@/libs/constants';
 import { formatPersianMoney } from '@/utils/persianUtils';
-import { ISaleItemDetail, IPaymentDetail, PaymentMethod } from '@/types/sale';
+import { ISaleItemDetail } from '@/types/sale';
 import { IItemSelection } from '@/hooks/usePayment';
 
 interface PaymentItemListProps {
@@ -10,47 +10,16 @@ interface PaymentItemListProps {
   paidItems: ISaleItemDetail[];
   selectedItems: IItemSelection[];
   selectAllItems: boolean;
-  payments?: IPaymentDetail[];
   onItemToggleFull: (itemId: number, maxQty: number) => void;
   onItemQuantityChange: (itemId: number, qty: number, maxQty: number) => void;
   onSelectAllToggle: () => void;
 }
-
-// Helper to format payment method in Persian
-const formatPaymentMethod = (method: string): string => {
-  switch (method) {
-    case PaymentMethod.CASH:
-      return 'نقدی';
-    case PaymentMethod.POS:
-      return 'کارتخوان';
-    case PaymentMethod.CARD_TRANSFER:
-      return 'کارت به کارت';
-    default:
-      return method;
-  }
-};
-
-// Helper to format date
-const formatPaymentDate = (dateStr: string): string => {
-  try {
-    const date = new Date(dateStr);
-    return new Intl.DateTimeFormat('fa-IR', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(date);
-  } catch {
-    return dateStr;
-  }
-};
 
 export function PaymentItemList({
   unpaidItems,
   paidItems,
   selectedItems,
   selectAllItems,
-  payments = [],
   onItemToggleFull,
   onItemQuantityChange,
   onSelectAllToggle,
@@ -373,99 +342,6 @@ export function PaymentItemList({
                 </div>
               );
             })}
-          </div>
-        )}
-
-        {/* Payment History Section */}
-        {payments.length > 0 && (
-          <div className="mt-6 pt-4 border-t-2" style={{ borderColor: THEME_COLORS.accent }}>
-            <div className="flex items-center gap-2 mb-3 px-2">
-              <div
-                className="w-7 h-7 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: THEME_COLORS.accent }}
-              >
-                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" />
-                </svg>
-              </div>
-              <span className="font-bold" style={{ color: THEME_COLORS.accent }}>
-                تاریخچه پرداخت‌ها ({payments.length})
-              </span>
-            </div>
-
-            <div className="space-y-2">
-              {payments.map((payment, index) => (
-                <div
-                  key={payment.id}
-                  className="rounded-xl overflow-hidden"
-                  style={{
-                    backgroundColor: payment.status === 'VOID' ? `${THEME_COLORS.red}10` : `${THEME_COLORS.accent}08`,
-                    border: `1px solid ${payment.status === 'VOID' ? THEME_COLORS.red : THEME_COLORS.accent}40`,
-                  }}
-                >
-                  <div className="px-4 py-3">
-                    {/* Payment header row */}
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
-                          style={{ backgroundColor: THEME_COLORS.accent, color: '#fff' }}
-                        >
-                          {index + 1}
-                        </span>
-                        <span
-                          className="px-2 py-0.5 rounded text-xs font-bold"
-                          style={{
-                            backgroundColor: payment.method === 'CASH' ? `${THEME_COLORS.green}20` :
-                                           payment.method === 'POS' ? `${THEME_COLORS.blue}20` : `${THEME_COLORS.purple}20`,
-                            color: payment.method === 'CASH' ? THEME_COLORS.green :
-                                   payment.method === 'POS' ? THEME_COLORS.blue : THEME_COLORS.purple,
-                          }}
-                        >
-                          {formatPaymentMethod(payment.method)}
-                        </span>
-                        {payment.status === 'VOID' && (
-                          <span
-                            className="px-2 py-0.5 rounded text-xs font-bold"
-                            style={{ backgroundColor: `${THEME_COLORS.red}20`, color: THEME_COLORS.red }}
-                          >
-                            باطل شده
-                          </span>
-                        )}
-                      </div>
-                      <div
-                        className={`text-lg font-bold ${payment.status === 'VOID' ? 'line-through' : ''}`}
-                        style={{ color: payment.status === 'VOID' ? THEME_COLORS.red : '#10B981', direction: 'ltr' }}
-                      >
-                        {formatPersianMoney(payment.amount_applied)}
-                      </div>
-                    </div>
-
-                    {/* Payment details row */}
-                    <div className="flex items-center justify-between text-xs" style={{ color: THEME_COLORS.subtext }}>
-                      <div className="flex items-center gap-3">
-                        <span>توسط: {payment.received_by_name}</span>
-                        {payment.tip_amount > 0 && (
-                          <span style={{ color: THEME_COLORS.green }}>
-                            انعام: {formatPersianMoney(payment.tip_amount)}
-                          </span>
-                        )}
-                      </div>
-                      <span>{formatPaymentDate(payment.received_at)}</span>
-                    </div>
-
-                    {/* Account info for non-cash payments */}
-                    {payment.destination_card_number && (
-                      <div className="mt-2 pt-2 border-t text-xs" style={{ borderColor: THEME_COLORS.border }}>
-                        <span style={{ color: THEME_COLORS.subtext }}>
-                          {payment.destination_bank_name} - {payment.destination_card_number.slice(-4)}****
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         )}
       </div>

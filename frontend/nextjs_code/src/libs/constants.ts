@@ -113,6 +113,7 @@ export const API_ENDPOINTS = {
 
   // Report endpoints
   REPORT_LIST: '/report/',
+  REPORT_CREATE: '/report/create',
   REPORT_DETAILS: (reportId: number) => `/report/${reportId}/details`,
   REPORT_APPROVE: (reportId: number) => `/report/${reportId}/approve`,
 

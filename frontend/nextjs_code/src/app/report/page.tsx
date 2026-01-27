@@ -113,6 +113,13 @@ export default function ReportsDashboardPage() {
 
           <div className="flex items-center gap-3">
             <button
+              onClick={() => router.push('/report/new')}
+              className="px-4 py-2 rounded-lg font-bold transition-all hover:opacity-80"
+              style={{ backgroundColor: THEME_COLORS.green, color: '#fff' }}
+            >
+              + ایجاد گزارش
+            </button>
+            <button
               onClick={() => router.push('/card-transfers')}
               className="px-4 py-2 rounded-lg font-medium transition-all hover:opacity-80"
               style={{ backgroundColor: THEME_COLORS.purple, color: '#fff' }}
