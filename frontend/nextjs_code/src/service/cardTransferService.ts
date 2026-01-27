@@ -3,6 +3,7 @@ import { CS_API_URL, API_ENDPOINTS } from "@/libs/constants";
 import {
   ICardTransferListResponse,
   IConfirmTransferResponse,
+  IBulkTransferResponse,
 } from "@/types/cardTransfer";
 
 export async function fetchCardTransfers(
@@ -54,5 +55,43 @@ export async function unconfirmCardTransfer(
   } catch (error) {
     console.error("Error unconfirming card transfer:", error);
     throw new Error("خطا در لغو تایید انتقال");
+  }
+}
+
+export async function bulkConfirmCardTransfers(
+  transferIds: number[]
+): Promise<IBulkTransferResponse> {
+  try {
+    const url = CS_API_URL + API_ENDPOINTS.CARD_TRANSFER_BULK_CONFIRM;
+    const response = await authenticatedFetchJSON<IBulkTransferResponse>(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ transfer_ids: transferIds }),
+    });
+    return response;
+  } catch (error) {
+    console.error("Error bulk confirming card transfers:", error);
+    throw new Error("خطا در تایید دسته‌جمعی انتقال‌ها");
+  }
+}
+
+export async function bulkUnconfirmCardTransfers(
+  transferIds: number[]
+): Promise<IBulkTransferResponse> {
+  try {
+    const url = CS_API_URL + API_ENDPOINTS.CARD_TRANSFER_BULK_UNCONFIRM;
+    const response = await authenticatedFetchJSON<IBulkTransferResponse>(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ transfer_ids: transferIds }),
+    });
+    return response;
+  } catch (error) {
+    console.error("Error bulk unconfirming card transfers:", error);
+    throw new Error("خطا در لغو تایید دسته‌جمعی انتقال‌ها");
   }
 }

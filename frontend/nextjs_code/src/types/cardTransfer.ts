@@ -25,3 +25,9 @@ export interface IConfirmTransferResponse {
   confirmed: boolean;
   message: string;
 }
+
+export interface IBulkTransferResponse {
+  success_count: number;
+  failed_count: number;
+  message: string;
+}

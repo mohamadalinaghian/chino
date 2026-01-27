@@ -120,6 +120,8 @@ export const API_ENDPOINTS = {
   CARD_TRANSFER_LIST: '/card-transfers/',
   CARD_TRANSFER_CONFIRM: (transferId: number) => `/card-transfers/${transferId}/confirm`,
   CARD_TRANSFER_UNCONFIRM: (transferId: number) => `/card-transfers/${transferId}/unconfirm`,
+  CARD_TRANSFER_BULK_CONFIRM: '/card-transfers/bulk-confirm',
+  CARD_TRANSFER_BULK_UNCONFIRM: '/card-transfers/bulk-unconfirm',
 
   // Auth endpoints
   AUTH_LOGIN: '/auth/login',

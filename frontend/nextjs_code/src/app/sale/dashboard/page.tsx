@@ -108,6 +108,9 @@ export default function SaleDashboardPage() {
     handleRefresh,
     handleCancelSale,
     loadData,
+    showOpenSection,
+    showClosedSection,
+    showCanceledSection,
   } = useDashboard();
 
   const onRefresh = async () => {
@@ -281,54 +284,60 @@ export default function SaleDashboardPage() {
                   فروش یافت نشد
                 </p>
                 <p className="text-sm mt-2" style={{ color: THEME_COLORS.subtext }}>
-                  {filters.user || filters.time !== 'all'
+                  {filters.user || filters.time !== 'today' || filters.state !== 'OPEN'
                     ? 'فیلترهای خود را تغییر دهید'
                     : 'برای شروع یک فروش جدید ایجاد کنید'}
                 </p>
               </div>
             ) : (
               <>
-                {/* Open Sales Section */}
-                <SaleSection
-                  title="فروش‌های باز"
-                  sales={salesByState.open}
-                  isSuperuser={isSuperuser}
-                  canCancelSale={canCancelSale}
-                  onCancel={onCancelSale}
-                  actionLoading={actionLoading}
-                  stats={statsByState?.open}
-                  color={THEME_COLORS.orange}
-                  icon="🟠"
-                  defaultExpanded={true}
-                />
+                {/* Open Sales Section - Only show when filter allows */}
+                {showOpenSection && (
+                  <SaleSection
+                    title="فروش‌های باز"
+                    sales={salesByState.open}
+                    isSuperuser={isSuperuser}
+                    canCancelSale={canCancelSale}
+                    onCancel={onCancelSale}
+                    actionLoading={actionLoading}
+                    stats={statsByState?.open}
+                    color={THEME_COLORS.orange}
+                    icon="🟠"
+                    defaultExpanded={true}
+                  />
+                )}
 
-                {/* Closed Sales Section */}
-                <SaleSection
-                  title="فروش‌های بسته شده"
-                  sales={salesByState.closed}
-                  isSuperuser={isSuperuser}
-                  canCancelSale={canCancelSale}
-                  onCancel={onCancelSale}
-                  actionLoading={actionLoading}
-                  stats={statsByState?.closed}
-                  color={THEME_COLORS.green}
-                  icon="🟢"
-                  defaultExpanded={true}
-                />
+                {/* Closed Sales Section - Only show when filter allows */}
+                {showClosedSection && (
+                  <SaleSection
+                    title="فروش‌های بسته شده"
+                    sales={salesByState.closed}
+                    isSuperuser={isSuperuser}
+                    canCancelSale={canCancelSale}
+                    onCancel={onCancelSale}
+                    actionLoading={actionLoading}
+                    stats={statsByState?.closed}
+                    color={THEME_COLORS.green}
+                    icon="🟢"
+                    defaultExpanded={true}
+                  />
+                )}
 
-                {/* Canceled Sales Section */}
-                <SaleSection
-                  title="فروش‌های لغو شده"
-                  sales={salesByState.canceled}
-                  isSuperuser={isSuperuser}
-                  canCancelSale={canCancelSale}
-                  onCancel={onCancelSale}
-                  actionLoading={actionLoading}
-                  stats={statsByState?.canceled}
-                  color={THEME_COLORS.red}
-                  icon="🔴"
-                  defaultExpanded={false}
-                />
+                {/* Canceled Sales Section - Only show when filter allows */}
+                {showCanceledSection && (
+                  <SaleSection
+                    title="فروش‌های لغو شده"
+                    sales={salesByState.canceled}
+                    isSuperuser={isSuperuser}
+                    canCancelSale={canCancelSale}
+                    onCancel={onCancelSale}
+                    actionLoading={actionLoading}
+                    stats={statsByState?.canceled}
+                    color={THEME_COLORS.red}
+                    icon="🔴"
+                    defaultExpanded={false}
+                  />
+                )}
               </>
             )}
           </>

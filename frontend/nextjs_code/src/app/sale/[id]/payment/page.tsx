@@ -109,11 +109,19 @@ export default function SalePaymentPage() {
 
             <div className="h-8 w-px" style={{ backgroundColor: THEME_COLORS.border }} />
 
+            {/* Dynamic Total - updates based on tax settings */}
             <div className="text-center">
-              <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>مجموع</div>
-              <div className="font-bold" style={{ color: THEME_COLORS.text }}>
-                {formatPersianMoney(payment.sale.total_amount)}
+              <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>
+                مجموع {payment.taxEnabled ? `(+${payment.taxValue}% مالیات)` : '(بدون مالیات)'}
               </div>
+              <div className="font-bold" style={{ color: THEME_COLORS.text }}>
+                {formatPersianMoney(payment.calculatedTotal)}
+              </div>
+              {payment.calculatedTotal !== payment.sale.total_amount && (
+                <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>
+                  اصلی: {formatPersianMoney(payment.sale.total_amount)}
+                </div>
+              )}
             </div>
             <div className="text-center">
               <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>پرداخت شده</div>
@@ -121,22 +129,32 @@ export default function SalePaymentPage() {
                 {formatPersianMoney(payment.sale.total_paid)}
               </div>
             </div>
+            {/* Dynamic Remaining - recalculates when total changes */}
             <div
               className="text-center cursor-pointer hover:opacity-80 transition-opacity px-2 py-1 rounded-lg"
               style={{ backgroundColor: `${THEME_COLORS.orange}15` }}
-              onClick={() => payment.handleAmountChange(payment.sale!.balance_due.toString())}
+              onClick={() => payment.handleAmountChange(Math.floor(payment.dynamicRemaining).toString())}
               title="کلیک برای وارد کردن مبلغ مانده"
             >
               <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>مانده (کلیک کنید)</div>
               <div
                 className="font-bold"
                 style={{
-                  color: payment.sale.balance_due > 0 ? THEME_COLORS.orange : '#10B981',
+                  color: payment.dynamicRemaining > 0 ? THEME_COLORS.orange : '#10B981',
                 }}
               >
-                {formatPersianMoney(payment.sale.balance_due)}
+                {formatPersianMoney(payment.dynamicRemaining)}
               </div>
             </div>
+            {/* Maximum with tips indicator */}
+            {payment.tipAmountValue > 0 && (
+              <div className="text-center">
+                <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>سقف (با انعام)</div>
+                <div className="font-bold" style={{ color: THEME_COLORS.green }}>
+                  {formatPersianMoney(payment.maximumTotal)}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>

@@ -35,11 +35,11 @@ export function useDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState<{ [key: number]: boolean }>({});
 
-  // Filters
+  // Filters - Default to today and OPEN sales
   const [filters, setFilters] = useState<DashboardFilters>({
     user: '',
-    time: 'all',
-    state: 'all', // Default to show all states
+    time: 'today', // Default to today's sales
+    state: 'OPEN', // Default to show only OPEN sales
   });
 
   useEffect(() => {
@@ -200,6 +200,12 @@ export function useDashboard() {
     }, 0);
   }, [filteredSales, isSuperuser]);
 
+  // Section visibility based on filter state
+  // When a specific state is selected (not 'all'), only show that section
+  const showOpenSection = filters.state === 'all' || filters.state === 'OPEN';
+  const showClosedSection = filters.state === 'all' || filters.state === 'CLOSED';
+  const showCanceledSection = filters.state === 'all' || filters.state === 'CANCELED';
+
   return {
     // State
     sales: filteredSales,
@@ -213,6 +219,11 @@ export function useDashboard() {
     canCancelSale,
     filters,
     totalRevenue,
+
+    // Section visibility
+    showOpenSection,
+    showClosedSection,
+    showCanceledSection,
 
     // Actions
     setFilters,

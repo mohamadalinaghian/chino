@@ -4,6 +4,9 @@ Card Transfer endpoints for listing and confirming card-to-card payments.
 Endpoints:
 - GET /card-transfers/ - List all card transfers
 - POST /card-transfers/{id}/confirm - Confirm a card transfer
+- POST /card-transfers/{id}/unconfirm - Unconfirm a card transfer
+- POST /card-transfers/bulk-confirm - Bulk confirm multiple transfers
+- POST /card-transfers/bulk-unconfirm - Bulk unconfirm multiple transfers
 """
 
 from datetime import datetime
@@ -230,4 +233,114 @@ def unconfirm_card_transfer(request, transfer_id: int):
         id=payment.pk,
         confirmed=False,
         message="تایید انتقال با موفقیت لغو شد",
+    )
+
+
+# ---------------------------------------------------------------------
+# Bulk Operations
+# ---------------------------------------------------------------------
+
+
+class BulkTransferRequest(Schema):
+    transfer_ids: List[int]
+
+
+class BulkTransferResponse(Schema):
+    success_count: int
+    failed_count: int
+    message: str
+
+
+@router.post(
+    "/bulk-confirm",
+    response={200: BulkTransferResponse, 422: ErrorResponse},
+)
+def bulk_confirm_card_transfers(request, payload: BulkTransferRequest):
+    """
+    Bulk confirm multiple card-to-card transfers.
+
+    Only superusers or users with specific permission can confirm transfers.
+    No second confirmation dialog needed.
+    """
+    # Check permission
+    if not request.auth.is_superuser and not request.auth.has_perm(
+        "sale.confirm_card_transfers"
+    ):
+        raise PermissionDenied("You don't have permission to confirm card transfers")
+
+    if not payload.transfer_ids:
+        return 422, {"detail": "No transfer IDs provided"}
+
+    # Get all transfers
+    transfers = SalePayment.objects.filter(
+        id__in=payload.transfer_ids,
+        method=SalePayment.PaymentMethod.CARD_TRANSFER,
+    )
+
+    success_count = 0
+    failed_count = 0
+
+    for transfer in transfers:
+        if not transfer.confirmed:
+            transfer.confirmed = True
+            transfer.save(update_fields=["confirmed"])
+            success_count += 1
+        else:
+            failed_count += 1  # Already confirmed
+
+    # Count transfers not found
+    found_ids = set(transfers.values_list("id", flat=True))
+    not_found_count = len(set(payload.transfer_ids) - found_ids)
+    failed_count += not_found_count
+
+    return BulkTransferResponse(
+        success_count=success_count,
+        failed_count=failed_count,
+        message=f"{success_count} انتقال تایید شد" + (f"، {failed_count} انتقال تایید نشد" if failed_count else ""),
+    )
+
+
+@router.post(
+    "/bulk-unconfirm",
+    response={200: BulkTransferResponse, 422: ErrorResponse},
+)
+def bulk_unconfirm_card_transfers(request, payload: BulkTransferRequest):
+    """
+    Bulk unconfirm multiple card-to-card transfers (undo).
+
+    Only superusers can unconfirm transfers.
+    """
+    # Only superusers can unconfirm
+    if not request.auth.is_superuser:
+        raise PermissionDenied("Only superusers can unconfirm card transfers")
+
+    if not payload.transfer_ids:
+        return 422, {"detail": "No transfer IDs provided"}
+
+    # Get all transfers
+    transfers = SalePayment.objects.filter(
+        id__in=payload.transfer_ids,
+        method=SalePayment.PaymentMethod.CARD_TRANSFER,
+    )
+
+    success_count = 0
+    failed_count = 0
+
+    for transfer in transfers:
+        if transfer.confirmed:
+            transfer.confirmed = False
+            transfer.save(update_fields=["confirmed"])
+            success_count += 1
+        else:
+            failed_count += 1  # Already unconfirmed
+
+    # Count transfers not found
+    found_ids = set(transfers.values_list("id", flat=True))
+    not_found_count = len(set(payload.transfer_ids) - found_ids)
+    failed_count += not_found_count
+
+    return BulkTransferResponse(
+        success_count=success_count,
+        failed_count=failed_count,
+        message=f"تایید {success_count} انتقال لغو شد" + (f"، {failed_count} انتقال لغو نشد" if failed_count else ""),
     )

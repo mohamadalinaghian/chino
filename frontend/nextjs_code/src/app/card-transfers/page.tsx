@@ -7,6 +7,8 @@ import {
   fetchCardTransfers,
   confirmCardTransfer,
   unconfirmCardTransfer,
+  bulkConfirmCardTransfers,
+  bulkUnconfirmCardTransfers,
 } from '@/service/cardTransferService';
 import { THEME_COLORS } from '@/libs/constants';
 import { LoadingOverlay } from '@/components/common/LoadingOverlay';
@@ -22,8 +24,12 @@ export default function CardTransfersPage() {
   const [transfers, setTransfers] = useState<ICardTransferItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmedFilter, setConfirmedFilter] = useState<ConfirmedFilter>('unconfirmed');
+
+  // Bulk selection
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   // Stats
   const [totalCount, setTotalCount] = useState(0);
@@ -32,6 +38,11 @@ export default function CardTransfersPage() {
 
   useEffect(() => {
     loadTransfers();
+  }, [confirmedFilter]);
+
+  // Reset selection when filter changes
+  useEffect(() => {
+    setSelectedIds(new Set());
   }, [confirmedFilter]);
 
   const loadTransfers = async () => {
@@ -47,6 +58,7 @@ export default function CardTransfersPage() {
       setTotalCount(data.total_count);
       setUnconfirmedCount(data.unconfirmed_count);
       setConfirmedCount(data.confirmed_count);
+      setSelectedIds(new Set());
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'خطا در بارگذاری';
       setError(errorMessage);
@@ -56,9 +68,30 @@ export default function CardTransfersPage() {
     }
   };
 
-  const handleConfirm = async (transferId: number) => {
-    if (!confirm('آیا از تایید این انتقال اطمینان دارید؟')) return;
+  // Toggle selection for a single transfer
+  const toggleSelection = (id: number) => {
+    setSelectedIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
 
+  // Select/deselect all
+  const toggleSelectAll = () => {
+    if (selectedIds.size === transfers.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(transfers.map((t) => t.id)));
+    }
+  };
+
+  // Single confirm - no dialog needed
+  const handleConfirm = async (transferId: number) => {
     try {
       setActionLoading(transferId);
       const result = await confirmCardTransfer(transferId);
@@ -72,9 +105,8 @@ export default function CardTransfersPage() {
     }
   };
 
+  // Single unconfirm (undo) - no dialog needed
   const handleUnconfirm = async (transferId: number) => {
-    if (!confirm('آیا از لغو تایید این انتقال اطمینان دارید؟')) return;
-
     try {
       setActionLoading(transferId);
       const result = await unconfirmCardTransfer(transferId);
@@ -85,6 +117,46 @@ export default function CardTransfersPage() {
       showToast(errorMessage, 'error');
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  // Bulk confirm
+  const handleBulkConfirm = async () => {
+    if (selectedIds.size === 0) {
+      showToast('لطفاً حداقل یک انتقال انتخاب کنید', 'warning');
+      return;
+    }
+
+    try {
+      setBulkActionLoading(true);
+      const result = await bulkConfirmCardTransfers(Array.from(selectedIds));
+      showToast(result.message, 'success');
+      await loadTransfers();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'خطا در تایید دسته‌جمعی';
+      showToast(errorMessage, 'error');
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  // Bulk unconfirm (undo)
+  const handleBulkUnconfirm = async () => {
+    if (selectedIds.size === 0) {
+      showToast('لطفاً حداقل یک انتقال انتخاب کنید', 'warning');
+      return;
+    }
+
+    try {
+      setBulkActionLoading(true);
+      const result = await bulkUnconfirmCardTransfers(Array.from(selectedIds));
+      showToast(result.message, 'success');
+      await loadTransfers();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'خطا در لغو تایید دسته‌جمعی';
+      showToast(errorMessage, 'error');
+    } finally {
+      setBulkActionLoading(false);
     }
   };
 
