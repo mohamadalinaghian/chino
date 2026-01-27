@@ -1,6 +1,6 @@
 import { authenticatedFetchJSON } from "@/libs/auth/authFetch"
 import { CS_API_URL, API_ENDPOINTS, UI_TEXT } from "@/libs/constants"
-import { IReportDetails } from "@/types/reportType"
+import { IReportDetails, IReportListResponse } from "@/types/reportType"
 
 export async function fetchReportDetails(reportId: number): Promise<IReportDetails> {
   try {
@@ -11,5 +11,37 @@ export async function fetchReportDetails(reportId: number): Promise<IReportDetai
   catch (error) {
     console.error('Error fetching report details:', error);
     throw new Error(UI_TEXT.ERROR_LOADING_REPORT);
+  }
+}
+
+export async function fetchReportList(status?: string, limit: number = 30): Promise<IReportListResponse> {
+  try {
+    let url = CS_API_URL + API_ENDPOINTS.REPORT_LIST;
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    params.append('limit', limit.toString());
+    if (params.toString()) {
+      url += '?' + params.toString();
+    }
+    const response = await authenticatedFetchJSON<IReportListResponse>(url);
+    return response;
+  }
+  catch (error) {
+    console.error('Error fetching report list:', error);
+    throw new Error('خطا در بارگذاری لیست گزارش‌ها');
+  }
+}
+
+export async function approveReport(reportId: number): Promise<{ id: number; state: string }> {
+  try {
+    const url = CS_API_URL + API_ENDPOINTS.REPORT_APPROVE(reportId);
+    const response = await authenticatedFetchJSON<{ id: number; state: string }>(url, {
+      method: 'POST',
+    });
+    return response;
+  }
+  catch (error) {
+    console.error('Error approving report:', error);
+    throw new Error('خطا در تایید گزارش');
   }
 }

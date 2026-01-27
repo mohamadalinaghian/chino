@@ -3,6 +3,7 @@ from ninja import NinjaAPI
 
 from .endpoints import (
     auth_endpoints,
+    card_transfer_endpoints,
     core_setting_endpoints,
     guest_endpoints,
     menu_endpoints,
@@ -33,3 +34,4 @@ api.add_router("/settings/", core_setting_endpoints.router)
 api.add_router("/user/", user_endpoints.router)
 api.add_router("/table/", table_endpoints.router_table)
 api.add_router("/report/", report_endpoints.router)
+api.add_router("/card-transfers/", card_transfer_endpoints.router)

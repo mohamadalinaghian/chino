@@ -39,3 +39,17 @@ export interface IReportSummary {
   total_variance: number;
   creator: string;
 }
+
+export interface IReportListItem {
+  id: number;
+  report_date: string;
+  status: 'DRAFT' | 'APPROVED';
+  created_by: string;
+  total_revenue: string;
+  total_variance: string;
+}
+
+export interface IReportListResponse {
+  reports: IReportListItem[];
+  total_count: number;
+}

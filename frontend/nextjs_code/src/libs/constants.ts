@@ -112,7 +112,14 @@ export const API_ENDPOINTS = {
   TABLES_EMPTY: '/table/empty/',
 
   // Report endpoints
+  REPORT_LIST: '/report/',
   REPORT_DETAILS: (reportId: number) => `/report/${reportId}/details`,
+  REPORT_APPROVE: (reportId: number) => `/report/${reportId}/approve`,
+
+  // Card Transfer endpoints
+  CARD_TRANSFER_LIST: '/card-transfers/',
+  CARD_TRANSFER_CONFIRM: (transferId: number) => `/card-transfers/${transferId}/confirm`,
+  CARD_TRANSFER_UNCONFIRM: (transferId: number) => `/card-transfers/${transferId}/unconfirm`,
 
   // Auth endpoints
   AUTH_LOGIN: '/auth/login',

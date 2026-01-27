@@ -13,6 +13,19 @@ export interface DashboardFilters {
   state: SaleStateFilter;
 }
 
+export interface SalesByState {
+  open: IDashboardSaleItem[];
+  closed: IDashboardSaleItem[];
+  canceled: IDashboardSaleItem[];
+}
+
+export interface StatsByState {
+  open: { count: number; revenue: number };
+  closed: { count: number; revenue: number };
+  canceled: { count: number; revenue: number };
+  total: { count: number; revenue: number };
+}
+
 export function useDashboard() {
   const [sales, setSales] = useState<IDashboardSaleItem[]>([]);
   const [permissions, setPermissions] = useState<string[]>([]);
@@ -26,7 +39,7 @@ export function useDashboard() {
   const [filters, setFilters] = useState<DashboardFilters>({
     user: '',
     time: 'all',
-    state: 'OPEN',
+    state: 'all', // Default to show all states
   });
 
   useEffect(() => {
@@ -84,7 +97,7 @@ export function useDashboard() {
   const hasPermission = (perm: string) => permissions.includes(perm);
   const canCancelSale = hasPermission('sale.cancel_sale');
 
-  // Filter and sort sales
+  // Filter sales by user and time
   const filteredSales = useMemo(() => {
     let filtered = sales;
 
@@ -110,8 +123,70 @@ export function useDashboard() {
     );
   }, [sales, filters]);
 
-  // TODO: better permissions controlling for this
-  // Calculate stats - only if superuser
+  // Group sales by state for sectioned display
+  const salesByState = useMemo((): SalesByState => {
+    const open: IDashboardSaleItem[] = [];
+    const closed: IDashboardSaleItem[] = [];
+    const canceled: IDashboardSaleItem[] = [];
+
+    filteredSales.forEach((sale) => {
+      switch (sale.state) {
+        case 'OPEN':
+          open.push(sale);
+          break;
+        case 'CLOSED':
+          closed.push(sale);
+          break;
+        case 'CANCELED':
+          canceled.push(sale);
+          break;
+      }
+    });
+
+    return { open, closed, canceled };
+  }, [filteredSales]);
+
+  // Calculate stats by state - only if superuser
+  const statsByState = useMemo((): StatsByState | null => {
+    if (!isSuperuser) return null;
+
+    const calculateRevenue = (sales: IDashboardSaleItem[]) => {
+      return sales.reduce((sum, sale) => {
+        const amount =
+          sale.total_amount !== null && sale.total_amount !== undefined
+            ? Number(sale.total_amount)
+            : 0;
+        return sum + (Number.isFinite(amount) ? amount : 0);
+      }, 0);
+    };
+
+    const openStats = {
+      count: salesByState.open.length,
+      revenue: calculateRevenue(salesByState.open),
+    };
+
+    const closedStats = {
+      count: salesByState.closed.length,
+      revenue: calculateRevenue(salesByState.closed),
+    };
+
+    const canceledStats = {
+      count: salesByState.canceled.length,
+      revenue: calculateRevenue(salesByState.canceled),
+    };
+
+    return {
+      open: openStats,
+      closed: closedStats,
+      canceled: canceledStats,
+      total: {
+        count: openStats.count + closedStats.count + canceledStats.count,
+        revenue: openStats.revenue + closedStats.revenue + canceledStats.revenue,
+      },
+    };
+  }, [salesByState, isSuperuser]);
+
+  // Legacy: Calculate total revenue for backwards compatibility
   const totalRevenue = useMemo(() => {
     if (!isSuperuser) return null;
 
@@ -128,6 +203,8 @@ export function useDashboard() {
   return {
     // State
     sales: filteredSales,
+    salesByState,
+    statsByState,
     loading,
     error,
     refreshing,

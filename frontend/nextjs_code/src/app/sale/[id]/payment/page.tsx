@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useParams } from 'next/navigation';
-import { usePayment } from '@/hooks/usePayment';
+import { usePayment, PaymentMode } from '@/hooks/usePayment';
 import { useToast } from '@/components/common/Toast';
 import { LoadingOverlay } from '@/components/common/LoadingOverlay';
 import { THEME_COLORS } from '@/libs/constants';
@@ -88,7 +88,7 @@ export default function SalePaymentPage() {
             </h1>
           </div>
 
-          {/* Quick summary in header - synced with payment status */}
+          {/* Payment Status Summary - SINGLE SOURCE OF TRUTH */}
           <div className="flex items-center gap-3">
             {/* Payment Status Badge */}
             <div
@@ -141,23 +141,137 @@ export default function SalePaymentPage() {
         </div>
       </header>
 
+      {/* Payment Mode Selector */}
+      <div
+        className="flex-shrink-0 px-4 py-3 border-b"
+        style={{ backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.border }}
+      >
+        <div className="flex items-center justify-center gap-4">
+          <span className="text-sm font-medium" style={{ color: THEME_COLORS.subtext }}>
+            نوع پرداخت:
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={payment.setModeToItems}
+              className="px-4 py-2 rounded-lg font-bold text-sm transition-all"
+              style={{
+                backgroundColor: payment.paymentMode === PaymentMode.FROM_ITEMS
+                  ? THEME_COLORS.accent
+                  : THEME_COLORS.bgSecondary,
+                color: payment.paymentMode === PaymentMode.FROM_ITEMS
+                  ? '#fff'
+                  : THEME_COLORS.text,
+                border: `2px solid ${payment.paymentMode === PaymentMode.FROM_ITEMS ? THEME_COLORS.accent : THEME_COLORS.border}`,
+              }}
+            >
+              بر اساس اقلام
+            </button>
+            <button
+              onClick={payment.setModeToManual}
+              className="px-4 py-2 rounded-lg font-bold text-sm transition-all"
+              style={{
+                backgroundColor: payment.paymentMode === PaymentMode.MANUAL
+                  ? THEME_COLORS.purple
+                  : THEME_COLORS.bgSecondary,
+                color: payment.paymentMode === PaymentMode.MANUAL
+                  ? '#fff'
+                  : THEME_COLORS.text,
+                border: `2px solid ${payment.paymentMode === PaymentMode.MANUAL ? THEME_COLORS.purple : THEME_COLORS.border}`,
+              }}
+            >
+              مبلغ دستی
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Main layout - 4-8 split for larger payment panel */}
       <div className="flex-1 grid grid-cols-12 gap-4 p-4 overflow-hidden">
-        {/* Left - Items (4 columns) */}
+        {/* Left - Items Panel (4 columns) */}
         <div
           className="col-span-4 flex flex-col overflow-hidden rounded-xl"
           style={{ backgroundColor: THEME_COLORS.bgSecondary }}
         >
-          <PaymentItemList
-            unpaidItems={payment.unpaidItems}
-            paidItems={payment.paidItems}
-            selectedItems={payment.selectedItems}
-            selectAllItems={payment.selectAllItems}
-            payments={payment.sale?.payments || []}
-            onItemToggleFull={payment.handleItemToggleFull}
-            onItemQuantityChange={payment.handleItemQuantityChange}
-            onSelectAllToggle={payment.handleSelectAllToggle}
-          />
+          {payment.paymentMode === PaymentMode.FROM_ITEMS ? (
+            <PaymentItemList
+              unpaidItems={payment.unpaidItems}
+              paidItems={payment.paidItems}
+              selectedItems={payment.selectedItems}
+              selectAllItems={payment.selectAllItems}
+              payments={payment.sale?.payments || []}
+              onItemToggleFull={payment.handleItemToggleFull}
+              onItemQuantityChange={payment.handleItemQuantityChange}
+              onSelectAllToggle={payment.handleSelectAllToggle}
+            />
+          ) : (
+            /* Manual Amount Mode - Show input here */
+            <div className="flex flex-col h-full">
+              <div
+                className="flex-shrink-0 px-4 py-3 border-b"
+                style={{ backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.border }}
+              >
+                <span className="font-bold" style={{ color: THEME_COLORS.purple }}>
+                  ورود مبلغ دستی
+                </span>
+              </div>
+              <div className="flex-1 flex items-center justify-center p-6">
+                <div
+                  className="w-full max-w-sm p-6 rounded-xl text-center"
+                  style={{
+                    backgroundColor: THEME_COLORS.surface,
+                    border: `3px solid ${THEME_COLORS.purple}`,
+                  }}
+                >
+                  <label
+                    className="block text-sm font-medium mb-3"
+                    style={{ color: THEME_COLORS.subtext }}
+                  >
+                    مبلغ درخواستی مهمان را وارد کنید
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    dir="ltr"
+                    value={payment.manualAmount}
+                    onChange={(e) => payment.setManualAmount(e.target.value.replace(/[^0-9۰-۹]/g, ''))}
+                    placeholder="۰"
+                    className="w-full text-4xl font-bold bg-transparent outline-none text-center py-4"
+                    style={{ color: THEME_COLORS.purple }}
+                    autoFocus
+                  />
+                  <div className="text-sm mt-2" style={{ color: THEME_COLORS.subtext }}>
+                    تومان
+                  </div>
+                </div>
+              </div>
+
+              {/* Show paid items in manual mode too */}
+              {payment.paidItems.length > 0 && (
+                <div
+                  className="flex-shrink-0 border-t p-4"
+                  style={{ borderColor: THEME_COLORS.border }}
+                >
+                  <div className="text-sm font-medium mb-2" style={{ color: '#10B981' }}>
+                    اقلام پرداخت شده ({payment.paidItems.length})
+                  </div>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {payment.paidItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex justify-between text-sm"
+                        style={{ color: THEME_COLORS.subtext }}
+                      >
+                        <span>{item.product_name} ×{item.quantity_paid}</span>
+                        <span style={{ color: '#10B981' }}>
+                          {formatPersianMoney(Number(item.unit_price) * item.quantity_paid)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right - Payment panel (8 columns - larger) */}
