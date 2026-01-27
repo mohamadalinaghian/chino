@@ -251,36 +251,87 @@ export default function CardTransfersPage() {
           </div>
         </div>
 
-        {/* Filters */}
+        {/* Filters and Bulk Actions */}
         <div
-          className="p-4 rounded-xl mb-6 flex items-center gap-4"
+          className="p-4 rounded-xl mb-6 flex items-center justify-between flex-wrap gap-4"
           style={{ backgroundColor: THEME_COLORS.bgSecondary }}
         >
-          <span className="font-medium" style={{ color: THEME_COLORS.text }}>
-            فیلتر:
-          </span>
-          <div className="flex gap-2">
-            {(
-              [
-                { value: 'all', label: 'همه' },
-                { value: 'unconfirmed', label: 'در انتظار تایید' },
-                { value: 'confirmed', label: 'تایید شده' },
-              ] as { value: ConfirmedFilter; label: string }[]
-            ).map((filter) => (
-              <button
-                key={filter.value}
-                onClick={() => setConfirmedFilter(filter.value)}
-                className="px-4 py-2 rounded-lg font-medium text-sm transition-all"
-                style={{
-                  backgroundColor:
-                    confirmedFilter === filter.value ? THEME_COLORS.accent : THEME_COLORS.surface,
-                  color: confirmedFilter === filter.value ? '#fff' : THEME_COLORS.text,
-                }}
-              >
-                {filter.label}
-              </button>
-            ))}
+          <div className="flex items-center gap-4">
+            <span className="font-medium" style={{ color: THEME_COLORS.text }}>
+              فیلتر:
+            </span>
+            <div className="flex gap-2">
+              {(
+                [
+                  { value: 'all', label: 'همه' },
+                  { value: 'unconfirmed', label: 'در انتظار تایید' },
+                  { value: 'confirmed', label: 'تایید شده' },
+                ] as { value: ConfirmedFilter; label: string }[]
+              ).map((filter) => (
+                <button
+                  key={filter.value}
+                  onClick={() => setConfirmedFilter(filter.value)}
+                  className="px-4 py-2 rounded-lg font-medium text-sm transition-all"
+                  style={{
+                    backgroundColor:
+                      confirmedFilter === filter.value ? THEME_COLORS.accent : THEME_COLORS.surface,
+                    color: confirmedFilter === filter.value ? '#fff' : THEME_COLORS.text,
+                  }}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {/* Bulk Actions */}
+          {transfers.length > 0 && (
+            <div className="flex items-center gap-3">
+              <span className="text-sm" style={{ color: THEME_COLORS.subtext }}>
+                {selectedIds.size > 0 ? `${selectedIds.size} انتخاب شده` : 'انتخاب کنید'}
+              </span>
+              {confirmedFilter === 'unconfirmed' && selectedIds.size > 0 && (
+                <button
+                  onClick={handleBulkConfirm}
+                  disabled={bulkActionLoading}
+                  className="px-4 py-2 rounded-lg font-medium text-sm transition-all hover:opacity-80 disabled:opacity-50"
+                  style={{ backgroundColor: THEME_COLORS.green, color: '#fff' }}
+                >
+                  {bulkActionLoading ? '...' : `تایید همه (${selectedIds.size})`}
+                </button>
+              )}
+              {confirmedFilter === 'confirmed' && selectedIds.size > 0 && (
+                <button
+                  onClick={handleBulkUnconfirm}
+                  disabled={bulkActionLoading}
+                  className="px-4 py-2 rounded-lg font-medium text-sm transition-all hover:opacity-80 disabled:opacity-50"
+                  style={{ backgroundColor: THEME_COLORS.red, color: '#fff' }}
+                >
+                  {bulkActionLoading ? '...' : `لغو تایید همه (${selectedIds.size})`}
+                </button>
+              )}
+              {confirmedFilter === 'all' && selectedIds.size > 0 && (
+                <>
+                  <button
+                    onClick={handleBulkConfirm}
+                    disabled={bulkActionLoading}
+                    className="px-4 py-2 rounded-lg font-medium text-sm transition-all hover:opacity-80 disabled:opacity-50"
+                    style={{ backgroundColor: THEME_COLORS.green, color: '#fff' }}
+                  >
+                    {bulkActionLoading ? '...' : 'تایید انتخاب شده'}
+                  </button>
+                  <button
+                    onClick={handleBulkUnconfirm}
+                    disabled={bulkActionLoading}
+                    className="px-4 py-2 rounded-lg font-medium text-sm transition-all hover:opacity-80 disabled:opacity-50"
+                    style={{ backgroundColor: THEME_COLORS.red, color: '#fff' }}
+                  >
+                    {bulkActionLoading ? '...' : 'لغو تایید انتخاب شده'}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Loading State */}
@@ -335,22 +386,53 @@ export default function CardTransfersPage() {
               </div>
             ) : (
               <div className="space-y-4">
+                {/* Select All Header */}
+                <div
+                  className="p-3 rounded-lg flex items-center gap-3"
+                  style={{ backgroundColor: THEME_COLORS.surface }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.size === transfers.length && transfers.length > 0}
+                    onChange={toggleSelectAll}
+                    className="w-5 h-5 rounded cursor-pointer accent-blue-500"
+                  />
+                  <span className="font-medium" style={{ color: THEME_COLORS.text }}>
+                    انتخاب همه ({transfers.length})
+                  </span>
+                </div>
+
                 {transfers.map((transfer) => (
                   <div
                     key={transfer.id}
                     className="p-4 rounded-xl transition-all"
                     style={{
-                      backgroundColor: THEME_COLORS.bgSecondary,
-                      border: `2px solid ${transfer.confirmed ? THEME_COLORS.green : THEME_COLORS.orange}40`,
+                      backgroundColor: selectedIds.has(transfer.id)
+                        ? `${THEME_COLORS.accent}10`
+                        : THEME_COLORS.bgSecondary,
+                      border: `2px solid ${
+                        selectedIds.has(transfer.id)
+                          ? THEME_COLORS.accent
+                          : transfer.confirmed
+                            ? THEME_COLORS.green
+                            : THEME_COLORS.orange
+                      }40`,
                     }}
                   >
                     <div className="flex items-start justify-between">
-                      {/* Transfer Info */}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-3">
-                          <span className="text-lg font-bold" style={{ color: THEME_COLORS.text }}>
-                            انتقال #{transfer.id}
-                          </span>
+                      {/* Checkbox and Transfer Info */}
+                      <div className="flex items-start gap-4 flex-1">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(transfer.id)}
+                          onChange={() => toggleSelection(transfer.id)}
+                          className="w-5 h-5 rounded cursor-pointer mt-1 accent-blue-500"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-3">
+                            <span className="text-lg font-bold" style={{ color: THEME_COLORS.text }}>
+                              انتقال #{transfer.id}
+                            </span>
                           <span
                             className="px-2 py-0.5 rounded text-xs font-bold"
                             style={{
@@ -419,6 +501,7 @@ export default function CardTransfersPage() {
                             <div className="font-medium" style={{ color: THEME_COLORS.text }}>
                               {formatDateTime(transfer.received_at)}
                             </div>
+                          </div>
                           </div>
                         </div>
                       </div>

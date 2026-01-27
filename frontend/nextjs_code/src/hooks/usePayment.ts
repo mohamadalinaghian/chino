@@ -12,6 +12,7 @@ import {
   fetchSaleDetails,
   addPaymentsToSale,
   fetchBankAccounts,
+  voidPayment,
 } from '@/service/sale';
 import { authenticatedFetchJSON } from '@/libs/auth/authFetch';
 import { CS_API_URL, API_ENDPOINTS, UI_TEXT } from '@/libs/constants';
@@ -73,6 +74,7 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
   const [sale, setSale] = useState<ISaleDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [voidingPaymentId, setVoidingPaymentId] = useState<number | null>(null);
 
   // ── Accounts ──────────────────────────────────────────────────────
   const [bankAccounts, setBankAccounts] = useState<IBankAccount[]>([]);
@@ -637,6 +639,25 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
   };
 
   // ═════════════════════════════════════════════════════════════════
+  // VOID PAYMENT
+  // ═════════════════════════════════════════════════════════════════
+
+  const handleVoidPayment = async (paymentId: number) => {
+    if (!sale) return;
+
+    setVoidingPaymentId(paymentId);
+    try {
+      await voidPayment(saleId, paymentId);
+      await loadSaleData();
+      onSuccess?.('پرداخت با موفقیت لغو شد', false);
+    } catch (err) {
+      onError?.(err instanceof Error ? err.message : 'خطا در لغو پرداخت');
+    } finally {
+      setVoidingPaymentId(null);
+    }
+  };
+
+  // ═════════════════════════════════════════════════════════════════
   // RETURN
   // ═════════════════════════════════════════════════════════════════
 
@@ -726,5 +747,9 @@ export function usePayment({ saleId, onSuccess, onError }: UsePaymentOptions) {
     handleSubmitPersonPayment,
     loadSaleData,
     resetFormState,
+
+    // Void payment
+    voidingPaymentId,
+    handleVoidPayment,
   };
 }

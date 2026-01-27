@@ -111,14 +111,23 @@ export default function ReportsDashboardPage() {
             </h1>
           </div>
 
-          <button
-            onClick={loadReports}
-            disabled={loading}
-            className="px-4 py-2 rounded-lg font-medium transition-all hover:opacity-80 disabled:opacity-50"
-            style={{ backgroundColor: THEME_COLORS.accent, color: '#fff' }}
-          >
-            {loading ? 'در حال بارگذاری...' : 'بروزرسانی'}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push('/card-transfers')}
+              className="px-4 py-2 rounded-lg font-medium transition-all hover:opacity-80"
+              style={{ backgroundColor: THEME_COLORS.purple, color: '#fff' }}
+            >
+              💳 تایید کارت به کارت
+            </button>
+            <button
+              onClick={loadReports}
+              disabled={loading}
+              className="px-4 py-2 rounded-lg font-medium transition-all hover:opacity-80 disabled:opacity-50"
+              style={{ backgroundColor: THEME_COLORS.accent, color: '#fff' }}
+            >
+              {loading ? 'در حال بارگذاری...' : 'بروزرسانی'}
+            </button>
+          </div>
         </div>
       </header>
 

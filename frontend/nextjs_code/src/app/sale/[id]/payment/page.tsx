@@ -345,6 +345,80 @@ export default function SalePaymentPage() {
               selectedAccountId={payment.selectedAccountId}
               onAccountSelect={payment.setSelectedAccountId}
             />
+
+            {/* Payment History Section */}
+            {payment.sale.payments && payment.sale.payments.length > 0 && (
+              <div
+                className="mt-4 p-4 rounded-xl"
+                style={{ backgroundColor: THEME_COLORS.surface }}
+              >
+                <h3 className="font-bold mb-3" style={{ color: THEME_COLORS.text }}>
+                  تاریخچه پرداخت‌ها ({payment.sale.payments.length})
+                </h3>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {payment.sale.payments.map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex items-center justify-between p-3 rounded-lg"
+                      style={{
+                        backgroundColor: p.status === 'VOID' ? `${THEME_COLORS.red}10` : THEME_COLORS.bgSecondary,
+                        opacity: p.status === 'VOID' ? 0.6 : 1,
+                      }}
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium" style={{ color: THEME_COLORS.text }}>
+                            {formatPersianMoney(p.amount_applied)}
+                          </span>
+                          <span
+                            className="px-2 py-0.5 rounded text-xs"
+                            style={{
+                              backgroundColor:
+                                p.method === 'CARD_TRANSFER' ? `${THEME_COLORS.accent}20` :
+                                p.method === 'CASH' ? `${THEME_COLORS.green}20` :
+                                `${THEME_COLORS.purple}20`,
+                              color:
+                                p.method === 'CARD_TRANSFER' ? THEME_COLORS.accent :
+                                p.method === 'CASH' ? THEME_COLORS.green :
+                                THEME_COLORS.purple,
+                            }}
+                          >
+                            {p.method === 'CARD_TRANSFER' ? 'کارت به کارت' :
+                             p.method === 'CASH' ? 'نقدی' : 'کارتخوان'}
+                          </span>
+                          {p.status === 'VOID' && (
+                            <span
+                              className="px-2 py-0.5 rounded text-xs font-bold"
+                              style={{ backgroundColor: `${THEME_COLORS.red}20`, color: THEME_COLORS.red }}
+                            >
+                              لغو شده
+                            </span>
+                          )}
+                          {p.tip_amount > 0 && (
+                            <span className="text-xs" style={{ color: THEME_COLORS.subtext }}>
+                              + انعام {formatPersianMoney(p.tip_amount)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs mt-1" style={{ color: THEME_COLORS.subtext }}>
+                          {p.received_by_name} - {new Date(p.received_at).toLocaleString('fa-IR')}
+                        </div>
+                      </div>
+                      {p.status !== 'VOID' && (
+                        <button
+                          onClick={() => payment.handleVoidPayment(p.id)}
+                          disabled={payment.voidingPaymentId === p.id}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-80 disabled:opacity-50"
+                          style={{ backgroundColor: THEME_COLORS.red, color: '#fff' }}
+                        >
+                          {payment.voidingPaymentId === p.id ? '...' : 'لغو'}
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Submit button - Synced with formula amount */}

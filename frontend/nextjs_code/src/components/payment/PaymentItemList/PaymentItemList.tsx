@@ -123,7 +123,9 @@ export function PaymentItemList({
             <div
               key={item.id}
               onClick={() => onItemToggleFull(item.id, maxSelectableQty)}
-              className="rounded-xl overflow-hidden cursor-pointer transition-all relative"
+              className={`rounded-xl overflow-hidden cursor-pointer relative transition-all duration-300 ease-out ${
+                isSelected ? 'transform scale-[1.02] animate-pulse-once' : 'hover:scale-[1.01]'
+              }`}
               style={{
                 border: `2px solid ${isSelected ? THEME_COLORS.accent : THEME_COLORS.border}`,
                 boxShadow: isSelected ? `0 4px 12px ${THEME_COLORS.accent}30` : 'none',
