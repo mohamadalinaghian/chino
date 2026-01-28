@@ -155,11 +155,25 @@ export default function PaymentPage() {
   }, [saleId]);   // ← safe — saleId changes very rarely
 
   // ── Computed Values ───────────────────────────────────────────────────────
+  // Items that still have remaining quantity (can be selected for payment)
   const unpaidItems = useMemo(() => {
     if (!sale) return [];
     return sale.items.filter(item => item.quantity_remaining > 0);
   }, [sale]);
 
+  // Fully paid items (no remaining quantity)
+  const fullyPaidItems = useMemo(() => {
+    if (!sale) return [];
+    return sale.items.filter(item => item.quantity_remaining === 0 && item.quantity_paid > 0);
+  }, [sale]);
+
+  // Partially paid items (some paid, some remaining) - these show in both lists
+  const partiallyPaidItems = useMemo(() => {
+    if (!sale) return [];
+    return sale.items.filter(item => item.quantity_paid > 0 && item.quantity_remaining > 0);
+  }, [sale]);
+
+  // Combined list of items with any payment (for left column display)
   const paidItems = useMemo(() => {
     if (!sale) return [];
     return sale.items.filter(item => item.quantity_paid > 0);
@@ -182,31 +196,62 @@ export default function PaymentPage() {
     }, 0);
   }, [splits]);
 
-  // Summary calculations
+  // Calculate total of selected items with their configured tax and discount from split panels
+  const selectedItemsWithTaxDiscount = useMemo(() => {
+    // Get all unlocked splits and calculate their total with tax/discount
+    const unlockedSplits = splits.filter(s => !s.isLocked);
+    return unlockedSplits.reduce((sum, split) => {
+      const taxAmount = split.taxEnabled ? Math.round(split.amount * split.taxPercent / 100) : 0;
+      return sum + split.amount + taxAmount - split.discount;
+    }, 0);
+  }, [splits]);
+
+  // Summary calculations with new formula:
+  // Total = ((unselected items + extras) + 10%) + (amount paid) + (selected items with tax/discount)
   const summaryCalculations = useMemo(() => {
     if (!sale) return { subtotal: 0, taxDefault: 0, totalAmount: 0, paidAmount: 0, remainingAmount: 0 };
 
-    // Calculate subtotal of all items (paid + unpaid)
-    const allItemsSubtotal = sale.items.reduce((sum, item) => {
-      const itemTotal = item.quantity * item.unit_price;
+    // Calculate total of all unpaid items (items that haven't been paid for yet)
+    const allUnpaidItemsTotal = sale.items.reduce((sum, item) => {
+      const itemTotal = item.quantity_remaining * item.unit_price;
       const extrasTotal = item.extras?.reduce((eSum, e) => eSum + e.unit_price * e.quantity, 0) || 0;
-      return sum + itemTotal + extrasTotal;
+      // Proportional extras based on remaining quantity
+      const extrasProportional = item.quantity > 0 ? (extrasTotal * item.quantity_remaining / item.quantity) : 0;
+      return sum + itemTotal + extrasProportional;
     }, 0);
 
-    // Default tax (10%)
-    const taxDefault = Math.round(allItemsSubtotal * 0.10);
+    // Calculate total of unselected items (unpaid items that are NOT currently selected)
+    const unselectedItemsTotal = sale.items.reduce((sum, item) => {
+      const selectedItem = selectedItems.find(s => s.itemId === item.id);
+      const selectedQty = selectedItem ? selectedItem.quantity : 0;
+      const unselectedQty = item.quantity_remaining - selectedQty;
 
-    // Total amount with default tax
-    const totalAmount = allItemsSubtotal + taxDefault;
+      if (unselectedQty <= 0) return sum;
 
-    // Amount paid from backend
+      const itemTotal = unselectedQty * item.unit_price;
+      const extrasTotal = item.extras?.reduce((eSum, e) => eSum + e.unit_price * e.quantity, 0) || 0;
+      const extrasProportional = item.quantity > 0 ? (extrasTotal * unselectedQty / item.quantity) : 0;
+      return sum + itemTotal + extrasProportional;
+    }, 0);
+
+    // Add 10% tax to unselected items (default tax for items not yet configured)
+    const unselectedWithTax = unselectedItemsTotal + Math.round(unselectedItemsTotal * 0.10);
+
+    // Amount already paid from backend
     const paidAmount = sale.total_paid;
 
-    // Remaining amount
+    // Total = (unselected items + 10%) + (amount paid) + (selected items with configured tax/discount)
+    const totalAmount = unselectedWithTax + paidAmount + selectedItemsWithTaxDiscount;
+
+    // Remaining amount = Total - Paid
     const remainingAmount = Math.max(0, totalAmount - paidAmount);
 
-    return { subtotal: allItemsSubtotal, taxDefault, totalAmount, paidAmount, remainingAmount };
-  }, [sale]);
+    // For display purposes
+    const subtotal = allUnpaidItemsTotal;
+    const taxDefault = Math.round(unselectedItemsTotal * 0.10);
+
+    return { subtotal, taxDefault, totalAmount, paidAmount, remainingAmount };
+  }, [sale, selectedItems, selectedItemsWithTaxDiscount]);
 
   // ── Split Payment Management ──────────────────────────────────────────────
   function createDefaultSplit(id: number): SplitPayment {
@@ -567,16 +612,16 @@ export default function PaymentPage() {
             </div>
           </div>
 
-          {/* Status Summary */}
+          {/* Status Summary - Using new calculation */}
           <div className="flex items-center gap-4">
             <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
-              جمع: <span className="font-bold" style={{ color: THEME_COLORS.accent }}>{formatPersianMoney(sale.total_amount)}</span>
+              جمع: <span className="font-bold number-display" style={{ color: THEME_COLORS.accent }}>{formatPersianMoney(summaryCalculations.totalAmount)}</span>
             </div>
             <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
-              پرداخت شده: <span className="font-bold" style={{ color: THEME_COLORS.green }}>{formatPersianMoney(sale.total_paid)}</span>
+              پرداخت شده: <span className="font-bold number-display" style={{ color: THEME_COLORS.green }}>{formatPersianMoney(summaryCalculations.paidAmount)}</span>
             </div>
             <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
-              مانده: <span className="font-bold" style={{ color: THEME_COLORS.orange }}>{formatPersianMoney(sale.balance_due)}</span>
+              مانده: <span className="font-bold number-display" style={{ color: THEME_COLORS.orange }}>{formatPersianMoney(summaryCalculations.remainingAmount)}</span>
             </div>
           </div>
         </div>
@@ -593,9 +638,16 @@ export default function PaymentPage() {
           {/* ─────────────────────────────────────────────────────────────── */}
           <div className="lg:col-span-4 flex flex-col overflow-hidden rounded-xl" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
             <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: THEME_COLORS.border }}>
-              <h2 className="font-bold" style={{ color: THEME_COLORS.text }}>
-                اقلام فروش ({unpaidItems.length})
-              </h2>
+              <div>
+                <h2 className="font-bold" style={{ color: THEME_COLORS.text }}>
+                  اقلام برای پرداخت ({unpaidItems.length})
+                </h2>
+                {partiallyPaidItems.length > 0 && (
+                  <div className="text-xs mt-0.5" style={{ color: THEME_COLORS.orange }}>
+                    {partiallyPaidItems.length} قلم پرداخت ناقص
+                  </div>
+                )}
+              </div>
               <div className="flex gap-2">
                 <button
                   onClick={selectAllItems}
@@ -624,6 +676,9 @@ export default function PaymentPage() {
                 const itemTotal = item.quantity_remaining * item.unit_price;
                 const extrasTotal = item.extras?.reduce((sum, e) => sum + e.unit_price * e.quantity, 0) || 0;
                 const extrasProportional = item.quantity > 0 ? (extrasTotal * item.quantity_remaining / item.quantity) : 0;
+                // Check if this item is partially paid
+                const isPartiallyPaid = item.quantity_paid > 0 && item.quantity_remaining > 0;
+                const paidPercentage = item.quantity > 0 ? Math.round((item.quantity_paid / item.quantity) * 100) : 0;
 
                 return (
                   <div
@@ -633,9 +688,20 @@ export default function PaymentPage() {
                       } ${isSelected ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-800' : 'hover:scale-[1.01]'}`}
                     style={{
                       backgroundColor: isSelected ? `${THEME_COLORS.accent}15` : THEME_COLORS.surface,
-                      border: `2px solid ${isSelected ? THEME_COLORS.accent : THEME_COLORS.border}`,
+                      border: `2px solid ${isSelected ? THEME_COLORS.accent : isPartiallyPaid ? THEME_COLORS.orange : THEME_COLORS.border}`,
                     }}
                   >
+                    {/* Partially paid indicator banner */}
+                    {isPartiallyPaid && (
+                      <div
+                        className="px-3 py-1 text-xs font-bold flex items-center justify-between"
+                        style={{ backgroundColor: `${THEME_COLORS.orange}20`, color: THEME_COLORS.orange }}
+                      >
+                        <span>پرداخت ناقص - {paidPercentage}% پرداخت شده</span>
+                        <span className="number-display">{item.quantity_paid} از {item.quantity}</span>
+                      </div>
+                    )}
+
                     <div className="p-3">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -644,7 +710,7 @@ export default function PaymentPage() {
                           </div>
                           <div className="text-sm mt-1" style={{ color: THEME_COLORS.subtext }}>
                             {item.quantity_remaining > 1 ? (
-                              <span>{formatPersianMoney(item.unit_price)} × {item.quantity_remaining}</span>
+                              <span>{formatPersianMoney(item.unit_price)} × {item.quantity_remaining} باقیمانده</span>
                             ) : (
                               <span>{formatPersianMoney(item.unit_price)}</span>
                             )}
@@ -655,6 +721,11 @@ export default function PaymentPage() {
                           <div className="font-bold text-lg" style={{ color: isSelected ? THEME_COLORS.green : THEME_COLORS.text }}>
                             {formatPersianMoney(itemTotal + extrasProportional)}
                           </div>
+                          {isPartiallyPaid && !isSelected && (
+                            <div className="text-xs" style={{ color: THEME_COLORS.orange }}>
+                              مانده
+                            </div>
+                          )}
                           {isSelected && item.quantity_remaining > 1 && (
                             <div className="flex items-center gap-1 mt-1">
                               <button
@@ -822,76 +893,112 @@ export default function PaymentPage() {
           {/* LEFT COLUMN: Summary Card, Paid Items & History */}
           {/* ─────────────────────────────────────────────────────────────── */}
           <div className="lg:col-span-3 flex flex-col overflow-hidden rounded-xl" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
-            {/* Summary Card with Guest/Table Info */}
-            <div className="px-4 py-3 border-b" style={{ borderColor: THEME_COLORS.border, backgroundColor: `${THEME_COLORS.accent}10` }}>
-              <h2 className="font-bold text-lg" style={{ color: THEME_COLORS.accent }}>
-                {sale.guest_name || sale.table_name || `فروش #${saleId}`}
-              </h2>
-              {(sale.table_name || sale.opened_at) && (
-                <div className="text-xs mt-1" style={{ color: THEME_COLORS.subtext }}>
-                  {sale.table_name && <span>میز: {sale.table_name} | </span>}
-                  {sale.opened_at && new Date(sale.opened_at).toLocaleDateString('fa-IR')}
-                </div>
-              )}
-            </div>
-
-            {/* Financial Summary */}
-            <div className="p-3 border-b space-y-2" style={{ borderColor: THEME_COLORS.border }}>
-              <div className="flex justify-between text-sm">
-                <span style={{ color: THEME_COLORS.subtext }}>جمع اقلام:</span>
-                <span className="font-bold number-display" style={{ color: THEME_COLORS.text }}>
-                  {formatPersianMoney(summaryCalculations.subtotal)}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span style={{ color: THEME_COLORS.subtext }}>مالیات (۱۰٪):</span>
-                <span className="font-bold number-display" style={{ color: THEME_COLORS.blue }}>
-                  {formatPersianMoney(summaryCalculations.taxDefault)}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm pt-2 border-t" style={{ borderColor: THEME_COLORS.border }}>
-                <span className="font-bold" style={{ color: THEME_COLORS.text }}>جمع کل:</span>
-                <span className="font-bold number-display" style={{ color: THEME_COLORS.accent }}>
-                  {formatPersianMoney(summaryCalculations.totalAmount)}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span style={{ color: THEME_COLORS.subtext }}>پرداخت شده:</span>
-                <span className="font-bold number-display" style={{ color: THEME_COLORS.green }}>
-                  {formatPersianMoney(summaryCalculations.paidAmount)}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm pt-2 border-t" style={{ borderColor: THEME_COLORS.border }}>
-                <span className="font-bold" style={{ color: THEME_COLORS.orange }}>مانده:</span>
-                <span className="font-bold text-lg number-display" style={{ color: THEME_COLORS.orange }}>
-                  {formatPersianMoney(summaryCalculations.remainingAmount)}
-                </span>
-              </div>
-            </div>
-
-            {/* Paid Items */}
+            {/* Payment Status Header */}
             <div className="px-4 py-3 border-b" style={{ borderColor: THEME_COLORS.border }}>
-              <h2 className="font-bold" style={{ color: THEME_COLORS.green }}>
-                اقلام پرداخت شده ({paidItems.length})
+              <h2 className="font-bold" style={{ color: THEME_COLORS.text }}>
+                وضعیت پرداخت اقلام
               </h2>
+              <div className="flex gap-3 mt-1 text-xs">
+                {fullyPaidItems.length > 0 && (
+                  <span style={{ color: THEME_COLORS.green }}>
+                    پرداخت شده: {fullyPaidItems.length}
+                  </span>
+                )}
+                {partiallyPaidItems.length > 0 && (
+                  <span style={{ color: THEME_COLORS.orange }}>
+                    پرداخت ناقص: {partiallyPaidItems.length}
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto">
-              {/* Paid Items List */}
-              {paidItems.length > 0 && (
+              {/* Partially Paid Items - These are important to show first */}
+              {partiallyPaidItems.length > 0 && (
                 <div className="p-3 space-y-2 border-b" style={{ borderColor: THEME_COLORS.border }}>
-                  {paidItems.map(item => {
+                  <div className="text-xs font-bold mb-2" style={{ color: THEME_COLORS.orange }}>
+                    پرداخت ناقص - نیاز به تکمیل پرداخت
+                  </div>
+                  {partiallyPaidItems.map(item => {
+                    const isRecentlyPaid = recentlyPaidItems.includes(item.id);
+                    const paidAmount = item.quantity_paid * item.unit_price;
+                    const remainingAmount = item.quantity_remaining * item.unit_price;
+                    const totalItemAmount = item.quantity * item.unit_price;
+                    const paidPercentage = Math.round((item.quantity_paid / item.quantity) * 100);
+                    const extrasTotal = item.extras?.reduce((sum, e) => sum + e.unit_price * e.quantity, 0) || 0;
+                    const extrasRemainingProportional = item.quantity > 0 ? (extrasTotal * item.quantity_remaining / item.quantity) : 0;
+
+                    return (
+                      <div
+                        key={`partial-${item.id}`}
+                        className={`p-3 rounded-lg ${isRecentlyPaid ? 'animate-slide-to-paid' : ''}`}
+                        style={{ backgroundColor: `${THEME_COLORS.orange}15`, border: `1px solid ${THEME_COLORS.orange}30` }}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-5 h-5 rounded-full flex items-center justify-center"
+                              style={{ backgroundColor: THEME_COLORS.orange }}
+                            >
+                              <span className="text-white text-[10px] font-bold">{paidPercentage}%</span>
+                            </div>
+                            <span className="text-sm font-medium" style={{ color: THEME_COLORS.text }}>
+                              {item.product_name}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Progress bar */}
+                        <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: THEME_COLORS.surface }}>
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{ width: `${paidPercentage}%`, backgroundColor: THEME_COLORS.orange }}
+                          />
+                        </div>
+
+                        {/* Payment details */}
+                        <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <span style={{ color: THEME_COLORS.subtext }}>پرداخت شده:</span>
+                            <span className="font-bold mr-1 number-display" style={{ color: THEME_COLORS.green }}>
+                              {formatPersianMoney(paidAmount)}
+                            </span>
+                          </div>
+                          <div>
+                            <span style={{ color: THEME_COLORS.subtext }}>باقیمانده:</span>
+                            <span className="font-bold mr-1 number-display" style={{ color: THEME_COLORS.orange }}>
+                              {formatPersianMoney(remainingAmount + extrasRemainingProportional)}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="mt-1 text-xs" style={{ color: THEME_COLORS.subtext }}>
+                          {item.quantity_paid} از {item.quantity} عدد پرداخت شده
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Fully Paid Items */}
+              {fullyPaidItems.length > 0 && (
+                <div className="p-3 space-y-2 border-b" style={{ borderColor: THEME_COLORS.border }}>
+                  <div className="text-xs font-bold mb-2" style={{ color: THEME_COLORS.green }}>
+                    تکمیل شده
+                  </div>
+                  {fullyPaidItems.map(item => {
                     const isRecentlyPaid = recentlyPaidItems.includes(item.id);
                     return (
                       <div
-                        key={item.id}
+                        key={`paid-${item.id}`}
                         className={`p-2 rounded-lg ${isRecentlyPaid ? 'animate-slide-to-paid' : ''}`}
                         style={{ backgroundColor: `${THEME_COLORS.green}15` }}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <div
-                              className="w-5 h-5 rounded-full flex items-center justify-center animate-checkmark"
+                              className="w-5 h-5 rounded-full flex items-center justify-center"
                               style={{ backgroundColor: THEME_COLORS.green }}
                             >
                               <span className="text-white text-xs">✓</span>
@@ -904,9 +1011,9 @@ export default function PaymentPage() {
                             {formatPersianMoney(item.quantity_paid * item.unit_price)}
                           </span>
                         </div>
-                        {item.quantity_paid < item.quantity && (
+                        {item.quantity > 1 && (
                           <div className="text-xs mt-1" style={{ color: THEME_COLORS.subtext }}>
-                            {item.quantity_paid} از {item.quantity} پرداخت شده
+                            {item.quantity} عدد
                           </div>
                         )}
                       </div>
