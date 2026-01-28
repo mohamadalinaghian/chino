@@ -115,6 +115,7 @@ export default function PaymentPage() {
   }, [saleId, router]);
 
   // ── Data Loading ──────────────────────────────────────────────────────────
+  // 1. Remove showToast from dependencies
   const loadData = useCallback(async () => {
     if (isNaN(saleId) || saleId <= 0) return;
 
@@ -130,18 +131,22 @@ export default function PaymentPage() {
         ...saleData,
         payments: saleData.payments || [],
       } as SaleData);
+
       setBankAccounts(accounts as BankAccount[]);
       if (pos) setPosAccount(pos);
     } catch (err) {
+      // You can still show toast here — it's fine
       showToast(err instanceof Error ? err.message : 'خطا در بارگذاری', 'error');
     } finally {
       setLoading(false);
     }
-  }, [saleId, showToast]);
+  }, [saleId]); // ← only saleId
 
+
+  // 2. Now useEffect depends only on saleId
   useEffect(() => {
     loadData();
-  }, [loadData]);
+  }, [saleId]);   // ← safe — saleId changes very rarely
 
   // ── Computed Values ───────────────────────────────────────────────────────
   const unpaidItems = useMemo(() => {
@@ -515,9 +520,8 @@ export default function PaymentPage() {
                   <div
                     key={item.id}
                     onClick={() => toggleItemSelection(item)}
-                    className={`rounded-xl cursor-pointer transition-all duration-300 overflow-hidden ${
-                      isAnimating ? 'animate-slide-to-center' : ''
-                    } ${isSelected ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-800' : 'hover:scale-[1.01]'}`}
+                    className={`rounded-xl cursor-pointer transition-all duration-300 overflow-hidden ${isAnimating ? 'animate-slide-to-center' : ''
+                      } ${isSelected ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-800' : 'hover:scale-[1.01]'}`}
                     style={{
                       backgroundColor: isSelected ? `${THEME_COLORS.accent}15` : THEME_COLORS.surface,
                       border: `2px solid ${isSelected ? THEME_COLORS.accent : THEME_COLORS.border}`,
@@ -1060,9 +1064,8 @@ function SplitPaymentCard({
       <button
         onClick={onSubmit}
         disabled={disabled || submitting || split.amount <= 0}
-        className={`w-full py-4 rounded-xl font-black text-lg transition-all disabled:opacity-50 ${
-          !disabled && split.amount > 0 ? 'animate-submit-pulse' : ''
-        }`}
+        className={`w-full py-4 rounded-xl font-black text-lg transition-all disabled:opacity-50 ${!disabled && split.amount > 0 ? 'animate-submit-pulse' : ''
+          }`}
         style={{ backgroundColor: THEME_COLORS.green, color: '#fff' }}
       >
         {submitting ? 'در حال ثبت...' : `ثبت پرداخت ${formatPersianMoney(finalTotal)}`}
