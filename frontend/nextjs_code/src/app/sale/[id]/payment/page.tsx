@@ -1,56 +1,402 @@
 'use client';
 
 import { useRouter, useParams } from 'next/navigation';
-import { useState } from 'react';
-import { usePaymentPage } from '@/hooks/payment';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useToast } from '@/components/common/Toast';
 import { LoadingOverlay } from '@/components/common/LoadingOverlay';
 import { THEME_COLORS } from '@/libs/constants';
 import { formatPersianMoney } from '@/utils/persianUtils';
-import { PaymentMethod } from '@/types/sale';
+import { PaymentMethod, ISaleItemDetail, IAddPaymentInput, TaxDiscountType } from '@/types/sale';
+import { fetchSaleDetails, fetchBankAccounts, addPaymentsToSale, voidPayment } from '@/service/sale';
+import { authenticatedFetchJSON } from '@/libs/auth/authFetch';
+import { CS_API_URL, API_ENDPOINTS } from '@/libs/constants';
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// PAYMENT PAGE
-// A clean, production-ready payment interface for cafe POS
-// Designed for non-technical cashiers with mistake-resistant UX
+// TYPES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+interface SaleData {
+  id: number;
+  state: string;
+  total_amount: number;
+  tax_amount: number;
+  discount_amount: number;
+  subtotal_amount: number;
+  total_paid: number;
+  balance_due: number;
+  is_fully_paid: boolean;
+  payment_status: string;
+  items: ISaleItemDetail[];
+  payments: PaymentRecord[];
+}
+
+interface PaymentRecord {
+  id: number;
+  method: string;
+  amount_applied: number;
+  tip_amount: number;
+  received_by_name: string;
+  received_at: string;
+  status: string;
+  covered_items: { item_id: number; quantity_paid: number }[];
+  destination_card_number?: string;
+  destination_bank_name?: string;
+}
+
+interface BankAccount {
+  id: number;
+  card_number: string;
+  bank_name: string | null;
+  related_user_name: string;
+}
+
+interface POSAccount {
+  id: number | null;
+  card_number: string | null;
+  account_owner: string | null;
+}
+
+interface SelectedItem {
+  itemId: number;
+  quantity: number;
+  item: ISaleItemDetail;
+}
+
+interface SplitPayment {
+  id: number;
+  amount: number;
+  taxEnabled: boolean;
+  taxPercent: number;
+  discount: number;
+  paymentMethod: PaymentMethod;
+  accountId: number | null;
+  isLocked: boolean;
+  tipAmount: number;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export default function PaymentPage() {
   const router = useRouter();
   const params = useParams();
+  const { showToast, ToastContainer } = useToast();
 
   const rawId = params.id;
   const saleId = typeof rawId === 'string' ? parseInt(rawId, 10) : NaN;
 
+  // ── State ─────────────────────────────────────────────────────────────────
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [sale, setSale] = useState<SaleData | null>(null);
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const [posAccount, setPosAccount] = useState<POSAccount | null>(null);
+
+  // Item selection
+  const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
+  const [animatingItemId, setAnimatingItemId] = useState<number | null>(null);
+
+  // Split payments
+  const [splitCount, setSplitCount] = useState(1);
+  const [splits, setSplits] = useState<SplitPayment[]>([createDefaultSplit(1)]);
+
+  // Recently paid items (for animation)
+  const [recentlyPaidItems, setRecentlyPaidItems] = useState<number[]>([]);
+
+  // Voiding
+  const [voidingPaymentId, setVoidingPaymentId] = useState<number | null>(null);
+
+  // ── Invalid Sale ID Check ─────────────────────────────────────────────────
+  useEffect(() => {
+    if (isNaN(saleId) || saleId <= 0) {
+      router.replace('/sale/dashboard');
+    }
+  }, [saleId, router]);
+
+  // ── Data Loading ──────────────────────────────────────────────────────────
+  const loadData = useCallback(async () => {
+    if (isNaN(saleId) || saleId <= 0) return;
+
+    try {
+      setLoading(true);
+      const [saleData, accounts, pos] = await Promise.all([
+        fetchSaleDetails(saleId),
+        fetchBankAccounts(),
+        authenticatedFetchJSON<POSAccount>(`${CS_API_URL}${API_ENDPOINTS.POS_ACCOUNT}`).catch(() => null),
+      ]);
+
+      setSale({
+        ...saleData,
+        payments: saleData.payments || [],
+      } as SaleData);
+      setBankAccounts(accounts as BankAccount[]);
+      if (pos) setPosAccount(pos);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'خطا در بارگذاری', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [saleId, showToast]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // ── Computed Values ───────────────────────────────────────────────────────
+  const unpaidItems = useMemo(() => {
+    if (!sale) return [];
+    return sale.items.filter(item => item.quantity_remaining > 0);
+  }, [sale]);
+
+  const paidItems = useMemo(() => {
+    if (!sale) return [];
+    return sale.items.filter(item => item.quantity_paid > 0);
+  }, [sale]);
+
+  const selectedItemsTotal = useMemo(() => {
+    return selectedItems.reduce((sum, sel) => {
+      const item = sel.item;
+      const baseTotal = sel.quantity * item.unit_price;
+      const extrasTotal = item.extras?.reduce((eSum, e) => eSum + e.unit_price * e.quantity, 0) || 0;
+      const extrasProportional = item.quantity > 0 ? (extrasTotal * sel.quantity / item.quantity) : 0;
+      return sum + baseTotal + extrasProportional;
+    }, 0);
+  }, [selectedItems]);
+
+  const totalLockedAmount = useMemo(() => {
+    return splits.filter(s => s.isLocked).reduce((sum, s) => {
+      const taxAmount = s.taxEnabled ? Math.round(s.amount * s.taxPercent / 100) : 0;
+      return sum + s.amount + taxAmount - s.discount + s.tipAmount;
+    }, 0);
+  }, [splits]);
+
+  // ── Split Payment Management ──────────────────────────────────────────────
+  function createDefaultSplit(id: number): SplitPayment {
+    return {
+      id,
+      amount: 0,
+      taxEnabled: true,
+      taxPercent: 10,
+      discount: 0,
+      paymentMethod: PaymentMethod.CASH,
+      accountId: null,
+      isLocked: false,
+      tipAmount: 0,
+    };
+  }
+
+  const updateSplitCount = useCallback((count: number) => {
+    const newCount = Math.max(1, Math.min(10, count));
+    setSplitCount(newCount);
+
+    // Preserve locked splits, adjust unlocked ones
+    const lockedSplits = splits.filter(s => s.isLocked);
+    const unlockedNeeded = newCount - lockedSplits.length;
+
+    if (unlockedNeeded > 0) {
+      const newSplits = [...lockedSplits];
+      const unlockedSplits = splits.filter(s => !s.isLocked);
+
+      // Keep existing unlocked splits up to needed count
+      for (let i = 0; i < Math.min(unlockedNeeded, unlockedSplits.length); i++) {
+        newSplits.push(unlockedSplits[i]);
+      }
+
+      // Create new splits if needed
+      for (let i = unlockedSplits.length; i < unlockedNeeded; i++) {
+        newSplits.push(createDefaultSplit(Date.now() + i));
+      }
+
+      setSplits(newSplits);
+    } else {
+      setSplits(lockedSplits);
+    }
+  }, [splits]);
+
+  const distributeSplitAmounts = useCallback(() => {
+    if (selectedItemsTotal <= 0) return;
+
+    const unlockedSplits = splits.filter(s => !s.isLocked);
+    if (unlockedSplits.length === 0) return;
+
+    const lockedTotal = splits.filter(s => s.isLocked).reduce((sum, s) => sum + s.amount, 0);
+    const remainingAmount = selectedItemsTotal - lockedTotal;
+    const perSplit = Math.floor(remainingAmount / unlockedSplits.length);
+    const remainder = remainingAmount - (perSplit * unlockedSplits.length);
+
+    setSplits(prev => prev.map((split, idx) => {
+      if (split.isLocked) return split;
+      const unlockedIdx = prev.filter(s => !s.isLocked).indexOf(split);
+      return {
+        ...split,
+        amount: perSplit + (unlockedIdx === 0 ? remainder : 0),
+      };
+    }));
+  }, [selectedItemsTotal, splits]);
+
+  // Auto-distribute when split count or selected items change
+  useEffect(() => {
+    distributeSplitAmounts();
+  }, [splitCount, selectedItemsTotal]);
+
+  const updateSplit = useCallback((splitId: number, updates: Partial<SplitPayment>) => {
+    setSplits(prev => prev.map(s => s.id === splitId ? { ...s, ...updates } : s));
+  }, []);
+
+  // ── Item Selection ────────────────────────────────────────────────────────
+  const toggleItemSelection = useCallback((item: ISaleItemDetail) => {
+    const maxQty = item.quantity_remaining;
+    const existing = selectedItems.find(s => s.itemId === item.id);
+
+    // Trigger animation
+    setAnimatingItemId(item.id);
+    setTimeout(() => setAnimatingItemId(null), 400);
+
+    if (existing) {
+      // Deselect
+      setSelectedItems(prev => prev.filter(s => s.itemId !== item.id));
+    } else {
+      // Select with full quantity
+      setSelectedItems(prev => [...prev, { itemId: item.id, quantity: maxQty, item }]);
+    }
+  }, [selectedItems]);
+
+  const updateItemQuantity = useCallback((itemId: number, quantity: number, item: ISaleItemDetail) => {
+    const maxQty = item.quantity_remaining;
+    const newQty = Math.max(0, Math.min(maxQty, quantity));
+
+    if (newQty === 0) {
+      setSelectedItems(prev => prev.filter(s => s.itemId !== itemId));
+    } else {
+      setSelectedItems(prev => {
+        const existing = prev.find(s => s.itemId === itemId);
+        if (existing) {
+          return prev.map(s => s.itemId === itemId ? { ...s, quantity: newQty } : s);
+        } else {
+          return [...prev, { itemId, quantity: newQty, item }];
+        }
+      });
+    }
+  }, []);
+
+  const selectAllItems = useCallback(() => {
+    setSelectedItems(unpaidItems.map(item => ({
+      itemId: item.id,
+      quantity: item.quantity_remaining,
+      item,
+    })));
+  }, [unpaidItems]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedItems([]);
+  }, []);
+
+  // ── Payment Submission ────────────────────────────────────────────────────
+  const handleSubmitSplit = useCallback(async (splitId: number) => {
+    const split = splits.find(s => s.id === splitId);
+    if (!split || split.isLocked || !sale) return;
+
+    if (selectedItems.length === 0) {
+      showToast('لطفاً حداقل یک آیتم انتخاب کنید', 'error');
+      return;
+    }
+
+    if (split.amount <= 0) {
+      showToast('مبلغ باید بزرگتر از صفر باشد', 'error');
+      return;
+    }
+
+    // Validate account for non-cash methods
+    if (split.paymentMethod !== PaymentMethod.CASH && !split.accountId) {
+      if (split.paymentMethod === PaymentMethod.POS && !posAccount?.id) {
+        showToast('کارتخوان تنظیم نشده است', 'error');
+        return;
+      }
+      if (split.paymentMethod === PaymentMethod.CARD_TRANSFER) {
+        showToast('لطفاً حساب مقصد را انتخاب کنید', 'error');
+        return;
+      }
+    }
+
+    setSubmitting(true);
+
+    try {
+      const payload: IAddPaymentInput = {
+        method: split.paymentMethod,
+        amount_applied: split.amount,
+        tip_amount: split.tipAmount > 0 ? split.tipAmount : undefined,
+        destination_account_id: split.paymentMethod === PaymentMethod.POS
+          ? posAccount?.id
+          : split.accountId,
+        selected_items: selectedItems.map(s => ({
+          item_id: s.itemId,
+          quantity: s.quantity,
+        })),
+        tax: split.taxEnabled ? { type: TaxDiscountType.PERCENTAGE, value: split.taxPercent } : null,
+        discount: split.discount > 0 ? { type: TaxDiscountType.FIXED, value: split.discount } : null,
+      };
+
+      const response = await addPaymentsToSale(saleId, { payments: [payload] });
+
+      // Mark split as locked
+      updateSplit(splitId, { isLocked: true });
+
+      // Track recently paid items for animation
+      const newlyPaidIds = selectedItems.map(s => s.itemId);
+      setRecentlyPaidItems(newlyPaidIds);
+      setTimeout(() => setRecentlyPaidItems([]), 1000);
+
+      // Clear selection after successful payment
+      setSelectedItems([]);
+
+      // Reload sale data
+      await loadData();
+
+      const wasAutoClosed = response.was_auto_closed || response.is_fully_paid;
+      showToast(
+        wasAutoClosed
+          ? 'پرداخت ثبت شد و فروش تسویه شد'
+          : `پرداخت ${split.amount.toLocaleString('fa-IR')} تومان ثبت شد`,
+        'success'
+      );
+
+      if (wasAutoClosed) {
+        setTimeout(() => router.push('/sale/dashboard'), 1500);
+      }
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'خطا در ثبت پرداخت', 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [splits, sale, selectedItems, posAccount, saleId, loadData, router, showToast, updateSplit]);
+
+  // ── Void Payment ──────────────────────────────────────────────────────────
+  const handleVoidPayment = useCallback(async (paymentId: number) => {
+    if (!sale || voidingPaymentId) return;
+
+    setVoidingPaymentId(paymentId);
+    try {
+      await voidPayment(saleId, paymentId);
+      await loadData();
+      showToast('پرداخت با موفقیت لغو شد', 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'خطا در لغو پرداخت', 'error');
+    } finally {
+      setVoidingPaymentId(null);
+    }
+  }, [sale, voidingPaymentId, saleId, loadData, showToast]);
+
+  // ── Render Guards ─────────────────────────────────────────────────────────
   if (isNaN(saleId) || saleId <= 0) {
-    router.replace('/sale/dashboard');
     return null;
   }
 
-  const { showToast, ToastContainer } = useToast();
-
-  const handleSuccess = (message: string, wasAutoClosed: boolean) => {
-    showToast(message, 'success');
-    if (wasAutoClosed) {
-      setTimeout(() => router.push('/sale/dashboard'), 1500);
-    }
-  };
-
-  const handleError = (message: string) => {
-    showToast(message, 'error');
-  };
-
-  const payment = usePaymentPage({
-    saleId,
-    onSuccess: handleSuccess,
-    onError: handleError,
-  });
-
-  if (payment.loading) {
+  if (loading) {
     return <LoadingOverlay message="در حال بارگذاری..." />;
   }
 
-  if (!payment.snapshot) {
+  if (!sale) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: THEME_COLORS.bgPrimary }}>
         <div className="text-center p-8 rounded-2xl" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
@@ -68,795 +414,749 @@ export default function PaymentPage() {
     );
   }
 
-  // View-only mode for closed sales
-  if (payment.isViewOnly) {
-    return <ViewOnlyMode payment={payment} router={router} saleId={saleId} ToastContainer={ToastContainer} />;
+  // View-only mode for closed/canceled sales
+  if (sale.is_fully_paid || sale.state === 'CANCELED') {
+    return (
+      <ViewOnlyMode
+        sale={sale}
+        router={router}
+        saleId={saleId}
+        ToastContainer={ToastContainer}
+        onVoidPayment={handleVoidPayment}
+        voidingPaymentId={voidingPaymentId}
+      />
+    );
   }
+
+  const unlockedSplits = splits.filter(s => !s.isLocked);
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: THEME_COLORS.bgPrimary }}>
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      {/* HEADER - Payment Status (Always Visible) */}
+      {/* HEADER */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
       <header
-        className="flex-shrink-0 px-4 py-4 border-b"
+        className="flex-shrink-0 px-4 py-3 border-b"
         style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border }}
       >
-        <div className="max-w-5xl mx-auto">
-          {/* Top row: Back button and sale info */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => router.back()}
-                className="px-4 py-2 rounded-xl font-medium transition-all hover:opacity-80"
-                style={{ backgroundColor: THEME_COLORS.surface, color: THEME_COLORS.text }}
-              >
-                بازگشت
-              </button>
-              <h1 className="text-xl font-bold" style={{ color: THEME_COLORS.text }}>
-                پرداخت فروش #{saleId}
-              </h1>
-            </div>
-            <StatusBadge status={payment.snapshot.paymentStatus} />
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.back()}
+              className="px-4 py-2 rounded-xl font-medium transition-all hover:opacity-80"
+              style={{ backgroundColor: THEME_COLORS.surface, color: THEME_COLORS.text }}
+            >
+              بازگشت
+            </button>
+            <h1 className="text-xl font-bold" style={{ color: THEME_COLORS.text }}>
+              پرداخت فروش #{saleId}
+            </h1>
           </div>
 
-          {/* Payment Status Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {/* Total Amount - LARGEST */}
-            <div
-              className="p-4 rounded-xl text-center"
-              style={{ backgroundColor: THEME_COLORS.surface, border: `2px solid ${THEME_COLORS.accent}` }}
-            >
-              <div className="text-xs mb-1" style={{ color: THEME_COLORS.subtext }}>جمع کل فروش</div>
-              <div className="text-2xl font-black" style={{ color: THEME_COLORS.accent }}>
-                {formatPersianMoney(payment.snapshot.totalAmount)}
-              </div>
+          {/* Status Summary */}
+          <div className="flex items-center gap-4">
+            <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
+              جمع: <span className="font-bold" style={{ color: THEME_COLORS.accent }}>{formatPersianMoney(sale.total_amount)}</span>
             </div>
-
-            {/* Tax - Read Only */}
-            <div
-              className="p-4 rounded-xl text-center"
-              style={{ backgroundColor: THEME_COLORS.surface }}
-            >
-              <div className="text-xs mb-1" style={{ color: THEME_COLORS.subtext }}>مالیات (محاسبه شده)</div>
-              <div className="text-lg font-bold" style={{ color: THEME_COLORS.blue }}>
-                {formatPersianMoney(payment.snapshot.taxAmount)}
-              </div>
+            <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
+              پرداخت شده: <span className="font-bold" style={{ color: THEME_COLORS.green }}>{formatPersianMoney(sale.total_paid)}</span>
             </div>
-
-            {/* Paid So Far */}
-            <div
-              className="p-4 rounded-xl text-center"
-              style={{ backgroundColor: `${THEME_COLORS.green}10` }}
-            >
-              <div className="text-xs mb-1" style={{ color: THEME_COLORS.subtext }}>پرداخت شده</div>
-              <div className="text-lg font-bold" style={{ color: THEME_COLORS.green }}>
-                {formatPersianMoney(payment.snapshot.totalPaid)}
-              </div>
-            </div>
-
-            {/* Remaining Due - HIGHLIGHTED */}
-            <div
-              className="p-4 rounded-xl text-center cursor-pointer transition-all hover:scale-[1.02]"
-              style={{
-                backgroundColor: payment.snapshot.remainingDue > 0 ? `${THEME_COLORS.orange}15` : `${THEME_COLORS.green}15`,
-                border: `2px solid ${payment.snapshot.remainingDue > 0 ? THEME_COLORS.orange : THEME_COLORS.green}`,
-              }}
-              onClick={payment.setAmountToRemaining}
-              title="کلیک برای وارد کردن مبلغ مانده"
-            >
-              <div className="text-xs mb-1" style={{ color: THEME_COLORS.subtext }}>
-                مانده {payment.snapshot.remainingDue > 0 ? '(کلیک کنید)' : ''}
-              </div>
-              <div
-                className="text-xl font-black"
-                style={{ color: payment.snapshot.remainingDue > 0 ? THEME_COLORS.orange : THEME_COLORS.green }}
-              >
-                {payment.snapshot.remainingDue > 0 ? formatPersianMoney(payment.snapshot.remainingDue) : 'تسویه شده'}
-              </div>
+            <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
+              مانده: <span className="font-bold" style={{ color: THEME_COLORS.orange }}>{formatPersianMoney(sale.balance_due)}</span>
             </div>
           </div>
         </div>
       </header>
 
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      {/* MAIN CONTENT */}
+      {/* MAIN 3-COLUMN LAYOUT */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      <main className="flex-1 overflow-auto">
-        <div className="max-w-5xl mx-auto p-4 space-y-4">
-          {/* Sale Breakdown (Collapsible) */}
-          <SaleBreakdown
-            items={payment.snapshot.items}
-            subtotal={payment.snapshot.subtotalAmount}
-            tax={payment.snapshot.taxAmount}
-            discount={payment.snapshot.discountAmount}
-            total={payment.snapshot.totalAmount}
-            isOpen={payment.showBreakdown}
-            onToggle={() => payment.setShowBreakdown(!payment.showBreakdown)}
-          />
+      <main className="flex-1 overflow-hidden">
+        <div className="h-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 p-4">
 
-          {/* Main Layout: Payment Input + History */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-            {/* Payment Input Area (Main Interaction Zone) */}
-            <div className="lg:col-span-3">
-              <PaymentInputArea
-                paymentMethod={payment.paymentMethod}
-                onMethodChange={payment.setPaymentMethod}
-                inputAmount={payment.inputAmount}
-                onAmountChange={payment.setInputAmount}
-                tipAmount={payment.tipAmount}
-                onTipChange={payment.setTipAmount}
-                calculatorExpression={payment.calculatorExpression}
-                onCalculatorChange={payment.setCalculatorExpression}
-                onCalculatorApply={payment.applyCalculatorResult}
-                parsedAmount={payment.parsedAmount}
-                parsedTip={payment.parsedTip}
-                totalPaymentAmount={payment.totalPaymentAmount}
-                remainingDue={payment.snapshot.remainingDue}
-                quickAmounts={payment.quickAmounts}
-                onQuickAmount={(amt) => payment.setInputAmount(amt.toString())}
-                onSetRemaining={payment.setAmountToRemaining}
-                bankAccounts={payment.bankAccounts}
-                posAccount={payment.posAccount}
-                selectedAccountId={payment.selectedAccountId}
-                onAccountSelect={payment.setSelectedAccountId}
-                validationError={payment.validationError}
-                isValid={payment.isValid}
-                submitting={payment.submitting}
-                onSubmit={payment.handleSubmitPayment}
-              />
+          {/* ─────────────────────────────────────────────────────────────── */}
+          {/* RIGHT COLUMN: Sale Items */}
+          {/* ─────────────────────────────────────────────────────────────── */}
+          <div className="lg:col-span-4 flex flex-col overflow-hidden rounded-xl" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
+            <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: THEME_COLORS.border }}>
+              <h2 className="font-bold" style={{ color: THEME_COLORS.text }}>
+                اقلام فروش ({unpaidItems.length})
+              </h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={selectAllItems}
+                  className="px-3 py-1 rounded-lg text-xs font-medium"
+                  style={{ backgroundColor: THEME_COLORS.accent, color: '#fff' }}
+                >
+                  انتخاب همه
+                </button>
+                {selectedItems.length > 0 && (
+                  <button
+                    onClick={clearSelection}
+                    className="px-3 py-1 rounded-lg text-xs font-medium"
+                    style={{ backgroundColor: THEME_COLORS.red, color: '#fff' }}
+                  >
+                    پاک کردن
+                  </button>
+                )}
+              </div>
             </div>
 
-            {/* Payments History */}
-            <div className="lg:col-span-2">
-              <PaymentHistory
-                payments={payment.payments}
-                voidingPaymentId={payment.voidingPaymentId}
-                onVoidPayment={payment.handleVoidPayment}
-              />
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {unpaidItems.map(item => {
+                const isSelected = selectedItems.some(s => s.itemId === item.id);
+                const selectedQty = selectedItems.find(s => s.itemId === item.id)?.quantity || 0;
+                const isAnimating = animatingItemId === item.id;
+                const itemTotal = item.quantity_remaining * item.unit_price;
+                const extrasTotal = item.extras?.reduce((sum, e) => sum + e.unit_price * e.quantity, 0) || 0;
+                const extrasProportional = item.quantity > 0 ? (extrasTotal * item.quantity_remaining / item.quantity) : 0;
+
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => toggleItemSelection(item)}
+                    className={`rounded-xl cursor-pointer transition-all duration-300 overflow-hidden ${
+                      isAnimating ? 'animate-slide-to-center' : ''
+                    } ${isSelected ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-800' : 'hover:scale-[1.01]'}`}
+                    style={{
+                      backgroundColor: isSelected ? `${THEME_COLORS.accent}15` : THEME_COLORS.surface,
+                      border: `2px solid ${isSelected ? THEME_COLORS.accent : THEME_COLORS.border}`,
+                    }}
+                  >
+                    <div className="p-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="font-bold" style={{ color: THEME_COLORS.text }}>
+                            {item.product_name}
+                          </div>
+                          <div className="text-sm mt-1" style={{ color: THEME_COLORS.subtext }}>
+                            {item.quantity_remaining > 1 ? (
+                              <span>{formatPersianMoney(item.unit_price)} × {item.quantity_remaining}</span>
+                            ) : (
+                              <span>{formatPersianMoney(item.unit_price)}</span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="text-left">
+                          <div className="font-bold text-lg" style={{ color: isSelected ? THEME_COLORS.green : THEME_COLORS.text }}>
+                            {formatPersianMoney(itemTotal + extrasProportional)}
+                          </div>
+                          {isSelected && item.quantity_remaining > 1 && (
+                            <div className="flex items-center gap-1 mt-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateItemQuantity(item.id, selectedQty - 1, item);
+                                }}
+                                className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold"
+                                style={{ backgroundColor: THEME_COLORS.red, color: '#fff' }}
+                              >
+                                -
+                              </button>
+                              <span className="w-6 text-center font-bold" style={{ color: THEME_COLORS.text }}>
+                                {selectedQty}
+                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateItemQuantity(item.id, selectedQty + 1, item);
+                                }}
+                                disabled={selectedQty >= item.quantity_remaining}
+                                className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold disabled:opacity-50"
+                                style={{ backgroundColor: THEME_COLORS.green, color: '#fff' }}
+                              >
+                                +
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Extras */}
+                      {item.extras && item.extras.length > 0 && (
+                        <div className="mt-2 pt-2 border-t" style={{ borderColor: THEME_COLORS.border }}>
+                          <div className="text-xs font-bold mb-1" style={{ color: THEME_COLORS.purple }}>
+                            افزودنی‌ها:
+                          </div>
+                          {item.extras.map(extra => (
+                            <div key={extra.id} className="flex justify-between text-xs" style={{ color: THEME_COLORS.subtext }}>
+                              <span>{extra.product_name} {extra.quantity > 1 ? `×${extra.quantity}` : ''}</span>
+                              <span className="number-display">+{formatPersianMoney(extra.unit_price * extra.quantity)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Selection indicator */}
+                    {isSelected && (
+                      <div
+                        className="px-3 py-1 text-center text-xs font-bold"
+                        style={{ backgroundColor: THEME_COLORS.accent, color: '#fff' }}
+                      >
+                        انتخاب شده
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {unpaidItems.length === 0 && (
+                <div className="text-center py-8" style={{ color: THEME_COLORS.subtext }}>
+                  همه اقلام پرداخت شده‌اند
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Edge Actions */}
-          <EdgeActions saleId={saleId} router={router} />
+          {/* ─────────────────────────────────────────────────────────────── */}
+          {/* CENTER COLUMN: Payment Controls */}
+          {/* ─────────────────────────────────────────────────────────────── */}
+          <div className="lg:col-span-5 flex flex-col overflow-hidden rounded-xl" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
+            {/* Selected Items Summary */}
+            <div className="px-4 py-3 border-b" style={{ borderColor: THEME_COLORS.border }}>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="font-bold" style={{ color: THEME_COLORS.text }}>
+                  آیتم‌های انتخاب شده ({selectedItems.length})
+                </h2>
+                <div className="text-lg font-bold" style={{ color: THEME_COLORS.accent }}>
+                  {formatPersianMoney(selectedItemsTotal)}
+                </div>
+              </div>
+
+              {/* Selected items mini-list */}
+              {selectedItems.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {selectedItems.map(sel => (
+                    <div
+                      key={sel.itemId}
+                      className="px-2 py-1 rounded-lg text-xs font-medium animate-appear-selection"
+                      style={{ backgroundColor: `${THEME_COLORS.accent}20`, color: THEME_COLORS.accent }}
+                    >
+                      {sel.item.product_name} {sel.quantity > 1 ? `×${sel.quantity}` : ''}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Split Count Control */}
+            <div className="px-4 py-3 border-b" style={{ borderColor: THEME_COLORS.border }}>
+              <div className="flex items-center justify-between">
+                <span className="font-medium" style={{ color: THEME_COLORS.text }}>
+                  تعداد تقسیم پرداخت
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => updateSplitCount(splitCount - 1)}
+                    disabled={splitCount <= 1}
+                    className="w-8 h-8 rounded-full flex items-center justify-center font-bold disabled:opacity-50"
+                    style={{ backgroundColor: THEME_COLORS.surface, color: THEME_COLORS.text }}
+                  >
+                    -
+                  </button>
+                  <span className="w-8 text-center text-xl font-bold" style={{ color: THEME_COLORS.accent }}>
+                    {splitCount}
+                  </span>
+                  <button
+                    onClick={() => updateSplitCount(splitCount + 1)}
+                    disabled={splitCount >= 10}
+                    className="w-8 h-8 rounded-full flex items-center justify-center font-bold disabled:opacity-50"
+                    style={{ backgroundColor: THEME_COLORS.surface, color: THEME_COLORS.text }}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {splitCount > 1 && (
+                <button
+                  onClick={distributeSplitAmounts}
+                  className="mt-2 w-full py-2 rounded-lg text-sm font-medium"
+                  style={{ backgroundColor: THEME_COLORS.surface, color: THEME_COLORS.accent }}
+                >
+                  تقسیم مساوی مبالغ
+                </button>
+              )}
+            </div>
+
+            {/* Split Payments - Scrollable */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {splits.map((split, index) => (
+                <SplitPaymentCard
+                  key={split.id}
+                  split={split}
+                  index={index}
+                  totalSplits={splits.length}
+                  bankAccounts={bankAccounts}
+                  posAccount={posAccount}
+                  onUpdate={(updates) => updateSplit(split.id, updates)}
+                  onSubmit={() => handleSubmitSplit(split.id)}
+                  submitting={submitting}
+                  disabled={selectedItems.length === 0}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* ─────────────────────────────────────────────────────────────── */}
+          {/* LEFT COLUMN: Paid Items & History */}
+          {/* ─────────────────────────────────────────────────────────────── */}
+          <div className="lg:col-span-3 flex flex-col overflow-hidden rounded-xl" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
+            {/* Paid Items */}
+            <div className="px-4 py-3 border-b" style={{ borderColor: THEME_COLORS.border }}>
+              <h2 className="font-bold" style={{ color: THEME_COLORS.green }}>
+                پرداخت شده ({paidItems.length})
+              </h2>
+            </div>
+
+            <div className="flex-1 overflow-y-auto">
+              {/* Paid Items List */}
+              {paidItems.length > 0 && (
+                <div className="p-3 space-y-2 border-b" style={{ borderColor: THEME_COLORS.border }}>
+                  {paidItems.map(item => {
+                    const isRecentlyPaid = recentlyPaidItems.includes(item.id);
+                    return (
+                      <div
+                        key={item.id}
+                        className={`p-2 rounded-lg ${isRecentlyPaid ? 'animate-slide-to-paid' : ''}`}
+                        style={{ backgroundColor: `${THEME_COLORS.green}15` }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-5 h-5 rounded-full flex items-center justify-center animate-checkmark"
+                              style={{ backgroundColor: THEME_COLORS.green }}
+                            >
+                              <span className="text-white text-xs">✓</span>
+                            </div>
+                            <span className="text-sm font-medium" style={{ color: THEME_COLORS.text }}>
+                              {item.product_name}
+                            </span>
+                          </div>
+                          <span className="text-sm font-bold number-display" style={{ color: THEME_COLORS.green }}>
+                            {formatPersianMoney(item.quantity_paid * item.unit_price)}
+                          </span>
+                        </div>
+                        {item.quantity_paid < item.quantity && (
+                          <div className="text-xs mt-1" style={{ color: THEME_COLORS.subtext }}>
+                            {item.quantity_paid} از {item.quantity} پرداخت شده
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Payment History */}
+              <div className="p-3">
+                <h3 className="font-bold mb-2 text-sm" style={{ color: THEME_COLORS.text }}>
+                  تاریخچه پرداخت‌ها ({sale.payments.filter(p => p.status === 'ACTIVE').length})
+                </h3>
+
+                {sale.payments.length === 0 ? (
+                  <div className="text-center py-4 text-sm" style={{ color: THEME_COLORS.subtext }}>
+                    هنوز پرداختی ثبت نشده
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {sale.payments.filter(p => p.status === 'ACTIVE').map(payment => (
+                      <PaymentHistoryItem
+                        key={payment.id}
+                        payment={payment}
+                        onVoid={handleVoidPayment}
+                        voiding={voidingPaymentId === payment.id}
+                      />
+                    ))}
+
+                    {/* Voided payments */}
+                    {sale.payments.filter(p => p.status === 'VOID').length > 0 && (
+                      <>
+                        <div className="text-xs font-medium pt-2 mt-2 border-t" style={{ color: THEME_COLORS.subtext, borderColor: THEME_COLORS.border }}>
+                          لغو شده
+                        </div>
+                        {sale.payments.filter(p => p.status === 'VOID').map(payment => (
+                          <div
+                            key={payment.id}
+                            className="p-2 rounded-lg opacity-50"
+                            style={{ backgroundColor: `${THEME_COLORS.red}10` }}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm line-through" style={{ color: THEME_COLORS.text }}>
+                                {formatPersianMoney(payment.amount_applied)}
+                              </span>
+                              <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: `${THEME_COLORS.red}20`, color: THEME_COLORS.red }}>
+                                لغو شده
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Partial Payment Progress */}
+            {totalLockedAmount > 0 && totalLockedAmount < selectedItemsTotal && (
+              <div className="p-3 border-t" style={{ borderColor: THEME_COLORS.border }}>
+                <div className="text-xs mb-1" style={{ color: THEME_COLORS.subtext }}>
+                  پیشرفت پرداخت
+                </div>
+                <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: THEME_COLORS.surface }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.min(100, (totalLockedAmount / selectedItemsTotal) * 100)}%`,
+                      backgroundColor: THEME_COLORS.green,
+                    }}
+                  />
+                </div>
+                <div className="text-xs mt-1 text-center" style={{ color: THEME_COLORS.green }}>
+                  {Math.round((totalLockedAmount / selectedItemsTotal) * 100)}% پرداخت شده
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </main>
 
-      {payment.submitting && <LoadingOverlay message="در حال ثبت پرداخت..." />}
+      {submitting && <LoadingOverlay message="در حال ثبت پرداخت..." />}
       <ToastContainer />
     </div>
   );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SUB-COMPONENTS
+// SPLIT PAYMENT CARD COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function StatusBadge({ status }: { status: string }) {
-  const config = {
-    PAID: { bg: `${THEME_COLORS.green}20`, color: THEME_COLORS.green, text: 'تسویه شده', icon: 'check' },
-    PARTIALLY_PAID: { bg: `${THEME_COLORS.orange}20`, color: THEME_COLORS.orange, text: 'پرداخت جزئی', icon: 'half' },
-    UNPAID: { bg: `${THEME_COLORS.red}20`, color: THEME_COLORS.red, text: 'پرداخت نشده', icon: 'empty' },
-  }[status] || { bg: THEME_COLORS.surface, color: THEME_COLORS.text, text: status, icon: 'empty' };
-
-  return (
-    <div
-      className="px-4 py-2 rounded-xl font-bold flex items-center gap-2"
-      style={{ backgroundColor: config.bg, color: config.color }}
-    >
-      <span className="text-lg">
-        {config.icon === 'check' ? '●' : config.icon === 'half' ? '◐' : '○'}
-      </span>
-      {config.text}
-    </div>
-  );
+interface SplitPaymentCardProps {
+  split: SplitPayment;
+  index: number;
+  totalSplits: number;
+  bankAccounts: BankAccount[];
+  posAccount: POSAccount | null;
+  onUpdate: (updates: Partial<SplitPayment>) => void;
+  onSubmit: () => void;
+  submitting: boolean;
+  disabled: boolean;
 }
 
-function SaleBreakdown({
-  items,
-  subtotal,
-  tax,
-  discount,
-  total,
-  isOpen,
-  onToggle,
-}: {
-  items: { id: number; product_name: string; quantity: number; unit_price: number; total: number; extras: { product_name: string; quantity: number; unit_price: number }[] }[];
-  subtotal: number;
-  tax: number;
-  discount: number;
-  total: number;
-  isOpen: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <div
-      className="rounded-xl overflow-hidden"
-      style={{ backgroundColor: THEME_COLORS.bgSecondary }}
-    >
-      {/* Header - Always visible */}
-      <button
-        onClick={onToggle}
-        className="w-full px-4 py-3 flex items-center justify-between"
-        style={{ backgroundColor: THEME_COLORS.surface }}
-      >
-        <div className="flex items-center gap-2">
-          <span className="text-xl">{isOpen ? '▼' : '▶'}</span>
-          <span className="font-bold" style={{ color: THEME_COLORS.text }}>
-            جزئیات فروش ({items.length} قلم)
-          </span>
-        </div>
-        <span style={{ color: THEME_COLORS.subtext }}>
-          {isOpen ? 'بستن' : 'مشاهده'}
-        </span>
-      </button>
-
-      {/* Content - Collapsible */}
-      {isOpen && (
-        <div className="p-4 space-y-3">
-          {/* Items */}
-          <div className="space-y-2 max-h-60 overflow-y-auto">
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className="flex justify-between items-start p-3 rounded-lg"
-                style={{ backgroundColor: THEME_COLORS.surface }}
-              >
-                <div>
-                  <div className="font-medium" style={{ color: THEME_COLORS.text }}>
-                    {item.product_name}
-                  </div>
-                  <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
-                    {item.quantity} عدد × {formatPersianMoney(item.unit_price)}
-                  </div>
-                  {item.extras?.length > 0 && (
-                    <div className="mt-1 text-xs" style={{ color: THEME_COLORS.subtext }}>
-                      افزودنی: {item.extras.map(e => e.product_name).join('، ')}
-                    </div>
-                  )}
-                </div>
-                <div className="font-bold" style={{ color: THEME_COLORS.text }}>
-                  {formatPersianMoney(item.total)}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Summary */}
-          <div className="pt-3 border-t space-y-1" style={{ borderColor: THEME_COLORS.border }}>
-            <div className="flex justify-between text-sm">
-              <span style={{ color: THEME_COLORS.subtext }}>جمع اقلام:</span>
-              <span style={{ color: THEME_COLORS.text }}>{formatPersianMoney(subtotal)}</span>
-            </div>
-            {tax > 0 && (
-              <div className="flex justify-between text-sm">
-                <span style={{ color: THEME_COLORS.blue }}>+ مالیات:</span>
-                <span style={{ color: THEME_COLORS.blue }}>{formatPersianMoney(tax)}</span>
-              </div>
-            )}
-            {discount > 0 && (
-              <div className="flex justify-between text-sm">
-                <span style={{ color: THEME_COLORS.orange }}>- تخفیف:</span>
-                <span style={{ color: THEME_COLORS.orange }}>{formatPersianMoney(discount)}</span>
-              </div>
-            )}
-            <div className="flex justify-between font-bold text-lg pt-2">
-              <span style={{ color: THEME_COLORS.text }}>جمع کل:</span>
-              <span style={{ color: THEME_COLORS.accent }}>{formatPersianMoney(total)}</span>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PaymentInputArea({
-  paymentMethod,
-  onMethodChange,
-  inputAmount,
-  onAmountChange,
-  tipAmount,
-  onTipChange,
-  calculatorExpression,
-  onCalculatorChange,
-  onCalculatorApply,
-  parsedAmount,
-  parsedTip,
-  totalPaymentAmount,
-  remainingDue,
-  quickAmounts,
-  onQuickAmount,
-  onSetRemaining,
+function SplitPaymentCard({
+  split,
+  index,
+  totalSplits,
   bankAccounts,
   posAccount,
-  selectedAccountId,
-  onAccountSelect,
-  validationError,
-  isValid,
-  submitting,
+  onUpdate,
   onSubmit,
-}: {
-  paymentMethod: PaymentMethod;
-  onMethodChange: (m: PaymentMethod) => void;
-  inputAmount: string;
-  onAmountChange: (v: string) => void;
-  tipAmount: string;
-  onTipChange: (v: string) => void;
-  calculatorExpression: string;
-  onCalculatorChange: (v: string) => void;
-  onCalculatorApply: () => void;
-  parsedAmount: number;
-  parsedTip: number;
-  totalPaymentAmount: number;
-  remainingDue: number;
-  quickAmounts: number[];
-  onQuickAmount: (amt: number) => void;
-  onSetRemaining: () => void;
-  bankAccounts: { id: number; card_number: string; bank_name: string | null; related_user_name: string }[];
-  posAccount: { id: number | null; card_number: string | null; account_owner: string | null } | null;
-  selectedAccountId: number | null;
-  onAccountSelect: (id: number) => void;
-  validationError: string | null;
-  isValid: boolean;
-  submitting: boolean;
-  onSubmit: () => void;
-}) {
-  const [showCalculator, setShowCalculator] = useState(false);
+  submitting,
+  disabled,
+}: SplitPaymentCardProps) {
+  const taxAmount = split.taxEnabled ? Math.round(split.amount * split.taxPercent / 100) : 0;
+  const totalWithTaxDiscount = split.amount + taxAmount - split.discount;
+  const finalTotal = totalWithTaxDiscount + split.tipAmount;
+
+  if (split.isLocked) {
+    return (
+      <div
+        className="p-4 rounded-xl"
+        style={{ backgroundColor: `${THEME_COLORS.green}15`, border: `2px solid ${THEME_COLORS.green}` }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: THEME_COLORS.green }}>
+              <span className="text-white text-sm">✓</span>
+            </div>
+            <span className="font-bold" style={{ color: THEME_COLORS.green }}>
+              پرداخت {index + 1} ثبت شد
+            </span>
+          </div>
+          <span className="font-bold number-display" style={{ color: THEME_COLORS.green }}>
+            {formatPersianMoney(finalTotal)}
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
-      className="rounded-xl p-5 space-y-5"
-      style={{ backgroundColor: THEME_COLORS.bgSecondary }}
+      className="p-4 rounded-xl space-y-4 animate-split-appear"
+      style={{ backgroundColor: THEME_COLORS.surface, border: `2px solid ${THEME_COLORS.border}` }}
     >
-      {/* Payment Method Selector */}
-      <div>
-        <div className="text-sm font-bold mb-3" style={{ color: THEME_COLORS.text }}>
-          روش پرداخت
+      {/* Header */}
+      {totalSplits > 1 && (
+        <div className="font-bold" style={{ color: THEME_COLORS.accent }}>
+          پرداخت {index + 1} از {totalSplits}
         </div>
+      )}
+
+      {/* Amount Input */}
+      <div>
+        <label className="text-sm font-medium mb-1 block" style={{ color: THEME_COLORS.subtext }}>
+          مبلغ پرداخت
+        </label>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={split.amount || ''}
+          onChange={(e) => onUpdate({ amount: parseInt(e.target.value.replace(/[^0-9]/g, '')) || 0 })}
+          placeholder="۰"
+          className="w-full p-3 rounded-lg text-xl font-bold bg-transparent outline-none number-input"
+          style={{
+            backgroundColor: THEME_COLORS.bgSecondary,
+            color: THEME_COLORS.accent,
+            border: `2px solid ${THEME_COLORS.border}`,
+          }}
+        />
+      </div>
+
+      {/* Tax Toggle */}
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium" style={{ color: THEME_COLORS.text }}>
+          مالیات ({split.taxPercent}%)
+        </span>
+        <button
+          onClick={() => onUpdate({ taxEnabled: !split.taxEnabled })}
+          className="px-4 py-2 rounded-lg font-bold text-sm transition-all"
+          style={{
+            backgroundColor: split.taxEnabled ? THEME_COLORS.blue : THEME_COLORS.bgSecondary,
+            color: split.taxEnabled ? '#fff' : THEME_COLORS.subtext,
+            border: `2px solid ${split.taxEnabled ? THEME_COLORS.blue : THEME_COLORS.border}`,
+          }}
+        >
+          {split.taxEnabled ? 'فعال' : 'غیرفعال'}
+        </button>
+      </div>
+
+      {/* Tax Amount Display */}
+      {split.taxEnabled && taxAmount > 0 && (
+        <div className="flex justify-between text-sm" style={{ color: THEME_COLORS.blue }}>
+          <span>+ مالیات</span>
+          <span className="number-display">{formatPersianMoney(taxAmount)}</span>
+        </div>
+      )}
+
+      {/* Discount Input */}
+      <div>
+        <label className="text-sm font-medium mb-1 block" style={{ color: THEME_COLORS.subtext }}>
+          تخفیف (تومان)
+        </label>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={split.discount || ''}
+          onChange={(e) => onUpdate({ discount: parseInt(e.target.value.replace(/[^0-9]/g, '')) || 0 })}
+          placeholder="۰"
+          className="w-full p-2 rounded-lg text-lg font-bold bg-transparent outline-none number-input"
+          style={{
+            backgroundColor: THEME_COLORS.bgSecondary,
+            color: THEME_COLORS.orange,
+            border: `2px solid ${THEME_COLORS.border}`,
+          }}
+        />
+      </div>
+
+      {/* Tip Input */}
+      <div>
+        <label className="text-sm font-medium mb-1 block" style={{ color: THEME_COLORS.subtext }}>
+          انعام (اختیاری)
+        </label>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={split.tipAmount || ''}
+          onChange={(e) => onUpdate({ tipAmount: parseInt(e.target.value.replace(/[^0-9]/g, '')) || 0 })}
+          placeholder="۰"
+          className="w-full p-2 rounded-lg text-lg font-bold bg-transparent outline-none number-input"
+          style={{
+            backgroundColor: THEME_COLORS.bgSecondary,
+            color: THEME_COLORS.green,
+            border: `2px solid ${THEME_COLORS.border}`,
+          }}
+        />
+      </div>
+
+      {/* Payment Method */}
+      <div>
+        <label className="text-sm font-medium mb-2 block" style={{ color: THEME_COLORS.subtext }}>
+          روش پرداخت
+        </label>
         <div className="grid grid-cols-3 gap-2">
           {[
             { value: PaymentMethod.CASH, label: 'نقدی', icon: '💵', color: THEME_COLORS.green },
             { value: PaymentMethod.POS, label: 'کارتخوان', icon: '💳', color: THEME_COLORS.purple },
-            { value: PaymentMethod.CARD_TRANSFER, label: 'کارت به کارت', icon: '🏦', color: THEME_COLORS.accent },
+            { value: PaymentMethod.CARD_TRANSFER, label: 'کارت', icon: '🏦', color: THEME_COLORS.accent },
           ].map((method) => (
             <button
               key={method.value}
-              onClick={() => onMethodChange(method.value)}
-              className="py-4 rounded-xl font-bold transition-all flex flex-col items-center gap-1"
+              onClick={() => onUpdate({
+                paymentMethod: method.value,
+                accountId: method.value === PaymentMethod.POS ? posAccount?.id || null : null,
+              })}
+              className="py-2 rounded-lg font-medium text-sm transition-all flex flex-col items-center gap-1"
               style={{
-                backgroundColor: paymentMethod === method.value ? method.color : THEME_COLORS.surface,
-                color: paymentMethod === method.value ? '#fff' : THEME_COLORS.text,
-                border: `2px solid ${paymentMethod === method.value ? method.color : THEME_COLORS.border}`,
+                backgroundColor: split.paymentMethod === method.value ? method.color : THEME_COLORS.bgSecondary,
+                color: split.paymentMethod === method.value ? '#fff' : THEME_COLORS.text,
+                border: `2px solid ${split.paymentMethod === method.value ? method.color : THEME_COLORS.border}`,
               }}
             >
-              <span className="text-2xl">{method.icon}</span>
+              <span>{method.icon}</span>
               <span>{method.label}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Account Selector (for non-cash methods) */}
-      {paymentMethod !== PaymentMethod.CASH && (
+      {/* Bank Account Selection */}
+      {split.paymentMethod === PaymentMethod.CARD_TRANSFER && (
         <div>
-          <div className="text-sm font-bold mb-2" style={{ color: THEME_COLORS.text }}>
-            {paymentMethod === PaymentMethod.POS ? 'کارتخوان' : 'حساب مقصد'}
-          </div>
-          {paymentMethod === PaymentMethod.POS ? (
-            posAccount?.id ? (
-              <div
-                className="p-3 rounded-xl"
-                style={{ backgroundColor: `${THEME_COLORS.green}15`, border: `2px solid ${THEME_COLORS.green}` }}
+          <label className="text-sm font-medium mb-2 block" style={{ color: THEME_COLORS.subtext }}>
+            حساب مقصد
+          </label>
+          <div className="space-y-2 max-h-24 overflow-y-auto">
+            {bankAccounts.map((account) => (
+              <button
+                key={account.id}
+                onClick={() => onUpdate({ accountId: account.id })}
+                className="w-full p-2 rounded-lg text-right text-sm transition-all"
+                style={{
+                  backgroundColor: split.accountId === account.id ? `${THEME_COLORS.accent}15` : THEME_COLORS.bgSecondary,
+                  border: `2px solid ${split.accountId === account.id ? THEME_COLORS.accent : THEME_COLORS.border}`,
+                }}
               >
-                <div className="font-bold" style={{ color: THEME_COLORS.text }}>{posAccount.account_owner}</div>
-                <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>{posAccount.card_number}</div>
-              </div>
-            ) : (
-              <div className="p-3 rounded-xl text-center" style={{ backgroundColor: `${THEME_COLORS.red}10` }}>
-                <span style={{ color: THEME_COLORS.red }}>کارتخوان تنظیم نشده است</span>
-              </div>
-            )
-          ) : (
-            <div className="grid grid-cols-1 gap-2 max-h-32 overflow-y-auto">
-              {bankAccounts.map((account) => (
-                <button
-                  key={account.id}
-                  onClick={() => onAccountSelect(account.id)}
-                  className="p-3 rounded-xl text-right transition-all"
-                  style={{
-                    backgroundColor: selectedAccountId === account.id ? `${THEME_COLORS.accent}15` : THEME_COLORS.surface,
-                    border: `2px solid ${selectedAccountId === account.id ? THEME_COLORS.accent : THEME_COLORS.border}`,
-                  }}
-                >
-                  <div className="font-bold" style={{ color: THEME_COLORS.text }}>{account.related_user_name}</div>
-                  <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>{account.card_number}</div>
-                </button>
-              ))}
-            </div>
-          )}
+                <div className="font-medium" style={{ color: THEME_COLORS.text }}>{account.related_user_name}</div>
+                <div className="text-xs number-display" style={{ color: THEME_COLORS.subtext }}>{account.card_number}</div>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Amount Input */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-bold" style={{ color: THEME_COLORS.text }}>مبلغ پرداخت</span>
-          <button
-            onClick={() => setShowCalculator(!showCalculator)}
-            className="text-xs px-2 py-1 rounded-lg"
-            style={{ backgroundColor: THEME_COLORS.surface, color: THEME_COLORS.accent }}
-          >
-            {showCalculator ? 'بستن ماشین‌حساب' : 'ماشین‌حساب'}
-          </button>
+      {/* POS Account Display */}
+      {split.paymentMethod === PaymentMethod.POS && posAccount?.id && (
+        <div className="p-2 rounded-lg" style={{ backgroundColor: `${THEME_COLORS.green}15`, border: `2px solid ${THEME_COLORS.green}` }}>
+          <div className="text-sm font-medium" style={{ color: THEME_COLORS.text }}>{posAccount.account_owner}</div>
+          <div className="text-xs number-display" style={{ color: THEME_COLORS.subtext }}>{posAccount.card_number}</div>
         </div>
-
-        {/* Calculator Expression (if open) */}
-        {showCalculator && (
-          <div className="mb-3 p-3 rounded-xl" style={{ backgroundColor: THEME_COLORS.surface }}>
-            <input
-              type="text"
-              value={calculatorExpression}
-              onChange={(e) => onCalculatorChange(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && onCalculatorApply()}
-              placeholder="مثال: 50000 + 30000"
-              className="w-full bg-transparent outline-none text-lg font-mono"
-              style={{ color: THEME_COLORS.text }}
-              dir="ltr"
-            />
-            <div className="text-xs mt-1" style={{ color: THEME_COLORS.subtext }}>
-              Enter بزنید یا روی دکمه مبلغ کلیک کنید
-            </div>
-          </div>
-        )}
-
-        {/* Main Amount Input - LARGE */}
-        <div
-          className="p-4 rounded-xl flex items-center justify-center"
-          style={{ backgroundColor: THEME_COLORS.surface, border: `3px solid ${THEME_COLORS.accent}` }}
-        >
-          <input
-            type="text"
-            inputMode="numeric"
-            value={inputAmount}
-            onChange={(e) => onAmountChange(e.target.value.replace(/[^0-9]/g, ''))}
-            placeholder="۰"
-            className="text-4xl font-black bg-transparent outline-none text-center w-full"
-            style={{ color: THEME_COLORS.accent }}
-            dir="ltr"
-          />
-          <span className="text-lg mr-2" style={{ color: THEME_COLORS.subtext }}>تومان</span>
-        </div>
-
-        {/* Quick Amount Buttons */}
-        <div className="flex flex-wrap gap-2 mt-3">
-          <button
-            onClick={onSetRemaining}
-            className="px-3 py-2 rounded-lg text-sm font-bold"
-            style={{ backgroundColor: `${THEME_COLORS.orange}20`, color: THEME_COLORS.orange }}
-          >
-            کل مانده
-          </button>
-          {quickAmounts.map((amt) => (
-            <button
-              key={amt}
-              onClick={() => onQuickAmount(amt)}
-              className="px-3 py-2 rounded-lg text-sm font-medium"
-              style={{ backgroundColor: THEME_COLORS.surface, color: THEME_COLORS.text }}
-            >
-              {formatPersianMoney(amt)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Tip Input (Optional) */}
-      <div>
-        <div className="text-sm font-bold mb-2" style={{ color: THEME_COLORS.text }}>
-          انعام (اختیاری)
-        </div>
-        <div
-          className="p-3 rounded-xl flex items-center gap-2"
-          style={{ backgroundColor: THEME_COLORS.surface }}
-        >
-          <input
-            type="text"
-            inputMode="numeric"
-            value={tipAmount}
-            onChange={(e) => onTipChange(e.target.value.replace(/[^0-9]/g, ''))}
-            placeholder="۰"
-            className="flex-1 text-lg font-bold bg-transparent outline-none text-center"
-            style={{ color: THEME_COLORS.green }}
-            dir="ltr"
-          />
-          <span className="text-sm" style={{ color: THEME_COLORS.subtext }}>تومان</span>
-        </div>
-      </div>
+      )}
 
       {/* Total Summary */}
-      {(parsedTip > 0 || parsedAmount !== totalPaymentAmount) && (
-        <div
-          className="p-3 rounded-xl text-center"
-          style={{ backgroundColor: `${THEME_COLORS.green}10` }}
-        >
-          <span className="text-sm" style={{ color: THEME_COLORS.subtext }}>جمع کل: </span>
-          <span className="text-lg font-bold" style={{ color: THEME_COLORS.green }}>
-            {formatPersianMoney(totalPaymentAmount)}
-          </span>
-          <span className="text-xs mr-2" style={{ color: THEME_COLORS.subtext }}>
-            (پرداخت {formatPersianMoney(parsedAmount)} + انعام {formatPersianMoney(parsedTip)})
+      <div className="pt-3 border-t" style={{ borderColor: THEME_COLORS.border }}>
+        <div className="flex justify-between items-center">
+          <span className="font-bold" style={{ color: THEME_COLORS.text }}>جمع کل:</span>
+          <span className="text-xl font-black number-display" style={{ color: THEME_COLORS.accent }}>
+            {formatPersianMoney(finalTotal)}
           </span>
         </div>
-      )}
-
-      {/* Validation Error */}
-      {validationError && (
-        <div
-          className="p-3 rounded-xl text-center"
-          style={{ backgroundColor: `${THEME_COLORS.red}10` }}
-        >
-          <span style={{ color: THEME_COLORS.red }}>{validationError}</span>
-        </div>
-      )}
+      </div>
 
       {/* Submit Button */}
       <button
         onClick={onSubmit}
-        disabled={!isValid || submitting}
-        className="w-full py-5 rounded-xl font-black text-xl transition-all disabled:opacity-50"
+        disabled={disabled || submitting || split.amount <= 0}
+        className={`w-full py-4 rounded-xl font-black text-lg transition-all disabled:opacity-50 ${
+          !disabled && split.amount > 0 ? 'animate-submit-pulse' : ''
+        }`}
         style={{ backgroundColor: THEME_COLORS.green, color: '#fff' }}
       >
-        {submitting ? (
-          'در حال ثبت...'
-        ) : (
-          <span>
-            ثبت پرداخت {parsedAmount > 0 && formatPersianMoney(parsedAmount)}
-          </span>
-        )}
+        {submitting ? 'در حال ثبت...' : `ثبت پرداخت ${formatPersianMoney(finalTotal)}`}
       </button>
-
-      {/* Amount vs Remaining indicator */}
-      {parsedAmount > 0 && remainingDue > 0 && (
-        <div className="text-center text-sm" style={{ color: THEME_COLORS.subtext }}>
-          {parsedAmount >= remainingDue ? (
-            <span style={{ color: THEME_COLORS.green }}>
-              این پرداخت فروش را تسویه می‌کند
-              {parsedAmount > remainingDue && ` (${formatPersianMoney(parsedAmount - remainingDue)} اضافه)`}
-            </span>
-          ) : (
-            <span>
-              پس از این پرداخت: {formatPersianMoney(remainingDue - parsedAmount)} باقی می‌ماند
-            </span>
-          )}
-        </div>
-      )}
     </div>
   );
 }
 
-function PaymentHistory({
-  payments,
-  voidingPaymentId,
-  onVoidPayment,
-}: {
-  payments: { id: number; method: string; amount: number; tipAmount: number; receivedBy: string; receivedAt: string; status: string; accountInfo?: string }[];
-  voidingPaymentId: number | null;
-  onVoidPayment: (id: number) => void;
-}) {
-  const [confirmVoidId, setConfirmVoidId] = useState<number | null>(null);
+// ═══════════════════════════════════════════════════════════════════════════════
+// PAYMENT HISTORY ITEM
+// ═══════════════════════════════════════════════════════════════════════════════
 
-  const activePayments = payments.filter(p => p.status === 'ACTIVE');
-  const voidedPayments = payments.filter(p => p.status === 'VOID');
+interface PaymentHistoryItemProps {
+  payment: PaymentRecord;
+  onVoid: (id: number) => void;
+  voiding: boolean;
+}
 
-  const handleVoidClick = (id: number) => {
-    if (confirmVoidId === id) {
-      onVoidPayment(id);
-      setConfirmVoidId(null);
-    } else {
-      setConfirmVoidId(id);
-    }
-  };
+function PaymentHistoryItem({ payment, onVoid, voiding }: PaymentHistoryItemProps) {
+  const [confirmVoid, setConfirmVoid] = useState(false);
 
-  const methodLabel = (method: string) => ({
+  const methodConfig: Record<string, { label: string; color: string }> = {
     CASH: { label: 'نقدی', color: THEME_COLORS.green },
     POS: { label: 'کارتخوان', color: THEME_COLORS.purple },
     CARD_TRANSFER: { label: 'کارت', color: THEME_COLORS.accent },
-  }[method] || { label: method, color: THEME_COLORS.text });
+  };
+
+  const config = methodConfig[payment.method] || { label: payment.method, color: THEME_COLORS.text };
+
+  const handleVoidClick = () => {
+    if (confirmVoid) {
+      onVoid(payment.id);
+      setConfirmVoid(false);
+    } else {
+      setConfirmVoid(true);
+    }
+  };
 
   return (
-    <div
-      className="rounded-xl p-4 h-full"
-      style={{ backgroundColor: THEME_COLORS.bgSecondary }}
-    >
-      <h3 className="font-bold mb-3" style={{ color: THEME_COLORS.text }}>
-        تاریخچه پرداخت‌ها ({activePayments.length})
-      </h3>
-
-      {payments.length === 0 ? (
-        <div className="text-center py-8" style={{ color: THEME_COLORS.subtext }}>
-          هنوز پرداختی ثبت نشده است
-        </div>
-      ) : (
-        <div className="space-y-2 max-h-[400px] overflow-y-auto">
-          {/* Active Payments */}
-          {activePayments.map((p) => {
-            const { label, color } = methodLabel(p.method);
-            const isConfirming = confirmVoidId === p.id;
-
-            return (
-              <div
-                key={p.id}
-                className="p-3 rounded-xl"
-                style={{ backgroundColor: THEME_COLORS.surface }}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-lg" style={{ color: THEME_COLORS.text }}>
-                        {formatPersianMoney(p.amount)}
-                      </span>
-                      <span
-                        className="px-2 py-0.5 rounded text-xs font-bold"
-                        style={{ backgroundColor: `${color}20`, color }}
-                      >
-                        {label}
-                      </span>
-                    </div>
-                    {p.tipAmount > 0 && (
-                      <div className="text-xs" style={{ color: THEME_COLORS.green }}>
-                        + انعام {formatPersianMoney(p.tipAmount)}
-                      </div>
-                    )}
-                    <div className="text-xs mt-1" style={{ color: THEME_COLORS.subtext }}>
-                      {p.receivedBy} - {new Date(p.receivedAt).toLocaleString('fa-IR')}
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => handleVoidClick(p.id)}
-                    disabled={voidingPaymentId === p.id}
-                    className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
-                    style={{
-                      backgroundColor: isConfirming ? THEME_COLORS.red : `${THEME_COLORS.red}20`,
-                      color: isConfirming ? '#fff' : THEME_COLORS.red,
-                    }}
-                  >
-                    {voidingPaymentId === p.id ? '...' : isConfirming ? 'تایید لغو' : 'لغو'}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Voided Payments */}
-          {voidedPayments.length > 0 && (
-            <>
-              <div className="text-xs font-medium pt-3" style={{ color: THEME_COLORS.subtext }}>
-                پرداخت‌های لغو شده
-              </div>
-              {voidedPayments.map((p) => {
-                const { label, color } = methodLabel(p.method);
-                return (
-                  <div
-                    key={p.id}
-                    className="p-3 rounded-xl opacity-50"
-                    style={{ backgroundColor: `${THEME_COLORS.red}10` }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold line-through" style={{ color: THEME_COLORS.text }}>
-                        {formatPersianMoney(p.amount)}
-                      </span>
-                      <span
-                        className="px-2 py-0.5 rounded text-xs"
-                        style={{ backgroundColor: `${color}20`, color }}
-                      >
-                        {label}
-                      </span>
-                      <span
-                        className="px-2 py-0.5 rounded text-xs font-bold"
-                        style={{ backgroundColor: `${THEME_COLORS.red}20`, color: THEME_COLORS.red }}
-                      >
-                        لغو شده
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </>
+    <div className="p-2 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="font-bold number-display" style={{ color: THEME_COLORS.text }}>
+              {formatPersianMoney(payment.amount_applied)}
+            </span>
+            <span
+              className="px-2 py-0.5 rounded text-xs font-bold"
+              style={{ backgroundColor: `${config.color}20`, color: config.color }}
+            >
+              {config.label}
+            </span>
+          </div>
+          {payment.tip_amount > 0 && (
+            <div className="text-xs" style={{ color: THEME_COLORS.green }}>
+              + انعام {formatPersianMoney(payment.tip_amount)}
+            </div>
           )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function EdgeActions({
-  saleId,
-  router,
-}: {
-  saleId: number;
-  router: { push: (url: string) => void };
-}) {
-  const [showWarning, setShowWarning] = useState(false);
-
-  return (
-    <div
-      className="rounded-xl p-4"
-      style={{ backgroundColor: THEME_COLORS.bgSecondary }}
-    >
-      <div className="text-sm font-bold mb-3" style={{ color: THEME_COLORS.subtext }}>
-        عملیات دیگر
-      </div>
-      <div className="flex flex-wrap gap-3">
-        <button
-          onClick={() => setShowWarning(true)}
-          className="px-4 py-2 rounded-xl font-medium transition-all"
-          style={{ backgroundColor: THEME_COLORS.surface, color: THEME_COLORS.text }}
-        >
-          افزودن آیتم به فروش
-        </button>
-      </div>
-
-      {/* Warning Modal */}
-      {showWarning && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div
-            className="max-w-md w-full p-6 rounded-2xl"
-            style={{ backgroundColor: THEME_COLORS.bgSecondary }}
-          >
-            <div className="text-center mb-4">
-              <div className="text-4xl mb-2">⚠️</div>
-              <h3 className="text-lg font-bold" style={{ color: THEME_COLORS.text }}>
-                توجه!
-              </h3>
-            </div>
-            <p className="text-center mb-6" style={{ color: THEME_COLORS.subtext }}>
-              افزودن آیتم جدید به فروش، محاسبات را تغییر می‌دهد.
-              آیا مطمئن هستید؟
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowWarning(false)}
-                className="flex-1 py-3 rounded-xl font-bold"
-                style={{ backgroundColor: THEME_COLORS.surface, color: THEME_COLORS.text }}
-              >
-                انصراف
-              </button>
-              <button
-                onClick={() => router.push(`/sale/${saleId}/edit/`)}
-                className="flex-1 py-3 rounded-xl font-bold"
-                style={{ backgroundColor: THEME_COLORS.orange, color: '#fff' }}
-              >
-                ادامه
-              </button>
-            </div>
+          <div className="text-xs mt-1" style={{ color: THEME_COLORS.subtext }}>
+            {payment.received_by_name} - {new Date(payment.received_at).toLocaleString('fa-IR')}
           </div>
         </div>
-      )}
+
+        <button
+          onClick={handleVoidClick}
+          disabled={voiding}
+          className="px-2 py-1 rounded text-xs font-bold transition-all"
+          style={{
+            backgroundColor: confirmVoid ? THEME_COLORS.red : `${THEME_COLORS.red}20`,
+            color: confirmVoid ? '#fff' : THEME_COLORS.red,
+          }}
+        >
+          {voiding ? '...' : confirmVoid ? 'تایید لغو' : 'لغو'}
+        </button>
+      </div>
     </div>
   );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// VIEW-ONLY MODE
+// VIEW ONLY MODE
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function ViewOnlyMode({
-  payment,
-  router,
-  saleId,
-  ToastContainer,
-}: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  payment: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  router: any;
+interface ViewOnlyModeProps {
+  sale: SaleData;
+  router: ReturnType<typeof useRouter>;
   saleId: number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ToastContainer: any;
-}) {
-  const snapshot = payment.snapshot;
-  const isCanceled = snapshot.saleState === 'CANCELED';
+  ToastContainer: React.ComponentType;
+  onVoidPayment: (id: number) => void;
+  voidingPaymentId: number | null;
+}
+
+function ViewOnlyMode({ sale, router, saleId, ToastContainer, onVoidPayment, voidingPaymentId }: ViewOnlyModeProps) {
+  const isCanceled = sale.state === 'CANCELED';
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: THEME_COLORS.bgPrimary }}>
@@ -896,26 +1196,26 @@ function ViewOnlyMode({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="p-4 rounded-xl text-center" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
             <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>جمع فروش</div>
-            <div className="text-xl font-bold" style={{ color: THEME_COLORS.text }}>
-              {formatPersianMoney(snapshot.totalAmount)}
+            <div className="text-xl font-bold number-display" style={{ color: THEME_COLORS.text }}>
+              {formatPersianMoney(sale.total_amount)}
             </div>
           </div>
           <div className="p-4 rounded-xl text-center" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
             <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>پرداخت شده</div>
-            <div className="text-xl font-bold" style={{ color: THEME_COLORS.green }}>
-              {formatPersianMoney(snapshot.totalPaid)}
+            <div className="text-xl font-bold number-display" style={{ color: THEME_COLORS.green }}>
+              {formatPersianMoney(sale.total_paid)}
             </div>
           </div>
           <div className="p-4 rounded-xl text-center" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
             <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>مالیات</div>
-            <div className="text-xl font-bold" style={{ color: THEME_COLORS.blue }}>
-              {formatPersianMoney(snapshot.taxAmount)}
+            <div className="text-xl font-bold number-display" style={{ color: THEME_COLORS.blue }}>
+              {formatPersianMoney(sale.tax_amount)}
             </div>
           </div>
           <div className="p-4 rounded-xl text-center" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
             <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>تخفیف</div>
-            <div className="text-xl font-bold" style={{ color: THEME_COLORS.orange }}>
-              {formatPersianMoney(snapshot.discountAmount)}
+            <div className="text-xl font-bold number-display" style={{ color: THEME_COLORS.orange }}>
+              {formatPersianMoney(sale.discount_amount)}
             </div>
           </div>
         </div>
@@ -923,10 +1223,10 @@ function ViewOnlyMode({
         {/* Items */}
         <div className="p-4 rounded-xl" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
           <h3 className="font-bold mb-3" style={{ color: THEME_COLORS.text }}>
-            اقلام فروش ({snapshot.items.length})
+            اقلام فروش ({sale.items.length})
           </h3>
           <div className="space-y-2">
-            {snapshot.items.map((item: { id: number; product_name: string; quantity: number; unit_price: number; total: number }) => (
+            {sale.items.map((item) => (
               <div
                 key={item.id}
                 className="flex justify-between items-center p-3 rounded-lg"
@@ -936,11 +1236,11 @@ function ViewOnlyMode({
                   <div className="font-medium" style={{ color: THEME_COLORS.text }}>
                     {item.product_name}
                   </div>
-                  <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
+                  <div className="text-sm number-display" style={{ color: THEME_COLORS.subtext }}>
                     {item.quantity} × {formatPersianMoney(item.unit_price)}
                   </div>
                 </div>
-                <div className="font-bold" style={{ color: THEME_COLORS.green }}>
+                <div className="font-bold number-display" style={{ color: THEME_COLORS.green }}>
                   {formatPersianMoney(item.total)}
                 </div>
               </div>
@@ -949,17 +1249,24 @@ function ViewOnlyMode({
         </div>
 
         {/* Payments */}
-        {payment.payments.length > 0 && (
+        {sale.payments.length > 0 && (
           <div className="p-4 rounded-xl" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
             <h3 className="font-bold mb-3" style={{ color: THEME_COLORS.text }}>
-              تاریخچه پرداخت‌ها ({payment.payments.length})
+              تاریخچه پرداخت‌ها ({sale.payments.length})
             </h3>
             <div className="space-y-2">
-              {payment.payments.map((p: { id: number; method: string; amount: number; tipAmount: number; receivedBy: string; receivedAt: string; status: string }) => {
-                const isVoid = p.status === 'VOID';
+              {sale.payments.map((payment) => {
+                const isVoid = payment.status === 'VOID';
+                const methodConfig: Record<string, { label: string; color: string }> = {
+                  CASH: { label: 'نقدی', color: THEME_COLORS.green },
+                  POS: { label: 'کارتخوان', color: THEME_COLORS.purple },
+                  CARD_TRANSFER: { label: 'کارت', color: THEME_COLORS.accent },
+                };
+                const config = methodConfig[payment.method] || { label: payment.method, color: THEME_COLORS.text };
+
                 return (
                   <div
-                    key={p.id}
+                    key={payment.id}
                     className="flex justify-between items-center p-3 rounded-lg"
                     style={{
                       backgroundColor: isVoid ? `${THEME_COLORS.red}10` : THEME_COLORS.surface,
@@ -968,17 +1275,14 @@ function ViewOnlyMode({
                   >
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className={`font-bold ${isVoid ? 'line-through' : ''}`} style={{ color: THEME_COLORS.text }}>
-                          {formatPersianMoney(p.amount)}
+                        <span className={`font-bold number-display ${isVoid ? 'line-through' : ''}`} style={{ color: THEME_COLORS.text }}>
+                          {formatPersianMoney(payment.amount_applied)}
                         </span>
                         <span
                           className="px-2 py-0.5 rounded text-xs"
-                          style={{
-                            backgroundColor: `${THEME_COLORS.accent}20`,
-                            color: THEME_COLORS.accent,
-                          }}
+                          style={{ backgroundColor: `${config.color}20`, color: config.color }}
                         >
-                          {p.method === 'CASH' ? 'نقدی' : p.method === 'POS' ? 'کارتخوان' : 'کارت'}
+                          {config.label}
                         </span>
                         {isVoid && (
                           <span
@@ -990,12 +1294,12 @@ function ViewOnlyMode({
                         )}
                       </div>
                       <div className="text-xs mt-1" style={{ color: THEME_COLORS.subtext }}>
-                        {p.receivedBy} - {new Date(p.receivedAt).toLocaleString('fa-IR')}
+                        {payment.received_by_name} - {new Date(payment.received_at).toLocaleString('fa-IR')}
                       </div>
                     </div>
-                    {p.tipAmount > 0 && (
-                      <div className="text-sm" style={{ color: THEME_COLORS.green }}>
-                        انعام: {formatPersianMoney(p.tipAmount)}
+                    {payment.tip_amount > 0 && (
+                      <div className="text-sm number-display" style={{ color: THEME_COLORS.green }}>
+                        انعام: {formatPersianMoney(payment.tip_amount)}
                       </div>
                     )}
                   </div>

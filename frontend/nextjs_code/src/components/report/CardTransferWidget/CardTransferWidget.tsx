@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { THEME_COLORS } from '@/libs/constants';
 import { formatPersianMoney } from '@/utils/persianUtils';
 import { fetchCardTransfers, confirmCardTransfer, bulkConfirmCardTransfers } from '@/service/cardTransferService';
-import { ICardTransferListItem } from '@/types/cardTransfer';
+import { ICardTransferItem } from '@/types/cardTransfer';
 import jalaliMoment from 'jalali-moment';
 
 interface CardTransferWidgetProps {
@@ -22,7 +22,7 @@ export function CardTransferWidget({
   onTotalChange,
   reportDate,
 }: CardTransferWidgetProps) {
-  const [transfers, setTransfers] = useState<ICardTransferListItem[]>([]);
+  const [transfers, setTransfers] = useState<ICardTransferItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [filter, setFilter] = useState<FilterOption>('unconfirmed');
@@ -49,7 +49,7 @@ export function CardTransferWidget({
   useEffect(() => {
     const confirmedTotal = transfers
       .filter(t => t.confirmed)
-      .reduce((sum, t) => sum + t.amount, 0);
+      .reduce((sum, t) => sum + t.amount_applied, 0);
     onTotalChange(confirmedTotal);
   }, [transfers, onTotalChange]);
 
@@ -83,10 +83,10 @@ export function CardTransferWidget({
     const unconfirmed = total - confirmed;
     const confirmedAmount = filteredTransfers
       .filter(t => t.confirmed)
-      .reduce((sum, t) => sum + t.amount, 0);
+      .reduce((sum, t) => sum + t.amount_applied, 0);
     const unconfirmedAmount = filteredTransfers
       .filter(t => !t.confirmed)
-      .reduce((sum, t) => sum + t.amount, 0);
+      .reduce((sum, t) => sum + t.amount_applied, 0);
     return { total, confirmed, unconfirmed, confirmedAmount, unconfirmedAmount };
   }, [filteredTransfers]);
 
@@ -246,7 +246,7 @@ export function CardTransferWidget({
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-bold" style={{ color: THEME_COLORS.green }}>
-                      {formatPersianMoney(transfer.amount)}
+                      {formatPersianMoney(transfer.amount_applied)}
                     </span>
                     {transfer.confirmed && (
                       <span

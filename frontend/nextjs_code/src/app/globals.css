@@ -112,6 +112,70 @@ input.ltr:focus {
   outline-offset: 0;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════════
+   RTL-AWARE NUMBER INPUT STYLES
+   Numbers should always be LTR, even in RTL context
+   Persian text before numbers should appear on the left side of numbers
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Base style for all number inputs in RTL context */
+input[type="number"],
+input[type="tel"],
+input[inputmode="numeric"],
+input[inputmode="decimal"],
+.number-input {
+  direction: ltr !important;
+  text-align: right;
+  unicode-bidi: plaintext;
+}
+
+/* When input is focused or has value, keep LTR for numbers */
+input[type="number"]:focus,
+input[type="tel"]:focus,
+input[inputmode="numeric"]:focus,
+input[inputmode="decimal"]:focus,
+.number-input:focus {
+  direction: ltr !important;
+}
+
+/* Placeholder styling for number inputs */
+input[type="number"]::placeholder,
+input[type="tel"]::placeholder,
+input[inputmode="numeric"]::placeholder,
+input[inputmode="decimal"]::placeholder,
+.number-input::placeholder {
+  direction: rtl;
+  text-align: right;
+  unicode-bidi: plaintext;
+}
+
+/* For mixed content (Persian + numbers), use isolate-override */
+.mixed-content {
+  unicode-bidi: isolate-override;
+  direction: rtl;
+}
+
+/* Number display containers - ensure numbers are always LTR */
+.number-display {
+  direction: ltr;
+  display: inline-block;
+  unicode-bidi: isolate;
+}
+
+/* Price/amount display with currency */
+.price-display {
+  direction: ltr;
+  unicode-bidi: isolate;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Currency suffix should be RTL */
+.price-display .currency {
+  direction: rtl;
+}
+
 
 /* Modern Item Selection Animation */
 @keyframes item-select {
@@ -172,4 +236,131 @@ input.ltr:focus {
 
 .animate-inner-glow {
   animation: inner-glow 500ms ease-in-out;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   PAYMENT PAGE ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Item moving from right to center animation */
+@keyframes slide-to-center {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  30% {
+    opacity: 0.8;
+    transform: translateX(-20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.animate-slide-to-center {
+  animation: slide-to-center 400ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Item appearing in selected box */
+@keyframes appear-in-selection {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-appear-selection {
+  animation: appear-in-selection 300ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Item moving to paid column */
+@keyframes slide-to-paid {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translateX(30px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.animate-slide-to-paid {
+  animation: slide-to-paid 500ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Partial payment progress bar animation */
+@keyframes fill-progress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: var(--progress-width, 0%);
+  }
+}
+
+.animate-fill-progress {
+  animation: fill-progress 600ms ease-out forwards;
+}
+
+/* Payment submit button pulse */
+@keyframes submit-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+  }
+}
+
+.animate-submit-pulse {
+  animation: submit-pulse 2s ease-in-out infinite;
+}
+
+/* Split number animation */
+@keyframes split-appear {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-split-appear {
+  animation: split-appear 300ms ease-out forwards;
+}
+
+/* Success checkmark animation */
+@keyframes checkmark-pop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-checkmark {
+  animation: checkmark-pop 400ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
