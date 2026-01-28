@@ -2,7 +2,7 @@
 
 import { useRouter, useParams } from 'next/navigation';
 import { useState } from 'react';
-import { usePaymentPage } from '@/hooks/usePaymentPage';
+import { usePaymentPage } from '@/hooks/payment';
 import { useToast } from '@/components/common/Toast';
 import { LoadingOverlay } from '@/components/common/LoadingOverlay';
 import { THEME_COLORS } from '@/libs/constants';

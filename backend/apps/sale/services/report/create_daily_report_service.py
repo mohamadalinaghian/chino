@@ -171,9 +171,14 @@ class CreateDailyReportService:
 
         # COGS = Sum of (quantity * material_cost) for each item
         # Using F expressions to multiply per-row before summing
+        # Note: Must specify output_field because quantity is PositiveIntegerField
+        # and material_cost is DecimalField (mixed types)
         cogs = sold_items.aggregate(
             cogs=Coalesce(
-                Sum(F("quantity") * F("material_cost")),
+                Sum(
+                    F("quantity") * F("material_cost"),
+                    output_field=models.DecimalField()
+                ),
                 Decimal("0")
             )
         )["cogs"]
