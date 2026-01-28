@@ -22,7 +22,7 @@ export function ReportFormSection({
 }: ReportFormSectionProps) {
   return (
     <div
-      className="rounded-xl overflow-hidden"
+      className="rounded-xl"
       style={{ backgroundColor: THEME_COLORS.bgSecondary }}
     >
       {/* Section Header */}

@@ -1,19 +1,21 @@
 'use client';
 
 import { useRouter, useParams } from 'next/navigation';
-import { usePayment, PaymentMode } from '@/hooks/usePayment';
+import { useState } from 'react';
+import { usePaymentPage } from '@/hooks/usePaymentPage';
 import { useToast } from '@/components/common/Toast';
 import { LoadingOverlay } from '@/components/common/LoadingOverlay';
 import { THEME_COLORS } from '@/libs/constants';
 import { formatPersianMoney } from '@/utils/persianUtils';
-import {
-  PaymentItemList,
-  PaymentMethodSelector,
-  PaymentAccountSelector,
-  PaymentFormulaCalculator,
-} from '@/components/payment';
+import { PaymentMethod } from '@/types/sale';
 
-export default function SalePaymentPage() {
+// ═══════════════════════════════════════════════════════════════════════════════
+// PAYMENT PAGE
+// A clean, production-ready payment interface for cafe POS
+// Designed for non-technical cashiers with mistake-resistant UX
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export default function PaymentPage() {
   const router = useRouter();
   const params = useParams();
 
@@ -30,7 +32,7 @@ export default function SalePaymentPage() {
   const handleSuccess = (message: string, wasAutoClosed: boolean) => {
     showToast(message, 'success');
     if (wasAutoClosed) {
-      setTimeout(() => router.push('/sale/dashboard'), 1600);
+      setTimeout(() => router.push('/sale/dashboard'), 1500);
     }
   };
 
@@ -38,7 +40,7 @@ export default function SalePaymentPage() {
     showToast(message, 'error');
   };
 
-  const payment = usePayment({
+  const payment = usePaymentPage({
     saleId,
     onSuccess: handleSuccess,
     onError: handleError,
@@ -48,168 +50,937 @@ export default function SalePaymentPage() {
     return <LoadingOverlay message="در حال بارگذاری..." />;
   }
 
-  if (!payment.sale) {
+  if (!payment.snapshot) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: THEME_COLORS.bgPrimary }}
-      >
-        <div className="text-center">
-          <div className="text-5xl mb-4" style={{ color: THEME_COLORS.red }}>
-            ⚠️
-          </div>
-          <p style={{ color: THEME_COLORS.text }}>فروش یافت نشد</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: THEME_COLORS.bgPrimary }}>
+        <div className="text-center p-8 rounded-2xl" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
+          <div className="text-6xl mb-4">!</div>
+          <p className="text-xl font-bold" style={{ color: THEME_COLORS.red }}>فروش یافت نشد</p>
+          <button
+            onClick={() => router.back()}
+            className="mt-6 px-6 py-3 rounded-xl font-bold"
+            style={{ backgroundColor: THEME_COLORS.surface, color: THEME_COLORS.text }}
+          >
+            بازگشت
+          </button>
         </div>
       </div>
     );
   }
 
-  const currentAmount = Number(payment.amount) || 0;
-
-  // View-only mode for fully paid or canceled sales
+  // View-only mode for closed sales
   if (payment.isViewOnly) {
-    return (
-      <div className="min-h-screen" style={{ backgroundColor: THEME_COLORS.bgPrimary }}>
-        {/* Header */}
-        <header
-          className="px-4 py-4 border-b"
-          style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border }}
-        >
-          <div className="flex justify-between items-center">
+    return <ViewOnlyMode payment={payment} router={router} saleId={saleId} ToastContainer={ToastContainer} />;
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: THEME_COLORS.bgPrimary }}>
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* HEADER - Payment Status (Always Visible) */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      <header
+        className="flex-shrink-0 px-4 py-4 border-b"
+        style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border }}
+      >
+        <div className="max-w-5xl mx-auto">
+          {/* Top row: Back button and sale info */}
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.back()}
-                className="px-5 py-2 rounded-lg font-medium transition-all hover:opacity-80"
+                className="px-4 py-2 rounded-xl font-medium transition-all hover:opacity-80"
                 style={{ backgroundColor: THEME_COLORS.surface, color: THEME_COLORS.text }}
               >
-                ← بازگشت
+                بازگشت
               </button>
               <h1 className="text-xl font-bold" style={{ color: THEME_COLORS.text }}>
-                جزئیات فروش #{saleId}
+                پرداخت فروش #{saleId}
               </h1>
             </div>
+            <StatusBadge status={payment.snapshot.paymentStatus} />
+          </div>
+
+          {/* Payment Status Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {/* Total Amount - LARGEST */}
             <div
-              className="px-4 py-2 rounded-lg font-bold"
+              className="p-4 rounded-xl text-center"
+              style={{ backgroundColor: THEME_COLORS.surface, border: `2px solid ${THEME_COLORS.accent}` }}
+            >
+              <div className="text-xs mb-1" style={{ color: THEME_COLORS.subtext }}>جمع کل فروش</div>
+              <div className="text-2xl font-black" style={{ color: THEME_COLORS.accent }}>
+                {formatPersianMoney(payment.snapshot.totalAmount)}
+              </div>
+            </div>
+
+            {/* Tax - Read Only */}
+            <div
+              className="p-4 rounded-xl text-center"
+              style={{ backgroundColor: THEME_COLORS.surface }}
+            >
+              <div className="text-xs mb-1" style={{ color: THEME_COLORS.subtext }}>مالیات (محاسبه شده)</div>
+              <div className="text-lg font-bold" style={{ color: THEME_COLORS.blue }}>
+                {formatPersianMoney(payment.snapshot.taxAmount)}
+              </div>
+            </div>
+
+            {/* Paid So Far */}
+            <div
+              className="p-4 rounded-xl text-center"
+              style={{ backgroundColor: `${THEME_COLORS.green}10` }}
+            >
+              <div className="text-xs mb-1" style={{ color: THEME_COLORS.subtext }}>پرداخت شده</div>
+              <div className="text-lg font-bold" style={{ color: THEME_COLORS.green }}>
+                {formatPersianMoney(payment.snapshot.totalPaid)}
+              </div>
+            </div>
+
+            {/* Remaining Due - HIGHLIGHTED */}
+            <div
+              className="p-4 rounded-xl text-center cursor-pointer transition-all hover:scale-[1.02]"
               style={{
-                backgroundColor: payment.sale.state === 'CANCELED' ? `${THEME_COLORS.red}20` : `${THEME_COLORS.green}20`,
-                color: payment.sale.state === 'CANCELED' ? THEME_COLORS.red : THEME_COLORS.green,
+                backgroundColor: payment.snapshot.remainingDue > 0 ? `${THEME_COLORS.orange}15` : `${THEME_COLORS.green}15`,
+                border: `2px solid ${payment.snapshot.remainingDue > 0 ? THEME_COLORS.orange : THEME_COLORS.green}`,
+              }}
+              onClick={payment.setAmountToRemaining}
+              title="کلیک برای وارد کردن مبلغ مانده"
+            >
+              <div className="text-xs mb-1" style={{ color: THEME_COLORS.subtext }}>
+                مانده {payment.snapshot.remainingDue > 0 ? '(کلیک کنید)' : ''}
+              </div>
+              <div
+                className="text-xl font-black"
+                style={{ color: payment.snapshot.remainingDue > 0 ? THEME_COLORS.orange : THEME_COLORS.green }}
+              >
+                {payment.snapshot.remainingDue > 0 ? formatPersianMoney(payment.snapshot.remainingDue) : 'تسویه شده'}
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* MAIN CONTENT */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      <main className="flex-1 overflow-auto">
+        <div className="max-w-5xl mx-auto p-4 space-y-4">
+          {/* Sale Breakdown (Collapsible) */}
+          <SaleBreakdown
+            items={payment.snapshot.items}
+            subtotal={payment.snapshot.subtotalAmount}
+            tax={payment.snapshot.taxAmount}
+            discount={payment.snapshot.discountAmount}
+            total={payment.snapshot.totalAmount}
+            isOpen={payment.showBreakdown}
+            onToggle={() => payment.setShowBreakdown(!payment.showBreakdown)}
+          />
+
+          {/* Main Layout: Payment Input + History */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+            {/* Payment Input Area (Main Interaction Zone) */}
+            <div className="lg:col-span-3">
+              <PaymentInputArea
+                paymentMethod={payment.paymentMethod}
+                onMethodChange={payment.setPaymentMethod}
+                inputAmount={payment.inputAmount}
+                onAmountChange={payment.setInputAmount}
+                tipAmount={payment.tipAmount}
+                onTipChange={payment.setTipAmount}
+                calculatorExpression={payment.calculatorExpression}
+                onCalculatorChange={payment.setCalculatorExpression}
+                onCalculatorApply={payment.applyCalculatorResult}
+                parsedAmount={payment.parsedAmount}
+                parsedTip={payment.parsedTip}
+                totalPaymentAmount={payment.totalPaymentAmount}
+                remainingDue={payment.snapshot.remainingDue}
+                quickAmounts={payment.quickAmounts}
+                onQuickAmount={(amt) => payment.setInputAmount(amt.toString())}
+                onSetRemaining={payment.setAmountToRemaining}
+                bankAccounts={payment.bankAccounts}
+                posAccount={payment.posAccount}
+                selectedAccountId={payment.selectedAccountId}
+                onAccountSelect={payment.setSelectedAccountId}
+                validationError={payment.validationError}
+                isValid={payment.isValid}
+                submitting={payment.submitting}
+                onSubmit={payment.handleSubmitPayment}
+              />
+            </div>
+
+            {/* Payments History */}
+            <div className="lg:col-span-2">
+              <PaymentHistory
+                payments={payment.payments}
+                voidingPaymentId={payment.voidingPaymentId}
+                onVoidPayment={payment.handleVoidPayment}
+              />
+            </div>
+          </div>
+
+          {/* Edge Actions */}
+          <EdgeActions saleId={saleId} router={router} />
+        </div>
+      </main>
+
+      {payment.submitting && <LoadingOverlay message="در حال ثبت پرداخت..." />}
+      <ToastContainer />
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SUB-COMPONENTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function StatusBadge({ status }: { status: string }) {
+  const config = {
+    PAID: { bg: `${THEME_COLORS.green}20`, color: THEME_COLORS.green, text: 'تسویه شده', icon: 'check' },
+    PARTIALLY_PAID: { bg: `${THEME_COLORS.orange}20`, color: THEME_COLORS.orange, text: 'پرداخت جزئی', icon: 'half' },
+    UNPAID: { bg: `${THEME_COLORS.red}20`, color: THEME_COLORS.red, text: 'پرداخت نشده', icon: 'empty' },
+  }[status] || { bg: THEME_COLORS.surface, color: THEME_COLORS.text, text: status, icon: 'empty' };
+
+  return (
+    <div
+      className="px-4 py-2 rounded-xl font-bold flex items-center gap-2"
+      style={{ backgroundColor: config.bg, color: config.color }}
+    >
+      <span className="text-lg">
+        {config.icon === 'check' ? '●' : config.icon === 'half' ? '◐' : '○'}
+      </span>
+      {config.text}
+    </div>
+  );
+}
+
+function SaleBreakdown({
+  items,
+  subtotal,
+  tax,
+  discount,
+  total,
+  isOpen,
+  onToggle,
+}: {
+  items: { id: number; product_name: string; quantity: number; unit_price: number; total: number; extras: { product_name: string; quantity: number; unit_price: number }[] }[];
+  subtotal: number;
+  tax: number;
+  discount: number;
+  total: number;
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div
+      className="rounded-xl overflow-hidden"
+      style={{ backgroundColor: THEME_COLORS.bgSecondary }}
+    >
+      {/* Header - Always visible */}
+      <button
+        onClick={onToggle}
+        className="w-full px-4 py-3 flex items-center justify-between"
+        style={{ backgroundColor: THEME_COLORS.surface }}
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-xl">{isOpen ? '▼' : '▶'}</span>
+          <span className="font-bold" style={{ color: THEME_COLORS.text }}>
+            جزئیات فروش ({items.length} قلم)
+          </span>
+        </div>
+        <span style={{ color: THEME_COLORS.subtext }}>
+          {isOpen ? 'بستن' : 'مشاهده'}
+        </span>
+      </button>
+
+      {/* Content - Collapsible */}
+      {isOpen && (
+        <div className="p-4 space-y-3">
+          {/* Items */}
+          <div className="space-y-2 max-h-60 overflow-y-auto">
+            {items.map((item) => (
+              <div
+                key={item.id}
+                className="flex justify-between items-start p-3 rounded-lg"
+                style={{ backgroundColor: THEME_COLORS.surface }}
+              >
+                <div>
+                  <div className="font-medium" style={{ color: THEME_COLORS.text }}>
+                    {item.product_name}
+                  </div>
+                  <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
+                    {item.quantity} عدد × {formatPersianMoney(item.unit_price)}
+                  </div>
+                  {item.extras?.length > 0 && (
+                    <div className="mt-1 text-xs" style={{ color: THEME_COLORS.subtext }}>
+                      افزودنی: {item.extras.map(e => e.product_name).join('، ')}
+                    </div>
+                  )}
+                </div>
+                <div className="font-bold" style={{ color: THEME_COLORS.text }}>
+                  {formatPersianMoney(item.total)}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Summary */}
+          <div className="pt-3 border-t space-y-1" style={{ borderColor: THEME_COLORS.border }}>
+            <div className="flex justify-between text-sm">
+              <span style={{ color: THEME_COLORS.subtext }}>جمع اقلام:</span>
+              <span style={{ color: THEME_COLORS.text }}>{formatPersianMoney(subtotal)}</span>
+            </div>
+            {tax > 0 && (
+              <div className="flex justify-between text-sm">
+                <span style={{ color: THEME_COLORS.blue }}>+ مالیات:</span>
+                <span style={{ color: THEME_COLORS.blue }}>{formatPersianMoney(tax)}</span>
+              </div>
+            )}
+            {discount > 0 && (
+              <div className="flex justify-between text-sm">
+                <span style={{ color: THEME_COLORS.orange }}>- تخفیف:</span>
+                <span style={{ color: THEME_COLORS.orange }}>{formatPersianMoney(discount)}</span>
+              </div>
+            )}
+            <div className="flex justify-between font-bold text-lg pt-2">
+              <span style={{ color: THEME_COLORS.text }}>جمع کل:</span>
+              <span style={{ color: THEME_COLORS.accent }}>{formatPersianMoney(total)}</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PaymentInputArea({
+  paymentMethod,
+  onMethodChange,
+  inputAmount,
+  onAmountChange,
+  tipAmount,
+  onTipChange,
+  calculatorExpression,
+  onCalculatorChange,
+  onCalculatorApply,
+  parsedAmount,
+  parsedTip,
+  totalPaymentAmount,
+  remainingDue,
+  quickAmounts,
+  onQuickAmount,
+  onSetRemaining,
+  bankAccounts,
+  posAccount,
+  selectedAccountId,
+  onAccountSelect,
+  validationError,
+  isValid,
+  submitting,
+  onSubmit,
+}: {
+  paymentMethod: PaymentMethod;
+  onMethodChange: (m: PaymentMethod) => void;
+  inputAmount: string;
+  onAmountChange: (v: string) => void;
+  tipAmount: string;
+  onTipChange: (v: string) => void;
+  calculatorExpression: string;
+  onCalculatorChange: (v: string) => void;
+  onCalculatorApply: () => void;
+  parsedAmount: number;
+  parsedTip: number;
+  totalPaymentAmount: number;
+  remainingDue: number;
+  quickAmounts: number[];
+  onQuickAmount: (amt: number) => void;
+  onSetRemaining: () => void;
+  bankAccounts: { id: number; card_number: string; bank_name: string | null; related_user_name: string }[];
+  posAccount: { id: number | null; card_number: string | null; account_owner: string | null } | null;
+  selectedAccountId: number | null;
+  onAccountSelect: (id: number) => void;
+  validationError: string | null;
+  isValid: boolean;
+  submitting: boolean;
+  onSubmit: () => void;
+}) {
+  const [showCalculator, setShowCalculator] = useState(false);
+
+  return (
+    <div
+      className="rounded-xl p-5 space-y-5"
+      style={{ backgroundColor: THEME_COLORS.bgSecondary }}
+    >
+      {/* Payment Method Selector */}
+      <div>
+        <div className="text-sm font-bold mb-3" style={{ color: THEME_COLORS.text }}>
+          روش پرداخت
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { value: PaymentMethod.CASH, label: 'نقدی', icon: '💵', color: THEME_COLORS.green },
+            { value: PaymentMethod.POS, label: 'کارتخوان', icon: '💳', color: THEME_COLORS.purple },
+            { value: PaymentMethod.CARD_TRANSFER, label: 'کارت به کارت', icon: '🏦', color: THEME_COLORS.accent },
+          ].map((method) => (
+            <button
+              key={method.value}
+              onClick={() => onMethodChange(method.value)}
+              className="py-4 rounded-xl font-bold transition-all flex flex-col items-center gap-1"
+              style={{
+                backgroundColor: paymentMethod === method.value ? method.color : THEME_COLORS.surface,
+                color: paymentMethod === method.value ? '#fff' : THEME_COLORS.text,
+                border: `2px solid ${paymentMethod === method.value ? method.color : THEME_COLORS.border}`,
               }}
             >
-              {payment.sale.state === 'CANCELED' ? '✕ لغو شده' : '✓ تسویه شده'}
-            </div>
-          </div>
-        </header>
+              <span className="text-2xl">{method.icon}</span>
+              <span>{method.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
-        {/* Summary */}
-        <div className="max-w-screen-lg mx-auto p-6">
-          {/* Financial Summary */}
-          <div
-            className="p-6 rounded-xl mb-6"
-            style={{ backgroundColor: THEME_COLORS.bgSecondary }}
-          >
-            <h2 className="text-lg font-bold mb-4" style={{ color: THEME_COLORS.text }}>
-              خلاصه مالی
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
-                <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>جمع فروش</div>
-                <div className="text-xl font-bold" style={{ color: THEME_COLORS.text }}>
-                  {formatPersianMoney(payment.sale.total_amount)}
-                </div>
-              </div>
-              <div className="text-center p-4 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
-                <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>پرداخت شده</div>
-                <div className="text-xl font-bold" style={{ color: THEME_COLORS.green }}>
-                  {formatPersianMoney(payment.sale.total_paid)}
-                </div>
-              </div>
-              <div className="text-center p-4 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
-                <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>مالیات</div>
-                <div className="text-xl font-bold" style={{ color: THEME_COLORS.blue }}>
-                  {formatPersianMoney(payment.sale.tax_amount)}
-                </div>
-              </div>
-              <div className="text-center p-4 rounded-lg" style={{ backgroundColor: THEME_COLORS.surface }}>
-                <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>تخفیف</div>
-                <div className="text-xl font-bold" style={{ color: THEME_COLORS.orange }}>
-                  {formatPersianMoney(payment.sale.discount_amount)}
-                </div>
-              </div>
-            </div>
+      {/* Account Selector (for non-cash methods) */}
+      {paymentMethod !== PaymentMethod.CASH && (
+        <div>
+          <div className="text-sm font-bold mb-2" style={{ color: THEME_COLORS.text }}>
+            {paymentMethod === PaymentMethod.POS ? 'کارتخوان' : 'حساب مقصد'}
           </div>
-
-          {/* Items List */}
-          <div
-            className="p-6 rounded-xl mb-6"
-            style={{ backgroundColor: THEME_COLORS.bgSecondary }}
-          >
-            <h2 className="text-lg font-bold mb-4" style={{ color: THEME_COLORS.text }}>
-              اقلام فروش ({payment.sale.items.length})
-            </h2>
-            <div className="space-y-3">
-              {payment.sale.items.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex justify-between items-center p-3 rounded-lg"
-                  style={{ backgroundColor: THEME_COLORS.surface }}
+          {paymentMethod === PaymentMethod.POS ? (
+            posAccount?.id ? (
+              <div
+                className="p-3 rounded-xl"
+                style={{ backgroundColor: `${THEME_COLORS.green}15`, border: `2px solid ${THEME_COLORS.green}` }}
+              >
+                <div className="font-bold" style={{ color: THEME_COLORS.text }}>{posAccount.account_owner}</div>
+                <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>{posAccount.card_number}</div>
+              </div>
+            ) : (
+              <div className="p-3 rounded-xl text-center" style={{ backgroundColor: `${THEME_COLORS.red}10` }}>
+                <span style={{ color: THEME_COLORS.red }}>کارتخوان تنظیم نشده است</span>
+              </div>
+            )
+          ) : (
+            <div className="grid grid-cols-1 gap-2 max-h-32 overflow-y-auto">
+              {bankAccounts.map((account) => (
+                <button
+                  key={account.id}
+                  onClick={() => onAccountSelect(account.id)}
+                  className="p-3 rounded-xl text-right transition-all"
+                  style={{
+                    backgroundColor: selectedAccountId === account.id ? `${THEME_COLORS.accent}15` : THEME_COLORS.surface,
+                    border: `2px solid ${selectedAccountId === account.id ? THEME_COLORS.accent : THEME_COLORS.border}`,
+                  }}
                 >
-                  <div>
-                    <div className="font-medium" style={{ color: THEME_COLORS.text }}>
-                      {item.product_name}
-                    </div>
-                    <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
-                      {item.quantity} × {formatPersianMoney(item.unit_price)}
-                    </div>
-                  </div>
-                  <div className="font-bold" style={{ color: THEME_COLORS.green }}>
-                    {formatPersianMoney(item.total)}
-                  </div>
-                </div>
+                  <div className="font-bold" style={{ color: THEME_COLORS.text }}>{account.related_user_name}</div>
+                  <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>{account.card_number}</div>
+                </button>
               ))}
             </div>
-          </div>
+          )}
+        </div>
+      )}
 
-          {/* Payment History */}
-          {payment.sale.payments && payment.sale.payments.length > 0 && (
-            <div
-              className="p-6 rounded-xl"
-              style={{ backgroundColor: THEME_COLORS.bgSecondary }}
+      {/* Amount Input */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-bold" style={{ color: THEME_COLORS.text }}>مبلغ پرداخت</span>
+          <button
+            onClick={() => setShowCalculator(!showCalculator)}
+            className="text-xs px-2 py-1 rounded-lg"
+            style={{ backgroundColor: THEME_COLORS.surface, color: THEME_COLORS.accent }}
+          >
+            {showCalculator ? 'بستن ماشین‌حساب' : 'ماشین‌حساب'}
+          </button>
+        </div>
+
+        {/* Calculator Expression (if open) */}
+        {showCalculator && (
+          <div className="mb-3 p-3 rounded-xl" style={{ backgroundColor: THEME_COLORS.surface }}>
+            <input
+              type="text"
+              value={calculatorExpression}
+              onChange={(e) => onCalculatorChange(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && onCalculatorApply()}
+              placeholder="مثال: 50000 + 30000"
+              className="w-full bg-transparent outline-none text-lg font-mono"
+              style={{ color: THEME_COLORS.text }}
+              dir="ltr"
+            />
+            <div className="text-xs mt-1" style={{ color: THEME_COLORS.subtext }}>
+              Enter بزنید یا روی دکمه مبلغ کلیک کنید
+            </div>
+          </div>
+        )}
+
+        {/* Main Amount Input - LARGE */}
+        <div
+          className="p-4 rounded-xl flex items-center justify-center"
+          style={{ backgroundColor: THEME_COLORS.surface, border: `3px solid ${THEME_COLORS.accent}` }}
+        >
+          <input
+            type="text"
+            inputMode="numeric"
+            value={inputAmount}
+            onChange={(e) => onAmountChange(e.target.value.replace(/[^0-9]/g, ''))}
+            placeholder="۰"
+            className="text-4xl font-black bg-transparent outline-none text-center w-full"
+            style={{ color: THEME_COLORS.accent }}
+            dir="ltr"
+          />
+          <span className="text-lg mr-2" style={{ color: THEME_COLORS.subtext }}>تومان</span>
+        </div>
+
+        {/* Quick Amount Buttons */}
+        <div className="flex flex-wrap gap-2 mt-3">
+          <button
+            onClick={onSetRemaining}
+            className="px-3 py-2 rounded-lg text-sm font-bold"
+            style={{ backgroundColor: `${THEME_COLORS.orange}20`, color: THEME_COLORS.orange }}
+          >
+            کل مانده
+          </button>
+          {quickAmounts.map((amt) => (
+            <button
+              key={amt}
+              onClick={() => onQuickAmount(amt)}
+              className="px-3 py-2 rounded-lg text-sm font-medium"
+              style={{ backgroundColor: THEME_COLORS.surface, color: THEME_COLORS.text }}
             >
-              <h2 className="text-lg font-bold mb-4" style={{ color: THEME_COLORS.text }}>
-                تاریخچه پرداخت‌ها ({payment.sale.payments.length})
-              </h2>
-              <div className="space-y-3">
-                {payment.sale.payments.map((p) => (
+              {formatPersianMoney(amt)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tip Input (Optional) */}
+      <div>
+        <div className="text-sm font-bold mb-2" style={{ color: THEME_COLORS.text }}>
+          انعام (اختیاری)
+        </div>
+        <div
+          className="p-3 rounded-xl flex items-center gap-2"
+          style={{ backgroundColor: THEME_COLORS.surface }}
+        >
+          <input
+            type="text"
+            inputMode="numeric"
+            value={tipAmount}
+            onChange={(e) => onTipChange(e.target.value.replace(/[^0-9]/g, ''))}
+            placeholder="۰"
+            className="flex-1 text-lg font-bold bg-transparent outline-none text-center"
+            style={{ color: THEME_COLORS.green }}
+            dir="ltr"
+          />
+          <span className="text-sm" style={{ color: THEME_COLORS.subtext }}>تومان</span>
+        </div>
+      </div>
+
+      {/* Total Summary */}
+      {(parsedTip > 0 || parsedAmount !== totalPaymentAmount) && (
+        <div
+          className="p-3 rounded-xl text-center"
+          style={{ backgroundColor: `${THEME_COLORS.green}10` }}
+        >
+          <span className="text-sm" style={{ color: THEME_COLORS.subtext }}>جمع کل: </span>
+          <span className="text-lg font-bold" style={{ color: THEME_COLORS.green }}>
+            {formatPersianMoney(totalPaymentAmount)}
+          </span>
+          <span className="text-xs mr-2" style={{ color: THEME_COLORS.subtext }}>
+            (پرداخت {formatPersianMoney(parsedAmount)} + انعام {formatPersianMoney(parsedTip)})
+          </span>
+        </div>
+      )}
+
+      {/* Validation Error */}
+      {validationError && (
+        <div
+          className="p-3 rounded-xl text-center"
+          style={{ backgroundColor: `${THEME_COLORS.red}10` }}
+        >
+          <span style={{ color: THEME_COLORS.red }}>{validationError}</span>
+        </div>
+      )}
+
+      {/* Submit Button */}
+      <button
+        onClick={onSubmit}
+        disabled={!isValid || submitting}
+        className="w-full py-5 rounded-xl font-black text-xl transition-all disabled:opacity-50"
+        style={{ backgroundColor: THEME_COLORS.green, color: '#fff' }}
+      >
+        {submitting ? (
+          'در حال ثبت...'
+        ) : (
+          <span>
+            ثبت پرداخت {parsedAmount > 0 && formatPersianMoney(parsedAmount)}
+          </span>
+        )}
+      </button>
+
+      {/* Amount vs Remaining indicator */}
+      {parsedAmount > 0 && remainingDue > 0 && (
+        <div className="text-center text-sm" style={{ color: THEME_COLORS.subtext }}>
+          {parsedAmount >= remainingDue ? (
+            <span style={{ color: THEME_COLORS.green }}>
+              این پرداخت فروش را تسویه می‌کند
+              {parsedAmount > remainingDue && ` (${formatPersianMoney(parsedAmount - remainingDue)} اضافه)`}
+            </span>
+          ) : (
+            <span>
+              پس از این پرداخت: {formatPersianMoney(remainingDue - parsedAmount)} باقی می‌ماند
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PaymentHistory({
+  payments,
+  voidingPaymentId,
+  onVoidPayment,
+}: {
+  payments: { id: number; method: string; amount: number; tipAmount: number; receivedBy: string; receivedAt: string; status: string; accountInfo?: string }[];
+  voidingPaymentId: number | null;
+  onVoidPayment: (id: number) => void;
+}) {
+  const [confirmVoidId, setConfirmVoidId] = useState<number | null>(null);
+
+  const activePayments = payments.filter(p => p.status === 'ACTIVE');
+  const voidedPayments = payments.filter(p => p.status === 'VOID');
+
+  const handleVoidClick = (id: number) => {
+    if (confirmVoidId === id) {
+      onVoidPayment(id);
+      setConfirmVoidId(null);
+    } else {
+      setConfirmVoidId(id);
+    }
+  };
+
+  const methodLabel = (method: string) => ({
+    CASH: { label: 'نقدی', color: THEME_COLORS.green },
+    POS: { label: 'کارتخوان', color: THEME_COLORS.purple },
+    CARD_TRANSFER: { label: 'کارت', color: THEME_COLORS.accent },
+  }[method] || { label: method, color: THEME_COLORS.text });
+
+  return (
+    <div
+      className="rounded-xl p-4 h-full"
+      style={{ backgroundColor: THEME_COLORS.bgSecondary }}
+    >
+      <h3 className="font-bold mb-3" style={{ color: THEME_COLORS.text }}>
+        تاریخچه پرداخت‌ها ({activePayments.length})
+      </h3>
+
+      {payments.length === 0 ? (
+        <div className="text-center py-8" style={{ color: THEME_COLORS.subtext }}>
+          هنوز پرداختی ثبت نشده است
+        </div>
+      ) : (
+        <div className="space-y-2 max-h-[400px] overflow-y-auto">
+          {/* Active Payments */}
+          {activePayments.map((p) => {
+            const { label, color } = methodLabel(p.method);
+            const isConfirming = confirmVoidId === p.id;
+
+            return (
+              <div
+                key={p.id}
+                className="p-3 rounded-xl"
+                style={{ backgroundColor: THEME_COLORS.surface }}
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-lg" style={{ color: THEME_COLORS.text }}>
+                        {formatPersianMoney(p.amount)}
+                      </span>
+                      <span
+                        className="px-2 py-0.5 rounded text-xs font-bold"
+                        style={{ backgroundColor: `${color}20`, color }}
+                      >
+                        {label}
+                      </span>
+                    </div>
+                    {p.tipAmount > 0 && (
+                      <div className="text-xs" style={{ color: THEME_COLORS.green }}>
+                        + انعام {formatPersianMoney(p.tipAmount)}
+                      </div>
+                    )}
+                    <div className="text-xs mt-1" style={{ color: THEME_COLORS.subtext }}>
+                      {p.receivedBy} - {new Date(p.receivedAt).toLocaleString('fa-IR')}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleVoidClick(p.id)}
+                    disabled={voidingPaymentId === p.id}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+                    style={{
+                      backgroundColor: isConfirming ? THEME_COLORS.red : `${THEME_COLORS.red}20`,
+                      color: isConfirming ? '#fff' : THEME_COLORS.red,
+                    }}
+                  >
+                    {voidingPaymentId === p.id ? '...' : isConfirming ? 'تایید لغو' : 'لغو'}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Voided Payments */}
+          {voidedPayments.length > 0 && (
+            <>
+              <div className="text-xs font-medium pt-3" style={{ color: THEME_COLORS.subtext }}>
+                پرداخت‌های لغو شده
+              </div>
+              {voidedPayments.map((p) => {
+                const { label, color } = methodLabel(p.method);
+                return (
                   <div
                     key={p.id}
-                    className="flex justify-between items-center p-4 rounded-lg"
+                    className="p-3 rounded-xl opacity-50"
+                    style={{ backgroundColor: `${THEME_COLORS.red}10` }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold line-through" style={{ color: THEME_COLORS.text }}>
+                        {formatPersianMoney(p.amount)}
+                      </span>
+                      <span
+                        className="px-2 py-0.5 rounded text-xs"
+                        style={{ backgroundColor: `${color}20`, color }}
+                      >
+                        {label}
+                      </span>
+                      <span
+                        className="px-2 py-0.5 rounded text-xs font-bold"
+                        style={{ backgroundColor: `${THEME_COLORS.red}20`, color: THEME_COLORS.red }}
+                      >
+                        لغو شده
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EdgeActions({
+  saleId,
+  router,
+}: {
+  saleId: number;
+  router: { push: (url: string) => void };
+}) {
+  const [showWarning, setShowWarning] = useState(false);
+
+  return (
+    <div
+      className="rounded-xl p-4"
+      style={{ backgroundColor: THEME_COLORS.bgSecondary }}
+    >
+      <div className="text-sm font-bold mb-3" style={{ color: THEME_COLORS.subtext }}>
+        عملیات دیگر
+      </div>
+      <div className="flex flex-wrap gap-3">
+        <button
+          onClick={() => setShowWarning(true)}
+          className="px-4 py-2 rounded-xl font-medium transition-all"
+          style={{ backgroundColor: THEME_COLORS.surface, color: THEME_COLORS.text }}
+        >
+          افزودن آیتم به فروش
+        </button>
+      </div>
+
+      {/* Warning Modal */}
+      {showWarning && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div
+            className="max-w-md w-full p-6 rounded-2xl"
+            style={{ backgroundColor: THEME_COLORS.bgSecondary }}
+          >
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-2">⚠️</div>
+              <h3 className="text-lg font-bold" style={{ color: THEME_COLORS.text }}>
+                توجه!
+              </h3>
+            </div>
+            <p className="text-center mb-6" style={{ color: THEME_COLORS.subtext }}>
+              افزودن آیتم جدید به فروش، محاسبات را تغییر می‌دهد.
+              آیا مطمئن هستید؟
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowWarning(false)}
+                className="flex-1 py-3 rounded-xl font-bold"
+                style={{ backgroundColor: THEME_COLORS.surface, color: THEME_COLORS.text }}
+              >
+                انصراف
+              </button>
+              <button
+                onClick={() => router.push(`/sale/${saleId}`)}
+                className="flex-1 py-3 rounded-xl font-bold"
+                style={{ backgroundColor: THEME_COLORS.orange, color: '#fff' }}
+              >
+                ادامه
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// VIEW-ONLY MODE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function ViewOnlyMode({
+  payment,
+  router,
+  saleId,
+  ToastContainer,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  payment: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  router: any;
+  saleId: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ToastContainer: any;
+}) {
+  const snapshot = payment.snapshot;
+  const isCanceled = snapshot.saleState === 'CANCELED';
+
+  return (
+    <div className="min-h-screen" style={{ backgroundColor: THEME_COLORS.bgPrimary }}>
+      {/* Header */}
+      <header
+        className="px-4 py-4 border-b"
+        style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border }}
+      >
+        <div className="max-w-3xl mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.back()}
+              className="px-4 py-2 rounded-xl font-medium"
+              style={{ backgroundColor: THEME_COLORS.surface, color: THEME_COLORS.text }}
+            >
+              بازگشت
+            </button>
+            <h1 className="text-xl font-bold" style={{ color: THEME_COLORS.text }}>
+              جزئیات فروش #{saleId}
+            </h1>
+          </div>
+          <div
+            className="px-4 py-2 rounded-xl font-bold"
+            style={{
+              backgroundColor: isCanceled ? `${THEME_COLORS.red}20` : `${THEME_COLORS.green}20`,
+              color: isCanceled ? THEME_COLORS.red : THEME_COLORS.green,
+            }}
+          >
+            {isCanceled ? 'لغو شده' : 'تسویه شده'}
+          </div>
+        </div>
+      </header>
+
+      {/* Content */}
+      <div className="max-w-3xl mx-auto p-4 space-y-4">
+        {/* Financial Summary */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="p-4 rounded-xl text-center" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
+            <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>جمع فروش</div>
+            <div className="text-xl font-bold" style={{ color: THEME_COLORS.text }}>
+              {formatPersianMoney(snapshot.totalAmount)}
+            </div>
+          </div>
+          <div className="p-4 rounded-xl text-center" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
+            <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>پرداخت شده</div>
+            <div className="text-xl font-bold" style={{ color: THEME_COLORS.green }}>
+              {formatPersianMoney(snapshot.totalPaid)}
+            </div>
+          </div>
+          <div className="p-4 rounded-xl text-center" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
+            <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>مالیات</div>
+            <div className="text-xl font-bold" style={{ color: THEME_COLORS.blue }}>
+              {formatPersianMoney(snapshot.taxAmount)}
+            </div>
+          </div>
+          <div className="p-4 rounded-xl text-center" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
+            <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>تخفیف</div>
+            <div className="text-xl font-bold" style={{ color: THEME_COLORS.orange }}>
+              {formatPersianMoney(snapshot.discountAmount)}
+            </div>
+          </div>
+        </div>
+
+        {/* Items */}
+        <div className="p-4 rounded-xl" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
+          <h3 className="font-bold mb-3" style={{ color: THEME_COLORS.text }}>
+            اقلام فروش ({snapshot.items.length})
+          </h3>
+          <div className="space-y-2">
+            {snapshot.items.map((item: { id: number; product_name: string; quantity: number; unit_price: number; total: number }) => (
+              <div
+                key={item.id}
+                className="flex justify-between items-center p-3 rounded-lg"
+                style={{ backgroundColor: THEME_COLORS.surface }}
+              >
+                <div>
+                  <div className="font-medium" style={{ color: THEME_COLORS.text }}>
+                    {item.product_name}
+                  </div>
+                  <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
+                    {item.quantity} × {formatPersianMoney(item.unit_price)}
+                  </div>
+                </div>
+                <div className="font-bold" style={{ color: THEME_COLORS.green }}>
+                  {formatPersianMoney(item.total)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Payments */}
+        {payment.payments.length > 0 && (
+          <div className="p-4 rounded-xl" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
+            <h3 className="font-bold mb-3" style={{ color: THEME_COLORS.text }}>
+              تاریخچه پرداخت‌ها ({payment.payments.length})
+            </h3>
+            <div className="space-y-2">
+              {payment.payments.map((p: { id: number; method: string; amount: number; tipAmount: number; receivedBy: string; receivedAt: string; status: string }) => {
+                const isVoid = p.status === 'VOID';
+                return (
+                  <div
+                    key={p.id}
+                    className="flex justify-between items-center p-3 rounded-lg"
                     style={{
-                      backgroundColor: p.status === 'VOID' ? `${THEME_COLORS.red}10` : THEME_COLORS.surface,
-                      opacity: p.status === 'VOID' ? 0.6 : 1,
+                      backgroundColor: isVoid ? `${THEME_COLORS.red}10` : THEME_COLORS.surface,
+                      opacity: isVoid ? 0.6 : 1,
                     }}
                   >
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold" style={{ color: THEME_COLORS.text }}>
-                          {formatPersianMoney(p.amount_applied)}
+                        <span className={`font-bold ${isVoid ? 'line-through' : ''}`} style={{ color: THEME_COLORS.text }}>
+                          {formatPersianMoney(p.amount)}
                         </span>
                         <span
                           className="px-2 py-0.5 rounded text-xs"
                           style={{
-                            backgroundColor:
-                              p.method === 'CARD_TRANSFER' ? `${THEME_COLORS.accent}20` :
-                              p.method === 'CASH' ? `${THEME_COLORS.green}20` :
-                              `${THEME_COLORS.purple}20`,
-                            color:
-                              p.method === 'CARD_TRANSFER' ? THEME_COLORS.accent :
-                              p.method === 'CASH' ? THEME_COLORS.green :
-                              THEME_COLORS.purple,
+                            backgroundColor: `${THEME_COLORS.accent}20`,
+                            color: THEME_COLORS.accent,
                           }}
                         >
-                          {p.method === 'CARD_TRANSFER' ? 'کارت به کارت' :
-                           p.method === 'CASH' ? 'نقدی' : 'کارتخوان'}
+                          {p.method === 'CASH' ? 'نقدی' : p.method === 'POS' ? 'کارتخوان' : 'کارت'}
                         </span>
-                        {p.status === 'VOID' && (
+                        {isVoid && (
                           <span
                             className="px-2 py-0.5 rounded text-xs font-bold"
                             style={{ backgroundColor: `${THEME_COLORS.red}20`, color: THEME_COLORS.red }}
@@ -218,466 +989,22 @@ export default function SalePaymentPage() {
                           </span>
                         )}
                       </div>
-                      <div className="text-sm mt-1" style={{ color: THEME_COLORS.subtext }}>
-                        {p.received_by_name} - {new Date(p.received_at).toLocaleString('fa-IR')}
+                      <div className="text-xs mt-1" style={{ color: THEME_COLORS.subtext }}>
+                        {p.receivedBy} - {new Date(p.receivedAt).toLocaleString('fa-IR')}
                       </div>
                     </div>
-                    {p.tip_amount > 0 && (
+                    {p.tipAmount > 0 && (
                       <div className="text-sm" style={{ color: THEME_COLORS.green }}>
-                        انعام: {formatPersianMoney(p.tip_amount)}
+                        انعام: {formatPersianMoney(p.tipAmount)}
                       </div>
                     )}
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
-          )}
-        </div>
-        <ToastContainer />
+          </div>
+        )}
       </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: THEME_COLORS.bgPrimary }}>
-      {/* Header */}
-      <header
-        className="px-4 py-3 border-b flex-shrink-0"
-        style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border }}
-      >
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.back()}
-              aria-label="بازگشت"
-              className="px-5 py-2 rounded-lg font-medium transition-all hover:opacity-80"
-              style={{ backgroundColor: THEME_COLORS.surface, color: THEME_COLORS.text }}
-            >
-              ← بازگشت
-            </button>
-            <h1 className="text-xl font-bold" style={{ color: THEME_COLORS.text }}>
-              پرداخت فروش #{saleId}
-            </h1>
-          </div>
-
-          {/* Payment Status Summary - SINGLE SOURCE OF TRUTH */}
-          <div className="flex items-center gap-3">
-            {/* Payment Status Badge */}
-            <div
-              className="px-3 py-1.5 rounded-lg text-sm font-bold"
-              style={{
-                backgroundColor: payment.sale.payment_status === 'PAID' ? '#10B98120' :
-                                payment.sale.payment_status === 'PARTIALLY_PAID' ? `${THEME_COLORS.orange}20` :
-                                `${THEME_COLORS.red}20`,
-                color: payment.sale.payment_status === 'PAID' ? '#10B981' :
-                       payment.sale.payment_status === 'PARTIALLY_PAID' ? THEME_COLORS.orange :
-                       THEME_COLORS.red,
-              }}
-            >
-              {payment.sale.payment_status === 'PAID' ? '✓ تسویه شده' :
-               payment.sale.payment_status === 'PARTIALLY_PAID' ? '◐ پرداخت جزئی' :
-               '○ پرداخت نشده'}
-            </div>
-
-            <div className="h-8 w-px" style={{ backgroundColor: THEME_COLORS.border }} />
-
-            {/* Dynamic Total - updates based on tax settings */}
-            <div className="text-center">
-              <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>
-                مجموع {payment.taxEnabled ? `(+${payment.taxValue}% مالیات)` : '(بدون مالیات)'}
-              </div>
-              <div className="font-bold" style={{ color: THEME_COLORS.text }}>
-                {formatPersianMoney(payment.calculatedTotal)}
-              </div>
-              {payment.calculatedTotal !== payment.sale.total_amount && (
-                <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>
-                  اصلی: {formatPersianMoney(payment.sale.total_amount)}
-                </div>
-              )}
-            </div>
-            <div className="text-center">
-              <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>پرداخت شده</div>
-              <div className="font-bold" style={{ color: '#10B981' }}>
-                {formatPersianMoney(payment.sale.total_paid)}
-              </div>
-            </div>
-            {/* Dynamic Remaining - recalculates when total changes */}
-            <div
-              className="text-center cursor-pointer hover:opacity-80 transition-opacity px-2 py-1 rounded-lg"
-              style={{ backgroundColor: `${THEME_COLORS.orange}15` }}
-              onClick={() => payment.handleAmountChange(Math.floor(payment.dynamicRemaining).toString())}
-              title="کلیک برای وارد کردن مبلغ مانده"
-            >
-              <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>مانده (کلیک کنید)</div>
-              <div
-                className="font-bold"
-                style={{
-                  color: payment.dynamicRemaining > 0 ? THEME_COLORS.orange : '#10B981',
-                }}
-              >
-                {formatPersianMoney(payment.dynamicRemaining)}
-              </div>
-            </div>
-            {/* Maximum with tips indicator */}
-            {payment.tipAmountValue > 0 && (
-              <div className="text-center">
-                <div className="text-xs" style={{ color: THEME_COLORS.subtext }}>سقف (با انعام)</div>
-                <div className="font-bold" style={{ color: THEME_COLORS.green }}>
-                  {formatPersianMoney(payment.maximumTotal)}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Payment Mode Selector */}
-      <div
-        className="flex-shrink-0 px-4 py-3 border-b"
-        style={{ backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.border }}
-      >
-        <div className="flex items-center justify-center gap-4">
-          <span className="text-sm font-medium" style={{ color: THEME_COLORS.subtext }}>
-            نوع پرداخت:
-          </span>
-          <div className="flex gap-2">
-            <button
-              onClick={payment.setModeToItems}
-              className="px-4 py-2 rounded-lg font-bold text-sm transition-all"
-              style={{
-                backgroundColor: payment.paymentMode === PaymentMode.FROM_ITEMS
-                  ? THEME_COLORS.accent
-                  : THEME_COLORS.bgSecondary,
-                color: payment.paymentMode === PaymentMode.FROM_ITEMS
-                  ? '#fff'
-                  : THEME_COLORS.text,
-                border: `2px solid ${payment.paymentMode === PaymentMode.FROM_ITEMS ? THEME_COLORS.accent : THEME_COLORS.border}`,
-              }}
-            >
-              بر اساس اقلام
-            </button>
-            <button
-              onClick={payment.setModeToManual}
-              className="px-4 py-2 rounded-lg font-bold text-sm transition-all"
-              style={{
-                backgroundColor: payment.paymentMode === PaymentMode.MANUAL
-                  ? THEME_COLORS.purple
-                  : THEME_COLORS.bgSecondary,
-                color: payment.paymentMode === PaymentMode.MANUAL
-                  ? '#fff'
-                  : THEME_COLORS.text,
-                border: `2px solid ${payment.paymentMode === PaymentMode.MANUAL ? THEME_COLORS.purple : THEME_COLORS.border}`,
-              }}
-            >
-              مبلغ دستی
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main layout - 4-8 split for larger payment panel */}
-      <div className="flex-1 grid grid-cols-12 gap-4 p-4 overflow-hidden">
-        {/* Left - Items Panel (4 columns) */}
-        <div
-          className="col-span-4 flex flex-col overflow-hidden rounded-xl"
-          style={{ backgroundColor: THEME_COLORS.bgSecondary }}
-        >
-          {payment.paymentMode === PaymentMode.FROM_ITEMS ? (
-            <PaymentItemList
-              unpaidItems={payment.unpaidItems}
-              paidItems={payment.paidItems}
-              selectedItems={payment.selectedItems}
-              selectAllItems={payment.selectAllItems}
-              onItemToggleFull={payment.handleItemToggleFull}
-              onItemQuantityChange={payment.handleItemQuantityChange}
-              onSelectAllToggle={payment.handleSelectAllToggle}
-            />
-          ) : (
-            /* Manual Amount Mode - Show input here */
-            <div className="flex flex-col h-full">
-              <div
-                className="flex-shrink-0 px-4 py-3 border-b"
-                style={{ backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.border }}
-              >
-                <span className="font-bold" style={{ color: THEME_COLORS.purple }}>
-                  ورود مبلغ دستی
-                </span>
-              </div>
-              <div className="flex-1 flex items-center justify-center p-6">
-                <div
-                  className="w-full max-w-sm p-6 rounded-xl text-center"
-                  style={{
-                    backgroundColor: THEME_COLORS.surface,
-                    border: `3px solid ${THEME_COLORS.purple}`,
-                  }}
-                >
-                  <label
-                    className="block text-sm font-medium mb-3"
-                    style={{ color: THEME_COLORS.subtext }}
-                  >
-                    مبلغ درخواستی مهمان را وارد کنید
-                  </label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    dir="ltr"
-                    value={payment.manualAmount}
-                    onChange={(e) => payment.setManualAmount(e.target.value.replace(/[^0-9۰-۹]/g, ''))}
-                    placeholder="۰"
-                    className="w-full text-4xl font-bold bg-transparent outline-none text-center py-4"
-                    style={{ color: THEME_COLORS.purple }}
-                    autoFocus
-                  />
-                  <div className="text-sm mt-2" style={{ color: THEME_COLORS.subtext }}>
-                    تومان
-                  </div>
-                </div>
-              </div>
-
-              {/* Show paid items in manual mode too */}
-              {payment.paidItems.length > 0 && (
-                <div
-                  className="flex-shrink-0 border-t p-4"
-                  style={{ borderColor: THEME_COLORS.border }}
-                >
-                  <div className="text-sm font-medium mb-2" style={{ color: '#10B981' }}>
-                    اقلام پرداخت شده ({payment.paidItems.length})
-                  </div>
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
-                    {payment.paidItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex justify-between text-sm"
-                        style={{ color: THEME_COLORS.subtext }}
-                      >
-                        <span>{item.product_name} ×{item.quantity_paid}</span>
-                        <span style={{ color: '#10B981' }}>
-                          {formatPersianMoney(Number(item.unit_price) * item.quantity_paid)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Right - Payment panel (8 columns - larger) */}
-        <div
-          className="col-span-8 flex flex-col overflow-hidden rounded-xl shadow-lg"
-          style={{ backgroundColor: THEME_COLORS.bgSecondary }}
-        >
-          {/* Formula Calculator at top */}
-          <div className="flex-shrink-0 p-4 border-b" style={{ borderColor: THEME_COLORS.border }}>
-            <PaymentFormulaCalculator
-              selectedTotal={payment.selectedTotal}
-              taxAmount={payment.taxAmount}
-              taxEnabled={payment.taxEnabled}
-              taxValue={payment.taxValue}
-              taxType={payment.taxType}
-              discountAmount={payment.discountAmount}
-              discountValue={payment.discountValue}
-              discountType={payment.discountType}
-              tipAmount={payment.tipAmount}
-              tipAmountValue={payment.tipAmountValue}
-              divisor={payment.divisor}
-              preDivisionAmount={payment.preDivisionAmount}
-              finalAmount={payment.finalAmount}
-              amount={payment.amount}
-              isAmountManuallyOverridden={payment.isAmountManuallyOverridden}
-              onToggleTax={payment.toggleTax}
-              onIncrementTax={payment.incrementTaxValue}
-              onDecrementTax={payment.decrementTaxValue}
-              onTaxValueChange={payment.setTaxValue}
-              onDiscountValueChange={payment.setDiscountValue}
-              onTipAmountChange={payment.setTipAmount}
-              onDivisorChange={payment.setDivisor}
-              onIncrementDivisor={payment.incrementDivisor}
-              onDecrementDivisor={payment.decrementDivisor}
-              onAmountChange={payment.handleAmountChange}
-              onSyncToFormula={payment.syncAmountToFormula}
-            />
-          </div>
-
-          {/* Scrollable content area */}
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-            {/* Payment method */}
-            <PaymentMethodSelector
-              paymentMethod={payment.paymentMethod}
-              onMethodChange={payment.handlePaymentMethodChange}
-            />
-
-            {/* Account selector */}
-            <PaymentAccountSelector
-              paymentMethod={payment.paymentMethod}
-              bankAccounts={payment.bankAccounts}
-              posAccount={payment.posAccount}
-              selectedAccountId={payment.selectedAccountId}
-              onAccountSelect={payment.setSelectedAccountId}
-            />
-
-            {/* Payment History Section */}
-            {payment.sale.payments && payment.sale.payments.length > 0 && (
-              <div
-                className="mt-4 p-4 rounded-xl"
-                style={{ backgroundColor: THEME_COLORS.surface }}
-              >
-                <h3 className="font-bold mb-3" style={{ color: THEME_COLORS.text }}>
-                  تاریخچه پرداخت‌ها ({payment.sale.payments.length})
-                </h3>
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {payment.sale.payments.map((p) => (
-                    <div
-                      key={p.id}
-                      className="flex items-center justify-between p-3 rounded-lg"
-                      style={{
-                        backgroundColor: p.status === 'VOID' ? `${THEME_COLORS.red}10` : THEME_COLORS.bgSecondary,
-                        opacity: p.status === 'VOID' ? 0.6 : 1,
-                      }}
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium" style={{ color: THEME_COLORS.text }}>
-                            {formatPersianMoney(p.amount_applied)}
-                          </span>
-                          <span
-                            className="px-2 py-0.5 rounded text-xs"
-                            style={{
-                              backgroundColor:
-                                p.method === 'CARD_TRANSFER' ? `${THEME_COLORS.accent}20` :
-                                p.method === 'CASH' ? `${THEME_COLORS.green}20` :
-                                `${THEME_COLORS.purple}20`,
-                              color:
-                                p.method === 'CARD_TRANSFER' ? THEME_COLORS.accent :
-                                p.method === 'CASH' ? THEME_COLORS.green :
-                                THEME_COLORS.purple,
-                            }}
-                          >
-                            {p.method === 'CARD_TRANSFER' ? 'کارت به کارت' :
-                             p.method === 'CASH' ? 'نقدی' : 'کارتخوان'}
-                          </span>
-                          {p.status === 'VOID' && (
-                            <span
-                              className="px-2 py-0.5 rounded text-xs font-bold"
-                              style={{ backgroundColor: `${THEME_COLORS.red}20`, color: THEME_COLORS.red }}
-                            >
-                              لغو شده
-                            </span>
-                          )}
-                          {p.tip_amount > 0 && (
-                            <span className="text-xs" style={{ color: THEME_COLORS.subtext }}>
-                              + انعام {formatPersianMoney(p.tip_amount)}
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-xs mt-1" style={{ color: THEME_COLORS.subtext }}>
-                          {p.received_by_name} - {new Date(p.received_at).toLocaleString('fa-IR')}
-                        </div>
-                      </div>
-                      {p.status !== 'VOID' && (
-                        <button
-                          onClick={() => payment.handleVoidPayment(p.id)}
-                          disabled={payment.voidingPaymentId === p.id}
-                          className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-80 disabled:opacity-50"
-                          style={{ backgroundColor: THEME_COLORS.red, color: '#fff' }}
-                        >
-                          {payment.voidingPaymentId === p.id ? '...' : 'لغو'}
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Submit button - Synced with formula amount */}
-          <div className="flex-shrink-0 p-5 border-t" style={{ borderColor: THEME_COLORS.border }}>
-            {payment.divisor > 1 ? (
-              // Split submit buttons for multiple persons
-              <div className="space-y-3">
-                <div className="text-center text-sm mb-2" style={{ color: THEME_COLORS.subtext }}>
-                  پرداخت {payment.divisor} نفره - هر نفر: {formatPersianMoney(payment.finalAmount)}
-                </div>
-                <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(payment.divisor, 5)}, 1fr)` }}>
-                  {Array.from({ length: payment.divisor }, (_, index) => {
-                    const isPaid = payment.paidPersons.includes(index);
-                    return (
-                      <button
-                        key={index}
-                        onClick={() => payment.handleSubmitPersonPayment(index)}
-                        disabled={payment.submitting || isPaid}
-                        className="py-4 rounded-xl font-bold text-base disabled:opacity-60 transition-all relative overflow-hidden"
-                        style={{
-                          backgroundColor: isPaid ? THEME_COLORS.green : THEME_COLORS.accent,
-                          color: '#ffffff',
-                        }}
-                      >
-                        {payment.submitting ? (
-                          '...'
-                        ) : isPaid ? (
-                          <div className="flex flex-col items-center">
-                            <span className="text-lg">✓</span>
-                            <span className="text-xs">نفر {index + 1}</span>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center">
-                            <span>نفر {index + 1}</span>
-                            <span className="text-xs opacity-80">{formatPersianMoney(payment.finalAmount)}</span>
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-                {/* Progress indicator */}
-                <div
-                  className="text-center text-sm py-2 rounded-lg"
-                  style={{ backgroundColor: `${THEME_COLORS.purple}10`, color: THEME_COLORS.purple }}
-                >
-                  {payment.paidPersons.length} از {payment.divisor} نفر پرداخت کرده‌اند
-                </div>
-              </div>
-            ) : (
-              // Single submit button
-              <button
-                onClick={payment.handleSubmitPayment}
-                disabled={payment.submitting || currentAmount <= 0}
-                className="w-full py-5 rounded-xl font-bold text-xl disabled:opacity-60 transition-all relative overflow-hidden"
-                style={{
-                  backgroundColor: payment.isAmountManuallyOverridden ? THEME_COLORS.orange : THEME_COLORS.green,
-                  color: '#ffffff',
-                }}
-              >
-                {payment.submitting ? (
-                  'در حال ثبت...'
-                ) : (
-                  <div className="flex items-center justify-center gap-3">
-                    {payment.isAmountManuallyOverridden && (
-                      <span className="text-sm opacity-80">(دستی)</span>
-                    )}
-                    <span>پرداخت {formatPersianMoney(currentAmount)}</span>
-                  </div>
-                )}
-              </button>
-            )}
-
-            {/* Show difference from formula if manually overridden */}
-            {payment.isAmountManuallyOverridden && currentAmount !== payment.finalAmount && (
-              <div
-                className="mt-2 text-center text-sm py-2 rounded-lg"
-                style={{ backgroundColor: `${THEME_COLORS.orange}15`, color: THEME_COLORS.orange }}
-              >
-                تفاوت با فرمول: {formatPersianMoney(Math.abs(currentAmount - payment.finalAmount))}
-                {currentAmount > payment.finalAmount ? ' بیشتر' : ' کمتر'}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {payment.submitting && <LoadingOverlay message="در حال ثبت پرداخت..." />}
       <ToastContainer />
     </div>
   );
