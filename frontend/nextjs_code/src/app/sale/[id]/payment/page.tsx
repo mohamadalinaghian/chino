@@ -823,7 +823,7 @@ function EdgeActions({
                 انصراف
               </button>
               <button
-                onClick={() => router.push(`/sale/${saleId}`)}
+                onClick={() => router.push(`/sale/${saleId}/edit/`)}
                 className="flex-1 py-3 rounded-xl font-bold"
                 style={{ backgroundColor: THEME_COLORS.orange, color: '#fff' }}
               >
