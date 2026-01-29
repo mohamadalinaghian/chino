@@ -1,3 +1,4 @@
+// src/hooks/payment/useSaleSummary.ts
 import { useMemo } from 'react';
 
 export interface SelectedItem {
@@ -11,7 +12,7 @@ export function useSaleSummary(
   selectedItems: SelectedItem[]
 ) {
   return useMemo(() => {
-    if (!sale) {
+    if (!sale?.items?.length) {
       return {
         totalAmount: 0,
         paidAmount: 0,
@@ -19,53 +20,44 @@ export function useSaleSummary(
       };
     }
 
-    let unselectedBaseTotal = 0;
-    let selectedBaseTotal = 0;
-    let selectedTaxTotal = 0;
+    let unselectedBase = 0;
+    let selectedBase = 0;
+    let selectedTax = 0;
 
     for (const item of sale.items) {
       const selected = selectedItems.find(s => s.itemId === item.id);
-      const selectedQty = selected?.quantity ?? 0;
-      const unselectedQty = item.quantity_remaining - selectedQty;
+      const selQty = selected?.quantity ?? 0;
+      const unselQty = item.quantity_remaining - selQty;
 
+      // Extras (same for selected/unselected)
       const extrasTotal =
-        item.extras?.reduce(
-          (sum: number, e: any) => sum + e.unit_price * e.quantity,
-          0
-        ) ?? 0;
+        item.extras?.reduce((sum: number, e: any) => sum + (e.unit_price * e.quantity), 0) ?? 0;
+      const extrasPerUnit = item.quantity > 0 ? extrasTotal / item.quantity : 0;
 
-      const extrasPerUnit =
-        item.quantity > 0 ? extrasTotal / item.quantity : 0;
-
-      // Unselected items (default 10% tax)
-      if (unselectedQty > 0) {
-        unselectedBaseTotal +=
-          unselectedQty * item.unit_price +
-          extrasPerUnit * unselectedQty;
+      // ── Unselected part ── (always 10% tax)
+      if (unselQty > 0) {
+        const base = unselQty * item.unit_price + extrasPerUnit * unselQty;
+        unselectedBase += base;
       }
 
-      // Selected items (custom tax)
-      if (selectedQty > 0 && selected) {
-        const base =
-          selectedQty * item.unit_price +
-          extrasPerUnit * selectedQty;
-
-        selectedBaseTotal += base;
-        selectedTaxTotal += base * (selected.taxPercent / 100);
+      // ── Selected part ── (custom tax)
+      if (selQty > 0 && selected) {
+        const base = selQty * item.unit_price + extrasPerUnit * selQty;
+        selectedBase += base;
+        selectedTax += base * (selected.taxPercent / 100);
       }
     }
 
-    const paidAmount = sale.paid_amount ?? 0;
+    const paid = sale.paid_amount ?? 0;
+    const total = unselectedBase * 1.1 + selectedBase + selectedTax;
 
-    const totalAmount =
-      unselectedBaseTotal * 1.1 +
-      selectedBaseTotal +
-      selectedTaxTotal;
+    // Optional: console.log for debugging
+    // console.log('[useSaleSummary]', { total, paid, remaining: total - paid, selectedCount: selectedItems.length });
 
     return {
-      totalAmount,
-      paidAmount,
-      remainingAmount: totalAmount - paidAmount,
+      totalAmount: total,
+      paidAmount: paid,
+      remainingAmount: total - paid,
     };
   }, [sale, selectedItems]);
 }
