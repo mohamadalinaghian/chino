@@ -342,7 +342,8 @@ class PaymentDetailExtendedSchema(Schema):
     )
     # Keep covered_item_ids for backwards compatibility
     covered_item_ids: List[int] = Field(
-        default_factory=list, description="SaleItem IDs covered by this payment (deprecated)"
+        default_factory=list,
+        description="SaleItem IDs covered by this payment (deprecated)",
     )
 
 

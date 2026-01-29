@@ -9,8 +9,6 @@
 
 from typing import Dict, List, Set
 
-from django.db.models import Sum
-
 from api.schemas.sale_schemas import (
     AddPaymentsRequest,
     AddPaymentsResponse,
@@ -32,7 +30,7 @@ from api.schemas.sale_schemas import (
 from api.security.auth import jwt_auth
 from apps.inventory.models import Product, Table
 from apps.menu.models import Menu
-from apps.sale.models import Sale, SaleItem, SalePaymentItem
+from apps.sale.models import Sale, SaleItem
 from apps.sale.policies import (
     can_cancel_sale,
     can_modify_sale,

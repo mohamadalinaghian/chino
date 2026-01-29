@@ -177,9 +177,9 @@ class CreateDailyReportService:
             cogs=Coalesce(
                 Sum(
                     F("quantity") * F("material_cost"),
-                    output_field=models.DecimalField()
+                    output_field=models.DecimalField(),
                 ),
-                Decimal("0")
+                Decimal("0"),
             )
         )["cogs"]
 

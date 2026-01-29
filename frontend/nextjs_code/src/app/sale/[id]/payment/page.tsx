@@ -1,5 +1,5 @@
 'use client';
-
+import { SaleHeader } from '@/components/sale/salePayment/SaleHeader/SaleHeader';
 import { useRouter, useParams } from 'next/navigation';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useToast } from '@/components/common/Toast';
@@ -10,6 +10,8 @@ import { PaymentMethod, ISaleItemDetail, IAddPaymentInput, TaxDiscountType } fro
 import { fetchSaleDetails, fetchBankAccounts, addPaymentsToSale, voidPayment } from '@/service/sale';
 import { authenticatedFetchJSON } from '@/libs/auth/authFetch';
 import { CS_API_URL, API_ENDPOINTS } from '@/libs/constants';
+import { useSaleSummary } from '@/hooks/payment/useSaleSummary';
+import { SaleItemsColumn } from '@/components/sale/salePayment/SaleItemColumn/SaleItemColumn';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -206,52 +208,8 @@ export default function PaymentPage() {
     }, 0);
   }, [splits]);
 
-  // Summary calculations with new formula:
-  // Total = ((unselected items + extras) + 10%) + (amount paid) + (selected items with tax/discount)
-  const summaryCalculations = useMemo(() => {
-    if (!sale) return { subtotal: 0, taxDefault: 0, totalAmount: 0, paidAmount: 0, remainingAmount: 0 };
+  const summaryCalculations = useSaleSummary(sale, selectedItems);
 
-    // Calculate total of all unpaid items (items that haven't been paid for yet)
-    const allUnpaidItemsTotal = sale.items.reduce((sum, item) => {
-      const itemTotal = item.quantity_remaining * item.unit_price;
-      const extrasTotal = item.extras?.reduce((eSum, e) => eSum + e.unit_price * e.quantity, 0) || 0;
-      // Proportional extras based on remaining quantity
-      const extrasProportional = item.quantity > 0 ? (extrasTotal * item.quantity_remaining / item.quantity) : 0;
-      return sum + itemTotal + extrasProportional;
-    }, 0);
-
-    // Calculate total of unselected items (unpaid items that are NOT currently selected)
-    const unselectedItemsTotal = sale.items.reduce((sum, item) => {
-      const selectedItem = selectedItems.find(s => s.itemId === item.id);
-      const selectedQty = selectedItem ? selectedItem.quantity : 0;
-      const unselectedQty = item.quantity_remaining - selectedQty;
-
-      if (unselectedQty <= 0) return sum;
-
-      const itemTotal = unselectedQty * item.unit_price;
-      const extrasTotal = item.extras?.reduce((eSum, e) => eSum + e.unit_price * e.quantity, 0) || 0;
-      const extrasProportional = item.quantity > 0 ? (extrasTotal * unselectedQty / item.quantity) : 0;
-      return sum + itemTotal + extrasProportional;
-    }, 0);
-
-    // Add 10% tax to unselected items (default tax for items not yet configured)
-    const unselectedWithTax = unselectedItemsTotal + Math.round(unselectedItemsTotal * 0.10);
-
-    // Amount already paid from backend
-    const paidAmount = sale.total_paid;
-
-    // Total = (unselected items + 10%) + (amount paid) + (selected items with configured tax/discount)
-    const totalAmount = unselectedWithTax + paidAmount + selectedItemsWithTaxDiscount;
-
-    // Remaining amount = Total - Paid
-    const remainingAmount = Math.max(0, totalAmount - paidAmount);
-
-    // For display purposes
-    const subtotal = allUnpaidItemsTotal;
-    const taxDefault = Math.round(unselectedItemsTotal * 0.10);
-
-    return { subtotal, taxDefault, totalAmount, paidAmount, remainingAmount };
-  }, [sale, selectedItems, selectedItemsWithTaxDiscount]);
 
   // ── Split Payment Management ──────────────────────────────────────────────
   function createDefaultSplit(id: number): SplitPayment {
@@ -584,48 +542,13 @@ export default function PaymentPage() {
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* HEADER */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      <header
-        className="flex-shrink-0 px-4 py-3 border-b"
-        style={{ backgroundColor: THEME_COLORS.bgSecondary, borderColor: THEME_COLORS.border }}
-      >
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.back()}
-              className="px-4 py-2 rounded-xl font-medium transition-all hover:opacity-80"
-              style={{ backgroundColor: THEME_COLORS.surface, color: THEME_COLORS.text }}
-            >
-              بازگشت
-            </button>
-            <div>
-              <h1 className="text-xl font-bold" style={{ color: THEME_COLORS.text }}>
-                {sale.guest_name || sale.table_name || `فروش #${saleId}`}
-              </h1>
-              <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
-                {sale.table_name && <span className="ml-2">میز: {sale.table_name}</span>}
-                {sale.opened_at && (
-                  <span>
-                    {new Date(sale.opened_at).toLocaleDateString('fa-IR')} - {new Date(sale.opened_at).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
+      <SaleHeader
+        saleId={saleId}
+        sale={sale}
+        summaryCalculations={summaryCalculations}
+        THEME_COLORS={THEME_COLORS}
+      />
 
-          {/* Status Summary - Using new calculation */}
-          <div className="flex items-center gap-4">
-            <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
-              جمع: <span className="font-bold number-display" style={{ color: THEME_COLORS.accent }}>{formatPersianMoney(summaryCalculations.totalAmount)}</span>
-            </div>
-            <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
-              پرداخت شده: <span className="font-bold number-display" style={{ color: THEME_COLORS.green }}>{formatPersianMoney(summaryCalculations.paidAmount)}</span>
-            </div>
-            <div className="text-sm" style={{ color: THEME_COLORS.subtext }}>
-              مانده: <span className="font-bold number-display" style={{ color: THEME_COLORS.orange }}>{formatPersianMoney(summaryCalculations.remainingAmount)}</span>
-            </div>
-          </div>
-        </div>
-      </header>
 
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* MAIN 3-COLUMN LAYOUT */}
@@ -636,164 +559,17 @@ export default function PaymentPage() {
           {/* ─────────────────────────────────────────────────────────────── */}
           {/* RIGHT COLUMN: Sale Items */}
           {/* ─────────────────────────────────────────────────────────────── */}
-          <div className="lg:col-span-4 flex flex-col overflow-hidden rounded-xl" style={{ backgroundColor: THEME_COLORS.bgSecondary }}>
-            <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: THEME_COLORS.border }}>
-              <div>
-                <h2 className="font-bold" style={{ color: THEME_COLORS.text }}>
-                  اقلام برای پرداخت ({unpaidItems.length})
-                </h2>
-                {partiallyPaidItems.length > 0 && (
-                  <div className="text-xs mt-0.5" style={{ color: THEME_COLORS.orange }}>
-                    {partiallyPaidItems.length} قلم پرداخت ناقص
-                  </div>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={selectAllItems}
-                  className="px-3 py-1 rounded-lg text-xs font-medium"
-                  style={{ backgroundColor: THEME_COLORS.accent, color: '#fff' }}
-                >
-                  انتخاب همه
-                </button>
-                {selectedItems.length > 0 && (
-                  <button
-                    onClick={clearSelection}
-                    className="px-3 py-1 rounded-lg text-xs font-medium"
-                    style={{ backgroundColor: THEME_COLORS.red, color: '#fff' }}
-                  >
-                    پاک کردن
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-3 space-y-2">
-              {unpaidItems.map(item => {
-                const isSelected = selectedItems.some(s => s.itemId === item.id);
-                const selectedQty = selectedItems.find(s => s.itemId === item.id)?.quantity || 0;
-                const isAnimating = animatingItemId === item.id;
-                const itemTotal = item.quantity_remaining * item.unit_price;
-                const extrasTotal = item.extras?.reduce((sum, e) => sum + e.unit_price * e.quantity, 0) || 0;
-                const extrasProportional = item.quantity > 0 ? (extrasTotal * item.quantity_remaining / item.quantity) : 0;
-                // Check if this item is partially paid
-                const isPartiallyPaid = item.quantity_paid > 0 && item.quantity_remaining > 0;
-                const paidPercentage = item.quantity > 0 ? Math.round((item.quantity_paid / item.quantity) * 100) : 0;
-
-                return (
-                  <div
-                    key={item.id}
-                    onClick={() => toggleItemSelection(item)}
-                    className={`rounded-xl cursor-pointer transition-all duration-300 overflow-hidden ${isAnimating ? 'animate-slide-to-center' : ''
-                      } ${isSelected ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-800' : 'hover:scale-[1.01]'}`}
-                    style={{
-                      backgroundColor: isSelected ? `${THEME_COLORS.accent}15` : THEME_COLORS.surface,
-                      border: `2px solid ${isSelected ? THEME_COLORS.accent : isPartiallyPaid ? THEME_COLORS.orange : THEME_COLORS.border}`,
-                    }}
-                  >
-                    {/* Partially paid indicator banner */}
-                    {isPartiallyPaid && (
-                      <div
-                        className="px-3 py-1 text-xs font-bold flex items-center justify-between"
-                        style={{ backgroundColor: `${THEME_COLORS.orange}20`, color: THEME_COLORS.orange }}
-                      >
-                        <span>پرداخت ناقص - {paidPercentage}% پرداخت شده</span>
-                        <span className="number-display">{item.quantity_paid} از {item.quantity}</span>
-                      </div>
-                    )}
-
-                    <div className="p-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="font-bold" style={{ color: THEME_COLORS.text }}>
-                            {item.product_name}
-                          </div>
-                          <div className="text-sm mt-1" style={{ color: THEME_COLORS.subtext }}>
-                            {item.quantity_remaining > 1 ? (
-                              <span>{formatPersianMoney(item.unit_price)} × {item.quantity_remaining} باقیمانده</span>
-                            ) : (
-                              <span>{formatPersianMoney(item.unit_price)}</span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="text-left">
-                          <div className="font-bold text-lg" style={{ color: isSelected ? THEME_COLORS.green : THEME_COLORS.text }}>
-                            {formatPersianMoney(itemTotal + extrasProportional)}
-                          </div>
-                          {isPartiallyPaid && !isSelected && (
-                            <div className="text-xs" style={{ color: THEME_COLORS.orange }}>
-                              مانده
-                            </div>
-                          )}
-                          {isSelected && item.quantity_remaining > 1 && (
-                            <div className="flex items-center gap-1 mt-1">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  updateItemQuantity(item.id, selectedQty - 1, item);
-                                }}
-                                className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold"
-                                style={{ backgroundColor: THEME_COLORS.red, color: '#fff' }}
-                              >
-                                -
-                              </button>
-                              <span className="w-6 text-center font-bold" style={{ color: THEME_COLORS.text }}>
-                                {selectedQty}
-                              </span>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  updateItemQuantity(item.id, selectedQty + 1, item);
-                                }}
-                                disabled={selectedQty >= item.quantity_remaining}
-                                className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold disabled:opacity-50"
-                                style={{ backgroundColor: THEME_COLORS.green, color: '#fff' }}
-                              >
-                                +
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Extras */}
-                      {item.extras && item.extras.length > 0 && (
-                        <div className="mt-2 pt-2 border-t" style={{ borderColor: THEME_COLORS.border }}>
-                          <div className="text-xs font-bold mb-1" style={{ color: THEME_COLORS.purple }}>
-                            افزودنی‌ها:
-                          </div>
-                          {item.extras.map(extra => (
-                            <div key={extra.id} className="flex justify-between text-xs" style={{ color: THEME_COLORS.subtext }}>
-                              <span>{extra.product_name} {extra.quantity > 1 ? `×${extra.quantity}` : ''}</span>
-                              <span className="number-display">+{formatPersianMoney(extra.unit_price * extra.quantity)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Selection indicator */}
-                    {isSelected && (
-                      <div
-                        className="px-3 py-1 text-center text-xs font-bold"
-                        style={{ backgroundColor: THEME_COLORS.accent, color: '#fff' }}
-                      >
-                        انتخاب شده
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {unpaidItems.length === 0 && (
-                <div className="text-center py-8" style={{ color: THEME_COLORS.subtext }}>
-                  همه اقلام پرداخت شده‌اند
-                </div>
-              )}
-            </div>
-          </div>
-
+          <SaleItemsColumn
+            unpaidItems={unpaidItems}
+            partiallyPaidItems={partiallyPaidItems}
+            selectedItems={selectedItems}
+            animatingItemId={animatingItemId}
+            THEME_COLORS={THEME_COLORS}
+            selectAllItems={selectAllItems}
+            clearSelection={clearSelection}
+            toggleItemSelection={toggleItemSelection}
+            updateItemQuantity={updateItemQuantity}
+          />
           {/* ─────────────────────────────────────────────────────────────── */}
           {/* CENTER COLUMN: Payment Controls */}
           {/* ─────────────────────────────────────────────────────────────── */}

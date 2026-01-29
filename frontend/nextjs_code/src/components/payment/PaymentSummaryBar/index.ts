@@ -1,1 +1,0 @@
-export { PaymentSummaryBar } from './PaymentSummaryBar';

@@ -371,7 +371,11 @@ class PaymentService:
         # This updates the sale's total_amount so balance_due is correct
         if payment_input.tax or payment_input.discount:
             # Get selected items for calculation
-            selected_items = [data["item"] for data in selected_item_data] if selected_item_data else []
+            selected_items = (
+                [data["item"] for data in selected_item_data]
+                if selected_item_data
+                else []
+            )
 
             if payment_input.tax:
                 tax_calculated = PaymentService._calculate_tax_discount(
@@ -383,10 +387,14 @@ class PaymentService:
                 discount_calculated = PaymentService._calculate_tax_discount(
                     payment_input.discount, sale, selected_items
                 )
-                sale.discount_amount = (sale.discount_amount or Decimal("0")) + discount_calculated
+                sale.discount_amount = (
+                    sale.discount_amount or Decimal("0")
+                ) + discount_calculated
 
             # Recalculate total_amount: subtotal - discount + tax
-            sale.total_amount = sale.subtotal_amount - sale.discount_amount + sale.tax_amount
+            sale.total_amount = (
+                sale.subtotal_amount - sale.discount_amount + sale.tax_amount
+            )
             sale.save(skip_validation=True)
 
         # Create payment

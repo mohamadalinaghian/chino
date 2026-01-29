@@ -15,7 +15,7 @@ from typing import List, Optional
 
 from api.security.auth import jwt_auth
 from apps.sale.models import SalePayment
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
 from ninja import Router, Schema
 
@@ -296,7 +296,8 @@ def bulk_confirm_card_transfers(request, payload: BulkTransferRequest):
     return BulkTransferResponse(
         success_count=success_count,
         failed_count=failed_count,
-        message=f"{success_count} انتقال تایید شد" + (f"، {failed_count} انتقال تایید نشد" if failed_count else ""),
+        message=f"{success_count} انتقال تایید شد"
+        + (f"، {failed_count} انتقال تایید نشد" if failed_count else ""),
     )
 
 
@@ -342,5 +343,6 @@ def bulk_unconfirm_card_transfers(request, payload: BulkTransferRequest):
     return BulkTransferResponse(
         success_count=success_count,
         failed_count=failed_count,
-        message=f"تایید {success_count} انتقال لغو شد" + (f"، {failed_count} انتقال لغو نشد" if failed_count else ""),
+        message=f"تایید {success_count} انتقال لغو شد"
+        + (f"، {failed_count} انتقال لغو نشد" if failed_count else ""),
     )
