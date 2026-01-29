@@ -12,8 +12,9 @@ import { authenticatedFetchJSON } from '@/libs/auth/authFetch';
 import { CS_API_URL, API_ENDPOINTS } from '@/libs/constants';
 import { useSaleSummary } from '@/hooks/payment/useSaleSummary';
 import { SaleItemsColumn } from '@/components/sale/salePayment/SaleItemColumn/SaleItemColumn';
+import { useItemSelection } from '@/hooks/payment/useItemSelection';
 
-
+import type { SaleData, BankAccount, POSAccount, SplitPayment, PaymentRecord } from '@/types/payment';
 // ═══════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -34,7 +35,6 @@ export default function PaymentPage() {
   const [posAccount, setPosAccount] = useState<POSAccount | null>(null);
 
   // Item selection
-  const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [animatingItemId, setAnimatingItemId] = useState<number | null>(null);
 
   // Split payments
@@ -112,16 +112,40 @@ export default function PaymentPage() {
     if (!sale) return [];
     return sale.items.filter(item => item.quantity_paid > 0);
   }, [sale]);
+  //
+  // ── Item Selection ────────────────────────────────────────────────────────
+  const {
+    selectedItems,
+    toggleItemSelection,
+    updateItemQuantity,
+    selectAllItems,
+    clearSelection,
+  } = useItemSelection({
+    unpaidItems,
+  });
 
   const selectedItemsTotal = useMemo(() => {
+    if (!sale) return 0;
+
     return selectedItems.reduce((sum, sel) => {
-      const item = sel.item;
+      const item = sale.items.find(i => i.id === sel.itemId);
+      if (!item) return sum;
+
       const baseTotal = sel.quantity * item.unit_price;
-      const extrasTotal = item.extras?.reduce((eSum, e) => eSum + e.unit_price * e.quantity, 0) || 0;
-      const extrasProportional = item.quantity > 0 ? (extrasTotal * sel.quantity / item.quantity) : 0;
+
+      const extrasTotal = item.extras.reduce(
+        (eSum, e) => eSum + e.unit_price * e.quantity,
+        0
+      );
+
+      const extrasProportional =
+        item.quantity > 0
+          ? (extrasTotal * sel.quantity) / item.quantity
+          : 0;
+
       return sum + baseTotal + extrasProportional;
     }, 0);
-  }, [selectedItems]);
+  }, [sale, selectedItems]);
 
   const totalLockedAmount = useMemo(() => {
     return splits.filter(s => s.isLocked).reduce((sum, s) => {
@@ -214,54 +238,6 @@ export default function PaymentPage() {
 
   const updateSplit = useCallback((splitId: number, updates: Partial<SplitPayment>) => {
     setSplits(prev => prev.map(s => s.id === splitId ? { ...s, ...updates } : s));
-  }, []);
-
-  // ── Item Selection ────────────────────────────────────────────────────────
-  const toggleItemSelection = useCallback((item: ISaleItemDetail) => {
-    const maxQty = item.quantity_remaining;
-    const existing = selectedItems.find(s => s.itemId === item.id);
-
-    // Trigger animation
-    setAnimatingItemId(item.id);
-    setTimeout(() => setAnimatingItemId(null), 400);
-
-    if (existing) {
-      // Deselect
-      setSelectedItems(prev => prev.filter(s => s.itemId !== item.id));
-    } else {
-      // Select with full quantity
-      setSelectedItems(prev => [...prev, { itemId: item.id, quantity: maxQty, item }]);
-    }
-  }, [selectedItems]);
-
-  const updateItemQuantity = useCallback((itemId: number, quantity: number, item: ISaleItemDetail) => {
-    const maxQty = item.quantity_remaining;
-    const newQty = Math.max(0, Math.min(maxQty, quantity));
-
-    if (newQty === 0) {
-      setSelectedItems(prev => prev.filter(s => s.itemId !== itemId));
-    } else {
-      setSelectedItems(prev => {
-        const existing = prev.find(s => s.itemId === itemId);
-        if (existing) {
-          return prev.map(s => s.itemId === itemId ? { ...s, quantity: newQty } : s);
-        } else {
-          return [...prev, { itemId, quantity: newQty, item }];
-        }
-      });
-    }
-  }, []);
-
-  const selectAllItems = useCallback(() => {
-    setSelectedItems(unpaidItems.map(item => ({
-      itemId: item.id,
-      quantity: item.quantity_remaining,
-      item,
-    })));
-  }, [unpaidItems]);
-
-  const clearSelection = useCallback(() => {
-    setSelectedItems([]);
   }, []);
 
   // ── Payment Submission ────────────────────────────────────────────────────
@@ -520,15 +496,21 @@ export default function PaymentPage() {
               {/* Selected items mini-list */}
               {selectedItems.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {selectedItems.map(sel => (
-                    <div
-                      key={sel.itemId}
-                      className="px-2 py-1 rounded-lg text-xs font-medium animate-appear-selection"
-                      style={{ backgroundColor: `${THEME_COLORS.accent}20`, color: THEME_COLORS.accent }}
-                    >
-                      {sel.item.product_name} {sel.quantity > 1 ? `×${sel.quantity}` : ''}
-                    </div>
-                  ))}
+                  {selectedItems.map(sel => {
+                    const item = sale?.items.find(i => i.id === sel.itemId);
+                    if (!item) return null;
+
+                    return (
+                      <div
+                        key={sel.itemId}
+                        className="px-2 py-1 rounded-lg text-xs font-medium animate-appear-selection"
+                        style={{ backgroundColor: `${THEME_COLORS.accent}20`, color: THEME_COLORS.accent }}
+                      >
+                        {item.product_name}
+                        {sel.quantity > 1 && ` ×${sel.quantity}`}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

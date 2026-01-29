@@ -1,5 +1,5 @@
 // src/types/payment.ts
-
+import { PaymentMethod, ISaleItemDetail } from "./sale";
 export interface SaleData {
   id: number;
   state: string;
@@ -54,8 +54,7 @@ export interface POSAccount {
 export interface SelectedItem {
   itemId: number;
   quantity: number;
-  taxPercent: number;          // ← added & required (fixes your main bug)
-  item?: ISaleItemDetail;      // optional – only if you really need the full item reference
+  taxPercent: number;
 }
 
 /**
@@ -72,28 +71,3 @@ export interface SplitPayment {
   isLocked: boolean;
   tipAmount: number;
 }
-
-// ───────────────────────────────────────────────
-// Missing types referenced above – define them here
-// (or move to separate file if they are used elsewhere)
-// ───────────────────────────────────────────────
-
-export interface ISaleItemDetail {
-  id: number;
-  product_name: string;
-  unit_price: number;
-  quantity_remaining: number;
-  quantity?: number;               // original total quantity (if needed)
-  extras?: Array<{
-    product_name?: string;
-    unit_price: number;
-    quantity: number;
-  }>;
-  tax_percent?: number;            // ← source of default tax rate
-  // Add any other fields you actually use from items
-}
-
-export type PaymentMethod =
-  | 'cash'
-  | 'bank_transfer'
-  | 'pos'
