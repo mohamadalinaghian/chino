@@ -9,7 +9,7 @@ interface SaleItemsColumnProps {
   selectedItems: Array<{ itemId: string; quantity: number }>;
   animatingItemId?: string | null;
   toggleItemSelection: (item: any) => void;
-  updateItemQuantity: (itemId: string, qty: number, item: any) => void;
+  updateItemQuantity: (item: any, qty: number) => void;
   selectAllItems: () => void;
   clearSelection: () => void;
   THEME_COLORS: {
@@ -176,7 +176,7 @@ export function SaleItemsColumn({
                         onClick={(e) => {
                           e.stopPropagation();
                           if (selectedQty > 1) {
-                            updateItemQuantity(item.id, selectedQty - 1, item);
+                            updateItemQuantity(item, selectedQty - 1, item);
                           }
                         }}
                         className="w-10 h-10 rounded-lg bg-gray-200/70 dark:bg-gray-700/70 hover:bg-gray-300/70 dark:hover:bg-gray-600/70 active:scale-95 transition-all flex items-center justify-center text-lg font-bold disabled:opacity-40"
@@ -193,7 +193,7 @@ export function SaleItemsColumn({
                         onClick={(e) => {
                           e.stopPropagation();
                           if (selectedQty < item.quantity_remaining) {
-                            updateItemQuantity(item.id, selectedQty + 1, item);
+                            updateItemQuantity(item, selectedQty + 1, item);
                           }
                         }}
                         className="w-10 h-10 rounded-lg bg-gray-200/70 dark:bg-gray-700/70 hover:bg-gray-300/70 dark:hover:bg-gray-600/70 active:scale-95 transition-all flex items-center justify-center text-lg font-bold disabled:opacity-40"
