@@ -1,6 +1,7 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { formatPersianMoney } from '@/utils/persianUtils';
+import { ArrowLeft } from 'lucide-react';
 
 interface SaleHeaderProps {
   saleId: string | number;
@@ -17,7 +18,7 @@ interface SaleHeaderProps {
     accent: string;
     green: string;
     orange: string;
-    surface?: string;     // ← optional, used in other component
+    surface?: string;
   };
 }
 
@@ -42,10 +43,11 @@ export function SaleHeader({
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.back()}
-            className="px-4 py-2 text-sm font-medium rounded-lg border transition-all duration-200 hover:bg-white/10 hover:shadow-sm active:scale-95 flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium rounded-lg border transition-all duration-200 hover:bg-white/10 dark:hover:bg-black/10 hover:shadow-sm active:scale-95 flex items-center gap-2"
             style={{ borderColor: THEME_COLORS.border, color: THEME_COLORS.text }}
           >
-            ← بازگشت
+            <ArrowLeft className="w-4 h-4" />
+            بازگشت
           </button>
 
           <h1
@@ -94,7 +96,7 @@ function Summary({ label, value, color, THEME_COLORS }: SummaryProps) {
     <div
       className="px-4 py-2.5 rounded-xl text-sm font-medium shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02] active:scale-95 min-w-[140px] text-center"
       style={{
-        backgroundColor: `${color}15`, // 15 = ~9% opacity
+        backgroundColor: `${color}15`,
         color: THEME_COLORS.text,
         border: `1px solid ${color}30`,
       }}
