@@ -9,7 +9,8 @@ export interface SelectedItem {
 
 export function useSaleSummary(
   sale: any | null,
-  selectedItems: SelectedItem[]
+  selectedItems: SelectedItem[],
+  paidAmount: number
 ) {
   return useMemo(() => {
     if (!sale?.items?.length) {
@@ -48,16 +49,19 @@ export function useSaleSummary(
       }
     }
 
-    const paid = sale.paid_amount ?? 0;
-    const total = unselectedBase * 1.1 + selectedBase + selectedTax;
-
+    const paid = paidAmount;
+    const unselectedTax = unselectedBase * 0.1;
+    const total =
+      unselectedBase +
+      unselectedTax +
+      selectedBase +
+      selectedTax;
     // Optional: console.log for debugging
     // console.log('[useSaleSummary]', { total, paid, remaining: total - paid, selectedCount: selectedItems.length });
-
     return {
       totalAmount: total,
       paidAmount: paid,
       remainingAmount: total - paid,
     };
-  }, [sale, selectedItems]);
+  }, [sale, selectedItems, paidAmount]);
 }

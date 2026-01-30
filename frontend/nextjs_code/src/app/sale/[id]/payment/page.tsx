@@ -31,6 +31,7 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [sale, setSale] = useState<SaleData | null>(null);
+  const [paidAmount, setPaidAmount] = useState<number>(0);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [posAccount, setPosAccount] = useState<POSAccount | null>(null);
 
@@ -71,6 +72,8 @@ export default function PaymentPage() {
         ...saleData,
         payments: saleData.payments || [],
       } as SaleData);
+
+      setPaidAmount(saleData.total_paid ?? 0);
 
       setBankAccounts(accounts as BankAccount[]);
       if (pos) setPosAccount(pos);
@@ -164,7 +167,11 @@ export default function PaymentPage() {
     }, 0);
   }, [splits]);
 
-  const summaryCalculations = useSaleSummary(sale, selectedItems);
+  const summaryCalculations = useSaleSummary(
+    sale,
+    selectedItems,
+    paidAmount
+  );
 
 
   // ── Split Payment Management ──────────────────────────────────────────────

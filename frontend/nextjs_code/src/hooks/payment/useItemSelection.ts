@@ -10,6 +10,7 @@ interface UseItemSelectionResult {
   selectedItems: SelectedItem[];
   toggleItemSelection: (item: ISaleItemDetail) => void;
   updateItemQuantity: (item: ISaleItemDetail, quantity: number) => void;
+  updateItemTax: (itemId: number, taxPercent: number) => void;
   selectAllItems: () => void;
   clearSelection: () => void;
 }
@@ -32,7 +33,7 @@ export function useItemSelection(
       return [
         ...prev,
         {
-          itemId: item.id,
+          itemId: Number(item.id),
           quantity: item.quantity_remaining,
           taxPercent: 10,
         },
@@ -45,18 +46,20 @@ export function useItemSelection(
       const maxQty = item.quantity_remaining;
       const newQty = Math.max(0, Math.min(maxQty, quantity));
 
+      const id = Number(item.id);
       setSelectedItems(prev => {
         if (newQty === 0) {
-          return prev.filter(s => s.itemId !== item.id);
+
+          return prev.filter(s => s.itemId !== id);
         }
 
-        const existing = prev.find(s => s.itemId === item.id);
+        const existing = prev.find(s => s.itemId === id);
 
         if (!existing) {
           return [
             ...prev,
             {
-              itemId: item.id,
+              itemId: Number(item.id),
               quantity: newQty,
               taxPercent: 10,
             },
@@ -64,7 +67,7 @@ export function useItemSelection(
         }
 
         return prev.map(s =>
-          s.itemId === item.id ? { ...s, quantity: newQty } : s
+          s.itemId === id ? { ...s, quantity: newQty } : s
         );
       });
     },
@@ -74,7 +77,7 @@ export function useItemSelection(
   const selectAllItems = useCallback(() => {
     setSelectedItems(
       unpaidItems.map(item => ({
-        itemId: item.id,
+        itemId: Number(item.id),
         quantity: item.quantity_remaining,
         taxPercent: 10,
       }))
@@ -85,10 +88,22 @@ export function useItemSelection(
     setSelectedItems([]);
   }, []);
 
+  const updateItemTax = useCallback(
+    (itemId: number, taxPercent: number) => {
+      setSelectedItems(prev =>
+        prev.map(s =>
+          s.itemId === itemId ? { ...s, taxPercent } : s
+        )
+      );
+    },
+    []
+  );
+
   return {
     selectedItems,
     toggleItemSelection,
     updateItemQuantity,
+    updateItemTax,
     selectAllItems,
     clearSelection,
   };
