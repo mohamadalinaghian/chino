@@ -1,155 +1,108 @@
 /**
- * Payment Data Loading Hook
- * Handles fetching sale details and account information
+ * usePaymentData Hook (FIXED)
+ *
+ * Responsibilities:
+ * - Fetch sale details, bank accounts, POS account
+ * - Handle loading and error states safely
+ * - Avoid infinite fetch loops caused by unstable callbacks
+ *
+ * Design notes:
+ * - onError is stored in a ref to avoid effect dependency loops
+ * - loadData is stable and depends ONLY on saleId
+ * - Guards prevent execution with invalid saleId
  */
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { ISaleDetailResponse, IBankAccount } from '@/types/sale';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { fetchSaleDetails, fetchBankAccounts } from '@/service/sale';
 import { authenticatedFetchJSON } from '@/libs/auth/authFetch';
 import { CS_API_URL, API_ENDPOINTS } from '@/libs/constants';
-import { IPOSAccount, PaymentSnapshot, PaymentRecord } from './types';
+import type { SaleData, BankAccount, POSAccount } from '@/types/payment';
 
-interface UsePaymentDataOptions {
+interface UsePaymentDataProps {
   saleId: number;
-  onError?: (message: string) => void;
-  onSaleLoaded?: (sale: ISaleDetailResponse) => void;
+  onError: (message: string) => void;
 }
 
 interface UsePaymentDataReturn {
+  sale: SaleData | null;
+  bankAccounts: BankAccount[];
+  posAccount: POSAccount | null;
   loading: boolean;
-  sale: ISaleDetailResponse | null;
-  bankAccounts: IBankAccount[];
-  posAccount: IPOSAccount | null;
-  snapshot: PaymentSnapshot | null;
-  payments: PaymentRecord[];
-  isViewOnly: boolean;
-  loadSaleData: () => Promise<void>;
+  refreshData: () => Promise<void>;
 }
 
-/**
- * Hook for loading and managing payment-related data
- * Handles sale details, bank accounts, and POS account
- */
 export function usePaymentData({
   saleId,
   onError,
-  onSaleLoaded,
-}: UsePaymentDataOptions): UsePaymentDataReturn {
-  const [loading, setLoading] = useState(true);
-  const [sale, setSale] = useState<ISaleDetailResponse | null>(null);
-  const [bankAccounts, setBankAccounts] = useState<IBankAccount[]>([]);
-  const [posAccount, setPosAccount] = useState<IPOSAccount | null>(null);
+}: UsePaymentDataProps): UsePaymentDataReturn {
+  const [sale, setSale] = useState<SaleData | null>(null);
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const [posAccount, setPosAccount] = useState<POSAccount | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  // Use refs for callbacks to avoid infinite loops
-  // This is a common pattern to handle callback dependencies
+  /**
+   * Store onError in a ref to prevent dependency loops.
+   * This allows the hook to call the latest callback
+   * without re-triggering effects.
+   */
   const onErrorRef = useRef(onError);
-  const onSaleLoadedRef = useRef(onSaleLoaded);
 
   useEffect(() => {
     onErrorRef.current = onError;
-    onSaleLoadedRef.current = onSaleLoaded;
-  });
-
-  // Track if initial load has happened
-  const initialLoadDone = useRef(false);
+  }, [onError]);
 
   /**
-   * Load sale details from API
+   * Core data loader.
+   * Stable across renders unless saleId changes.
    */
-  const loadSaleData = useCallback(async () => {
+  const loadData = useCallback(async () => {
+    if (!saleId || saleId <= 0 || Number.isNaN(saleId)) {
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      setLoading(true);
-      const saleData = await fetchSaleDetails(saleId);
-      setSale(saleData);
-      onSaleLoadedRef.current?.(saleData);
+      const [saleData, accounts, pos] = await Promise.all([
+        fetchSaleDetails(saleId),
+        fetchBankAccounts(),
+        authenticatedFetchJSON<POSAccount>(
+          `${CS_API_URL}${API_ENDPOINTS.POS_ACCOUNT}`
+        ).catch(() => null), // POS account is optional
+      ]);
+
+      setSale({
+        ...saleData,
+        payments: saleData.payments ?? [],
+      });
+
+      setBankAccounts(accounts as BankAccount[]);
+      setPosAccount(pos);
     } catch (err) {
-      onErrorRef.current?.(err instanceof Error ? err.message : 'خطا در بارگذاری فروش');
+      const message =
+        err instanceof Error ? err.message : 'خطا در بارگذاری اطلاعات';
+      onErrorRef.current(message);
     } finally {
       setLoading(false);
     }
   }, [saleId]);
 
   /**
-   * Load bank accounts and POS account
+   * Initial load + reload on saleId change only.
    */
-  const loadAccounts = useCallback(async () => {
-    try {
-      const [accounts, pos] = await Promise.all([
-        fetchBankAccounts(),
-        authenticatedFetchJSON<IPOSAccount>(`${CS_API_URL}${API_ENDPOINTS.POS_ACCOUNT}`).catch(() => null),
-      ]);
-      setBankAccounts(accounts);
-      if (pos) setPosAccount(pos);
-    } catch (err) {
-      console.error('Error loading accounts:', err);
-    }
-  }, []);
-
-  // Initial data load - only runs once
   useEffect(() => {
-    if (!initialLoadDone.current) {
-      initialLoadDone.current = true;
-      loadSaleData();
-      loadAccounts();
+    if (!saleId || saleId <= 0 || Number.isNaN(saleId)) {
+      return;
     }
-  }, [loadSaleData, loadAccounts]);
 
-  /**
-   * Create frozen snapshot from sale data
-   */
-  const snapshot: PaymentSnapshot | null = useMemo(() => {
-    if (!sale) return null;
-    return {
-      saleId: sale.id,
-      totalAmount: sale.total_amount,
-      taxAmount: sale.tax_amount,
-      discountAmount: sale.discount_amount,
-      subtotalAmount: sale.subtotal_amount,
-      totalPaid: sale.total_paid,
-      remainingDue: sale.balance_due,
-      items: sale.items,
-      isFullyPaid: sale.is_fully_paid,
-      paymentStatus: sale.payment_status,
-      saleState: sale.state,
-    };
-  }, [sale]);
-
-  /**
-   * Transform payment records for display
-   */
-  const payments: PaymentRecord[] = useMemo(() => {
-    if (!sale?.payments) return [];
-    return sale.payments.map(p => ({
-      id: p.id,
-      method: p.method,
-      amount: p.amount_applied,
-      tipAmount: p.tip_amount,
-      receivedBy: p.received_by_name,
-      receivedAt: p.received_at,
-      status: p.status as 'ACTIVE' | 'VOID',
-      accountInfo: p.destination_card_number
-        ? `${p.destination_bank_name || ''} - ${p.destination_card_number}`.trim()
-        : undefined,
-    }));
-  }, [sale]);
-
-  /**
-   * Check if payment page should be view-only
-   */
-  const isViewOnly = useMemo(() => {
-    if (!snapshot) return false;
-    return snapshot.isFullyPaid || snapshot.saleState === 'CANCELED';
-  }, [snapshot]);
+    loadData();
+  }, [saleId, loadData]);
 
   return {
-    loading,
     sale,
     bankAccounts,
     posAccount,
-    snapshot,
-    payments,
-    isViewOnly,
-    loadSaleData,
+    loading,
+    refreshData: loadData,
   };
 }

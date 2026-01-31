@@ -1,0 +1,151 @@
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Payment Page (Composition Root)
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * ROLE
+ * ----
+ * This page acts strictly as a COMPOSITION ROOT.
+ * It does NOT contain business rules, calculations, or validation logic.
+ *
+ * Its sole responsibility is to:
+ * - Coordinate domain hooks
+ * - Route data and callbacks to UI components
+ * - Orchestrate user-driven flows (selection → split → submit)
+ *
+ *
+ * WHAT THIS PAGE MUST NEVER DO
+ * ----------------------------
+ * ❌ Calculate money, tax, discounts, or totals
+ * ❌ Validate payment correctness
+ * ❌ Decide whether a sale is payable
+ * ❌ Mutate domain state directly
+ * ❌ Contain animation or timing logic
+ *
+ *
+ * DOMAIN OWNERSHIP (SINGLE SOURCES OF TRUTH)
+ * -----------------------------------------
+ * • Sale state & mutability rules
+ *   → Domain utilities / hooks (e.g. isSalePayable)
+ *
+ * • Monetary totals & balances
+ *   → useSaleSummary
+ *
+ * • Selected items & quantities
+ *   → useItemSelection
+ *
+ * • Split payment state & distribution logic
+ *   → usePaymentSplits
+ *
+ * • Payment validation
+ *   → usePaymentValidation (consumed by UI, not page)
+ *
+ * • Payment submission & side effects
+ *   → usePaymentSubmission
+ *
+ *
+ * SPLIT PAYMENT MODEL (IMPORTANT)
+ * -------------------------------
+ * - Splits are AMOUNT-BASED only (not item-based)
+ * - Locked splits represent INTENT, not fixed values
+ *
+ * Decision B (Auto-adjusting locked splits):
+ * -----------------------------------------
+ * - Any change in selected items or quantities WILL:
+ *   • Recalculate total payable amount
+ *   • Redistribute split amounts proportionally
+ *   • Preserve relative weights of locked splits
+ *
+ * Invariant enforced by domain layer:
+ *   sum(split.amounts) === selectedItemsTotal
+ *
+ * The page does NOT enforce this invariant.
+ *
+ *
+ * STATE FLOW (HIGH LEVEL)
+ * ----------------------
+ * 1. Validate route params (saleId)
+ * 2. Load sale & payment context (usePaymentData)
+ * 3. Derive payable summary (useSaleSummary)
+ * 4. Manage item selection (useItemSelection)
+ * 5. Manage split payments (usePaymentSplits)
+ * 6. Display validation feedback (via hooks)
+ * 7. Submit payments (usePaymentSubmission)
+ * 8. Refresh & reset on success
+ *
+ *
+ * UI RESPONSIBILITIES
+ * ------------------
+ * - SaleHeader:
+ *   • Displays sale metadata & summary
+ *
+ * - SaleItemsColumn:
+ *   • Displays selectable unpaid / partial items
+ *   • Owns animation logic for selection changes
+ *
+ * - PaymentSplitPanel:
+ *   • Displays and edits split amounts & methods
+ *   • Reflects validation state (does not validate)
+ *
+ * - PaymentHistory:
+ *   • Displays past payments
+ *   • Triggers void actions
+ *
+ *
+ * ERROR & FEEDBACK HANDLING
+ * ------------------------
+ * - Errors and success messages are surfaced via
+ *   a global Toast system (app-level provider).
+ *
+ * - This page only triggers notifications,
+ *   it does not own notification lifecycle.
+ *
+ *
+ * TESTING & MAINTAINABILITY GUARANTEES
+ * -----------------------------------
+ * - Page is easily snapshot-testable
+ * - Business logic is fully testable in isolation
+ * - Domain rules can evolve without UI rewrites
+ * - New payment methods or tax logic do not
+ *   require changes in this file
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+
+
+┌──────────────────────────────────────────────────────────┐
+│                      PaymentPage                         │
+│                  (Pure Composition)                      │
+│                                                          │
+│  ┌───────────────┐                                      │
+│  │ usePaymentData│─── sale, accounts, refresh            │
+│  └───────────────┘                                      │
+│            │                                             │
+│            ▼                                             │
+│  ┌────────────────┐                                    │
+│  │ useSaleSummary │◄───── ONLY monetary truth            │
+│  └────────────────┘                                    │
+│            ▲                                             │
+│            │                                             │
+│  ┌──────────────────┐        ┌──────────────────────┐  │
+│  │ useItemSelection │──────▶ │ usePaymentSplits     │  │
+│  └──────────────────┘        │ (amount-based, auto) │  │
+│            │                  └──────────────────────┘  │
+│            │                           │                  │
+│            ▼                           ▼                  │
+│  ┌──────────────────┐        ┌──────────────────────┐  │
+│  │ SaleItemsColumn  │        │ PaymentSplitPanel(s) │  │
+│  │ (owns animation) │        │ (reflects validation)│  │
+│  └──────────────────┘        └──────────────────────┘  │
+│                                                          │
+│  ┌────────────────────────────┐                         │
+│  │ usePaymentValidation       │◄── consumes summary     │
+│  └────────────────────────────┘                         │
+│                  │                                      │
+│                  ▼                                      │
+│  ┌────────────────────────────┐                         │
+│  │ usePaymentSubmission       │                         │
+│  └────────────────────────────┘                         │
+│                                                          │
+└──────────────────────────────────────────────────────────┘
