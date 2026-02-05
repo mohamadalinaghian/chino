@@ -6,7 +6,7 @@ import ItemDescription from "./ItemDescription";
 interface MenuItemProps {
   name: string;
   description: string;
-  price: number;
+  price?: number | null;
   thumbnail: string | null;
   index?: number;
 }
@@ -46,7 +46,7 @@ export default function MenuItem({
 
       <div className="flex-1 min-w-0">
         <ItemTitle>{name}</ItemTitle>
-        {price > 0 && <ItemPrice price={price} />}
+        {price && price > 0 && <ItemPrice price={price} />}
         <ItemDescription text={description} />
       </div>
     </article>

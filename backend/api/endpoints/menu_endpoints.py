@@ -58,7 +58,7 @@ def items_display(request):
         results.append(
             {
                 "name": item.name.name,  # Product.name (real text)
-                "price": item.price,
+                "price": item.price if item.price_is_visible else None,
                 "thumbnail": item.thumbnail.url if item.thumbnail else None,
                 "images": (
                     [img.file.url for img in item.images.all()]

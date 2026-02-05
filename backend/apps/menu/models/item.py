@@ -24,6 +24,7 @@ class Menu(OrderedModel):
     )
     price = models.IntegerField(verbose_name=_("Price"), null=True, blank=True)
     show_in_menu = models.BooleanField(_("Showable in menu"), default=True)
+    price_is_visible = models.BooleanField(_("Show price in menu"), default=False)
 
     description = models.CharField(
         verbose_name=_("Description"), blank=True, null=True, max_length=255
