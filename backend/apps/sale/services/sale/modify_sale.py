@@ -1,5 +1,9 @@
-"""Service for modifying OPEN sales - syncing cart state with database."""
+"""
+Service for modifying OPEN sales.
+This is the ONLY place allowed to mutate sale items.
+"""
 
+from decimal import Decimal
 from typing import Any, Dict, List, Set
 
 from apps.inventory.models import Product
@@ -15,56 +19,57 @@ from .open_sale import OpenSaleService
 
 class ModifySaleService:
     """
-    Service for reconciling the Frontend 'Cart' state with the Backend Database.
+    Reconciles frontend cart state with backend sale items.
 
-    Implements 'Smart Sync' strategy:
-    - Items with item_id → UPDATE quantity
-    - Items without item_id → CREATE new
-    - Items not in payload → DELETE (implicit)
+    HARD RULE:
+        new_subtotal_amount >= sale.subtotal_paid
     """
 
     @staticmethod
     @transaction.atomic
     def sync_items(*, sale: Sale, items_payload: List[Any], performer) -> Sale:
-        """
-        Sync sale items with frontend cart state.
-
-        Args:
-            sale: Sale instance (must be OPEN)
-            items_payload: List of SyncSaleItemInput (item_id, menu_id, quantity, extras)
-            performer: User making the modification
-
-        Returns:
-            Updated Sale instance
-
-        Raises:
-            ValidationError: If menu_id or product_id is invalid
-        """
-        # 1. Policy check
+        # --------------------------------------------------
+        # 1. Policy & state validation
+        # --------------------------------------------------
         can_modify_sale(performer, sale)
 
+        if sale.state != Sale.SaleState.OPEN:
+            raise ValidationError(_("Only OPEN sales can be modified"))
+
+        # --------------------------------------------------
+        # 2. Handle empty cart explicitly
+        # --------------------------------------------------
         if not items_payload:
-            # Empty cart - delete all items
+            if sale.subtotal_paid > Decimal("0"):
+                raise ValidationError(
+                    _(
+                        "Cannot remove all items after payments have been made "
+                        "(paid: %(paid)s)"
+                    )
+                    % {"paid": sale.subtotal_paid}
+                )
+
             sale.items.all().delete()
+            sale.subtotal_amount = Decimal("0")
             sale.modified_by = performer
-            OpenSaleService.recalculate_total(sale)
+            sale.save(update_fields=["subtotal_amount", "modified_by"])
             return sale
 
-        # 2. Bulk fetch all referenced entities (avoid N+1)
+        # --------------------------------------------------
+        # 3. Bulk fetch referenced entities
+        # --------------------------------------------------
         menu_ids: Set[int] = {item.menu_id for item in items_payload}
         product_ids: Set[int] = {
             extra.product_id for item in items_payload for extra in item.extras
         }
 
-        # Fetch and create lookup maps
         menus_map: Dict[int, Menu] = {
-            m.pk: m for m in Menu.objects.filter(id__in=menu_ids).select_related("name")
+            m.pk: m for m in Menu.objects.filter(pk__in=menu_ids)
         }
         products_map: Dict[int, Product] = {
-            p.pk: p for p in Product.objects.filter(id__in=product_ids)
+            p.pk: p for p in Product.objects.filter(pk__in=product_ids)
         }
 
-        # Validate all IDs exist
         if len(menus_map) != len(menu_ids):
             missing = menu_ids - menus_map.keys()
             raise ValidationError(
@@ -77,49 +82,74 @@ class ModifySaleService:
                 _("Invalid Product IDs: %(ids)s") % {"ids": list(missing)}
             )
 
-        # 3. Detect deletions (items not in incoming payload)
+        # --------------------------------------------------
+        # 4. Detect deletions
+        # --------------------------------------------------
         incoming_item_ids: Set[int] = {
             item.item_id for item in items_payload if item.item_id is not None
         }
 
-        # Delete parent items (and their children via CASCADE) not in payload
         sale.items.filter(parent_item__isnull=True).exclude(
             id__in=incoming_item_ids
         ).delete()
 
-        # 4. Process each item in payload
+        # --------------------------------------------------
+        # 5. Create / update items
+        # --------------------------------------------------
         for item_data in items_payload:
             if item_data.item_id:
-                # CASE A: UPDATE EXISTING
-                # Only update quantity - extras cannot be modified on existing items
+                # UPDATE quantity only
                 sale.items.filter(
-                    id=item_data.item_id, sale=sale, parent_item__isnull=True
+                    id=item_data.item_id,
+                    sale=sale,
+                    parent_item__isnull=True,
                 ).update(quantity=item_data.quantity)
 
             else:
-                # CASE B: CREATE NEW
-                menu_obj = menus_map[item_data.menu_id]
+                # CREATE new item
+                menu = menus_map[item_data.menu_id]
 
-                # Build extras DTOs
-                extra_dtos = []
-                for extra_data in item_data.extras:
-                    extra_dtos.append(
-                        OpenSaleService.ExtraInput(
-                            product=products_map[extra_data.product_id],
-                            quantity=extra_data.quantity,
-                        )
+                extras = [
+                    OpenSaleService.ExtraInput(
+                        product=products_map[extra.product_id],
+                        quantity=extra.quantity,
                     )
+                    for extra in item_data.extras
+                ]
 
-                # Build item DTO
-                item_dto = OpenSaleService.ItemInput(
-                    menu=menu_obj, quantity=item_data.quantity, extras=extra_dtos
+                item_input = OpenSaleService.ItemInput(
+                    menu=menu,
+                    quantity=item_data.quantity,
+                    extras=extras,
                 )
 
-                # Delegate to OpenSaleService for consistent creation logic
-                OpenSaleService.create_item_line(sale, item_dto)
+                OpenSaleService.create_item_line(sale, item_input)
 
-        # 5. Finalize: Update audit trail and recalculate totals
+        # --------------------------------------------------
+        # 6. Recalculate subtotal (AUTHORITATIVE)
+        # --------------------------------------------------
+        OpenSaleService.recalculate_subtotal(sale)
+        sale.refresh_from_db()
+
+        # --------------------------------------------------
+        # 7. Enforce subtotal >= already paid
+        # --------------------------------------------------
+        if sale.subtotal_amount < sale.subtotal_paid:
+            raise ValidationError(
+                _(
+                    "Cart subtotal (%(subtotal)s) cannot be lower than "
+                    "already paid amount (%(paid)s)"
+                )
+                % {
+                    "subtotal": sale.subtotal_amount,
+                    "paid": sale.subtotal_paid,
+                }
+            )
+
+        # --------------------------------------------------
+        # 8. Finalize audit
+        # --------------------------------------------------
         sale.modified_by = performer
-        OpenSaleService.recalculate_total(sale)
+        sale.save(update_fields=["subtotal_amount", "modified_by"])
 
         return sale

@@ -1,60 +1,81 @@
-/**
- * Payment Validation Hook
- * Handles payment form validation
- */
-
 import { useMemo } from 'react';
-import { PaymentMethod } from '@/types/sale';
-import { PaymentSnapshot } from './types';
-
-interface UsePaymentValidationOptions {
-  snapshot: PaymentSnapshot | null;
-  parsedAmount: number;
-  paymentMethod: PaymentMethod;
-  selectedAccountId: number | null;
-}
-
-interface UsePaymentValidationReturn {
-  validationError: string | null;
-  isValid: boolean;
-}
+import type {
+  Money,
+  PaymentSplit,
+  PaymentValidationResult,
+} from '@/types/payment/domain';
 
 /**
- * Hook for validating payment form state
+ * ─────────────────────────────────────────────────────────────
+ * usePaymentValidation
+ * ─────────────────────────────────────────────────────────────
+ * Evaluates payment splits and produces a validation report.
+ *
+ * Key property:
+ * - Supports partial validity (some splits valid, others not)
+ *
+ * This hook does NOT:
+ * - Submit
+ * - Mutate
+ * - Auto-fix values
+ * ─────────────────────────────────────────────────────────────
  */
-export function usePaymentValidation({
-  snapshot,
-  parsedAmount,
-  paymentMethod,
-  selectedAccountId,
-}: UsePaymentValidationOptions): UsePaymentValidationReturn {
-  const validationError = useMemo((): string | null => {
-    // Loading state
-    if (!snapshot) return 'در حال بارگذاری...';
+export function usePaymentValidation(
+  splits: PaymentSplit[],
+  expectedTotal: Money,
+) {
+  return useMemo<PaymentValidationResult>(() => {
+    const errorsBySplit = new Map<string, string[]>();
 
-    // Sale already paid
-    if (snapshot.isFullyPaid) return 'این فروش کاملاً تسویه شده است';
+    let sum = 0;
 
-    // Sale canceled
-    if (snapshot.saleState === 'CANCELED') return 'این فروش لغو شده است';
+    for (const split of splits) {
+      const errors: string[] = [];
 
-    // Amount validation
-    if (parsedAmount <= 0) return 'مبلغ باید بزرگتر از صفر باشد';
+      if (split.amount <= 0) {
+        errors.push('Amount must be greater than zero.');
+      }
 
-    // Account validation for non-cash methods
-    if (paymentMethod !== PaymentMethod.CASH && !selectedAccountId) {
-      return paymentMethod === PaymentMethod.POS
-        ? 'کارتخوان تنظیم نشده است'
-        : 'لطفاً حساب مقصد را انتخاب کنید';
+      if (!Number.isInteger(split.amount)) {
+        errors.push('Amount must be an integer.');
+      }
+
+      if (errors.length > 0) {
+        errorsBySplit.set(split.id, errors);
+      }
+
+      sum += split.amount;
     }
 
-    return null;
-  }, [snapshot, parsedAmount, paymentMethod, selectedAccountId]);
+    const blockingErrors: string[] = [];
 
-  const isValid = validationError === null;
+    if (sum !== expectedTotal) {
+      blockingErrors.push(
+        'Total of payments does not match selected items total.',
+      );
+    }
 
-  return {
-    validationError,
-    isValid,
-  };
+    /**
+     * A split is submittable if:
+     * - it has no local errors
+     * - amount > 0
+     */
+    const submittableSplitIds = splits
+      .filter(
+        s =>
+          s.amount > 0 &&
+          !errorsBySplit.has(s.id),
+      )
+      .map(s => s.id);
+
+    return {
+      isFullyValid:
+        errorsBySplit.size === 0 &&
+        blockingErrors.length === 0,
+
+      blockingErrors,
+      errorsBySplit,
+      submittableSplitIds,
+    };
+  }, [splits, expectedTotal]);
 }

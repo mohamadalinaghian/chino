@@ -1,67 +1,102 @@
-// src/hooks/payment/useSaleSummary.ts
 import { useMemo } from 'react';
+import type {
+  SaleItem,
+  SelectedItem,
+  SaleSummary,
+  Money,
+} from '@/types/payment/domain';
 
-export interface SelectedItem {
-  itemId: number;
-  quantity: number;
-  taxPercent: number;
+/**
+ * ─────────────────────────────────────────────────────────────
+ * useSaleSummary
+ * ─────────────────────────────────────────────────────────────
+ * Single source of truth for ALL monetary calculations
+ * related to a sale and current user selection.
+ *
+ * Rules:
+ * - All money is integer-based (smallest currency unit)
+ * - No UI logic
+ * - No side effects
+ * - No duplicated calculations elsewhere
+ *
+ * Consumers:
+ * - PaymentPage
+ * - SaleHeader
+ * - usePaymentSplits
+ * - usePaymentValidation
+ * ─────────────────────────────────────────────────────────────
+ */
+export function useSaleSummary(
+  saleItems: SaleItem[] | null,
+  selectedItems: SelectedItem[],
+  totalPaid: Money,
+): SaleSummary {
+  return useMemo(() => {
+    if (!saleItems) {
+      return emptySummary();
+    }
+
+    const saleTotal = calculateSaleTotal(saleItems);
+    const selectedItemsTotal = calculateSelectedItemsTotal(
+      saleItems,
+      selectedItems,
+    );
+
+    const remainingTotal = Math.max(
+      saleTotal - totalPaid,
+      0,
+    );
+
+    return {
+      saleTotal,
+      totalPaid,
+      remainingTotal,
+      selectedItemsTotal,
+      isFullyPaid: remainingTotal === 0,
+      isOverpaid: totalPaid > saleTotal,
+    };
+  }, [saleItems, selectedItems, totalPaid]);
 }
 
-export function useSaleSummary(
-  sale: any | null,
-  selectedItems: SelectedItem[],
-  paidAmount: number
-) {
-  return useMemo(() => {
-    if (!sale?.items?.length) {
-      return {
-        totalAmount: 0,
-        paidAmount: 0,
-        remainingAmount: 0,
-      };
-    }
+/* ────────────────────────────────────────────────────────── */
+/* Helpers (pure functions, testable)                          */
+/* ────────────────────────────────────────────────────────── */
 
-    let unselectedBase = 0;
-    let selectedBase = 0;
-    let selectedTax = 0;
+function calculateSaleTotal(items: SaleItem[]): Money {
+  return items.reduce((sum, item) => {
+    return sum + item.unit_price * item.quantity_total;
+  }, 0);
+}
 
-    for (const item of sale.items) {
-      const selected = selectedItems.find(s => s.itemId === item.id);
-      const selQty = selected?.quantity ?? 0;
-      const unselQty = item.quantity_remaining - selQty;
+function calculateSelectedItemsTotal(
+  items: SaleItem[],
+  selected: SelectedItem[],
+): Money {
+  if (selected.length === 0) return 0;
 
-      // Extras (same for selected/unselected)
-      const extrasTotal =
-        item.extras?.reduce((sum: number, e: any) => sum + (e.unit_price * e.quantity), 0) ?? 0;
-      const extrasPerUnit = item.quantity > 0 ? extrasTotal / item.quantity : 0;
+  const itemMap = new Map<number, SaleItem>();
+  items.forEach(item => itemMap.set(item.id, item));
 
-      // ── Unselected part ── (always 10% tax)
-      if (unselQty > 0) {
-        const base = unselQty * item.unit_price + extrasPerUnit * unselQty;
-        unselectedBase += base;
-      }
+  return selected.reduce((sum, sel) => {
+    const item = itemMap.get(sel.itemId);
+    if (!item) return sum;
 
-      // ── Selected part ── (custom tax)
-      if (selQty > 0 && selected) {
-        const base = selQty * item.unit_price + extrasPerUnit * selQty;
-        selectedBase += base;
-        selectedTax += base * (selected.taxPercent / 100);
-      }
-    }
+    const payableQty = Math.min(
+      sel.quantity,
+      item.quantity_remaining,
+    );
 
-    const paid = paidAmount;
-    const unselectedTax = unselectedBase * 0.1;
-    const total =
-      unselectedBase +
-      unselectedTax +
-      selectedBase +
-      selectedTax;
-    // Optional: console.log for debugging
-    // console.log('[useSaleSummary]', { total, paid, remaining: total - paid, selectedCount: selectedItems.length });
-    return {
-      totalAmount: total,
-      paidAmount: paid,
-      remainingAmount: total - paid,
-    };
-  }, [sale, selectedItems, paidAmount]);
+    return sum + item.unit_price * payableQty;
+  }, 0);
+}
+
+function emptySummary(): SaleSummary {
+  return {
+    saleTotal: 0,
+    totalPaid: 0,
+    remainingTotal: 0,
+    selectedItemsTotal: 0,
+    isFullyPaid: false,
+    isOverpaid: false,
+  };
 }

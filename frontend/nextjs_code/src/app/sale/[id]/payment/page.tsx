@@ -27,6 +27,7 @@ import { formatPersianMoney } from '@/utils/persianUtils';
 
 // Components
 import { SaleHeader } from '@/components/sale/salePayment/SaleHeader/SaleHeader';
+import { SkeletonHeader } from '@/components/sale/salePayment/SaleHeader/SkeletonHeader';
 import { SaleItemsColumn } from '@/components/sale/salePayment/SaleItemColumn/SaleItemColumn';
 import { PaymentSplitPanel } from '@/components/sale/salePayment/PaymentSplitPanel';
 import { PaymentHistory } from '@/components/sale/salePayment/PaymentHistory';
@@ -34,10 +35,10 @@ import { ViewOnlyMode } from '@/components/sale/salePayment/ViewOnlyMode';
 
 // Hooks
 import { useItemSelection } from '@/hooks/payment/useItemSelection';
-import { useSaleSummary } from '@/hooks/payment/useSaleSummary';
+import { useSaleSummary } from '@/hooks/payment/summary/useSaleSummary';
 import { usePaymentData } from '@/hooks/payment/usePaymentData';
-import { usePaymentSplits } from '@/hooks/payment/usePaymentSplits';
-import { usePaymentSubmission } from '@/hooks/payment/usePaymentSubmission';
+import { usePaymentSplits } from '@/hooks/payment/splits/usePaymentSplits';
+import { usePaymentSubmission } from '@/hooks/payment/submission/usePaymentSubmission';
 import { usePaymentVoid } from '@/hooks/payment/usePaymentVoid';
 
 // Utils
@@ -169,11 +170,10 @@ export default function PaymentPage() {
   // ──────────────────────────────────────────────────────────────────────────
   // Summary Calculations
   // ──────────────────────────────────────────────────────────────────────────
-  const summaryCalculations = useSaleSummary(
-    sale,
+  const summaryCalculations = useSaleSummary({
+    saleItems: sale?.items ?? [],
     selectedItems,
-    sale?.total_paid || 0
-  );
+  });
 
   const selectedItemsTotal = useMemo(() => {
     if (!sale) return 0;
@@ -206,7 +206,12 @@ export default function PaymentPage() {
 
   // Loading state
   if (loading) {
-    return <LoadingOverlay message="در حال بارگذاری..." />;
+    return (
+      <>
+        <SkeletonHeader THEME_COLORS={THEME_COLORS} />
+        <LoadingOverlay message="در حال بارگذاری اطلاعات فروش..." />
+      </>
+    );
   }
 
   // No sale data

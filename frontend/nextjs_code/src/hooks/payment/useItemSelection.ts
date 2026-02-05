@@ -1,110 +1,118 @@
-import { useCallback, useState } from 'react';
-import { ISaleItemDetail } from '@/types/sale';
-import { SelectedItem } from '@/types/payment';
+import { useCallback, useMemo, useState } from 'react';
+import type {
+  SaleItem,
+  SelectedItem,
+} from '@/types/payment/domain';
 
-interface UseItemSelectionArgs {
-  unpaidItems: ISaleItemDetail[];
-}
+/**
+ * ─────────────────────────────────────────────────────────────
+ * useItemSelection
+ * ─────────────────────────────────────────────────────────────
+ * Manages user intent for selecting sale items and quantities.
+ *
+ * Responsibilities:
+ * - Track which items are selected
+ * - Track selected quantities
+ *
+ * Non-responsibilities:
+ * - No monetary calculation
+ * - No payment logic
+ * - No split awareness
+ *
+ * This hook represents PURE USER INTENT.
+ * ─────────────────────────────────────────────────────────────
+ */
+export function useItemSelection(unpaidItems: SaleItem[]) {
+  const [selectedMap, setSelectedMap] = useState<
+    Map<number, number>
+  >(new Map());
 
-interface UseItemSelectionResult {
-  selectedItems: SelectedItem[];
-  toggleItemSelection: (item: ISaleItemDetail) => void;
-  updateItemQuantity: (item: ISaleItemDetail, quantity: number) => void;
-  updateItemTax: (itemId: number, taxPercent: number) => void;
-  selectAllItems: () => void;
-  clearSelection: () => void;
-}
+  /**
+   * Toggle selection of an item.
+   * If selecting, defaults quantity to remaining quantity.
+   * If deselecting, removes it completely.
+   */
+  const toggleItem = useCallback(
+    (itemId: number) => {
+      setSelectedMap(prev => {
+        const next = new Map(prev);
 
-export function useItemSelection(
-  args: UseItemSelectionArgs
-): UseItemSelectionResult {
-  const { unpaidItems } = args;
+        if (next.has(itemId)) {
+          next.delete(itemId);
+        } else {
+          const item = unpaidItems.find(i => i.id === itemId);
+          if (!item) return prev;
 
-  const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
-
-  const toggleItemSelection = useCallback((item: ISaleItemDetail) => {
-    setSelectedItems(prev => {
-      const existing = prev.find(s => s.itemId === item.id);
-
-      if (existing) {
-        return prev.filter(s => s.itemId !== item.id);
-      }
-
-      return [
-        ...prev,
-        {
-          itemId: Number(item.id),
-          quantity: item.quantity_remaining,
-          taxPercent: 10,
-        },
-      ];
-    });
-  }, []);
-
-  const updateItemQuantity = useCallback(
-    (item: ISaleItemDetail, quantity: number) => {
-      const maxQty = item.quantity_remaining;
-      const newQty = Math.max(0, Math.min(maxQty, quantity));
-
-      const id = Number(item.id);
-      setSelectedItems(prev => {
-        if (newQty === 0) {
-
-          return prev.filter(s => s.itemId !== id);
+          next.set(itemId, item.quantity_remaining);
         }
 
-        const existing = prev.find(s => s.itemId === id);
-
-        if (!existing) {
-          return [
-            ...prev,
-            {
-              itemId: Number(item.id),
-              quantity: newQty,
-              taxPercent: 10,
-            },
-          ];
-        }
-
-        return prev.map(s =>
-          s.itemId === id ? { ...s, quantity: newQty } : s
-        );
+        return next;
       });
     },
-    []
+    [unpaidItems],
   );
 
-  const selectAllItems = useCallback(() => {
-    setSelectedItems(
-      unpaidItems.map(item => ({
-        itemId: Number(item.id),
-        quantity: item.quantity_remaining,
-        taxPercent: 10,
-      }))
-    );
+  /**
+   * Update selected quantity for an item.
+   * Quantity is clamped between 1 and remaining quantity.
+   */
+  const updateQuantity = useCallback(
+    (itemId: number, quantity: number) => {
+      setSelectedMap(prev => {
+        if (!prev.has(itemId)) return prev;
+
+        const item = unpaidItems.find(i => i.id === itemId);
+        if (!item) return prev;
+
+        const clampedQty = Math.max(
+          1,
+          Math.min(quantity, item.quantity_remaining),
+        );
+
+        const next = new Map(prev);
+        next.set(itemId, clampedQty);
+
+        return next;
+      });
+    },
+    [unpaidItems],
+  );
+
+  /**
+   * Select all unpaid items with full remaining quantities.
+   */
+  const selectAll = useCallback(() => {
+    const next = new Map<number, number>();
+    unpaidItems.forEach(item => {
+      next.set(item.id, item.quantity_remaining);
+    });
+    setSelectedMap(next);
   }, [unpaidItems]);
 
-  const clearSelection = useCallback(() => {
-    setSelectedItems([]);
+  /**
+   * Clear all selections.
+   */
+  const clear = useCallback(() => {
+    setSelectedMap(new Map());
   }, []);
 
-  const updateItemTax = useCallback(
-    (itemId: number, taxPercent: number) => {
-      setSelectedItems(prev =>
-        prev.map(s =>
-          s.itemId === itemId ? { ...s, taxPercent } : s
-        )
-      );
-    },
-    []
-  );
+  /**
+   * Convert internal map to stable array form.
+   */
+  const selectedItems: SelectedItem[] = useMemo(() => {
+    return Array.from(selectedMap.entries()).map(
+      ([itemId, quantity]) => ({
+        itemId,
+        quantity,
+      }),
+    );
+  }, [selectedMap]);
 
   return {
     selectedItems,
-    toggleItemSelection,
-    updateItemQuantity,
-    updateItemTax,
-    selectAllItems,
-    clearSelection,
+    toggleItem,
+    updateQuantity,
+    selectAll,
+    clear,
   };
 }

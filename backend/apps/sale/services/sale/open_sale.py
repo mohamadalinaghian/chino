@@ -102,7 +102,7 @@ class OpenSaleService:
             OpenSaleService.create_item_line(sale, item)
 
         # Totals
-        OpenSaleService.recalculate_total(sale)
+        OpenSaleService.recalculate_subtotal(sale)
 
         # Print to thermal printer if requested
         # if print_order:
@@ -156,17 +156,16 @@ class OpenSaleService:
         )
 
     @staticmethod
-    def recalculate_total(sale: Sale) -> None:
+    def recalculate_subtotal(sale: Sale) -> None:
         """
-        Updates the cached subtotal_amount using DB aggregation.
-        The Sale model's save() method will auto-calculate total_amount, gross_profit, etc.
+        Recalculates ONLY subtotal_amount from sale items.
+        No tax, no discount, no payment logic.
         """
         aggregation = sale.items.aggregate(
             total=Sum(
-                F("quantity") * F("unit_price"), output_field=models.DecimalField()
+                F("quantity") * F("unit_price"),
+                output_field=models.DecimalField(),
             )
         )
         sale.subtotal_amount = aggregation["total"] or Decimal("0")
-        # Save will auto-calculate: total_amount = subtotal - discount + tax
-        # Skip validation since we're just recalculating totals
-        sale.save(skip_validation=True)
+        sale.save(update_fields=["subtotal_amount"])

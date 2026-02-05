@@ -34,7 +34,6 @@ class SalePayment(models.Model):
         on_delete=models.PROTECT,
         related_name="payments",
         verbose_name=_("Sale"),
-        help_text=_("Sale this payment is applied to (must be CLOSED state)"),
     )
 
     method = models.CharField(
@@ -44,20 +43,26 @@ class SalePayment(models.Model):
         db_index=True,
     )
 
-    # ---- Financials ----
-    amount_total = models.DecimalField(
-        _("Total received"),
-        max_digits=12,
-        decimal_places=4,
-        help_text=_("Total money received from customer"),
-    )
-    confirmed = models.BooleanField(_("Is confirmed"), default=False)
+    # ==================== FINANCIAL CORE ====================
 
     amount_applied = models.DecimalField(
-        _("Applied to invoice"),
         max_digits=12,
-        decimal_places=4,
-        help_text=_("Amount applied to invoice balance"),
+        decimal_places=2,
+        help_text=_("Amount applied to sale subtotal"),
+    )
+
+    tax_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0"),
+        help_text=_("Tax applied in this payment"),
+    )
+
+    discount_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0"),
+        help_text=_("Discount applied in this payment"),
     )
 
     tip_amount = models.DecimalField(
@@ -67,6 +72,9 @@ class SalePayment(models.Model):
         default=Decimal("0"),
         help_text=_("Optional tip (never refundable)"),
     )
+
+    # ==================== METADATA ====================
+    confirmed = models.BooleanField(_("Is confirmed"), default=False)
 
     # ---- Method-specific ----
     destination_account = models.ForeignKey(
@@ -96,16 +104,6 @@ class SalePayment(models.Model):
         db_index=True,
     )
 
-    # Item tracking for split payments (with quantity support)
-    sale_items = models.ManyToManyField(
-        "sale.SaleItem",
-        through="sale.SalePaymentItem",
-        blank=True,
-        related_name="payments",
-        verbose_name=_("Sale items"),
-        help_text=_("Specific items this payment covers (empty means all items)"),
-    )
-
     # History tracking
     history = HistoricalRecords()
 
@@ -119,45 +117,26 @@ class SalePayment(models.Model):
             models.Index(fields=["status"]),
         ]
 
+    # ==================== VALIDATION ====================
+
     def clean(self):
-        """
-        Domain invariants:
-        - amount_total = amount_applied + tip_amount
-        - tip_amount >= 0
-        - destination_account rules enforced
-        """
-        # Check amount calculations
-        if abs(self.amount_applied + self.tip_amount - self.amount_total) > Decimal(
-            "0.01"
-        ):
-            raise ValidationError(
-                _(
-                    "amount_total (%(total)s) must equal amount_applied (%(applied)s) + tip_amount (%(tip)s)"
-                )
-                % {
-                    "total": self.amount_total,
-                    "applied": self.amount_applied,
-                    "tip": self.tip_amount,
-                }
-            )
+        super().clean()
 
         if self.amount_applied <= 0:
-            raise ValidationError(_("Applied amount must be positive"))
+            raise ValidationError(_("Amount applied must be greater than zero"))
 
-        if self.tip_amount < 0:
-            raise ValidationError(_("Tip amount cannot be negative"))
+        if self.tax_amount < 0:
+            raise ValidationError(_("Tax amount cannot be negative"))
 
-        # Validate destination account rules
-        if self.method == self.PaymentMethod.CASH and self.destination_account:
-            raise ValidationError(_("Cash payments must not have destination account"))
+        if self.discount_amount < 0:
+            raise ValidationError(_("Discount amount cannot be negative"))
 
-        if (
-            self.method in {self.PaymentMethod.POS, self.PaymentMethod.CARD_TRANSFER}
-            and not self.destination_account
-        ):
-            raise ValidationError(
-                _("This payment method requires a destination account")
-            )
+        if self.discount_amount > self.amount_applied:
+            raise ValidationError(_("Discount cannot exceed applied amount"))
+
+        if self.status == self.PaymentStatus.COMPLETED:
+            if self.sale.state != self.sale.SaleState.OPEN:
+                raise ValidationError(_("Cannot complete payment for non-open sale"))
 
     @property
     def total_refunded(self) -> Decimal:
@@ -174,44 +153,4 @@ class SalePayment(models.Model):
         return self.amount_applied - self.total_refunded
 
     def __str__(self) -> str:
-        return f"{self.get_method_display()} | {self.amount_total}"
-
-
-class SalePaymentItem(models.Model):
-    """
-    Through model for tracking paid quantities per item in a payment.
-
-    Allows partial quantity payments - e.g., paying for 2 out of 3 items.
-    """
-
-    payment = models.ForeignKey(
-        SalePayment,
-        on_delete=models.CASCADE,
-        related_name="payment_items",
-        verbose_name=_("Payment"),
-    )
-
-    sale_item = models.ForeignKey(
-        "sale.SaleItem",
-        on_delete=models.CASCADE,
-        related_name="payment_records",
-        verbose_name=_("Sale Item"),
-    )
-
-    quantity_paid = models.PositiveIntegerField(
-        _("Quantity paid"),
-        help_text=_("Number of units paid for in this payment"),
-    )
-
-    class Meta:
-        verbose_name = _("Sale payment item")
-        verbose_name_plural = _("Sale payment items")
-        unique_together = ("payment", "sale_item")
-
-    def clean(self):
-        """Validate quantity doesn't exceed item's available quantity"""
-        if self.quantity_paid <= 0:
-            raise ValidationError(_("Quantity paid must be positive"))
-
-    def __str__(self) -> str:
-        return f"Payment #{self.payment_id} - Item #{self.sale_item_id} x{self.quantity_paid}"
+        return f"{self.get_method_display()} | {self.amount_applied}"

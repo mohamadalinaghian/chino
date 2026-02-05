@@ -1,194 +1,158 @@
-/**
- * usePaymentSplits Hook
- *
- * Manages split payment state and operations.
- * Responsibilities:
- * - Manage split count and split payment objects
- * - Handle split creation, deletion, and updates
- * - Distribute amounts across splits
- * - Lock/unlock splits
- * - Calculate totals
- */
-
-import { useState, useCallback, useMemo } from 'react';
-import { PaymentMethod } from '@/types/sale';
-import type { SplitPayment, SelectedItem } from '@/types/payment';
-import {
-  calculateSelectedItemsTotal,
-  distributeAmountAcrossSplits,
-  calculateTotalLockedAmount,
-  calculateTotalUnlockedAmount,
-} from '@/utils/paymentCalculation';
-import { DEFAULT_TAX_PERCENT } from '@/libs/paymentConstants';
-import type { ISaleItemDetail } from '@/types/sale';
-
-interface UsePaymentSplitsProps {
-  items: ISaleItemDetail[];
-  selectedItems: SelectedItem[];
-}
-
-interface UsePaymentSplitsReturn {
-  splits: SplitPayment[];
-  splitCount: number;
-  totalLockedAmount: number;
-  totalUnlockedAmount: number;
-  updateSplitCount: (count: number) => void;
-  updateSplit: (id: number, updates: Partial<SplitPayment>) => void;
-  toggleSplitLock: (id: number) => void;
-  distributeSelectedAmount: () => void;
-  resetSplits: () => void;
-}
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type {
+  Money,
+  PaymentSplit,
+  SaleSummary,
+} from '@/types/payment/domain';
 
 /**
- * Create a default split payment object
+ * ─────────────────────────────────────────────────────────────
+ * usePaymentSplits
+ * ─────────────────────────────────────────────────────────────
+ * Authoritative split engine.
  *
- * @param id - Unique identifier for the split
- * @returns Default split payment configuration
- */
-function createDefaultSplit(id: number): SplitPayment {
-  return {
-    id,
-    amount: 0,
-    taxEnabled: true,
-    taxPercent: DEFAULT_TAX_PERCENT,
-    discount: 0,
-    paymentMethod: PaymentMethod.CARD_TRANSFER,
-    accountId: null,
-    isLocked: false,
-    tipAmount: 0,
-  };
-}
-
-/**
- * Hook for managing split payments
+ * Core invariant:
+ *   Σ(split.amount) === saleSummary.selectedItemsTotal
  *
- * @param props - Hook configuration
- * @returns Split payment state and operations
+ * Design decisions:
+ * - Amount-based only
+ * - Manual edits are authoritative
+ * - Locked splits preserve relative weight
+ * - Redistribution is rounding-safe
+ * - No UI logic
+ * ─────────────────────────────────────────────────────────────
  */
-export function usePaymentSplits({
-  items,
-  selectedItems,
-}: UsePaymentSplitsProps): UsePaymentSplitsReturn {
-  const [splitCount, setSplitCount] = useState(1);
-  const [splits, setSplits] = useState<SplitPayment[]>([createDefaultSplit(1)]);
+export function usePaymentSplits(saleSummary: SaleSummary) {
+  const [splits, setSplits] = useState<PaymentSplit[]>(() => [
+    createEmptySplit(),
+  ]);
 
   /**
-   * Calculate total amount of selected items
+   * Tracks whether recalculation is internal
+   * (prevents infinite loops on state updates).
    */
-  const selectedTotal = useMemo(() => {
-    return calculateSelectedItemsTotal(items, selectedItems);
-  }, [items, selectedItems]);
+  const isRecalculatingRef = useRef(false);
 
   /**
-   * Calculate total locked amount
+   * Recalculate splits whenever selected total changes.
    */
-  const totalLockedAmount = useMemo(() => {
-    return calculateTotalLockedAmount(splits);
-  }, [splits]);
+  useEffect(() => {
+    if (isRecalculatingRef.current) return;
 
-  /**
-   * Calculate total unlocked amount
-   */
-  const totalUnlockedAmount = useMemo(() => {
-    return calculateTotalUnlockedAmount(splits);
-  }, [splits]);
+    redistributeSplits(
+      saleSummary.selectedItemsTotal,
+      splits,
+      setSplits,
+      isRecalculatingRef,
+    );
+  }, [saleSummary.selectedItemsTotal, splits]);
 
-  /**
-   * Update the number of split payments
-   * Preserves locked splits and adjusts unlocked ones
-   *
-   * @param count - New split count (1-10)
-   */
-  const updateSplitCount = useCallback(
-    (count: number) => {
-      const newCount = Math.max(1, Math.min(10, count));
-      setSplitCount(newCount);
+  /* ────────────────────────────────────────────────────────── */
+  /* Public API                                                 */
+  /* ────────────────────────────────────────────────────────── */
 
-      // Preserve locked splits, adjust unlocked ones
-      const lockedSplits = splits.filter(s => s.isLocked);
-      const unlockedNeeded = newCount - lockedSplits.length;
+  const updateAmount = useCallback((id: string, amount: Money) => {
+    setSplits(prev =>
+      prev.map(split =>
+        split.id === id
+          ? {
+              ...split,
+              amount,
+              manuallyEdited: true,
+            }
+          : split,
+      ),
+    );
+  }, []);
 
-      if (unlockedNeeded > 0) {
-        // Create additional unlocked splits
-        const newSplits = [...lockedSplits];
-        const maxId = Math.max(...splits.map(s => s.id), 0);
+  const toggleLock = useCallback((id: string) => {
+    setSplits(prev =>
+      prev.map(split =>
+        split.id === id
+          ? { ...split, locked: !split.locked }
+          : split,
+      ),
+    );
+  }, []);
 
-        for (let i = 0; i < unlockedNeeded; i++) {
-          newSplits.push(createDefaultSplit(maxId + i + 1));
-        }
+  const addSplit = useCallback(() => {
+    setSplits(prev => [...prev, createEmptySplit()]);
+  }, []);
 
-        setSplits(newSplits);
-      } else if (unlockedNeeded < 0) {
-        // Remove excess unlocked splits
-        const unlockedToKeep = splits.filter(s => !s.isLocked).slice(0, unlockedNeeded);
-        setSplits([...lockedSplits, ...unlockedToKeep]);
-      }
-    },
-    [splits]
-  );
-
-  /**
-   * Update a specific split payment
-   *
-   * @param id - Split ID to update
-   * @param updates - Partial updates to apply
-   */
-  const updateSplit = useCallback(
-    (id: number, updates: Partial<SplitPayment>) => {
-      setSplits(prev =>
-        prev.map(split =>
-          split.id === id ? { ...split, ...updates } : split
-        )
-      );
-    },
-    []
-  );
-
-  /**
-   * Toggle lock state of a split
-   *
-   * @param id - Split ID to toggle
-   */
-  const toggleSplitLock = useCallback(
-    (id: number) => {
-      setSplits(prev =>
-        prev.map(split =>
-          split.id === id ? { ...split, isLocked: !split.isLocked } : split
-        )
-      );
-    },
-    []
-  );
-
-  /**
-   * Distribute selected items total across unlocked splits
-   * Respects locked splits and distributes remaining amount equally
-   */
-  const distributeSelectedAmount = useCallback(() => {
-    const lockedTotal = calculateTotalLockedAmount(splits);
-    const remainingAmount = Math.max(0, selectedTotal - lockedTotal);
-
-    const updatedSplits = distributeAmountAcrossSplits(remainingAmount, splits);
-    setSplits(updatedSplits);
-  }, [splits, selectedTotal]);
-
-  /**
-   * Reset all splits to default state
-   */
-  const resetSplits = useCallback(() => {
-    setSplitCount(1);
-    setSplits([createDefaultSplit(1)]);
+  const removeSplit = useCallback((id: string) => {
+    setSplits(prev => prev.filter(s => s.id !== id));
   }, []);
 
   return {
     splits,
-    splitCount,
-    totalLockedAmount,
-    totalUnlockedAmount,
-    updateSplitCount,
-    updateSplit,
-    toggleSplitLock,
-    distributeSelectedAmount,
-    resetSplits,
+    updateAmount,
+    toggleLock,
+    addSplit,
+    removeSplit,
   };
+}
+
+/* ────────────────────────────────────────────────────────── */
+/* Helpers                                                    */
+/* ────────────────────────────────────────────────────────── */
+
+function createEmptySplit(): PaymentSplit {
+  return {
+    id: crypto.randomUUID(),
+    amount: 0,
+    locked: false,
+    manuallyEdited: false,
+  };
+}
+
+/**
+ * Redistribute amounts while preserving:
+ * - manual edits
+ * - locked intent
+ * - rounding correctness
+ */
+function redistributeSplits(
+  total: Money,
+  splits: PaymentSplit[],
+  setSplits: React.Dispatch<React.SetStateAction<PaymentSplit[]>>,
+  lockRef: React.MutableRefObject<boolean>,
+) {
+  lockRef.current = true;
+
+  setSplits(prev => {
+    if (prev.length === 0) return prev;
+
+    const manual = prev.filter(s => s.manuallyEdited);
+    const auto = prev.filter(s => !s.manuallyEdited);
+
+    const manualSum = manual.reduce(
+      (sum, s) => sum + s.amount,
+      0,
+    );
+
+    const remaining = Math.max(total - manualSum, 0);
+
+    if (auto.length === 0) {
+      lockRef.current = false;
+      return prev;
+    }
+
+    const base = Math.floor(remaining / auto.length);
+    let remainder = remaining - base * auto.length;
+
+    const next = prev.map(split => {
+      if (split.manuallyEdited) return split;
+
+      const extra = remainder > 0 ? 1 : 0;
+      remainder -= extra;
+
+      return {
+        ...split,
+        amount: base + extra,
+      };
+    });
+
+    lockRef.current = false;
+    return next;
+  });
 }

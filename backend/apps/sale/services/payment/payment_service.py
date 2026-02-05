@@ -1,503 +1,142 @@
-"""Payment processing service for handling sale payments."""
-
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import List, Optional
 
-from apps.sale.models import Sale, SaleItem, SalePayment, SalePaymentItem
+from apps.sale.models import Sale, SalePayment
 from apps.user.models import BankAccount
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.db import models, transaction
-from django.utils import timezone
+from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 
 User = get_user_model()
 
 
-@dataclass
+@dataclass(frozen=True)
 class PaymentInput:
-    """Data transfer object for payment input."""
+    """
+    DTO for creating a payment.
 
-    method: str  # SalePayment.PaymentMethod value
+    IMPORTANT:
+    - amount_applied settles ONLY sale.subtotal_amount
+    - tax/discount are informational and derived at Sale level
+    """
+
+    method: str
     amount_applied: Decimal
+    tax_amount: Decimal = Decimal("0")
+    discount_amount: Decimal = Decimal("0")
     tip_amount: Decimal = Decimal("0")
     destination_account_id: Optional[int] = None
-
-
-@dataclass
-class TaxDiscountInput:
-    """Data transfer object for tax/discount input."""
-
-    type: str  # 'fixed' or 'percentage'
-    value: Decimal
-
-
-@dataclass
-class SelectedItemQuantity:
-    """Data transfer object for item with quantity selection."""
-
-    item_id: int
-    quantity: int
-
-
-@dataclass
-class EnhancedPaymentInput:
-    """Enhanced payment input with item selection and tax/discount."""
-
-    method: str  # SalePayment.PaymentMethod value
-    amount_applied: Decimal
-    tip_amount: Decimal = Decimal("0")
-    destination_account_id: Optional[int] = None
-    selected_items: List[SelectedItemQuantity] = (
-        None  # Items with quantities for partial payment
-    )
-    tax: Optional[TaxDiscountInput] = None
-    discount: Optional[TaxDiscountInput] = None
 
 
 class PaymentService:
     """
-    Service for processing payments on sales.
+    Authoritative payment service.
 
-    Responsibilities:
-        - Validate payment data
-        - Create payment records
-        - Update sale payment status
-        - Handle payment method-specific logic
+    Rules:
+    - Payments are append-only
+    - No item-level payment tracking
+    - No tax/discount logic here
+    - No auto-close here
     """
 
     @staticmethod
     @transaction.atomic
-    def process_payments(
+    def add_payments(
         *, sale: Sale, payments: List[PaymentInput], performer: User
     ) -> List[SalePayment]:
-        """
-        Process multiple payments for a sale.
-
-        Args:
-            sale: Sale instance (must be CLOSED state)
-            payments: List of payment inputs
-            performer: User processing the payments
-
-        Returns:
-            List of created SalePayment instances
-
-        Raises:
-            ValidationError: If sale state is invalid or payment data is invalid
-        """
-        if sale.state != Sale.SaleState.CLOSED:
-            raise ValidationError(_("Payments can only be processed for CLOSED sales"))
+        if sale.state == Sale.SaleState.CANCELED:
+            raise ValidationError(_("Cannot add payments to a canceled sale"))
 
         if not payments:
             raise ValidationError(_("At least one payment is required"))
 
-        created_payments = []
+        created: List[SalePayment] = []
 
-        for payment_input in payments:
-            payment = PaymentService._create_payment(
-                sale=sale, payment_input=payment_input, performer=performer
+        for input_data in payments:
+            created.append(
+                PaymentService._create_single_payment(
+                    sale=sale,
+                    input_data=input_data,
+                    performer=performer,
+                )
             )
-            created_payments.append(payment)
 
-        # Update sale payment status based on total paid
         PaymentService._update_sale_payment_status(sale)
+        return created
 
-        return created_payments
+    # ------------------------------------------------------------------
 
     @staticmethod
-    def _create_payment(
-        *, sale: Sale, payment_input: PaymentInput, performer: User
+    def _create_single_payment(
+        *, sale: Sale, input_data: PaymentInput, performer: User
     ) -> SalePayment:
-        """
-        Create a single payment record.
+        # --- method validation ---
+        if input_data.method not in dict(SalePayment.PaymentMethod.choices):
+            raise ValidationError(_("Invalid payment method"))
 
-        Args:
-            sale: Sale instance
-            payment_input: Payment data
-            performer: User creating the payment
+        # --- amount validation ---
+        if input_data.amount_applied <= 0:
+            raise ValidationError(_("amount_applied must be positive"))
 
-        Returns:
-            Created SalePayment instance
+        if input_data.tax_amount < 0 or input_data.discount_amount < 0:
+            raise ValidationError(_("Tax / discount cannot be negative"))
 
-        Raises:
-            ValidationError: If payment data is invalid
-        """
-        # Validate payment method
-        if payment_input.method not in dict(SalePayment.PaymentMethod.choices):
+        if input_data.discount_amount > input_data.amount_applied:
+            raise ValidationError(_("Discount cannot exceed applied amount"))
+
+        # --- prevent subtotal overpayment ---
+        sale.refresh_from_db()
+        if input_data.amount_applied > sale.remaining_subtotal:
             raise ValidationError(
-                _("Invalid payment method: %(method)s")
-                % {"method": payment_input.method}
+                _("Payment exceeds remaining subtotal (%(remaining)s)")
+                % {"remaining": sale.remaining_subtotal}
             )
 
-        # Validate amounts
-        if payment_input.amount_applied <= 0:
-            raise ValidationError(_("Payment amount must be positive"))
-
-        if payment_input.tip_amount < 0:
-            raise ValidationError(_("Tip amount cannot be negative"))
-
-        # Get destination account if specified
+        # --- destination account rules ---
         destination_account = None
-        if payment_input.destination_account_id:
+        if input_data.destination_account_id:
             try:
                 destination_account = BankAccount.objects.get(
-                    pk=payment_input.destination_account_id
+                    pk=input_data.destination_account_id
                 )
             except BankAccount.DoesNotExist:
-                raise ValidationError(
-                    _("Invalid destination account ID: %(id)s")
-                    % {"id": payment_input.destination_account_id}
-                )
+                raise ValidationError(_("Invalid destination account"))
 
-        # Validate destination account rules
-        if payment_input.method == SalePayment.PaymentMethod.CASH:
+        if input_data.method == SalePayment.PaymentMethod.CASH:
             if destination_account:
-                raise ValidationError(
-                    _("Cash payments must not have destination account")
-                )
-        elif payment_input.method in {
-            SalePayment.PaymentMethod.POS,
-            SalePayment.PaymentMethod.CARD_TRANSFER,
-        }:
+                raise ValidationError(_("Cash payment cannot have destination account"))
+        else:
             if not destination_account:
                 raise ValidationError(
-                    _("%(method)s requires a destination account")
-                    % {"method": payment_input.method}
+                    _("Non-cash payments require destination account")
                 )
 
-        # Calculate total
-        amount_total = payment_input.amount_applied + payment_input.tip_amount
-
-        # Create payment
-        payment = SalePayment.objects.create(
+        # --- create payment ---
+        return SalePayment.objects.create(
             sale=sale,
-            method=payment_input.method,
-            amount_total=amount_total,
-            amount_applied=payment_input.amount_applied,
-            tip_amount=payment_input.tip_amount,
+            method=input_data.method,
+            amount_applied=input_data.amount_applied,
+            tax_amount=input_data.tax_amount,
+            discount_amount=input_data.discount_amount,
+            tip_amount=input_data.tip_amount,
             destination_account=destination_account,
             received_by=performer,
             status=SalePayment.PaymentStatus.COMPLETED,
         )
 
-        return payment
+    # ------------------------------------------------------------------
 
     @staticmethod
     def _update_sale_payment_status(sale: Sale) -> None:
-        """
-        Update sale payment status based on total payments.
-
-        Args:
-            sale: Sale instance to update
-        """
         sale.refresh_from_db()
 
-        if sale.is_fully_paid:
+        if sale.subtotal_paid >= sale.subtotal_amount:
             sale.payment_status = Sale.PaymentStatus.PAID
-        elif sale.total_paid > 0:
+        elif sale.subtotal_paid > 0:
             sale.payment_status = Sale.PaymentStatus.PARTIALLY_PAID
         else:
             sale.payment_status = Sale.PaymentStatus.UNPAID
 
-        sale.save(skip_validation=True)
-
-    @staticmethod
-    @transaction.atomic
-    def add_payments_to_sale(
-        *,
-        sale: Sale,
-        payments: List[EnhancedPaymentInput],
-        performer: User,
-    ) -> tuple[Sale, List[SalePayment], bool]:
-        """
-        Add one or more payments to a sale (OPEN or CLOSED).
-        Auto-closes the sale if total_paid >= total_amount.
-
-        Args:
-            sale: Sale instance (can be OPEN or CLOSED)
-            payments: List of enhanced payment inputs
-            performer: User processing the payments
-
-        Returns:
-            Tuple of (updated_sale, created_payments, was_auto_closed)
-
-        Raises:
-            ValidationError: If sale is CANCELED or payment data is invalid
-        """
-        if sale.state == Sale.SaleState.CANCELED:
-            raise ValidationError(_("Cannot add payments to a CANCELED sale"))
-
-        if not payments:
-            raise ValidationError(_("At least one payment is required"))
-
-        created_payments = []
-
-        for payment_input in payments:
-            payment = PaymentService._create_enhanced_payment(
-                sale=sale, payment_input=payment_input, performer=performer
-            )
-            created_payments.append(payment)
-
-        # Update sale payment status
-        PaymentService._update_sale_payment_status(sale)
-
-        # Auto-close if fully paid
-        was_auto_closed = False
-        sale.refresh_from_db()
-        if sale.state == Sale.SaleState.OPEN and sale.is_fully_paid:
-            # Auto-close the sale (change state to CLOSED)
-            sale.state = Sale.SaleState.CLOSED
-            sale.closed_by = performer
-            sale.closed_at = timezone.now()
-            # Reserve stock for sale.
-            from ..sale.close_sale import CloseSaleService
-
-            # TODO: this part must be unified with close service
-            CloseSaleService._calculate_cogs(sale)
-            sale.save(skip_validation=True)
-            was_auto_closed = True
-
-        return sale, created_payments, was_auto_closed
-
-    @staticmethod
-    def _create_enhanced_payment(
-        *, sale: Sale, payment_input: EnhancedPaymentInput, performer: User
-    ) -> SalePayment:
-        """
-        Create a payment with item selection and tax/discount support.
-
-        Args:
-            sale: Sale instance
-            payment_input: Enhanced payment data
-            performer: User creating the payment
-
-        Returns:
-            Created SalePayment instance
-
-        Raises:
-            ValidationError: If payment data is invalid
-        """
-        # Validate payment method
-        if payment_input.method not in dict(SalePayment.PaymentMethod.choices):
-            raise ValidationError(
-                _("Invalid payment method: %(method)s")
-                % {"method": payment_input.method}
-            )
-
-        # Validate amounts
-        if payment_input.amount_applied <= 0:
-            raise ValidationError(_("Payment amount must be positive"))
-
-        if payment_input.tip_amount < 0:
-            raise ValidationError(_("Tip amount cannot be negative"))
-
-        # Get destination account if specified
-        destination_account = None
-        if payment_input.destination_account_id:
-            try:
-                destination_account = BankAccount.objects.get(
-                    pk=payment_input.destination_account_id
-                )
-            except BankAccount.DoesNotExist:
-                raise ValidationError(
-                    _("Invalid destination account ID: %(id)s")
-                    % {"id": payment_input.destination_account_id}
-                )
-
-        # Validate destination account rules
-        if payment_input.method == SalePayment.PaymentMethod.CASH:
-            if destination_account:
-                raise ValidationError(
-                    _("Cash payments must not have destination account")
-                )
-        elif payment_input.method in {
-            SalePayment.PaymentMethod.POS,
-            SalePayment.PaymentMethod.CARD_TRANSFER,
-        }:
-            if not destination_account:
-                raise ValidationError(
-                    _("%(method)s requires a destination account")
-                    % {"method": payment_input.method}
-                )
-
-        # Validate selected items if specified
-        selected_item_data = []
-        if payment_input.selected_items:
-            item_ids = [s.item_id for s in payment_input.selected_items]
-            items_by_id = {
-                item.id: item
-                for item in SaleItem.objects.filter(id__in=item_ids, sale=sale)
-            }
-
-            if len(items_by_id) != len(item_ids):
-                raise ValidationError(
-                    _("Some selected items do not belong to this sale")
-                )
-
-            # Validate quantities and calculate remaining
-            for selection in payment_input.selected_items:
-                item = items_by_id[selection.item_id]
-                # Calculate already paid quantity for this item
-                already_paid = (
-                    SalePaymentItem.objects.filter(
-                        sale_item_id=selection.item_id,
-                        payment__status=SalePayment.PaymentStatus.COMPLETED,
-                    ).aggregate(total=models.Sum("quantity_paid"))["total"]
-                    or 0
-                )
-                remaining = item.quantity - already_paid
-
-                if selection.quantity > remaining:
-                    raise ValidationError(
-                        _(
-                            "Cannot pay for %(qty)s units of '%(item)s'. Only %(remaining)s remaining."
-                        )
-                        % {
-                            "qty": selection.quantity,
-                            "item": item.product.name,
-                            "remaining": remaining,
-                        }
-                    )
-
-                selected_item_data.append(
-                    {"item": item, "quantity": selection.quantity}
-                )
-
-        # Calculate total
-        amount_total = payment_input.amount_applied + payment_input.tip_amount
-
-        # Calculate and apply tax/discount to sale if provided
-        # This updates the sale's total_amount so balance_due is correct
-        if payment_input.tax or payment_input.discount:
-            # Get selected items for calculation
-            selected_items = (
-                [data["item"] for data in selected_item_data]
-                if selected_item_data
-                else []
-            )
-
-            if payment_input.tax:
-                tax_calculated = PaymentService._calculate_tax_discount(
-                    payment_input.tax, sale, selected_items
-                )
-                sale.tax_amount = (sale.tax_amount or Decimal("0")) + tax_calculated
-
-            if payment_input.discount:
-                discount_calculated = PaymentService._calculate_tax_discount(
-                    payment_input.discount, sale, selected_items
-                )
-                sale.discount_amount = (
-                    sale.discount_amount or Decimal("0")
-                ) + discount_calculated
-
-            # Recalculate total_amount: subtotal - discount + tax
-            sale.total_amount = (
-                sale.subtotal_amount - sale.discount_amount + sale.tax_amount
-            )
-            sale.save(skip_validation=True)
-
-        # Create payment
-        payment = SalePayment.objects.create(
-            sale=sale,
-            method=payment_input.method,
-            amount_total=amount_total,
-            amount_applied=payment_input.amount_applied,
-            tip_amount=payment_input.tip_amount,
-            destination_account=destination_account,
-            received_by=performer,
-            status=SalePayment.PaymentStatus.COMPLETED,
-        )
-
-        # Link selected items with quantities via through model
-        if selected_item_data:
-            for data in selected_item_data:
-                SalePaymentItem.objects.create(
-                    payment=payment,
-                    sale_item=data["item"],
-                    quantity_paid=data["quantity"],
-                )
-
-        return payment
-
-    @staticmethod
-    def _calculate_tax_discount(
-        input_data: TaxDiscountInput, sale: Sale, selected_items: List[SaleItem]
-    ) -> Decimal:
-        """
-        Calculate tax or discount amount based on type (fixed or percentage).
-
-        Args:
-            input_data: Tax or discount input
-            sale: Sale instance
-            selected_items: List of selected items (empty = all items)
-
-        Returns:
-            Calculated amount
-
-        Raises:
-            ValidationError: If input type is invalid
-        """
-        if input_data.type == "fixed":
-            return input_data.value
-        elif input_data.type == "percentage":
-            # Calculate base amount from selected items or all items
-            if selected_items:
-                base_amount = sum(
-                    item.quantity * item.unit_price for item in selected_items
-                )
-            else:
-                base_amount = sale.subtotal_amount
-
-            return (base_amount * input_data.value / Decimal("100")).quantize(
-                Decimal("0.01")
-            )
-        else:
-            raise ValidationError(
-                _(
-                    "Invalid tax/discount type: %(type)s. Must be 'fixed' or 'percentage'"
-                )
-                % {"type": input_data.type}
-            )
-
-    @staticmethod
-    @transaction.atomic
-    def void_payment(*, payment_id: int, performer: User) -> SalePayment:
-        """
-        Void a payment by setting its status to VOID.
-        Updates the sale's payment status accordingly.
-
-        Args:
-            payment_id: ID of the payment to void
-            performer: User voiding the payment
-
-        Returns:
-            Voided SalePayment instance
-
-        Raises:
-            ValidationError: If payment is already voided or doesn't exist
-        """
-        try:
-            payment = SalePayment.objects.select_related("sale").get(pk=payment_id)
-        except SalePayment.DoesNotExist:
-            raise ValidationError(_("Payment not found"))
-
-        if payment.status == SalePayment.PaymentStatus.VOID:
-            raise ValidationError(_("Payment is already voided"))
-
-        # Void the payment
-        payment.status = SalePayment.PaymentStatus.VOID
-        payment.save()
-
-        # Update sale payment status
-        PaymentService._update_sale_payment_status(payment.sale)
-
-        # If sale was auto-closed and is now not fully paid, reopen it
-        sale = payment.sale
-        sale.refresh_from_db()
-        if sale.state == Sale.SaleState.CLOSED and not sale.is_fully_paid:
-            # Only reopen if there are no other business rules preventing it
-            # For now, we'll leave it closed but with PARTIALLY_PAID status
-            pass
-
-        return payment
+        sale.save(update_fields=["payment_status"])

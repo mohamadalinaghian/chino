@@ -33,8 +33,10 @@ class SaleRefund(models.Model):
         verbose_name=_("Original payment"),
     )
 
-    amount = models.PositiveIntegerField(
+    amount = models.DecimalField(
         _("Refund amount"),
+        max_digits=12,
+        decimal_places=2,
         help_text=_("Refunded amount (excluding tip)"),
     )
 
